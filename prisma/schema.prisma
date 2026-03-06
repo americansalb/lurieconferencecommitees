@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String            @id @default(cuid())
+  email        String            @unique
+  passwordHash String
+  name         String
+  role         String            @default("member")
+  timezone     String            @default("America/Chicago")
+  createdAt    DateTime          @default(now())
+  committees   CommitteeMember[]
+  discussions  Discussion[]
+  posts        Post[]
+
+  @@map("lcc_users")
+}
+
+model Committee {
+  id          String            @id @default(cuid())
+  name        String            @unique
+  slug        String            @unique
+  description String
+  color       String            @default("#3B82F6")
+  icon        String            @default("users")
+  members     CommitteeMember[]
+  events      Event[]
+  discussions Discussion[]
+
+  @@map("lcc_committees")
+}
+
+model CommitteeMember {
+  id          String    @id @default(cuid())
+  userId      String
+  committeeId String
+  role        String    @default("member")
+  joinedAt    DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  committee   Committee @relation(fields: [committeeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, committeeId])
+  @@map("lcc_committee_members")
+}
+
+model Event {
+  id          String    @id @default(cuid())
+  committeeId String
+  title       String
+  description String    @default("")
+  startTime   DateTime
+  endTime     DateTime
+  duration    Int       @default(60)
+  timezone    String    @default("America/Chicago")
+  recurring   Boolean   @default(false)
+  meetingUrl  String?
+  committee   Committee @relation(fields: [committeeId], references: [id], onDelete: Cascade)
+
+  @@map("lcc_events")
+}
+
+model Discussion {
+  id          String    @id @default(cuid())
+  committeeId String
+  title       String
+  authorId    String
+  isPinned    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  committee   Committee @relation(fields: [committeeId], references: [id], onDelete: Cascade)
+  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  posts       Post[]
+
+  @@map("lcc_discussions")
+}
+
+model Post {
+  id           String     @id @default(cuid())
+  discussionId String
+  authorId     String
+  body         String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime?
+  discussion   Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  author       User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@map("lcc_posts")
+}
