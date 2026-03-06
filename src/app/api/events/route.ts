@@ -18,6 +18,32 @@ export async function GET(req: Request) {
   return NextResponse.json(events);
 }
 
+/**
+ * Parse a naive datetime string (e.g. "2026-03-06T09:00") as if it were in
+ * the given IANA timezone, returning a proper UTC Date.
+ *
+ * Without this, `new Date("2026-03-06T09:00")` is interpreted in the server's
+ * local time (often UTC), which silently shifts the event by several hours.
+ */
+function parseInTimezone(naiveDatetime: string, tz: string): Date {
+  // Treat the naive string as UTC temporarily
+  const asUtc = new Date(
+    naiveDatetime.includes("Z") || /[+-]\d{2}:?\d{2}$/.test(naiveDatetime)
+      ? naiveDatetime                 // already has offset — use as-is
+      : naiveDatetime + "Z",         // force UTC interpretation
+  );
+
+  // Render that UTC instant in both UTC and the target timezone
+  const utcRepr = asUtc.toLocaleString("en-US", { timeZone: "UTC" });
+  const tzRepr = asUtc.toLocaleString("en-US", { timeZone: tz });
+
+  // The difference tells us the UTC offset for this timezone at this moment
+  const offsetMs = new Date(utcRepr).getTime() - new Date(tzRepr).getTime();
+
+  // Shift so the original wall-clock time is preserved in the target timezone
+  return new Date(asUtc.getTime() + offsetMs);
+}
+
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -33,8 +59,8 @@ export async function POST(req: Request) {
 
     const durationMins = duration || 60;
     const tz = timezone || "America/Chicago";
-    const start = new Date(startTime);
-    const end = endTime ? new Date(endTime) : new Date(start.getTime() + durationMins * 60 * 1000);
+    const start = parseInTimezone(startTime, tz);
+    const end = endTime ? parseInTimezone(endTime, tz) : new Date(start.getTime() + durationMins * 60 * 1000);
 
     const event = await prisma.event.create({
       data: {

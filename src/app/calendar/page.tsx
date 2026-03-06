@@ -141,12 +141,15 @@ export default function CalendarPage() {
   const eventsByDate = useMemo(() => {
     const map: Record<string, CalEvent[]> = {};
     filteredEvents.forEach(ev => {
-      const dateKey = new Date(ev.startTime).toISOString().split("T")[0];
+      // Format in the user's timezone so events land on the correct calendar day
+      const dateKey = userTimezone
+        ? new Intl.DateTimeFormat("en-CA", { timeZone: userTimezone }).format(new Date(ev.startTime))
+        : new Date(ev.startTime).toISOString().split("T")[0];
       if (!map[dateKey]) map[dateKey] = [];
       map[dateKey].push(ev);
     });
     return map;
-  }, [filteredEvents]);
+  }, [filteredEvents, userTimezone]);
 
   const selectedEvents = selectedDate ? (eventsByDate[selectedDate] || []) : [];
 
