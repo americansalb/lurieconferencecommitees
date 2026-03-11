@@ -376,7 +376,7 @@ export default function DashboardPage() {
           <div className="bg-white border-b border-slate-200 px-4 sm:px-6 py-3">
             <div className="flex flex-wrap gap-2">
               <button
-                onClick={() => { setSelectedSlug("__all__"); setActiveTab("overview"); setExpandedDisc(null); }}
+                onClick={() => { setSelectedSlug("__all__"); setActiveTab("members"); setExpandedDisc(null); }}
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                   selectedSlug === "__all__" ? "shadow-sm border bg-slate-900 text-white border-slate-900" : "border border-transparent hover:bg-slate-50 text-slate-500"
                 }`}
