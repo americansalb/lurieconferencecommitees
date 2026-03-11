@@ -5,7 +5,8 @@ import {
   Plus, X, Trash2, ChevronLeft, ChevronRight,
   Check, Circle, CheckCircle2, Clock, ExternalLink,
   AlertCircle, ArrowUp, ArrowRight, ArrowDown, Link2,
-  Pencil, Calendar, User, Flag, Palette,
+  Pencil, Calendar, User, Flag, Palette, Sparkles,
+  FileText, Users, Zap,
 } from "lucide-react";
 
 interface Task {
@@ -95,7 +96,8 @@ export default function GanttChart({ committeeId, accentColor, lightColor, membe
   const [dragOrigEnd, setDragOrigEnd] = useState("");
   const ganttRef = useRef<HTMLDivElement>(null);
 
-  // Form state
+  // Form / wizard state
+  const [wizardStep, setWizardStep] = useState(0);
   const [formTitle, setFormTitle] = useState("");
   const [formDesc, setFormDesc] = useState("");
   const [formUrl, setFormUrl] = useState("");
@@ -104,6 +106,7 @@ export default function GanttChart({ committeeId, accentColor, lightColor, membe
   const [formPriority, setFormPriority] = useState("medium");
   const [formColor, setFormColor] = useState(TASK_COLORS[0]);
   const [formAssignee, setFormAssignee] = useState("");
+  const [creating, setCreating] = useState(false);
 
   const fetchTasks = useCallback(async () => {
     try {
@@ -173,7 +176,7 @@ export default function GanttChart({ committeeId, accentColor, lightColor, membe
   function resetForm() {
     setFormTitle(""); setFormDesc(""); setFormUrl(""); setFormPriority("medium"); setFormAssignee("");
     setFormStart(formatDate(new Date())); setFormEnd(formatDate(addDays(new Date(), 7)));
-    setFormColor(TASK_COLORS[0]);
+    setFormColor(TASK_COLORS[0]); setWizardStep(0); setCreating(false);
   }
 
   const [formError, setFormError] = useState("");
@@ -181,6 +184,7 @@ export default function GanttChart({ committeeId, accentColor, lightColor, membe
   async function handleCreateTask() {
     if (!formTitle.trim() || !formStart || !formEnd) return;
     setFormError("");
+    setCreating(true);
     try {
       const res = await fetch("/api/tasks", {
         method: "POST",
@@ -200,6 +204,7 @@ export default function GanttChart({ committeeId, accentColor, lightColor, membe
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: "Failed to create task" }));
         setFormError(err.error || "Failed to create task");
+        setCreating(false);
         return;
       }
       resetForm();
@@ -207,7 +212,20 @@ export default function GanttChart({ committeeId, accentColor, lightColor, membe
       fetchTasks();
     } catch {
       setFormError("Network error — please try again");
+      setCreating(false);
     }
+  }
+
+  const WIZARD_STEPS = [
+    { label: "Basics", icon: FileText, desc: "Name your task" },
+    { label: "Timeline", icon: Calendar, desc: "Set dates & assign" },
+    { label: "Details", icon: Zap, desc: "Priority & style" },
+  ];
+
+  function canAdvanceStep(step: number): boolean {
+    if (step === 0) return formTitle.trim().length > 0;
+    if (step === 1) return !!formStart && !!formEnd;
+    return true;
   }
 
   async function handleUpdateTask(taskId: string, updates: Record<string, unknown>) {
@@ -380,131 +398,303 @@ export default function GanttChart({ committeeId, accentColor, lightColor, membe
         </div>
       </div>
 
-      {/* New task form */}
+      {/* Task creation wizard modal */}
       {showForm && (
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 mb-5 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-bold text-slate-900">Create New Task</h3>
-            <button onClick={() => { setShowForm(false); resetForm(); }} className="p-1 rounded-lg hover:bg-slate-100 text-slate-400">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Title *</label>
-              <input
-                value={formTitle}
-                onChange={e => setFormTitle(e.target.value)}
-                placeholder="What needs to be done?"
-                className="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/10 transition-all"
-              />
-            </div>
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Details</label>
-              <textarea
-                value={formDesc}
-                onChange={e => setFormDesc(e.target.value)}
-                placeholder="Add more context, notes, or instructions..."
-                rows={3}
-                className="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/10 transition-all resize-none"
-              />
-            </div>
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
-                <span className="flex items-center gap-1"><Link2 className="w-3 h-3" /> External Link</span>
-              </label>
-              <input
-                value={formUrl}
-                onChange={e => setFormUrl(e.target.value)}
-                placeholder="https://docs.google.com/... or any URL"
-                className="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/10 transition-all"
-              />
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
-                  <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> Start</span>
-                </label>
-                <input
-                  type="date"
-                  value={formStart}
-                  onChange={e => setFormStart(e.target.value)}
-                  className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/10"
-                />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => { setShowForm(false); resetForm(); setFormError(""); }} />
+          <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            {/* Wizard header with gradient */}
+            <div className="relative overflow-hidden px-6 pt-6 pb-4" style={{ background: `linear-gradient(135deg, ${accentColor}12, ${accentColor}06)` }}>
+              <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-[0.04]" style={{ background: accentColor, transform: "translate(30%, -30%)" }} />
+              <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: accentColor + "18" }}>
+                    <Sparkles className="w-4.5 h-4.5" style={{ color: accentColor }} />
+                  </div>
+                  <div>
+                    <h3 className="text-[15px] font-extrabold text-slate-900">Create a Task</h3>
+                    <p className="text-[11px] text-slate-400 mt-0.5">{WIZARD_STEPS[wizardStep].desc}</p>
+                  </div>
+                </div>
+                <button onClick={() => { setShowForm(false); resetForm(); setFormError(""); }} className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-all">
+                  <X className="w-4 h-4" />
+                </button>
               </div>
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
-                  <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> End</span>
-                </label>
-                <input
-                  type="date"
-                  value={formEnd}
-                  onChange={e => setFormEnd(e.target.value)}
-                  className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/10"
-                />
-              </div>
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
-                  <span className="flex items-center gap-1"><Flag className="w-3 h-3" /> Priority</span>
-                </label>
-                <select
-                  value={formPriority}
-                  onChange={e => setFormPriority(e.target.value)}
-                  className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400 bg-white"
-                >
-                  {Object.entries(PRIORITY_CONFIG).map(([k, v]) => (
-                    <option key={k} value={k}>{v.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
-                  <span className="flex items-center gap-1"><User className="w-3 h-3" /> Assign To</span>
-                </label>
-                <select
-                  value={formAssignee}
-                  onChange={e => setFormAssignee(e.target.value)}
-                  className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400 bg-white"
-                >
-                  <option value="">Unassigned</option>
-                  {members.map(m => (
-                    <option key={m.user.id} value={m.user.id}>{m.user.name}</option>
-                  ))}
-                </select>
+
+              {/* Step indicator */}
+              <div className="flex items-center gap-1">
+                {WIZARD_STEPS.map((step, i) => {
+                  const StepIcon = step.icon;
+                  const isActive = i === wizardStep;
+                  const isDone = i < wizardStep;
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => { if (i < wizardStep || canAdvanceStep(wizardStep)) setWizardStep(i); }}
+                      className={`flex-1 flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-semibold transition-all ${
+                        isActive ? "shadow-sm" : isDone ? "hover:bg-white/60" : "opacity-50"
+                      }`}
+                      style={isActive ? { background: "white", color: accentColor, boxShadow: `0 2px 8px ${accentColor}15` } : isDone ? { color: accentColor } : { color: "#94a3b8" }}
+                    >
+                      {isDone ? <Check className="w-3.5 h-3.5" /> : <StepIcon className="w-3.5 h-3.5" />}
+                      <span className="hidden sm:inline">{step.label}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
-                <span className="flex items-center gap-1"><Palette className="w-3 h-3" /> Color</span>
-              </label>
-              <div className="flex gap-2">
-                {TASK_COLORS.map(c => (
-                  <button
-                    key={c}
-                    onClick={() => setFormColor(c)}
-                    className={`w-7 h-7 rounded-lg transition-all ${formColor === c ? "ring-2 ring-offset-2 scale-110 shadow-sm" : "hover:scale-105"}`}
-                    style={{ background: c, ringColor: c }}
-                  />
+
+            {/* Step content */}
+            <div className="px-6 py-5 min-h-[240px]">
+              {/* Step 1: Basics */}
+              {wizardStep === 0 && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">What needs to be done?</label>
+                    <input
+                      value={formTitle}
+                      onChange={e => setFormTitle(e.target.value)}
+                      placeholder="e.g. Book conference venue, Send speaker invitations..."
+                      className="w-full px-4 py-3 text-[15px] font-medium border-2 border-slate-200 rounded-xl outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-400/10 transition-all placeholder:text-slate-300"
+                      autoFocus
+                      onKeyDown={e => { if (e.key === "Enter" && formTitle.trim()) setWizardStep(1); }}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      Description <span className="font-normal text-slate-300">(optional)</span>
+                    </label>
+                    <textarea
+                      value={formDesc}
+                      onChange={e => setFormDesc(e.target.value)}
+                      placeholder="Add context, notes, or instructions..."
+                      rows={3}
+                      className="w-full px-4 py-3 text-sm border-2 border-slate-200 rounded-xl outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-400/10 transition-all resize-none placeholder:text-slate-300"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      <span className="flex items-center gap-1"><Link2 className="w-3 h-3" /> Link <span className="font-normal text-slate-300">(optional)</span></span>
+                    </label>
+                    <input
+                      value={formUrl}
+                      onChange={e => setFormUrl(e.target.value)}
+                      placeholder="https://docs.google.com/..."
+                      className="w-full px-4 py-3 text-sm border-2 border-slate-200 rounded-xl outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-400/10 transition-all placeholder:text-slate-300"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Step 2: Timeline & Assignment */}
+              {wizardStep === 1 && (
+                <div className="space-y-5">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">Timeline</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="relative">
+                        <label className="block text-[10px] font-semibold text-slate-400 mb-1.5 flex items-center gap-1">
+                          <Calendar className="w-3 h-3" /> Start Date
+                        </label>
+                        <input
+                          type="date"
+                          value={formStart}
+                          onChange={e => setFormStart(e.target.value)}
+                          className="w-full px-3.5 py-3 text-sm font-medium border-2 border-slate-200 rounded-xl outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-400/10 transition-all"
+                        />
+                      </div>
+                      <div className="relative">
+                        <label className="block text-[10px] font-semibold text-slate-400 mb-1.5 flex items-center gap-1">
+                          <Calendar className="w-3 h-3" /> End Date
+                        </label>
+                        <input
+                          type="date"
+                          value={formEnd}
+                          onChange={e => setFormEnd(e.target.value)}
+                          className="w-full px-3.5 py-3 text-sm font-medium border-2 border-slate-200 rounded-xl outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-400/10 transition-all"
+                        />
+                      </div>
+                    </div>
+                    {formStart && formEnd && (
+                      <div className="mt-2.5 flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: accentColor + "08" }}>
+                        <Clock className="w-3.5 h-3.5" style={{ color: accentColor }} />
+                        <span className="text-xs font-medium" style={{ color: accentColor }}>
+                          {daysBetween(new Date(formStart), new Date(formEnd)) + 1} days &middot;{" "}
+                          {new Date(formStart).toLocaleDateString("en-US", { month: "short", day: "numeric" })} →{" "}
+                          {new Date(formEnd).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">
+                      <span className="flex items-center gap-1"><Users className="w-3 h-3" /> Assign to</span>
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => setFormAssignee("")}
+                        className={`flex items-center gap-2.5 px-3.5 py-3 rounded-xl border-2 transition-all text-left ${
+                          !formAssignee ? "border-blue-400 bg-blue-50/50 shadow-sm" : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+                        }`}
+                      >
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${!formAssignee ? "bg-blue-100" : "bg-slate-100"}`}>
+                          <User className="w-4 h-4 text-slate-400" />
+                        </div>
+                        <span className="text-xs font-semibold text-slate-500">Unassigned</span>
+                      </button>
+                      {members.map(m => {
+                        const isSelected = formAssignee === m.user.id;
+                        return (
+                          <button
+                            key={m.user.id}
+                            onClick={() => setFormAssignee(m.user.id)}
+                            className={`flex items-center gap-2.5 px-3.5 py-3 rounded-xl border-2 transition-all text-left ${
+                              isSelected ? "border-blue-400 bg-blue-50/50 shadow-sm" : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+                            }`}
+                          >
+                            <div
+                              className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"
+                              style={{ background: isSelected ? accentColor : "#94a3b8" }}
+                            >
+                              {getInitials(m.user.name)}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="text-xs font-semibold text-slate-700 truncate">{m.user.name}</div>
+                              <div className="text-[10px] text-slate-400 capitalize">{m.role}</div>
+                            </div>
+                            {isSelected && <Check className="w-4 h-4 ml-auto shrink-0" style={{ color: accentColor }} />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 3: Priority & Style */}
+              {wizardStep === 2 && (
+                <div className="space-y-5">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">
+                      <span className="flex items-center gap-1"><Flag className="w-3 h-3" /> Priority</span>
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {Object.entries(PRIORITY_CONFIG).map(([key, cfg]) => {
+                        const Icon = cfg.icon;
+                        const isActive = formPriority === key;
+                        return (
+                          <button
+                            key={key}
+                            onClick={() => setFormPriority(key)}
+                            className={`flex flex-col items-center gap-2 px-4 py-4 rounded-xl border-2 transition-all ${
+                              isActive ? "shadow-sm" : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+                            }`}
+                            style={isActive ? { borderColor: cfg.color, background: cfg.bg } : undefined}
+                          >
+                            <div
+                              className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${isActive ? "" : "bg-slate-100"}`}
+                              style={isActive ? { background: cfg.color + "20" } : undefined}
+                            >
+                              <Icon className="w-5 h-5" style={{ color: isActive ? cfg.color : "#94a3b8" }} />
+                            </div>
+                            <span className="text-xs font-bold" style={{ color: isActive ? cfg.color : "#64748b" }}>{cfg.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">
+                      <span className="flex items-center gap-1"><Palette className="w-3 h-3" /> Color</span>
+                    </label>
+                    <div className="flex gap-2.5 flex-wrap">
+                      {TASK_COLORS.map(c => (
+                        <button
+                          key={c}
+                          onClick={() => setFormColor(c)}
+                          className={`w-9 h-9 rounded-xl transition-all relative ${formColor === c ? "ring-2 ring-offset-2 scale-110 shadow-md" : "hover:scale-105 hover:shadow-sm"}`}
+                          style={{ background: c, ringColor: c }}
+                        >
+                          {formColor === c && <Check className="w-4 h-4 text-white absolute inset-0 m-auto drop-shadow-sm" />}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Preview card */}
+                  <div className="mt-2 p-4 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50">
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Preview</div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-8 rounded-full" style={{ background: formColor }} />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-bold text-slate-900 truncate">{formTitle || "Task name"}</div>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {formAssignee && (
+                            <span className="text-[10px] text-slate-500">{members.find(m => m.user.id === formAssignee)?.user.name}</span>
+                          )}
+                          <span className="text-[10px] text-slate-400">
+                            {new Date(formStart).toLocaleDateString("en-US", { month: "short", day: "numeric" })} → {new Date(formEnd).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold" style={{ background: PRIORITY_CONFIG[formPriority]?.bg, color: PRIORITY_CONFIG[formPriority]?.color }}>
+                        {(() => { const P = PRIORITY_CONFIG[formPriority]?.icon || ArrowRight; return <P className="w-3 h-3" />; })()}
+                        {PRIORITY_CONFIG[formPriority]?.label}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {formError && (
+                <div className="mt-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  {formError}
+                </div>
+              )}
+            </div>
+
+            {/* Footer navigation */}
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between">
+              <button
+                onClick={() => { if (wizardStep === 0) { setShowForm(false); resetForm(); setFormError(""); } else setWizardStep(s => s - 1); }}
+                className="text-sm font-medium text-slate-500 hover:text-slate-700 px-4 py-2.5 rounded-xl hover:bg-white transition-all"
+              >
+                {wizardStep === 0 ? "Cancel" : "Back"}
+              </button>
+              <div className="flex items-center gap-1.5">
+                {WIZARD_STEPS.map((_, i) => (
+                  <div key={i} className="w-1.5 h-1.5 rounded-full transition-all" style={{ background: i === wizardStep ? accentColor : i < wizardStep ? accentColor + "60" : "#cbd5e1" }} />
                 ))}
               </div>
-            </div>
-            {formError && (
-              <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                {formError}
-              </div>
-            )}
-            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-              <button onClick={() => { setShowForm(false); resetForm(); setFormError(""); }} className="text-sm font-medium text-slate-500 hover:text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors">
-                Cancel
-              </button>
-              <button
-                onClick={handleCreateTask}
-                disabled={!formTitle.trim()}
-                className="text-sm font-bold text-white rounded-lg px-5 py-2 transition-all hover:opacity-90 disabled:opacity-40 shadow-sm"
-                style={{ background: accentColor }}
-              >
-                Create Task
-              </button>
+              {wizardStep < 2 ? (
+                <button
+                  onClick={() => setWizardStep(s => s + 1)}
+                  disabled={!canAdvanceStep(wizardStep)}
+                  className="text-sm font-bold text-white rounded-xl px-5 py-2.5 transition-all hover:opacity-90 disabled:opacity-40 shadow-sm flex items-center gap-1.5"
+                  style={{ background: accentColor }}
+                >
+                  Next <ChevronRight className="w-4 h-4" />
+                </button>
+              ) : (
+                <button
+                  onClick={handleCreateTask}
+                  disabled={!formTitle.trim() || creating}
+                  className="text-sm font-bold text-white rounded-xl px-5 py-2.5 transition-all hover:opacity-90 disabled:opacity-40 shadow-sm flex items-center gap-1.5"
+                  style={{ background: accentColor }}
+                >
+                  {creating ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" /> Create Task
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           </div>
         </div>
