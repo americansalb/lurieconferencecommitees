@@ -1,6 +1,5 @@
--- AlterTable: make committeeId nullable and add isGlobal flag for global discussions
+-- AlterTable: make committeeId nullable for global discussions (null committeeId = visible in all committees)
 ALTER TABLE "lcc_discussions" ALTER COLUMN "committeeId" DROP NOT NULL;
-ALTER TABLE "lcc_discussions" ADD COLUMN "isGlobal" BOOLEAN NOT NULL DEFAULT false;
 
 -- Add Executive Planning Committee
 INSERT INTO "lcc_committees" (id, name, slug, description, color, icon)

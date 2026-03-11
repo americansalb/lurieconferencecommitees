@@ -31,7 +31,6 @@ interface Discussion {
   id: string;
   title: string;
   isPinned: boolean;
-  isGlobal?: boolean;
   author: { id: string; name: string };
   committee: { id: string; name: string; slug: string; color: string } | null;
   createdAt: string;
@@ -99,7 +98,7 @@ export default function DiscussionsPage() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const filteredDiscussions = filterSlug
-    ? discussions.filter(d => d.committee?.slug === filterSlug || d.isGlobal)
+    ? discussions.filter(d => d.committee?.slug === filterSlug || !d.committee)
     : discussions;
 
   async function loadPosts(discId: string) {

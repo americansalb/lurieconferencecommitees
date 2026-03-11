@@ -71,7 +71,6 @@ model Discussion {
   title       String
   authorId    String
   isPinned    Boolean    @default(false)
-  isGlobal    Boolean    @default(false)
   createdAt   DateTime   @default(now())
   committee   Committee? @relation(fields: [committeeId], references: [id], onDelete: Cascade)
   author      User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
