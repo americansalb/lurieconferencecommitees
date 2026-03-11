@@ -7,7 +7,10 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const committeeId = searchParams.get("committeeId");
 
-  const where = committeeId ? { committeeId } : {};
+  // When filtering by committee, also include global discussions
+  const where = committeeId
+    ? { OR: [{ committeeId }, { isGlobal: true }] }
+    : {};
 
   const discussions = await prisma.discussion.findMany({
     where,
@@ -38,21 +41,16 @@ export async function POST(req: Request) {
     const userId = (session.user as { id: string }).id;
     const userRole = (session.user as { role?: string }).role;
 
-    // "all" broadcasts the discussion to every committee simultaneously (admin/developer only)
+    // "all" creates ONE global discussion visible in every committee
     if (committeeId === "all") {
       if (userRole !== "admin" && userRole !== "developer") {
         return NextResponse.json({ error: "Only admins can broadcast to all committees" }, { status: 403 });
       }
-      const allCommittees = await prisma.committee.findMany({ select: { id: true } });
-      const created = await prisma.$transaction(
-        allCommittees.map((c: { id: string }) =>
-          prisma.discussion.create({
-            data: { title, committeeId: c.id, authorId: userId },
-            include: { author: { select: { id: true, name: true } } },
-          })
-        )
-      );
-      return NextResponse.json(created, { status: 201 });
+      const discussion = await prisma.discussion.create({
+        data: { title, committeeId: null, authorId: userId, isGlobal: true },
+        include: { author: { select: { id: true, name: true } } },
+      });
+      return NextResponse.json(discussion, { status: 201 });
     }
 
     const membership = await prisma.committeeMember.findUnique({

@@ -43,6 +43,14 @@ const committees = [
     color: "#0D9488",
     icon: "users",
   },
+  {
+    name: "Executive Planning Committee",
+    slug: "executive-planning",
+    description:
+      "Provides strategic leadership and oversight for the entire conference. Coordinates across all committees, sets timelines and milestones, manages the overall budget, resolves cross-committee issues, and ensures alignment with Lurie Children's mission and AALB goals.",
+    color: "#DC2626",
+    icon: "users",
+  },
 ];
 
 async function main() {
@@ -55,7 +63,7 @@ async function main() {
       create: committee,
     });
   }
-  console.log("Seeded 5 committees.");
+  console.log(`Seeded ${committees.length} committees.`);
 }
 
 main()
