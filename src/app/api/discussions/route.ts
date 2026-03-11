@@ -7,9 +7,9 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const committeeId = searchParams.get("committeeId");
 
-  // When filtering by committee, also include global discussions
+  // When filtering by committee, also include global discussions (committeeId is null)
   const where = committeeId
-    ? { OR: [{ committeeId }, { isGlobal: true }] }
+    ? { OR: [{ committeeId }, { committeeId: null }] }
     : {};
 
   const discussions = await prisma.discussion.findMany({
@@ -47,7 +47,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Only admins can broadcast to all committees" }, { status: 403 });
       }
       const discussion = await prisma.discussion.create({
-        data: { title, committeeId: null, authorId: userId, isGlobal: true },
+        data: { title, committeeId: null, authorId: userId },
         include: { author: { select: { id: true, name: true } } },
       });
       return NextResponse.json(discussion, { status: 201 });

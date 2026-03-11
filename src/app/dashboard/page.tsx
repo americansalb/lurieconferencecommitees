@@ -8,11 +8,12 @@ import {
   MapPin, Monitor, Megaphone, Handshake, Users,
   Calendar, MessageSquare, ChevronDown, ChevronUp,
   Pin, Send, Plus, LogOut, User, Pencil, Trash2, Check, X,
-  ChevronLeft, ChevronRight, Clock, Globe,
+  ChevronLeft, ChevronRight, Clock, Globe, BarChart3,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
 import MobileNav from "@/components/layout/MobileNav";
+import GanttChart from "@/components/tasks/GanttChart";
 
 const SLUG_COLORS: Record<string, { accent: string; bg: string; light: string }> = {
   "logistics-venue": { accent: "#3b82f6", bg: "#1e3a5f", light: "#eff6ff" },
@@ -71,7 +72,7 @@ interface Committee {
   _count: { members: number; discussions: number; events: number };
 }
 
-type Tab = "overview" | "members" | "calendar" | "discussion";
+type Tab = "overview" | "members" | "calendar" | "discussion" | "tasks";
 
 function getInitials(name: string) {
   return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
@@ -364,6 +365,7 @@ export default function DashboardPage() {
     { id: "members", label: `Members (${committee?._count.members || 0})`, icon: Users },
     { id: "calendar", label: "Calendar", icon: Calendar },
     { id: "discussion", label: `Discussion (${committee?._count.discussions || 0})`, icon: MessageSquare },
+    { id: "tasks", label: "Tasks", icon: BarChart3 },
   ];
 
   return (
@@ -376,7 +378,7 @@ export default function DashboardPage() {
           <div className="bg-white border-b border-slate-200 px-4 sm:px-6 py-3">
             <div className="flex flex-wrap gap-2">
               <button
-                onClick={() => { setSelectedSlug("__all__"); setActiveTab("overview"); setExpandedDisc(null); }}
+                onClick={() => { setSelectedSlug("__all__"); setActiveTab("members"); setExpandedDisc(null); }}
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                   selectedSlug === "__all__" ? "shadow-sm border bg-slate-900 text-white border-slate-900" : "border border-transparent hover:bg-slate-50 text-slate-500"
                 }`}
@@ -1033,6 +1035,17 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </div>
+            )}
+
+            {/* Tasks / Gantt Chart */}
+            {activeTab === "tasks" && committee && (
+              <GanttChart
+                committeeId={committee.id}
+                accentColor={col.accent}
+                lightColor={col.light}
+                members={committee.members}
+                isMember={!!isMember}
+              />
             )}
 
             {/* Discussion */}
