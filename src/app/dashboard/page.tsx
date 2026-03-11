@@ -324,6 +324,15 @@ export default function DashboardPage() {
     loadDiscussionPosts(expandedDisc);
   }
 
+  async function handleDeleteDiscussion(discId: string) {
+    if (!confirm("Delete this discussion and all its replies?")) return;
+    const res = await fetch(`/api/discussions/${discId}`, { method: "DELETE" });
+    if (res.ok) {
+      if (expandedDisc === discId) setExpandedDisc(null);
+      fetchCommittees();
+    }
+  }
+
   async function handleCreateCommittee() {
     if (!newCommitteeName.trim()) return;
     const res = await fetch("/api/committees", {
@@ -1105,6 +1114,16 @@ export default function DashboardPage() {
                         </button>
                         {expandedDisc === d.id && (
                           <div className="border-t border-slate-100 px-4 py-4">
+                            {(d.author.id === currentUserId || canModerate) && (
+                              <div className="flex justify-end mb-3">
+                                <button
+                                  onClick={() => handleDeleteDiscussion(d.id)}
+                                  className="flex items-center gap-1 text-xs font-medium text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded-lg transition-colors"
+                                >
+                                  <Trash2 className="w-3 h-3" /> Delete Discussion
+                                </button>
+                              </div>
+                            )}
                             {discPosts[d.id]?.map(p => {
                               const isOwnPost = p.author.id === currentUserId;
                               const canEditPost = isOwnPost || canModerate;
