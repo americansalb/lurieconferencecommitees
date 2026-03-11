@@ -10,6 +10,7 @@ CREATE TABLE "lcc_tasks" (
     "startDate" TIMESTAMP(3) NOT NULL,
     "endDate" TIMESTAMP(3) NOT NULL,
     "color" TEXT,
+    "url" TEXT,
     "assigneeId" TEXT,
     "sortOrder" INTEGER NOT NULL DEFAULT 0,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,

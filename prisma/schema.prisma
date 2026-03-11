@@ -92,6 +92,7 @@ model Task {
   startDate   DateTime
   endDate     DateTime
   color       String?
+  url         String?
   assigneeId  String?
   sortOrder   Int       @default(0)
   createdAt   DateTime  @default(now())

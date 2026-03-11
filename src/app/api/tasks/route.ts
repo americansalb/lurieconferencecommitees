@@ -35,7 +35,7 @@ export async function POST(req: Request) {
     }
 
     const userId = (session.user as { id: string }).id;
-    const { committeeId, title, description, startDate, endDate, priority, color, assigneeId } = await req.json();
+    const { committeeId, title, description, startDate, endDate, priority, color, url, assigneeId } = await req.json();
 
     if (!committeeId || !title || !startDate || !endDate) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -59,6 +59,7 @@ export async function POST(req: Request) {
         endDate: new Date(endDate),
         priority: priority || "medium",
         color: color || null,
+        url: url || null,
         assigneeId: assigneeId || null,
       },
       include: {
@@ -79,7 +80,7 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { taskId, title, description, startDate, endDate, status, priority, progress, color, assigneeId, sortOrder } = await req.json();
+    const { taskId, title, description, startDate, endDate, status, priority, progress, color, url, assigneeId, sortOrder } = await req.json();
 
     if (!taskId) {
       return NextResponse.json({ error: "taskId is required" }, { status: 400 });
@@ -94,6 +95,7 @@ export async function PUT(req: Request) {
     if (priority !== undefined) data.priority = priority;
     if (progress !== undefined) data.progress = Math.max(0, Math.min(100, progress));
     if (color !== undefined) data.color = color;
+    if (url !== undefined) data.url = url || null;
     if (assigneeId !== undefined) data.assigneeId = assigneeId || null;
     if (sortOrder !== undefined) data.sortOrder = sortOrder;
 
