@@ -10,7 +10,7 @@ import MobileNav from "@/components/layout/MobileNav";
 
 interface Membership {
   role: string;
-  committee: { name: string; slug: string; color: string };
+  committee: { id: string; name: string; slug: string; color: string };
 }
 
 const ROLE_LABELS: Record<string, string> = {
@@ -74,17 +74,29 @@ export default function ProfilePage() {
     if (!session) return;
     fetch("/api/committees")
       .then((r) => (r.ok ? r.json() : []))
-      .then((committees: { members: { user: { id: string }; role: string }[]; name: string; slug: string; color: string }[]) => {
+      .then((committees: { id: string; members: { user: { id: string }; role: string }[]; name: string; slug: string; color: string }[]) => {
         const userId = (session.user as { id: string }).id;
         const mine: Membership[] = [];
         committees.forEach((c) => {
           const m = c.members.find((m) => m.user.id === userId);
-          if (m) mine.push({ role: m.role, committee: { name: c.name, slug: c.slug, color: c.color } });
+          if (m) mine.push({ role: m.role, committee: { id: c.id, name: c.name, slug: c.slug, color: c.color } });
         });
         setMemberships(mine);
       })
       .catch(() => {});
   }, [session]);
+
+  async function handleLeaveCommittee(committeeId: string, committeeName: string) {
+    if (!confirm(`Leave ${committeeName}?`)) return;
+    const res = await fetch("/api/committees/join", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ committeeId }),
+    });
+    if (res.ok) {
+      setMemberships((prev: Membership[]) => prev.filter((m: Membership) => m.committee.id !== committeeId));
+    }
+  }
 
   if (status === "loading" || !session) {
     return (
@@ -190,7 +202,15 @@ export default function ProfilePage() {
                         <div className="w-2.5 h-2.5 rounded-full" style={{ background: m.committee.color }} />
                         <span className="text-sm font-semibold text-slate-900">{m.committee.name}</span>
                       </div>
-                      <span className="text-xs font-medium text-slate-400 capitalize">{m.role}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-medium text-slate-400 capitalize">{m.role}</span>
+                        <button
+                          onClick={() => handleLeaveCommittee(m.committee.id, m.committee.name)}
+                          className="text-[11px] font-semibold text-red-500 hover:text-red-700 hover:bg-red-50 rounded px-2 py-0.5 transition-colors"
+                        >
+                          Leave
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>

@@ -36,6 +36,24 @@ export async function POST(req: Request) {
     }
 
     const userId = (session.user as { id: string }).id;
+    const userRole = (session.user as { role?: string }).role;
+
+    // "all" broadcasts the discussion to every committee simultaneously (admin/developer only)
+    if (committeeId === "all") {
+      if (userRole !== "admin" && userRole !== "developer") {
+        return NextResponse.json({ error: "Only admins can broadcast to all committees" }, { status: 403 });
+      }
+      const allCommittees = await prisma.committee.findMany({ select: { id: true } });
+      const created = await prisma.$transaction(
+        allCommittees.map((c: { id: string }) =>
+          prisma.discussion.create({
+            data: { title, committeeId: c.id, authorId: userId },
+            include: { author: { select: { id: true, name: true } } },
+          })
+        )
+      );
+      return NextResponse.json(created, { status: 201 });
+    }
 
     const membership = await prisma.committeeMember.findUnique({
       where: { userId_committeeId: { userId, committeeId } },
