@@ -4,27 +4,32 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
 export async function GET(req: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const committeeId = searchParams.get("committeeId");
+
+    if (!committeeId) {
+      return NextResponse.json({ error: "committeeId is required" }, { status: 400 });
+    }
+
+    const tasks = await prisma.task.findMany({
+      where: { committeeId },
+      include: {
+        assignee: { select: { id: true, name: true } },
+      },
+      orderBy: [{ sortOrder: "asc" }, { startDate: "asc" }],
+    });
+
+    return NextResponse.json(tasks);
+  } catch (err) {
+    console.error("GET /api/tasks error:", err);
+    return NextResponse.json({ error: "Failed to load tasks" }, { status: 500 });
   }
-
-  const { searchParams } = new URL(req.url);
-  const committeeId = searchParams.get("committeeId");
-
-  if (!committeeId) {
-    return NextResponse.json({ error: "committeeId is required" }, { status: 400 });
-  }
-
-  const tasks = await prisma.task.findMany({
-    where: { committeeId },
-    include: {
-      assignee: { select: { id: true, name: true } },
-    },
-    orderBy: [{ sortOrder: "asc" }, { startDate: "asc" }],
-  });
-
-  return NextResponse.json(tasks);
 }
 
 export async function POST(req: Request) {
@@ -68,7 +73,8 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json(task, { status: 201 });
-  } catch {
+  } catch (err) {
+    console.error("POST /api/tasks error:", err);
     return NextResponse.json({ error: "Failed to create task" }, { status: 500 });
   }
 }
@@ -108,7 +114,8 @@ export async function PUT(req: Request) {
     });
 
     return NextResponse.json(task);
-  } catch {
+  } catch (err) {
+    console.error("PUT /api/tasks error:", err);
     return NextResponse.json({ error: "Failed to update task" }, { status: 500 });
   }
 }
@@ -128,7 +135,8 @@ export async function DELETE(req: Request) {
 
     await prisma.task.delete({ where: { id: taskId } });
     return NextResponse.json({ success: true });
-  } catch {
+  } catch (err) {
+    console.error("DELETE /api/tasks error:", err);
     return NextResponse.json({ error: "Failed to delete task" }, { status: 500 });
   }
 }
