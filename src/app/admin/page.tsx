@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import {
   Users, Calendar, Shield, Trash2, Pencil, X, Check,
-  Clock, Globe, Search, MessageSquare, Pin,
+  Clock, Globe, Search, MessageSquare, Pin, Crown,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
@@ -18,6 +18,7 @@ interface Committee {
 }
 
 interface MemberCommittee {
+  role: string;
   committee: Committee;
 }
 
@@ -178,6 +179,17 @@ export default function AdminPage() {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ eventId }),
+    });
+    fetchData();
+  }
+
+  // Committee role actions
+  async function toggleChair(userId: string, committeeId: string, currentRole: string) {
+    const newRole = currentRole === "chair" ? "member" : "chair";
+    await fetch("/api/admin/committee-roles", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, committeeId, committeeRole: newRole }),
     });
     fetchData();
   }
@@ -371,9 +383,19 @@ export default function AdminPage() {
                                   {m.committees.length === 0 ? (
                                     <span className="text-xs text-slate-400">None</span>
                                   ) : m.committees.map(mc => (
-                                    <span key={mc.committee.id} className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                                    <button
+                                      key={mc.committee.id}
+                                      onClick={() => toggleChair(m.id, mc.committee.id, mc.role)}
+                                      title={mc.role === "chair" ? "Click to remove as leader" : "Click to make group leader"}
+                                      className={`text-[11px] font-medium px-2 py-0.5 rounded-full inline-flex items-center gap-1 transition-colors ${
+                                        mc.role === "chair"
+                                          ? "bg-amber-100 text-amber-700 border border-amber-200"
+                                          : "bg-slate-100 text-slate-600 hover:bg-amber-50 hover:text-amber-600"
+                                      }`}
+                                    >
+                                      {mc.role === "chair" && <Crown className="w-3 h-3" />}
                                       {mc.committee.name}
-                                    </span>
+                                    </button>
                                   ))}
                                 </div>
                               )}

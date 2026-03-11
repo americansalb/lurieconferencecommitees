@@ -235,6 +235,17 @@ export default function DashboardPage() {
     fetchCommittees();
   }
 
+  async function handleLeave() {
+    if (!committee) return;
+    if (!confirm(`Leave ${committee.name}?`)) return;
+    await fetch("/api/committees/join", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ committeeId: committee.id }),
+    });
+    fetchCommittees();
+  }
+
   async function handleCreateDiscussion() {
     if (!committee || !newDiscTitle.trim()) return;
     await fetch("/api/discussions", {
@@ -363,6 +374,16 @@ export default function DashboardPage() {
           {/* Committee selector */}
           <div className="bg-white border-b border-slate-200 px-4 sm:px-6 py-3">
             <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => { setSelectedSlug("__all__"); setActiveTab("overview"); setExpandedDisc(null); }}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  selectedSlug === "__all__" ? "shadow-sm border bg-slate-900 text-white border-slate-900" : "border border-transparent hover:bg-slate-50 text-slate-500"
+                }`}
+              >
+                <Globe className="w-4 h-4" />
+                <span className="hidden sm:inline">All Committees</span>
+                <span className="sm:hidden">All</span>
+              </button>
               {committees.map(c => {
                 const isSelected = selectedSlug === c.slug;
                 const cCol = SLUG_COLORS[c.slug] || SLUG_COLORS["logistics-venue"];
@@ -459,7 +480,147 @@ export default function DashboardPage() {
             </div>
           )}
 
-      {committee && (
+      {selectedSlug === "__all__" && (
+        <div className="p-4 sm:p-6">
+          {/* All Committees — Tabs */}
+          <div className="flex gap-1 bg-slate-100 rounded-lg p-1 mb-4 w-fit">
+            <button
+              onClick={() => setActiveTab("members")}
+              className={`flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-md transition-colors ${
+                activeTab === "members" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              <Users className="w-4 h-4" /> All Members
+            </button>
+            <button
+              onClick={() => setActiveTab("calendar")}
+              className={`flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-md transition-colors ${
+                activeTab === "calendar" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              <Calendar className="w-4 h-4" /> All Events
+            </button>
+          </div>
+
+          {/* All Members */}
+          {activeTab === "members" && (
+            <div className="space-y-4">
+              {committees.map(c => {
+                const cCol = SLUG_COLORS[c.slug] || SLUG_COLORS["logistics-venue"];
+                return (
+                  <div key={c.id} className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                    <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-2">
+                      <div className="w-2.5 h-2.5 rounded-full" style={{ background: cCol.accent }} />
+                      <h3 className="text-sm font-bold text-slate-900">{c.name}</h3>
+                      <span className="text-xs text-slate-400 ml-auto">{c.members.length} {c.members.length === 1 ? "member" : "members"}</span>
+                    </div>
+                    <div className="p-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                      {c.members.length === 0 ? (
+                        <div className="col-span-full text-center text-xs text-slate-400 py-4">No members yet</div>
+                      ) : c.members.map(m => (
+                        <div key={m.user.id} className="flex items-center gap-2.5 px-3 py-2 rounded-lg border border-slate-100">
+                          <Avatar name={m.user.name} size="sm" accentColor={cCol.accent} />
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-semibold text-slate-900 truncate">{m.user.name}</div>
+                            <div className="text-[11px] text-slate-400">{m.role === "chair" ? "Group Leader" : "Member"}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* All Events */}
+          {activeTab === "calendar" && (() => {
+            const allEvents = committees.flatMap(c =>
+              c.events.map(e => ({ ...e, committeeName: c.name, committeeSlug: c.slug }))
+            ).sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+            const upcoming = allEvents.filter(e => new Date(e.startTime) >= new Date());
+            const past = allEvents.filter(e => new Date(e.startTime) < new Date());
+            return (
+              <div className="space-y-4">
+                <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                  <div className="px-4 py-3 border-b border-slate-100">
+                    <h3 className="text-sm font-bold text-slate-900">Upcoming Events ({upcoming.length})</h3>
+                  </div>
+                  <div className="divide-y divide-slate-50">
+                    {upcoming.length === 0 && (
+                      <div className="px-4 py-6 text-center text-xs text-slate-400">No upcoming events</div>
+                    )}
+                    {upcoming.map(ev => {
+                      const cCol = SLUG_COLORS[ev.committeeSlug] || SLUG_COLORS["logistics-venue"];
+                      const start = new Date(ev.startTime);
+                      const end = new Date(ev.endTime);
+                      return (
+                        <div key={ev.id} className="px-4 py-3 flex items-start gap-3">
+                          <div className="w-1.5 h-10 rounded-full shrink-0 mt-0.5" style={{ background: cCol.accent }} />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-bold text-slate-900">{ev.title}</span>
+                              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">{ev.committeeName}</span>
+                            </div>
+                            <div className="flex items-center gap-3 mt-0.5 text-xs text-slate-400">
+                              <span className="flex items-center gap-1">
+                                <Calendar className="w-3 h-3" />
+                                {start.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                {start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", timeZone: ev.timezone || undefined })}
+                                {" - "}
+                                {end.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", timeZone: ev.timezone || undefined })}
+                              </span>
+                            </div>
+                          </div>
+                          {ev.meetingUrl && (
+                            <a
+                              href={ev.meetingUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[11px] font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-lg shrink-0"
+                            >
+                              Join
+                            </a>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                {past.length > 0 && (
+                  <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                    <div className="px-4 py-3 border-b border-slate-100">
+                      <h3 className="text-sm font-bold text-slate-500">Past Events ({past.length})</h3>
+                    </div>
+                    <div className="divide-y divide-slate-50 opacity-60">
+                      {past.map(ev => {
+                        const cCol = SLUG_COLORS[ev.committeeSlug] || SLUG_COLORS["logistics-venue"];
+                        const start = new Date(ev.startTime);
+                        return (
+                          <div key={ev.id} className="px-4 py-3 flex items-center gap-3">
+                            <div className="w-1.5 h-8 rounded-full shrink-0" style={{ background: cCol.accent }} />
+                            <div className="flex-1 min-w-0">
+                              <span className="text-sm font-semibold text-slate-700">{ev.title}</span>
+                              <div className="text-xs text-slate-400">
+                                {ev.committeeName} &middot; {start.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
+      {committee && selectedSlug !== "__all__" && (
         <div>
           {/* Header */}
           <div className="bg-white border-b border-slate-200 px-4 sm:px-7 pt-4 sm:pt-5">
@@ -477,13 +638,20 @@ export default function DashboardPage() {
                     : "No members yet"}
                 </p>
               </div>
-              {!isMember && (
+              {!isMember ? (
                 <button
                   onClick={handleJoin}
                   className="text-sm font-bold text-white rounded-lg px-4 py-2 transition-all hover:opacity-90 shrink-0"
                   style={{ background: col.accent }}
                 >
                   Join
+                </button>
+              ) : (
+                <button
+                  onClick={handleLeave}
+                  className="text-xs font-semibold text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg px-3 py-2 transition-colors shrink-0"
+                >
+                  Leave
                 </button>
               )}
             </div>
