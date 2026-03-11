@@ -176,47 +176,65 @@ export default function GanttChart({ committeeId, accentColor, lightColor, membe
     setFormColor(TASK_COLORS[0]);
   }
 
+  const [formError, setFormError] = useState("");
+
   async function handleCreateTask() {
     if (!formTitle.trim() || !formStart || !formEnd) return;
-    await fetch("/api/tasks", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        committeeId,
-        title: formTitle,
-        description: formDesc,
-        startDate: formStart,
-        endDate: formEnd,
-        priority: formPriority,
-        color: formColor,
-        url: formUrl || null,
-        assigneeId: formAssignee || null,
-      }),
-    });
-    resetForm();
-    setShowForm(false);
-    fetchTasks();
+    setFormError("");
+    try {
+      const res = await fetch("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          committeeId,
+          title: formTitle,
+          description: formDesc,
+          startDate: formStart,
+          endDate: formEnd,
+          priority: formPriority,
+          color: formColor,
+          url: formUrl || null,
+          assigneeId: formAssignee || null,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Failed to create task" }));
+        setFormError(err.error || "Failed to create task");
+        return;
+      }
+      resetForm();
+      setShowForm(false);
+      fetchTasks();
+    } catch {
+      setFormError("Network error — please try again");
+    }
   }
 
   async function handleUpdateTask(taskId: string, updates: Record<string, unknown>) {
-    await fetch("/api/tasks", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ taskId, ...updates }),
-    });
-    fetchTasks();
-    setEditField(null);
+    try {
+      const res = await fetch("/api/tasks", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ taskId, ...updates }),
+      });
+      if (!res.ok) return;
+      fetchTasks();
+      setEditField(null);
+    } catch { /* ignore */ }
   }
 
   async function handleDeleteTask(taskId: string) {
     if (!confirm("Delete this task?")) return;
-    await fetch("/api/tasks", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ taskId }),
-    });
-    if (selectedTask === taskId) setSelectedTask(null);
-    fetchTasks();
+    try {
+      const res = await fetch("/api/tasks", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ taskId }),
+      });
+      if (!res.ok) return;
+      if (selectedTask === taskId) setSelectedTask(null);
+      fetchTasks();
+    } catch { /* ignore */ }
   }
 
   // Drag handlers
@@ -470,8 +488,13 @@ export default function GanttChart({ committeeId, accentColor, lightColor, membe
                 ))}
               </div>
             </div>
+            {formError && (
+              <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                {formError}
+              </div>
+            )}
             <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-              <button onClick={() => { setShowForm(false); resetForm(); }} className="text-sm font-medium text-slate-500 hover:text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors">
+              <button onClick={() => { setShowForm(false); resetForm(); setFormError(""); }} className="text-sm font-medium text-slate-500 hover:text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors">
                 Cancel
               </button>
               <button
