@@ -83,7 +83,7 @@ export default function CalendarPage() {
   const [eventCommitteeId, setEventCommitteeId] = useState("");
   const [eventRecurring, setEventRecurring] = useState(false);
   const [filterSlug, setFilterSlug] = useState<string | null>(null);
-  const [userTimezone, setUserTimezone] = useState<string>("");
+  const [userTimezone, setUserTimezone] = useState<string>(() => Intl.DateTimeFormat().resolvedOptions().timeZone);
   const [detectedTimezone] = useState(() => Intl.DateTimeFormat().resolvedOptions().timeZone);
   const [tzSource, setTzSource] = useState<"detected" | "saved">("detected");
 
@@ -181,7 +181,16 @@ export default function CalendarPage() {
 
   async function handleCreateEvent() {
     if (!eventTitle.trim() || !eventDate || !eventTime || !eventCommitteeId) return;
-    const startTime = `${eventDate}T${eventTime}`;
+
+    // Convert the user's wall-clock time in their selected timezone to a proper UTC ISO string.
+    // We treat the naive datetime as UTC temporarily, then compute the real UTC offset for the
+    // target timezone so the server stores the correct instant.
+    const tempUtc = new Date(`${eventDate}T${eventTime}:00Z`);
+    const utcFmt = tempUtc.toLocaleString("en-US", { timeZone: "UTC" });
+    const tzFmt = tempUtc.toLocaleString("en-US", { timeZone: eventTimezone });
+    const offsetMs = new Date(utcFmt).getTime() - new Date(tzFmt).getTime();
+    const startTime = new Date(tempUtc.getTime() + offsetMs).toISOString();
+
     await fetch("/api/events", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

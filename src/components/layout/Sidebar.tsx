@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { LayoutDashboard, CalendarDays, MessageSquare, UserCircle, LogOut } from "lucide-react";
+import { LayoutDashboard, CalendarDays, MessageSquare, UserCircle, LogOut, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -11,6 +11,7 @@ const navItems = [
   { href: "/calendar", label: "Calendar", icon: CalendarDays, iconBg: "bg-emerald-500/20", iconColor: "text-emerald-400" },
   { href: "/discussions", label: "Discussions", icon: MessageSquare, iconBg: "bg-amber-500/20", iconColor: "text-amber-400" },
   { href: "/profile", label: "Profile", icon: UserCircle, iconBg: "bg-purple-500/20", iconColor: "text-purple-400" },
+  { href: "/admin", label: "Admin", icon: Shield, iconBg: "bg-red-500/20", iconColor: "text-red-400", adminOnly: true },
 ];
 
 export default function Sidebar() {
@@ -33,7 +34,15 @@ export default function Sidebar() {
 
       <div className="px-2.5 flex-1">
         <div className="space-y-0.5">
-          {navItems.map((item) => {
+          {navItems
+            .filter((item) => {
+              if ((item as { adminOnly?: boolean }).adminOnly) {
+                const role = (session?.user as { role?: string })?.role;
+                return role === "admin" || role === "developer";
+              }
+              return true;
+            })
+            .map((item) => {
             const isActive = pathname === item.href || (item.href !== "/" && pathname?.startsWith(item.href + "/"));
             const Icon = item.icon;
             return (
