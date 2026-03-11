@@ -3,6 +3,54 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
+let tableEnsured = false;
+
+async function ensureTasksTable() {
+  if (tableEnsured) return;
+  try {
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "lcc_tasks" (
+        "id" TEXT NOT NULL,
+        "committeeId" TEXT NOT NULL,
+        "title" TEXT NOT NULL,
+        "description" TEXT NOT NULL DEFAULT '',
+        "status" TEXT NOT NULL DEFAULT 'todo',
+        "priority" TEXT NOT NULL DEFAULT 'medium',
+        "progress" INTEGER NOT NULL DEFAULT 0,
+        "startDate" TIMESTAMP(3) NOT NULL,
+        "endDate" TIMESTAMP(3) NOT NULL,
+        "color" TEXT,
+        "url" TEXT,
+        "assigneeId" TEXT,
+        "sortOrder" INTEGER NOT NULL DEFAULT 0,
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP(3),
+        CONSTRAINT "lcc_tasks_pkey" PRIMARY KEY ("id")
+      )
+    `);
+    // Add foreign keys only if they don't already exist
+    await prisma.$executeRawUnsafe(`
+      DO $$ BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'lcc_tasks_committeeId_fkey') THEN
+          ALTER TABLE "lcc_tasks" ADD CONSTRAINT "lcc_tasks_committeeId_fkey"
+            FOREIGN KEY ("committeeId") REFERENCES "lcc_committees"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+        END IF;
+      END $$
+    `);
+    await prisma.$executeRawUnsafe(`
+      DO $$ BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'lcc_tasks_assigneeId_fkey') THEN
+          ALTER TABLE "lcc_tasks" ADD CONSTRAINT "lcc_tasks_assigneeId_fkey"
+            FOREIGN KEY ("assigneeId") REFERENCES "lcc_users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+        END IF;
+      END $$
+    `);
+    tableEnsured = true;
+  } catch (err) {
+    console.error("ensureTasksTable error:", err);
+  }
+}
+
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -16,6 +64,8 @@ export async function GET(req: Request) {
     if (!committeeId) {
       return NextResponse.json({ error: "committeeId is required" }, { status: 400 });
     }
+
+    await ensureTasksTable();
 
     const tasks = await prisma.task.findMany({
       where: { committeeId },
@@ -55,6 +105,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Must be a committee member" }, { status: 403 });
     }
 
+    await ensureTasksTable();
+
     const task = await prisma.task.create({
       data: {
         committeeId,
@@ -91,6 +143,8 @@ export async function PUT(req: Request) {
     if (!taskId) {
       return NextResponse.json({ error: "taskId is required" }, { status: 400 });
     }
+
+    await ensureTasksTable();
 
     const data: Record<string, unknown> = {};
     if (title !== undefined) data.title = title;
@@ -132,6 +186,8 @@ export async function DELETE(req: Request) {
     if (!taskId) {
       return NextResponse.json({ error: "taskId is required" }, { status: 400 });
     }
+
+    await ensureTasksTable();
 
     await prisma.task.delete({ where: { id: taskId } });
     return NextResponse.json({ success: true });
