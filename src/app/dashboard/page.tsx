@@ -20,6 +20,7 @@ const SLUG_COLORS: Record<string, { accent: string; bg: string; light: string }>
   "marketing-communications": { accent: "#f59e0b", bg: "#78350f", light: "#fffbeb" },
   "sponsorship-fundraising": { accent: "#8b5cf6", bg: "#3b0764", light: "#f5f3ff" },
   "volunteer-participant": { accent: "#10b981", bg: "#064e3b", light: "#ecfdf5" },
+  "executive-planning": { accent: "#DC2626", bg: "#7f1d1d", light: "#fef2f2" },
 };
 
 const SLUG_ICONS: Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {

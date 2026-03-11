@@ -17,6 +17,7 @@ const SLUG_COLORS: Record<string, string> = {
   "marketing-communications": "#f59e0b",
   "sponsorship-fundraising": "#8b5cf6",
   "volunteer-participant": "#10b981",
+  "executive-planning": "#DC2626",
 };
 
 interface Post {
@@ -30,8 +31,9 @@ interface Discussion {
   id: string;
   title: string;
   isPinned: boolean;
+  isGlobal?: boolean;
   author: { id: string; name: string };
-  committee: { id: string; name: string; slug: string; color: string };
+  committee: { id: string; name: string; slug: string; color: string } | null;
   createdAt: string;
   _count: { posts: number };
 }
@@ -97,7 +99,7 @@ export default function DiscussionsPage() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const filteredDiscussions = filterSlug
-    ? discussions.filter(d => d.committee.slug === filterSlug)
+    ? discussions.filter(d => d.committee?.slug === filterSlug || d.isGlobal)
     : discussions;
 
   async function loadPosts(discId: string) {
@@ -144,6 +146,13 @@ export default function DiscussionsPage() {
       body: JSON.stringify({ title: newDiscTitle, committeeId: newDiscCommitteeId }),
     });
     setNewDiscTitle("");
+    fetchData();
+  }
+
+  async function handleDeleteDiscussion(discId: string, title: string) {
+    if (!confirm(`Delete "${title}" and all its replies?`)) return;
+    await fetch(`/api/discussions/${discId}`, { method: "DELETE" });
+    if (expandedDisc === discId) setExpandedDisc(null);
     fetchData();
   }
 
@@ -237,45 +246,58 @@ export default function DiscussionsPage() {
                 </div>
               ) : (
                 filteredDiscussions.map(disc => {
-                  const color = SLUG_COLORS[disc.committee.slug] || "#3b82f6";
+                  const color = disc.committee ? (SLUG_COLORS[disc.committee.slug] || "#3b82f6") : "#64748b";
                   const isExpanded = expandedDisc === disc.id;
                   const posts = discPosts[disc.id] || [];
+                  const canDelete = disc.author.id === currentUserId || canModerate;
 
                   return (
                     <div key={disc.id} className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                      <button
-                        onClick={() => {
-                          if (isExpanded) {
-                            setExpandedDisc(null);
-                          } else {
-                            setExpandedDisc(disc.id);
-                            if (!discPosts[disc.id]) loadPosts(disc.id);
-                          }
-                        }}
-                        className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-slate-50 transition-colors"
-                      >
-                        <div className="w-2 h-8 rounded-full shrink-0" style={{ background: color }} />
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            {disc.isPinned && <Pin className="w-3 h-3 text-amber-500 shrink-0" />}
-                            <span className="text-sm font-bold text-slate-900 truncate">{disc.title}</span>
+                      <div className="flex items-center gap-0 hover:bg-slate-50 transition-colors">
+                        <button
+                          onClick={() => {
+                            if (isExpanded) {
+                              setExpandedDisc(null);
+                            } else {
+                              setExpandedDisc(disc.id);
+                              if (!discPosts[disc.id]) loadPosts(disc.id);
+                            }
+                          }}
+                          className="flex-1 text-left px-4 py-3 flex items-center gap-3 min-w-0"
+                        >
+                          <div className="w-2 h-8 rounded-full shrink-0" style={{ background: color }} />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              {disc.isPinned && <Pin className="w-3 h-3 text-amber-500 shrink-0" />}
+                              {disc.isGlobal && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-800 text-white shrink-0">ALL</span>}
+                              <span className="text-sm font-bold text-slate-900 truncate">{disc.title}</span>
+                            </div>
+                            <div className="text-[11px] text-slate-400 mt-0.5">
+                              <span style={{ color }}>{disc.committee ? disc.committee.name : "All Committees"}</span>
+                              {" · "}
+                              {disc.author.name}
+                              {" · "}
+                              {timeAgo(disc.createdAt)}
+                              {" · "}
+                              {disc._count.posts} {disc._count.posts === 1 ? "reply" : "replies"}
+                            </div>
                           </div>
-                          <div className="text-[11px] text-slate-400 mt-0.5">
-                            <span style={{ color }}>{disc.committee.name}</span>
-                            {" · "}
-                            {disc.author.name}
-                            {" · "}
-                            {timeAgo(disc.createdAt)}
-                            {" · "}
-                            {disc._count.posts} {disc._count.posts === 1 ? "reply" : "replies"}
-                          </div>
-                        </div>
-                        {isExpanded ? (
-                          <ChevronUp className="w-4 h-4 text-slate-400 shrink-0" />
-                        ) : (
-                          <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
+                          {isExpanded ? (
+                            <ChevronUp className="w-4 h-4 text-slate-400 shrink-0" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
+                          )}
+                        </button>
+                        {canDelete && (
+                          <button
+                            onClick={() => handleDeleteDiscussion(disc.id, disc.title)}
+                            className="p-2 mr-2 rounded-lg hover:bg-red-50 text-slate-300 hover:text-red-500 transition-colors shrink-0"
+                            title="Delete discussion"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         )}
-                      </button>
+                      </div>
 
                       {isExpanded && (
                         <div className="border-t border-slate-100">

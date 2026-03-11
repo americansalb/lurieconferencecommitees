@@ -25,6 +25,7 @@ const SLUG_COLORS: Record<string, string> = {
   "marketing-communications": "#f59e0b",
   "sponsorship-fundraising": "#8b5cf6",
   "volunteer-participant": "#10b981",
+  "executive-planning": "#DC2626",
 };
 
 interface CalEvent {

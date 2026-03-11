@@ -66,14 +66,15 @@ model Event {
 }
 
 model Discussion {
-  id          String    @id @default(cuid())
-  committeeId String
+  id          String     @id @default(cuid())
+  committeeId String?
   title       String
   authorId    String
-  isPinned    Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-  committee   Committee @relation(fields: [committeeId], references: [id], onDelete: Cascade)
-  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  isPinned    Boolean    @default(false)
+  isGlobal    Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+  committee   Committee? @relation(fields: [committeeId], references: [id], onDelete: Cascade)
+  author      User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
   posts       Post[]
 
   @@map("lcc_discussions")
