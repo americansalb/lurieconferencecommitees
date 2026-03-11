@@ -325,6 +325,9 @@ export default function CalendarPage() {
                     onChange={e => setEventCommitteeId(e.target.value)}
                     className="sm:col-span-2 px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/10"
                   >
+                    {((session?.user as { role?: string })?.role === "admin" || (session?.user as { role?: string })?.role === "developer") && (
+                      <option value="all">All Committees (broadcast)</option>
+                    )}
                     {committees.map(c => (
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))}

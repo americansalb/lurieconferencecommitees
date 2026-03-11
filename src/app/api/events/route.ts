@@ -37,6 +37,29 @@ export async function POST(req: Request) {
     const start = new Date(startTime);
     const end = endTime ? new Date(endTime) : new Date(start.getTime() + durationMins * 60 * 1000);
 
+    // "all" broadcasts the event to every committee simultaneously
+    if (committeeId === "all") {
+      const allCommittees = await prisma.committee.findMany({ select: { id: true } });
+      const created = await prisma.$transaction(
+        allCommittees.map((c: { id: string }) =>
+          prisma.event.create({
+            data: {
+              title,
+              description: description || "",
+              committeeId: c.id,
+              startTime: start,
+              endTime: end,
+              duration: durationMins,
+              timezone: tz,
+              recurring: recurring || false,
+              meetingUrl: meetingUrl || null,
+            },
+          })
+        )
+      );
+      return NextResponse.json(created, { status: 201 });
+    }
+
     const event = await prisma.event.create({
       data: {
         title,

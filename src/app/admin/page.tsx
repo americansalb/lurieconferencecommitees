@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import {
   Users, Calendar, Shield, Trash2, Pencil, X, Check,
-  Clock, Globe, Search,
+  Clock, Globe, Search, MessageSquare, Pin,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
@@ -44,6 +44,16 @@ interface CalEvent {
   committee: { id: string; name: string; slug: string; color: string };
 }
 
+interface Discussion {
+  id: string;
+  title: string;
+  isPinned: boolean;
+  createdAt: string;
+  author: { id: string; name: string };
+  committee: { id: string; name: string; slug: string; color: string };
+  _count: { posts: number };
+}
+
 const ROLE_LABELS: Record<string, { label: string; color: string }> = {
   developer: { label: "Developer", color: "bg-red-100 text-red-700 border-red-200" },
   admin: { label: "Admin", color: "bg-purple-100 text-purple-700 border-purple-200" },
@@ -53,9 +63,10 @@ const ROLE_LABELS: Record<string, { label: string; color: string }> = {
 export default function AdminPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [tab, setTab] = useState<"members" | "events">("members");
+  const [tab, setTab] = useState<"members" | "events" | "discussions">("members");
   const [members, setMembers] = useState<Member[]>([]);
   const [events, setEvents] = useState<CalEvent[]>([]);
+  const [discussions, setDiscussions] = useState<Discussion[]>([]);
   const [committees, setCommittees] = useState<Committee[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -72,6 +83,10 @@ export default function AdminPage() {
   const [editEventRecurring, setEditEventRecurring] = useState(false);
   const [editEventMeetingUrl, setEditEventMeetingUrl] = useState("");
 
+  // Discussion editing
+  const [editingDiscId, setEditingDiscId] = useState<string | null>(null);
+  const [editDiscTitle, setEditDiscTitle] = useState("");
+
   const userRole = (session?.user as { role?: string })?.role;
   const isAdmin = userRole === "admin" || userRole === "developer";
 
@@ -85,16 +100,19 @@ export default function AdminPage() {
     Promise.all([
       fetch("/api/admin/members").then(r => r.ok ? r.json() : []),
       fetch("/api/admin/events").then(r => r.ok ? r.json() : []),
+      fetch("/api/admin/discussions").then(r => r.ok ? r.json() : []),
       fetch("/api/committees").then(r => r.ok ? r.json() : []),
-    ]).then(([m, e, c]) => {
+    ]).then(([m, e, d, c]) => {
       setMembers(m);
       setEvents(e);
+      setDiscussions(d);
       setCommittees(c.map((cm: Committee & { id: string; name: string; slug: string }) => ({ id: cm.id, name: cm.name, slug: cm.slug })));
     }).catch(() => {}).finally(() => setLoading(false));
   }, [session, isAdmin]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // Member actions
   function startEditMember(m: Member) {
     setEditingMemberId(m.id);
     setEditRole(m.role);
@@ -122,6 +140,13 @@ export default function AdminPage() {
     fetchData();
   }
 
+  function toggleCommittee(cid: string) {
+    setEditCommittees((prev: string[]) =>
+      prev.includes(cid) ? prev.filter((id: string) => id !== cid) : [...prev, cid]
+    );
+  }
+
+  // Event actions
   function startEditEvent(ev: CalEvent) {
     setEditingEventId(ev.id);
     setEditEventTitle(ev.title);
@@ -157,12 +182,43 @@ export default function AdminPage() {
     fetchData();
   }
 
-  function toggleCommittee(cid: string) {
-    setEditCommittees((prev: string[]) =>
-      prev.includes(cid) ? prev.filter((id: string) => id !== cid) : [...prev, cid]
-    );
+  // Discussion actions
+  function startEditDisc(d: Discussion) {
+    setEditingDiscId(d.id);
+    setEditDiscTitle(d.title);
   }
 
+  async function saveDisc() {
+    if (!editingDiscId) return;
+    await fetch("/api/admin/discussions", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ discussionId: editingDiscId, title: editDiscTitle }),
+    });
+    setEditingDiscId(null);
+    fetchData();
+  }
+
+  async function togglePinDisc(d: Discussion) {
+    await fetch("/api/admin/discussions", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ discussionId: d.id, isPinned: !d.isPinned }),
+    });
+    fetchData();
+  }
+
+  async function deleteDisc(discId: string, title: string) {
+    if (!confirm(`Delete discussion "${title}" and all its posts? This cannot be undone.`)) return;
+    await fetch("/api/admin/discussions", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ discussionId: discId }),
+    });
+    fetchData();
+  }
+
+  // Filtered lists
   const filteredMembers = members.filter((m: Member) =>
     m.name.toLowerCase().includes(search.toLowerCase()) ||
     m.email.toLowerCase().includes(search.toLowerCase())
@@ -172,6 +228,18 @@ export default function AdminPage() {
     ev.title.toLowerCase().includes(search.toLowerCase()) ||
     ev.committee.name.toLowerCase().includes(search.toLowerCase())
   );
+
+  const filteredDiscussions = discussions.filter((d: Discussion) =>
+    d.title.toLowerCase().includes(search.toLowerCase()) ||
+    d.author.name.toLowerCase().includes(search.toLowerCase()) ||
+    d.committee.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const searchPlaceholders: Record<string, string> = {
+    members: "Search members...",
+    events: "Search events...",
+    discussions: "Search discussions...",
+  };
 
   if (status === "loading" || !session || loading) {
     return (
@@ -197,7 +265,7 @@ export default function AdminPage() {
               </div>
               <div>
                 <h1 className="text-xl font-extrabold text-slate-900">Admin Panel</h1>
-                <p className="text-xs text-slate-500">Manage members and events</p>
+                <p className="text-xs text-slate-500">Manage members, events, and discussions</p>
               </div>
             </div>
 
@@ -219,6 +287,14 @@ export default function AdminPage() {
               >
                 <Calendar className="w-4 h-4" /> Events ({events.length})
               </button>
+              <button
+                onClick={() => { setTab("discussions"); setSearch(""); }}
+                className={`flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-md transition-colors ${
+                  tab === "discussions" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                <MessageSquare className="w-4 h-4" /> Discussions ({discussions.length})
+              </button>
             </div>
 
             {/* Search */}
@@ -227,7 +303,7 @@ export default function AdminPage() {
               <input
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                placeholder={tab === "members" ? "Search members..." : "Search events..."}
+                placeholder={searchPlaceholders[tab]}
                 className="w-full pl-9 pr-4 py-2.5 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/10 bg-white"
               />
             </div>
@@ -442,6 +518,88 @@ export default function AdminPage() {
                               <Pencil className="w-3.5 h-3.5" />
                             </button>
                             <button onClick={() => deleteEvent(ev.id, ev.title)} className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors" title="Delete event">
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Discussions Tab */}
+            {tab === "discussions" && (
+              <div className="space-y-3">
+                {filteredDiscussions.length === 0 && (
+                  <div className="bg-white border border-slate-200 rounded-xl p-8 text-center text-sm text-slate-400">
+                    No discussions found.
+                  </div>
+                )}
+                {filteredDiscussions.map(d => {
+                  const isEditing = editingDiscId === d.id;
+                  return (
+                    <div key={d.id} className={`bg-white border rounded-xl shadow-sm overflow-hidden ${isEditing ? "border-blue-300" : "border-slate-200"}`}>
+                      <div className="px-4 py-3 flex items-start gap-3">
+                        <div
+                          className="w-1.5 h-12 rounded-full shrink-0 mt-0.5"
+                          style={{ background: d.committee.color || "#3b82f6" }}
+                        />
+                        <div className="flex-1 min-w-0">
+                          {isEditing ? (
+                            <div className="space-y-2">
+                              <input
+                                value={editDiscTitle}
+                                onChange={e => setEditDiscTitle(e.target.value)}
+                                className="w-full text-sm font-bold border border-slate-200 rounded-lg px-3 py-2 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/10"
+                              />
+                              <div className="flex gap-2">
+                                <button onClick={saveDisc} className="text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg px-3 py-1.5 transition-colors">
+                                  Save
+                                </button>
+                                <button onClick={() => setEditingDiscId(null)} className="text-xs font-semibold text-slate-500 hover:text-slate-700 px-3 py-1.5">
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-bold text-slate-900">{d.title}</span>
+                                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">
+                                  {d.committee.name}
+                                </span>
+                                {d.isPinned && (
+                                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 flex items-center gap-0.5">
+                                    <Pin className="w-3 h-3" /> Pinned
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-3 mt-1 text-xs text-slate-400">
+                                <span>by {d.author.name}</span>
+                                <span>{new Date(d.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+                                <span className="flex items-center gap-1">
+                                  <MessageSquare className="w-3 h-3" />
+                                  {d._count.posts} {d._count.posts === 1 ? "reply" : "replies"}
+                                </span>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                        {!isEditing && (
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              onClick={() => togglePinDisc(d)}
+                              className={`p-1.5 rounded-lg transition-colors ${d.isPinned ? "bg-amber-50 text-amber-500 hover:bg-amber-100" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"}`}
+                              title={d.isPinned ? "Unpin" : "Pin"}
+                            >
+                              <Pin className="w-3.5 h-3.5" />
+                            </button>
+                            <button onClick={() => startEditDisc(d)} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors" title="Edit title">
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            <button onClick={() => deleteDisc(d.id, d.title)} className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors" title="Delete discussion">
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
