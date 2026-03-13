@@ -721,91 +721,27 @@ export default function GanttChart({ committeeId, accentColor, lightColor, membe
         <div className="flex gap-4">
           {/* Main Gantt area */}
           <div className={`bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden ${selectedTask ? "flex-1 min-w-0" : "w-full"} transition-all`}>
-            {/* Timeline header */}
-            <div className="border-b border-slate-200 overflow-hidden">
-              <div className="flex">
-                <div className="w-64 shrink-0 border-r border-slate-200 px-4 py-2.5 bg-gradient-to-b from-slate-50 to-white">
+            <div className="flex">
+              {/* Fixed left column: header + task list */}
+              <div className="w-64 shrink-0 border-r border-slate-200">
+                <div className="px-4 py-2.5 bg-gradient-to-b from-slate-50 to-white border-b border-slate-200 h-[72px] flex items-end">
                   <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Task</span>
                 </div>
-                <div className="flex-1 min-w-0 overflow-x-auto">
-                  <div className="min-w-[500px]">
-                    {/* Month row */}
-                    <div className="flex border-b border-slate-100">
-                      {(() => {
-                        const months: { label: string; span: number }[] = [];
-                        let currentMonth = "";
-                        days.forEach(d => {
-                          const label = d.toLocaleString("default", { month: "long", year: "numeric" });
-                          if (label !== currentMonth) {
-                            months.push({ label, span: 1 });
-                            currentMonth = label;
-                          } else {
-                            months[months.length - 1].span++;
-                          }
-                        });
-                        return months.map((m, i) => (
-                          <div
-                            key={i}
-                            className="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-2 py-1.5 border-r border-slate-50 last:border-r-0"
-                            style={{ width: `${(m.span / totalDays) * 100}%` }}
-                          >
-                            {m.label}
-                          </div>
-                        ));
-                      })()}
-                    </div>
-                    {/* Days row */}
-                    <div className="flex">
-                      {days.map((d, i) => {
-                        const isToday = d.getTime() === today.getTime();
-                        const isWeekend = d.getDay() === 0 || d.getDay() === 6;
-                        return (
-                          <div
-                            key={i}
-                            className={`text-center py-1 ${isWeekend ? "bg-slate-50/60" : ""}`}
-                            style={{ width: `${dayWidth}%` }}
-                          >
-                            <div className={`text-[8px] font-bold uppercase ${isToday ? "" : "text-slate-300"}`} style={isToday ? { color: accentColor } : undefined}>
-                              {["S", "M", "T", "W", "T", "F", "S"][d.getDay()]}
-                            </div>
-                            <div
-                              className={`text-[10px] font-bold mx-auto w-5 h-5 flex items-center justify-center rounded-full leading-none ${
-                                isToday ? "text-white shadow-sm" : isWeekend ? "text-slate-300" : "text-slate-500"
-                              }`}
-                              style={isToday ? { background: accentColor } : undefined}
-                            >
-                              {d.getDate()}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Task rows */}
-            <div>
-              {tasks.map((task, taskIdx) => {
-                const barStyle = getBarStyle(task);
-                const statusCfg = STATUS_CONFIG[task.status] || STATUS_CONFIG.todo;
-                const priorityCfg = PRIORITY_CONFIG[task.priority] || PRIORITY_CONFIG.medium;
-                const StatusIcon = statusCfg.icon;
-                const PriorityIcon = priorityCfg.icon;
-                const taskColor = task.color || accentColor;
-                const isSelected = selectedTask === task.id;
-
-                return (
-                  <div
-                    key={task.id}
-                    className={`flex transition-colors cursor-pointer ${
-                      isSelected ? "bg-blue-50/50" : taskIdx % 2 === 0 ? "bg-white" : "bg-slate-50/30"
-                    } hover:bg-blue-50/30`}
-                    onClick={() => setSelectedTask(isSelected ? null : task.id)}
-                  >
-                    {/* Task info column */}
-                    <div className="w-64 shrink-0 border-r border-slate-100 px-3 py-2.5 flex items-center gap-2.5 group">
+                {tasks.map((task, taskIdx) => {
+                  const statusCfg = STATUS_CONFIG[task.status] || STATUS_CONFIG.todo;
+                  const priorityCfg = PRIORITY_CONFIG[task.priority] || PRIORITY_CONFIG.medium;
+                  const StatusIcon = statusCfg.icon;
+                  const PriorityIcon = priorityCfg.icon;
+                  const taskColor = task.color || accentColor;
+                  const isSelected = selectedTask === task.id;
+                  return (
+                    <div
+                      key={task.id}
+                      className={`px-3 py-2.5 flex items-center gap-2.5 group cursor-pointer border-b border-slate-100 last:border-b-0 transition-colors ${
+                        isSelected ? "bg-blue-50/50" : taskIdx % 2 === 0 ? "bg-white" : "bg-slate-50/30"
+                      } hover:bg-blue-50/30`}
+                      onClick={() => setSelectedTask(isSelected ? null : task.id)}
+                    >
                       <button
                         onClick={e => { e.stopPropagation(); cycleStatus(task); }}
                         className="shrink-0 p-0.5 rounded-md hover:bg-white hover:shadow-sm transition-all"
@@ -862,10 +798,82 @@ export default function GanttChart({ committeeId, accentColor, lightColor, membe
                         </button>
                       )}
                     </div>
+                  );
+                })}
+              </div>
 
-                    {/* Gantt bar */}
-                    <div className="flex-1 min-w-0 overflow-x-auto" ref={ganttRef}>
-                      <div className="min-w-[500px] relative h-[44px]">
+              {/* Scrollable right column: timeline header + bars */}
+              <div className="flex-1 min-w-0 overflow-x-auto" ref={ganttRef}>
+                <div className="min-w-[600px]">
+                  {/* Timeline header */}
+                  <div className="border-b border-slate-200">
+                    {/* Month row */}
+                    <div className="flex border-b border-slate-100">
+                      {(() => {
+                        const months: { label: string; span: number }[] = [];
+                        let currentMonth = "";
+                        days.forEach(d => {
+                          const label = d.toLocaleString("default", { month: "long", year: "numeric" });
+                          if (label !== currentMonth) {
+                            months.push({ label, span: 1 });
+                            currentMonth = label;
+                          } else {
+                            months[months.length - 1].span++;
+                          }
+                        });
+                        return months.map((m, i) => (
+                          <div
+                            key={i}
+                            className="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-2 py-1.5 border-r border-slate-50 last:border-r-0"
+                            style={{ width: `${(m.span / totalDays) * 100}%` }}
+                          >
+                            {m.label}
+                          </div>
+                        ));
+                      })()}
+                    </div>
+                    {/* Days row */}
+                    <div className="flex">
+                      {days.map((d, i) => {
+                        const isToday = d.getTime() === today.getTime();
+                        const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+                        return (
+                          <div
+                            key={i}
+                            className={`text-center py-1 ${isWeekend ? "bg-slate-50/60" : ""}`}
+                            style={{ width: `${dayWidth}%` }}
+                          >
+                            <div className={`text-[8px] font-bold uppercase ${isToday ? "" : "text-slate-300"}`} style={isToday ? { color: accentColor } : undefined}>
+                              {["S", "M", "T", "W", "T", "F", "S"][d.getDay()]}
+                            </div>
+                            <div
+                              className={`text-[10px] font-bold mx-auto w-5 h-5 flex items-center justify-center rounded-full leading-none ${
+                                isToday ? "text-white shadow-sm" : isWeekend ? "text-slate-300" : "text-slate-500"
+                              }`}
+                              style={isToday ? { background: accentColor } : undefined}
+                            >
+                              {d.getDate()}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Task bar rows */}
+                  {tasks.map((task, taskIdx) => {
+                    const barStyle = getBarStyle(task);
+                    const taskColor = task.color || accentColor;
+                    const isSelected = selectedTask === task.id;
+
+                    return (
+                      <div
+                        key={task.id}
+                        className={`relative h-[48px] border-b border-slate-100 last:border-b-0 cursor-pointer transition-colors ${
+                          isSelected ? "bg-blue-50/50" : taskIdx % 2 === 0 ? "bg-white" : "bg-slate-50/30"
+                        } hover:bg-blue-50/30`}
+                        onClick={() => setSelectedTask(isSelected ? null : task.id)}
+                      >
                         {/* Weekend shading */}
                         {days.map((d, i) => {
                           const isWeekend = d.getDay() === 0 || d.getDay() === 6;
@@ -902,7 +910,7 @@ export default function GanttChart({ committeeId, accentColor, lightColor, membe
                         {/* Task bar */}
                         {barStyle && (
                           <div
-                            className={`absolute top-[10px] h-[24px] rounded-lg transition-shadow select-none ${
+                            className={`absolute top-[12px] h-[24px] rounded-lg transition-shadow select-none ${
                               dragTask === task.id ? "shadow-lg z-20 opacity-90" : "hover:shadow-md"
                             }`}
                             style={{
@@ -943,10 +951,10 @@ export default function GanttChart({ committeeId, accentColor, lightColor, membe
                           </div>
                         )}
                       </div>
-                    </div>
-                  </div>
-                );
-              })}
+                    );
+                  })}
+                </div>
+              </div>
             </div>
 
             {/* Footer with legend */}
