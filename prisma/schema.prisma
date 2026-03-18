@@ -19,6 +19,7 @@ model User {
   discussions  Discussion[]
   posts        Post[]
   tasks        Task[]            @relation("assignee")
+  files        CommitteeFile[]
 
   @@map("lcc_users")
 }
@@ -34,6 +35,7 @@ model Committee {
   events      Event[]
   discussions Discussion[]
   tasks       Task[]
+  files       CommitteeFile[]
 
   @@map("lcc_committees")
 }
@@ -101,6 +103,20 @@ model Task {
   assignee    User?     @relation("assignee", fields: [assigneeId], references: [id], onDelete: SetNull)
 
   @@map("lcc_tasks")
+}
+
+model CommitteeFile {
+  id          String    @id @default(cuid())
+  committeeId String
+  title       String
+  url         String
+  type        String    @default("link")
+  addedById   String
+  createdAt   DateTime  @default(now())
+  committee   Committee @relation(fields: [committeeId], references: [id], onDelete: Cascade)
+  addedBy     User      @relation(fields: [addedById], references: [id], onDelete: Cascade)
+
+  @@map("lcc_committee_files")
 }
 
 model Post {

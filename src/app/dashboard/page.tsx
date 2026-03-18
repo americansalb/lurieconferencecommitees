@@ -9,6 +9,7 @@ import {
   Calendar, MessageSquare, ChevronDown, ChevronUp,
   Pin, Send, Plus, LogOut, User, Pencil, Trash2, Check, X,
   ChevronLeft, ChevronRight, Clock, Globe, BarChart3,
+  FileText, ExternalLink, Sheet, Presentation, FileSpreadsheet, FolderOpen, Link2,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
@@ -72,7 +73,45 @@ interface Committee {
   _count: { members: number; discussions: number; events: number };
 }
 
-type Tab = "overview" | "members" | "calendar" | "discussion" | "tasks";
+type Tab = "overview" | "members" | "calendar" | "discussion" | "tasks" | "files";
+
+interface CommitteeFile {
+  id: string;
+  title: string;
+  url: string;
+  type: string;
+  addedBy: { id: string; name: string };
+  createdAt: string;
+}
+
+const FILE_TYPE_ICONS: Record<string, { icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>; label: string; color: string }> = {
+  "google-doc": { icon: FileText, label: "Google Doc", color: "#4285F4" },
+  "google-sheet": { icon: FileSpreadsheet, label: "Google Sheet", color: "#0F9D58" },
+  "google-slides": { icon: Presentation, label: "Google Slides", color: "#F4B400" },
+  "google-form": { icon: FileText, label: "Google Form", color: "#7627BB" },
+  "google-drive": { icon: FolderOpen, label: "Google Drive", color: "#4285F4" },
+  "notion": { icon: FileText, label: "Notion", color: "#000000" },
+  "figma": { icon: FileText, label: "Figma", color: "#F24E1E" },
+  "miro": { icon: FileText, label: "Miro", color: "#FFD02F" },
+  "canva": { icon: FileText, label: "Canva", color: "#00C4CC" },
+  "link": { icon: Link2, label: "Link", color: "#64748b" },
+};
+
+function getEmbedUrl(url: string, type: string): string | null {
+  if (type === "google-doc") {
+    // Convert /edit or /view to /preview
+    return url.replace(/\/(edit|view)(#.*)?(\?.*)?$/, "/preview");
+  }
+  if (type === "google-sheet") {
+    return url.replace(/\/(edit|view)(#.*)?(\?.*)?$/, "/preview");
+  }
+  if (type === "google-slides") {
+    // Convert to embed format
+    const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (match) return `https://docs.google.com/presentation/d/${match[1]}/embed?start=false&loop=false`;
+  }
+  return null;
+}
 
 function getInitials(name: string) {
   return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
@@ -181,6 +220,11 @@ export default function DashboardPage() {
   const [newCommitteeDesc, setNewCommitteeDesc] = useState("");
   const [newCommitteeColor, setNewCommitteeColor] = useState("#3b82f6");
   const [newCommitteeIcon, setNewCommitteeIcon] = useState("users");
+  const [committeeFiles, setCommitteeFiles] = useState<CommitteeFile[]>([]);
+  const [showAddFile, setShowAddFile] = useState(false);
+  const [newFileTitle, setNewFileTitle] = useState("");
+  const [newFileUrl, setNewFileUrl] = useState("");
+  const [previewFile, setPreviewFile] = useState<CommitteeFile | null>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") router.replace("/login");
@@ -355,6 +399,43 @@ export default function DashboardPage() {
     }
   }
 
+  const fetchFiles = useCallback(async (committeeId: string) => {
+    try {
+      const res = await fetch(`/api/files?committeeId=${committeeId}`);
+      if (res.ok) setCommitteeFiles(await res.json());
+    } catch { /* ignore */ }
+  }, []);
+
+  async function handleAddFile() {
+    if (!committee || !newFileTitle.trim() || !newFileUrl.trim()) return;
+    const res = await fetch("/api/files", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ committeeId: committee.id, title: newFileTitle, url: newFileUrl }),
+    });
+    if (res.ok) {
+      setNewFileTitle("");
+      setNewFileUrl("");
+      setShowAddFile(false);
+      fetchFiles(committee.id);
+    }
+  }
+
+  async function handleDeleteFile(fileId: string) {
+    if (!confirm("Remove this file link?")) return;
+    const res = await fetch("/api/files", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: fileId }),
+    });
+    if (res.ok && committee) fetchFiles(committee.id);
+  }
+
+  // Fetch files when switching to files tab or selecting a committee
+  useEffect(() => {
+    if (committee && activeTab === "files") fetchFiles(committee.id);
+  }, [committee, activeTab, fetchFiles]);
+
   const currentUserId = (session?.user as { id?: string })?.id;
   const currentUserRole = (session?.user as { role?: string })?.role;
   const canModerate = currentUserRole === "developer" || currentUserRole === "admin";
@@ -373,6 +454,7 @@ export default function DashboardPage() {
     { id: "calendar", label: "Calendar", icon: Calendar },
     { id: "discussion", label: `Discussion (${committee?._count.discussions || 0})`, icon: MessageSquare },
     { id: "tasks", label: "Tasks", icon: BarChart3 },
+    { id: "files", label: "Files", icon: FolderOpen },
   ];
 
   return (
@@ -1200,6 +1282,171 @@ export default function DashboardPage() {
                         )}
                       </div>
                     ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Files */}
+            {activeTab === "files" && (
+              <div className="p-4 sm:p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                    <FolderOpen className="w-4 h-4 text-slate-400" /> Files & Documents
+                  </h2>
+                  {isMember && (
+                    <button
+                      onClick={() => setShowAddFile(!showAddFile)}
+                      className="text-[13px] font-bold text-white rounded-lg px-3 py-1.5 flex items-center gap-1 transition-all hover:opacity-90"
+                      style={{ background: col.accent }}
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Add Link
+                    </button>
+                  )}
+                </div>
+
+                {/* Add file form */}
+                {showAddFile && (
+                  <div className="bg-white border border-slate-200 rounded-xl p-4 mb-4 shadow-sm space-y-3">
+                    <p className="text-xs text-slate-500">
+                      Add a link to a Google Doc, Sheet, Slides, Drive file, or any URL.
+                    </p>
+                    <input
+                      value={newFileTitle}
+                      onChange={e => setNewFileTitle(e.target.value)}
+                      placeholder="Document title"
+                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/10"
+                    />
+                    <input
+                      value={newFileUrl}
+                      onChange={e => setNewFileUrl(e.target.value)}
+                      placeholder="https://docs.google.com/document/d/..."
+                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/10"
+                    />
+                    <div className="flex gap-2 justify-end">
+                      <button onClick={() => { setShowAddFile(false); setNewFileTitle(""); setNewFileUrl(""); }} className="text-sm text-slate-500 hover:text-slate-700 px-3 py-1.5">
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleAddFile}
+                        disabled={!newFileTitle.trim() || !newFileUrl.trim()}
+                        className="text-sm font-bold text-white rounded-lg px-4 py-1.5 transition-all hover:opacity-90 disabled:opacity-50"
+                        style={{ background: col.accent }}
+                      >
+                        Add
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Embed preview */}
+                {previewFile && (() => {
+                  const embedUrl = getEmbedUrl(previewFile.url, previewFile.type);
+                  if (!embedUrl) return null;
+                  return (
+                    <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mb-4">
+                      <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+                        <h3 className="text-sm font-bold text-slate-900 truncate">{previewFile.title}</h3>
+                        <div className="flex items-center gap-2">
+                          <a
+                            href={previewFile.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[11px] font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-lg transition-colors"
+                          >
+                            Open in new tab
+                          </a>
+                          <button
+                            onClick={() => setPreviewFile(null)}
+                            className="p-1 rounded hover:bg-slate-100"
+                          >
+                            <X className="w-4 h-4 text-slate-400" />
+                          </button>
+                        </div>
+                      </div>
+                      <iframe
+                        src={embedUrl}
+                        className="w-full border-0"
+                        style={{ height: "500px" }}
+                        title={previewFile.title}
+                        sandbox="allow-scripts allow-same-origin allow-popups"
+                      />
+                    </div>
+                  );
+                })()}
+
+                {/* File list */}
+                {committeeFiles.length === 0 && !showAddFile ? (
+                  <div className="bg-white border border-slate-100 rounded-xl p-8 text-center shadow-sm">
+                    <FolderOpen className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                    <p className="text-sm text-slate-400 mb-1">No files or documents yet.</p>
+                    <p className="text-xs text-slate-400">Add links to Google Docs, Sheets, Drive files, or any URL.</p>
+                    {isMember && (
+                      <button
+                        onClick={() => setShowAddFile(true)}
+                        className="mt-3 text-[13px] font-semibold px-4 py-2 rounded-lg transition-colors"
+                        style={{ color: col.accent, background: col.light }}
+                      >
+                        Add the first document
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {committeeFiles.map(f => {
+                      const ft = FILE_TYPE_ICONS[f.type] || FILE_TYPE_ICONS["link"];
+                      const FIcon = ft.icon;
+                      const embedUrl = getEmbedUrl(f.url, f.type);
+                      const canDelete = f.addedBy.id === currentUserId || canModerate;
+                      return (
+                        <div key={f.id} className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all group">
+                          <div className="p-4">
+                            <div className="flex items-start gap-3">
+                              <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: ft.color + "15" }}>
+                                <FIcon className="w-5 h-5" style={{ color: ft.color }} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h4 className="text-sm font-bold text-slate-900 truncate">{f.title}</h4>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded" style={{ background: ft.color + "15", color: ft.color }}>
+                                    {ft.label}
+                                  </span>
+                                  <span className="text-[11px] text-slate-400">
+                                    by {f.addedBy.name.split(" ")[0]}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="border-t border-slate-100 px-4 py-2 flex items-center gap-2 bg-slate-50/50">
+                            <a
+                              href={f.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[11px] font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                            >
+                              <ExternalLink className="w-3 h-3" /> Open
+                            </a>
+                            {embedUrl && (
+                              <button
+                                onClick={() => setPreviewFile(previewFile?.id === f.id ? null : f)}
+                                className="text-[11px] font-semibold text-slate-500 hover:text-slate-700 flex items-center gap-1"
+                              >
+                                <FileText className="w-3 h-3" /> {previewFile?.id === f.id ? "Hide Preview" : "Preview"}
+                              </button>
+                            )}
+                            {canDelete && (
+                              <button
+                                onClick={() => handleDeleteFile(f.id)}
+                                className="text-[11px] font-semibold text-red-400 hover:text-red-600 flex items-center gap-1 ml-auto opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <Trash2 className="w-3 h-3" /> Remove
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
