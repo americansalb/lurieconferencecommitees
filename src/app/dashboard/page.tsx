@@ -9,6 +9,7 @@ import {
   Calendar, MessageSquare, ChevronDown, ChevronUp,
   Pin, Send, Plus, LogOut, User, Pencil, Trash2, Check, X,
   ChevronLeft, ChevronRight, Clock, Globe, BarChart3,
+  FileText, ExternalLink, Sheet, Presentation, FileSpreadsheet, FolderOpen, Link2,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
@@ -72,7 +73,45 @@ interface Committee {
   _count: { members: number; discussions: number; events: number };
 }
 
-type Tab = "overview" | "members" | "calendar" | "discussion" | "tasks";
+type Tab = "overview" | "members" | "calendar" | "discussion" | "tasks" | "files";
+
+interface CommitteeFile {
+  id: string;
+  title: string;
+  url: string;
+  type: string;
+  addedBy: { id: string; name: string };
+  createdAt: string;
+}
+
+const FILE_TYPE_ICONS: Record<string, { icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>; label: string; color: string }> = {
+  "google-doc": { icon: FileText, label: "Google Doc", color: "#4285F4" },
+  "google-sheet": { icon: FileSpreadsheet, label: "Google Sheet", color: "#0F9D58" },
+  "google-slides": { icon: Presentation, label: "Google Slides", color: "#F4B400" },
+  "google-form": { icon: FileText, label: "Google Form", color: "#7627BB" },
+  "google-drive": { icon: FolderOpen, label: "Google Drive", color: "#4285F4" },
+  "notion": { icon: FileText, label: "Notion", color: "#000000" },
+  "figma": { icon: FileText, label: "Figma", color: "#F24E1E" },
+  "miro": { icon: FileText, label: "Miro", color: "#FFD02F" },
+  "canva": { icon: FileText, label: "Canva", color: "#00C4CC" },
+  "link": { icon: Link2, label: "Link", color: "#64748b" },
+};
+
+function getEmbedUrl(url: string, type: string): string | null {
+  if (type === "google-doc") {
+    // Convert /edit or /view to /preview
+    return url.replace(/\/(edit|view)(#.*)?(\?.*)?$/, "/preview");
+  }
+  if (type === "google-sheet") {
+    return url.replace(/\/(edit|view)(#.*)?(\?.*)?$/, "/preview");
+  }
+  if (type === "google-slides") {
+    // Convert to embed format
+    const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (match) return `https://docs.google.com/presentation/d/${match[1]}/embed?start=false&loop=false`;
+  }
+  return null;
+}
 
 function getInitials(name: string) {
   return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
@@ -159,6 +198,7 @@ export default function DashboardPage() {
   const [selectedSlug, setSelectedSlug] = useState<string>("");
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const [loading, setLoading] = useState(true);
+  const [committeeFilter, setCommitteeFilter] = useState<"all" | "mine">("all");
   const [replyText, setReplyText] = useState("");
   const [newDiscTitle, setNewDiscTitle] = useState("");
   const [expandedDisc, setExpandedDisc] = useState<string | null>(null);
@@ -180,6 +220,11 @@ export default function DashboardPage() {
   const [newCommitteeDesc, setNewCommitteeDesc] = useState("");
   const [newCommitteeColor, setNewCommitteeColor] = useState("#3b82f6");
   const [newCommitteeIcon, setNewCommitteeIcon] = useState("users");
+  const [committeeFiles, setCommitteeFiles] = useState<CommitteeFile[]>([]);
+  const [showAddFile, setShowAddFile] = useState(false);
+  const [newFileTitle, setNewFileTitle] = useState("");
+  const [newFileUrl, setNewFileUrl] = useState("");
+  const [previewFile, setPreviewFile] = useState<CommitteeFile | null>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") router.replace("/login");
@@ -208,12 +253,11 @@ export default function DashboardPage() {
       if (res.ok) {
         const data = await res.json();
         setCommittees(data);
-        if (!selectedSlug && data.length > 0) setSelectedSlug(data[0].slug);
       }
     } catch { /* ignore */ } finally {
       setLoading(false);
     }
-  }, [selectedSlug]);
+  }, []);
 
   useEffect(() => {
     if (session) fetchCommittees();
@@ -346,16 +390,51 @@ export default function DashboardPage() {
       }),
     });
     if (res.ok) {
-      const created = await res.json();
       setNewCommitteeName("");
       setNewCommitteeDesc("");
       setNewCommitteeColor("#3b82f6");
       setNewCommitteeIcon("users");
       setShowNewCommittee(false);
       await fetchCommittees();
-      setSelectedSlug(created.slug);
     }
   }
+
+  const fetchFiles = useCallback(async (committeeId: string) => {
+    try {
+      const res = await fetch(`/api/files?committeeId=${committeeId}`);
+      if (res.ok) setCommitteeFiles(await res.json());
+    } catch { /* ignore */ }
+  }, []);
+
+  async function handleAddFile() {
+    if (!committee || !newFileTitle.trim() || !newFileUrl.trim()) return;
+    const res = await fetch("/api/files", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ committeeId: committee.id, title: newFileTitle, url: newFileUrl }),
+    });
+    if (res.ok) {
+      setNewFileTitle("");
+      setNewFileUrl("");
+      setShowAddFile(false);
+      fetchFiles(committee.id);
+    }
+  }
+
+  async function handleDeleteFile(fileId: string) {
+    if (!confirm("Remove this file link?")) return;
+    const res = await fetch("/api/files", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: fileId }),
+    });
+    if (res.ok && committee) fetchFiles(committee.id);
+  }
+
+  // Fetch files when switching to files tab or selecting a committee
+  useEffect(() => {
+    if (committee && activeTab === "files") fetchFiles(committee.id);
+  }, [committee, activeTab, fetchFiles]);
 
   const currentUserId = (session?.user as { id?: string })?.id;
   const currentUserRole = (session?.user as { role?: string })?.role;
@@ -375,6 +454,7 @@ export default function DashboardPage() {
     { id: "calendar", label: "Calendar", icon: Calendar },
     { id: "discussion", label: `Discussion (${committee?._count.discussions || 0})`, icon: MessageSquare },
     { id: "tasks", label: "Tasks", icon: BarChart3 },
+    { id: "files", label: "Files", icon: FolderOpen },
   ];
 
   return (
@@ -383,260 +463,259 @@ export default function DashboardPage() {
       <div className="flex-1 flex flex-col overflow-hidden">
         <Navbar />
         <div className="flex-1 overflow-y-auto pb-20 md:pb-0">
-          {/* Committee selector */}
-          <div className="bg-white border-b border-slate-200 px-4 sm:px-6 py-3">
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => { setSelectedSlug("__all__"); setActiveTab("members"); setExpandedDisc(null); }}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                  selectedSlug === "__all__" ? "shadow-sm border bg-slate-900 text-white border-slate-900" : "border border-transparent hover:bg-slate-50 text-slate-500"
-                }`}
-              >
-                <Globe className="w-4 h-4" />
-                <span className="hidden sm:inline">All Committees</span>
-                <span className="sm:hidden">All</span>
-              </button>
-              {committees.map(c => {
-                const isSelected = selectedSlug === c.slug;
-                const cCol = SLUG_COLORS[c.slug] || SLUG_COLORS["logistics-venue"];
-                const CIcon = SLUG_ICONS[c.icon] || Users;
-                return (
-                  <button
-                    key={c.slug}
-                    onClick={() => { setSelectedSlug(c.slug); setActiveTab("overview"); setExpandedDisc(null); }}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                      isSelected ? "shadow-sm border" : "border border-transparent hover:bg-slate-50"
-                    }`}
-                    style={isSelected ? { background: cCol.light, borderColor: cCol.accent + "30", color: cCol.accent } : { color: "#64748b" }}
-                  >
-                    <CIcon className="w-4 h-4" style={isSelected ? { color: cCol.accent } : undefined} />
-                    <span className="hidden sm:inline">{c.name}</span>
-                    <span className="sm:hidden">{c.name.split(" ")[0]}</span>
-                  </button>
-                );
-              })}
-              {canModerate && (
-                <button
-                  onClick={() => setShowNewCommittee(true)}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border border-dashed border-slate-300 text-slate-400 hover:text-slate-600 hover:border-slate-400 transition-all"
-                  title="Create new committee"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span className="hidden sm:inline">New</span>
-                </button>
-              )}
-            </div>
-          </div>
-
-          {showNewCommittee && (
-            <div className="bg-white border-b border-slate-200 px-4 sm:px-6 py-4">
-              <div className="max-w-lg">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-bold text-slate-900">Create New Committee</h3>
-                  <button onClick={() => setShowNewCommittee(false)} className="p-1 rounded hover:bg-slate-100">
-                    <X className="w-4 h-4 text-slate-400" />
-                  </button>
-                </div>
-                <div className="space-y-3">
-                  <input
-                    value={newCommitteeName}
-                    onChange={e => setNewCommitteeName(e.target.value)}
-                    placeholder="Committee name"
-                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/10"
-                  />
-                  <input
-                    value={newCommitteeDesc}
-                    onChange={e => setNewCommitteeDesc(e.target.value)}
-                    placeholder="Description (optional)"
-                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/10"
-                  />
-                  <div className="flex gap-3">
-                    <div className="flex-1">
-                      <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Color</label>
-                      <input
-                        type="color"
-                        value={newCommitteeColor}
-                        onChange={e => setNewCommitteeColor(e.target.value)}
-                        className="w-full h-9 rounded-lg border border-slate-200 cursor-pointer"
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Icon</label>
-                      <select
-                        value={newCommitteeIcon}
-                        onChange={e => setNewCommitteeIcon(e.target.value)}
-                        className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400"
-                      >
-                        <option value="users">Users</option>
-                        <option value="map-pin">Map Pin</option>
-                        <option value="monitor">Monitor</option>
-                        <option value="megaphone">Megaphone</option>
-                        <option value="handshake">Handshake</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="flex gap-2 justify-end">
-                    <button onClick={() => setShowNewCommittee(false)} className="text-sm text-slate-500 hover:text-slate-700 px-3 py-1.5">
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleCreateCommittee}
-                      disabled={!newCommitteeName.trim()}
-                      className="text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-lg px-4 py-1.5 transition-colors"
-                    >
-                      Create
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-      {selectedSlug === "__all__" && (
-        <div className="p-4 sm:p-6">
-          {/* All Committees — Tabs */}
-          <div className="flex gap-1 bg-slate-100 rounded-lg p-1 mb-4 w-fit">
-            <button
-              onClick={() => setActiveTab("members")}
-              className={`flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-md transition-colors ${
-                activeTab === "members" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
-              }`}
-            >
-              <Users className="w-4 h-4" /> All Members
-            </button>
-            <button
-              onClick={() => setActiveTab("calendar")}
-              className={`flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-md transition-colors ${
-                activeTab === "calendar" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
-              }`}
-            >
-              <Calendar className="w-4 h-4" /> All Events
-            </button>
-          </div>
-
-          {/* All Members */}
-          {activeTab === "members" && (
-            <div className="space-y-4">
-              {committees.map(c => {
-                const cCol = SLUG_COLORS[c.slug] || SLUG_COLORS["logistics-venue"];
-                return (
-                  <div key={c.id} className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                    <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full" style={{ background: cCol.accent }} />
-                      <h3 className="text-sm font-bold text-slate-900">{c.name}</h3>
-                      <span className="text-xs text-slate-400 ml-auto">{c.members.length} {c.members.length === 1 ? "member" : "members"}</span>
-                    </div>
-                    <div className="p-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                      {c.members.length === 0 ? (
-                        <div className="col-span-full text-center text-xs text-slate-400 py-4">No members yet</div>
-                      ) : c.members.map(m => (
-                        <div key={m.user.id} className="flex items-center gap-2.5 px-3 py-2 rounded-lg border border-slate-100">
-                          <Avatar name={m.user.name} size="sm" accentColor={cCol.accent} />
-                          <div className="min-w-0 flex-1">
-                            <div className="text-sm font-semibold text-slate-900 truncate">{m.user.name}</div>
-                            <div className="text-[11px] text-slate-400">{m.role === "chair" ? "Group Leader" : "Member"}</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* All Events */}
-          {activeTab === "calendar" && (() => {
-            const allEvents = committees.flatMap(c =>
+          {/* Home View — All Committees + Upcoming Events */}
+          {!selectedSlug && (() => {
+            const currentUserId = (session?.user as { id?: string })?.id;
+            const displayCommittees = committeeFilter === "mine"
+              ? committees.filter(c => c.members.some(m => m.user.id === currentUserId))
+              : committees;
+            const allEvents = displayCommittees.flatMap(c =>
               c.events.map(e => ({ ...e, committeeName: c.name, committeeSlug: c.slug }))
             ).sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
             const upcoming = allEvents.filter(e => new Date(e.startTime) >= new Date());
-            const past = allEvents.filter(e => new Date(e.startTime) < new Date());
+            const totalMembers = new Set(committees.flatMap(c => c.members.map(m => m.user.id))).size;
+
+            // Group upcoming events by date for clean display
+            const eventsByDate: Record<string, typeof upcoming> = {};
+            upcoming.forEach(ev => {
+              const dateKey = new Date(ev.startTime).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+              if (!eventsByDate[dateKey]) eventsByDate[dateKey] = [];
+              eventsByDate[dateKey].push(ev);
+            });
+
             return (
-              <div className="space-y-4">
-                <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                  <div className="px-4 py-3 border-b border-slate-100">
-                    <h3 className="text-sm font-bold text-slate-900">Upcoming Events ({upcoming.length})</h3>
-                  </div>
-                  <div className="divide-y divide-slate-50">
-                    {upcoming.length === 0 && (
-                      <div className="px-4 py-6 text-center text-xs text-slate-400">No upcoming events</div>
-                    )}
-                    {upcoming.map(ev => {
-                      const cCol = SLUG_COLORS[ev.committeeSlug] || SLUG_COLORS["logistics-venue"];
-                      const start = new Date(ev.startTime);
-                      const end = new Date(ev.endTime);
-                      return (
-                        <div key={ev.id} className="px-4 py-3 flex items-start gap-3">
-                          <div className="w-1.5 h-10 rounded-full shrink-0 mt-0.5" style={{ background: cCol.accent }} />
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-bold text-slate-900">{ev.title}</span>
-                              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">{ev.committeeName}</span>
-                            </div>
-                            <div className="flex items-center gap-3 mt-0.5 text-xs text-slate-400">
-                              <span className="flex items-center gap-1">
-                                <Calendar className="w-3 h-3" />
-                                {start.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                {start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", timeZone: ev.timezone || undefined })}
-                                {" - "}
-                                {end.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", timeZone: ev.timezone || undefined })}
-                              </span>
-                            </div>
-                          </div>
-                          {ev.meetingUrl && (
-                            <a
-                              href={ev.meetingUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-[11px] font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-lg shrink-0"
-                            >
-                              Join
-                            </a>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
+              <div className="p-4 sm:p-6 max-w-6xl mx-auto">
+                {/* Welcome + Stats */}
+                <div className="mb-6">
+                  <h1 className="text-2xl font-extrabold text-slate-900 mb-1">
+                    Welcome back, {session?.user?.name?.split(" ")[0]}
+                  </h1>
+                  <p className="text-sm text-slate-500">
+                    {committees.length} committees &middot; {totalMembers} members &middot; {upcoming.length} upcoming events
+                  </p>
                 </div>
-                {past.length > 0 && (
-                  <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                    <div className="px-4 py-3 border-b border-slate-100">
-                      <h3 className="text-sm font-bold text-slate-500">Past Events ({past.length})</h3>
-                    </div>
-                    <div className="divide-y divide-slate-50 opacity-60">
-                      {past.map(ev => {
-                        const cCol = SLUG_COLORS[ev.committeeSlug] || SLUG_COLORS["logistics-venue"];
-                        const start = new Date(ev.startTime);
-                        return (
-                          <div key={ev.id} className="px-4 py-3 flex items-center gap-3">
-                            <div className="w-1.5 h-8 rounded-full shrink-0" style={{ background: cCol.accent }} />
-                            <div className="flex-1 min-w-0">
-                              <span className="text-sm font-semibold text-slate-700">{ev.title}</span>
-                              <div className="text-xs text-slate-400">
-                                {ev.committeeName} &middot; {start.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                              </div>
-                            </div>
+
+                {/* Toggle + Create */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex gap-1 bg-slate-100 rounded-lg p-1">
+                    <button
+                      onClick={() => setCommitteeFilter("all")}
+                      className={`text-sm font-semibold px-4 py-2 rounded-md transition-colors ${
+                        committeeFilter === "all" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                      }`}
+                    >
+                      All Committees
+                    </button>
+                    <button
+                      onClick={() => setCommitteeFilter("mine")}
+                      className={`text-sm font-semibold px-4 py-2 rounded-md transition-colors ${
+                        committeeFilter === "mine" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                      }`}
+                    >
+                      My Committees
+                    </button>
+                  </div>
+                  {canModerate && (
+                    <button
+                      onClick={() => setShowNewCommittee(true)}
+                      className="flex items-center gap-1.5 text-sm font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-lg px-4 py-2 transition-colors"
+                    >
+                      <Plus className="w-4 h-4" /> New Committee
+                    </button>
+                  )}
+                </div>
+
+                {/* New Committee Form */}
+                {showNewCommittee && (
+                  <div className="bg-white border border-slate-200 rounded-xl p-4 mb-4 shadow-sm">
+                    <div className="max-w-lg">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-sm font-bold text-slate-900">Create New Committee</h3>
+                        <button onClick={() => setShowNewCommittee(false)} className="p-1 rounded hover:bg-slate-100">
+                          <X className="w-4 h-4 text-slate-400" />
+                        </button>
+                      </div>
+                      <div className="space-y-3">
+                        <input
+                          value={newCommitteeName}
+                          onChange={e => setNewCommitteeName(e.target.value)}
+                          placeholder="Committee name"
+                          className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/10"
+                        />
+                        <input
+                          value={newCommitteeDesc}
+                          onChange={e => setNewCommitteeDesc(e.target.value)}
+                          placeholder="Description (optional)"
+                          className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/10"
+                        />
+                        <div className="flex gap-3">
+                          <div className="flex-1">
+                            <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Color</label>
+                            <input
+                              type="color"
+                              value={newCommitteeColor}
+                              onChange={e => setNewCommitteeColor(e.target.value)}
+                              className="w-full h-9 rounded-lg border border-slate-200 cursor-pointer"
+                            />
                           </div>
-                        );
-                      })}
+                          <div className="flex-1">
+                            <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Icon</label>
+                            <select
+                              value={newCommitteeIcon}
+                              onChange={e => setNewCommitteeIcon(e.target.value)}
+                              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400"
+                            >
+                              <option value="users">Users</option>
+                              <option value="map-pin">Map Pin</option>
+                              <option value="monitor">Monitor</option>
+                              <option value="megaphone">Megaphone</option>
+                              <option value="handshake">Handshake</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div className="flex gap-2 justify-end">
+                          <button onClick={() => setShowNewCommittee(false)} className="text-sm text-slate-500 hover:text-slate-700 px-3 py-1.5">
+                            Cancel
+                          </button>
+                          <button
+                            onClick={handleCreateCommittee}
+                            disabled={!newCommitteeName.trim()}
+                            className="text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-lg px-4 py-1.5 transition-colors"
+                          >
+                            Create
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
+
+                {/* Committee Cards Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-8">
+                  {displayCommittees.length === 0 ? (
+                    <div className="col-span-full text-center py-12 text-slate-400 text-sm">
+                      {committeeFilter === "mine" ? "You haven't joined any committees yet." : "No committees found."}
+                    </div>
+                  ) : displayCommittees.map(c => {
+                    const cCol = SLUG_COLORS[c.slug] || SLUG_COLORS["logistics-venue"];
+                    const CIcon = SLUG_ICONS[c.icon] || Users;
+                    const memberOfThis = c.members.some(m => m.user.id === currentUserId);
+                    return (
+                      <button
+                        key={c.id}
+                        onClick={() => { setSelectedSlug(c.slug); setActiveTab("overview"); setExpandedDisc(null); }}
+                        className="bg-white border border-slate-200 rounded-xl p-4 text-left hover:shadow-md hover:border-slate-300 transition-all group"
+                      >
+                        <div className="flex items-start gap-3 mb-3">
+                          <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: cCol.accent + "15" }}>
+                            <CIcon className="w-5 h-5" style={{ color: cCol.accent }} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <h3 className="text-sm font-bold text-slate-900 truncate group-hover:text-slate-700">{c.name}</h3>
+                              {memberOfThis && (
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-green-50 text-green-600 shrink-0">Joined</span>
+                              )}
+                            </div>
+                            <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{c.description}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4 text-xs text-slate-400">
+                          <span className="flex items-center gap-1">
+                            <Users className="w-3 h-3" /> {c._count.members}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" /> {c._count.events}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <MessageSquare className="w-3 h-3" /> {c._count.discussions}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Upcoming Events Timeline */}
+                <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                  <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+                    <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                      <Calendar className="w-4.5 h-4.5 text-slate-400" /> Upcoming Events
+                    </h2>
+                    <Link href="/calendar" className="text-xs font-semibold text-blue-600 hover:text-blue-700">
+                      Full Calendar
+                    </Link>
+                  </div>
+                  {upcoming.length === 0 ? (
+                    <div className="px-5 py-10 text-center">
+                      <Calendar className="w-8 h-8 text-slate-200 mx-auto mb-2" />
+                      <p className="text-sm text-slate-400">No upcoming events</p>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-slate-100">
+                      {Object.entries(eventsByDate).slice(0, 7).map(([dateLabel, dayEvents]) => (
+                        <div key={dateLabel}>
+                          <div className="px-5 py-2 bg-slate-50">
+                            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">{dateLabel}</span>
+                          </div>
+                          {dayEvents.map(ev => {
+                            const cCol = SLUG_COLORS[ev.committeeSlug] || SLUG_COLORS["logistics-venue"];
+                            const start = new Date(ev.startTime);
+                            const end = new Date(ev.endTime);
+                            return (
+                              <div key={ev.id} className="px-5 py-3 flex items-center gap-4 hover:bg-slate-50/50 transition-colors">
+                                <div className="w-16 text-center shrink-0">
+                                  <div className="text-sm font-bold text-slate-900">
+                                    {start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", timeZone: ev.timezone || undefined })}
+                                  </div>
+                                  <div className="text-[10px] text-slate-400">
+                                    {end.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", timeZone: ev.timezone || undefined })}
+                                  </div>
+                                </div>
+                                <div className="w-1 h-8 rounded-full shrink-0" style={{ background: cCol.accent }} />
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-sm font-semibold text-slate-900 truncate">{ev.title}</div>
+                                  <div className="text-xs text-slate-400 mt-0.5">
+                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 text-[10px] font-medium">
+                                      {ev.committeeName}
+                                    </span>
+                                    {ev.description && <span className="ml-2">{ev.description}</span>}
+                                  </div>
+                                </div>
+                                {ev.meetingUrl && (
+                                  <a
+                                    href={ev.meetingUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-[11px] font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg shrink-0 transition-colors"
+                                  >
+                                    Join
+                                  </a>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             );
           })()}
-        </div>
-      )}
 
-      {committee && selectedSlug !== "__all__" && (
+      {committee && selectedSlug && (
         <div>
           {/* Header */}
           <div className="bg-white border-b border-slate-200 px-4 sm:px-7 pt-4 sm:pt-5">
             <div className="flex items-center gap-3 mb-3">
+              <button
+                onClick={() => { setSelectedSlug(""); setExpandedDisc(null); }}
+                className="p-1.5 -ml-1 rounded-lg hover:bg-slate-100 transition-colors shrink-0"
+                title="Back to all committees"
+              >
+                <ChevronLeft className="w-5 h-5 text-slate-400" />
+              </button>
               <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: col.accent + "15" }}>
                 <IconComponent className="w-5 h-5" style={{ color: col.accent }} />
               </div>
@@ -1203,6 +1282,171 @@ export default function DashboardPage() {
                         )}
                       </div>
                     ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Files */}
+            {activeTab === "files" && (
+              <div className="p-4 sm:p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                    <FolderOpen className="w-4 h-4 text-slate-400" /> Files & Documents
+                  </h2>
+                  {isMember && (
+                    <button
+                      onClick={() => setShowAddFile(!showAddFile)}
+                      className="text-[13px] font-bold text-white rounded-lg px-3 py-1.5 flex items-center gap-1 transition-all hover:opacity-90"
+                      style={{ background: col.accent }}
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Add Link
+                    </button>
+                  )}
+                </div>
+
+                {/* Add file form */}
+                {showAddFile && (
+                  <div className="bg-white border border-slate-200 rounded-xl p-4 mb-4 shadow-sm space-y-3">
+                    <p className="text-xs text-slate-500">
+                      Add a link to a Google Doc, Sheet, Slides, Drive file, or any URL.
+                    </p>
+                    <input
+                      value={newFileTitle}
+                      onChange={e => setNewFileTitle(e.target.value)}
+                      placeholder="Document title"
+                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/10"
+                    />
+                    <input
+                      value={newFileUrl}
+                      onChange={e => setNewFileUrl(e.target.value)}
+                      placeholder="https://docs.google.com/document/d/..."
+                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/10"
+                    />
+                    <div className="flex gap-2 justify-end">
+                      <button onClick={() => { setShowAddFile(false); setNewFileTitle(""); setNewFileUrl(""); }} className="text-sm text-slate-500 hover:text-slate-700 px-3 py-1.5">
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleAddFile}
+                        disabled={!newFileTitle.trim() || !newFileUrl.trim()}
+                        className="text-sm font-bold text-white rounded-lg px-4 py-1.5 transition-all hover:opacity-90 disabled:opacity-50"
+                        style={{ background: col.accent }}
+                      >
+                        Add
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Embed preview */}
+                {previewFile && (() => {
+                  const embedUrl = getEmbedUrl(previewFile.url, previewFile.type);
+                  if (!embedUrl) return null;
+                  return (
+                    <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mb-4">
+                      <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+                        <h3 className="text-sm font-bold text-slate-900 truncate">{previewFile.title}</h3>
+                        <div className="flex items-center gap-2">
+                          <a
+                            href={previewFile.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[11px] font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-lg transition-colors"
+                          >
+                            Open in new tab
+                          </a>
+                          <button
+                            onClick={() => setPreviewFile(null)}
+                            className="p-1 rounded hover:bg-slate-100"
+                          >
+                            <X className="w-4 h-4 text-slate-400" />
+                          </button>
+                        </div>
+                      </div>
+                      <iframe
+                        src={embedUrl}
+                        className="w-full border-0"
+                        style={{ height: "500px" }}
+                        title={previewFile.title}
+                        sandbox="allow-scripts allow-same-origin allow-popups"
+                      />
+                    </div>
+                  );
+                })()}
+
+                {/* File list */}
+                {committeeFiles.length === 0 && !showAddFile ? (
+                  <div className="bg-white border border-slate-100 rounded-xl p-8 text-center shadow-sm">
+                    <FolderOpen className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                    <p className="text-sm text-slate-400 mb-1">No files or documents yet.</p>
+                    <p className="text-xs text-slate-400">Add links to Google Docs, Sheets, Drive files, or any URL.</p>
+                    {isMember && (
+                      <button
+                        onClick={() => setShowAddFile(true)}
+                        className="mt-3 text-[13px] font-semibold px-4 py-2 rounded-lg transition-colors"
+                        style={{ color: col.accent, background: col.light }}
+                      >
+                        Add the first document
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {committeeFiles.map(f => {
+                      const ft = FILE_TYPE_ICONS[f.type] || FILE_TYPE_ICONS["link"];
+                      const FIcon = ft.icon;
+                      const embedUrl = getEmbedUrl(f.url, f.type);
+                      const canDelete = f.addedBy.id === currentUserId || canModerate;
+                      return (
+                        <div key={f.id} className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all group">
+                          <div className="p-4">
+                            <div className="flex items-start gap-3">
+                              <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: ft.color + "15" }}>
+                                <FIcon className="w-5 h-5" style={{ color: ft.color }} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h4 className="text-sm font-bold text-slate-900 truncate">{f.title}</h4>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded" style={{ background: ft.color + "15", color: ft.color }}>
+                                    {ft.label}
+                                  </span>
+                                  <span className="text-[11px] text-slate-400">
+                                    by {f.addedBy.name.split(" ")[0]}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="border-t border-slate-100 px-4 py-2 flex items-center gap-2 bg-slate-50/50">
+                            <a
+                              href={f.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[11px] font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                            >
+                              <ExternalLink className="w-3 h-3" /> Open
+                            </a>
+                            {embedUrl && (
+                              <button
+                                onClick={() => setPreviewFile(previewFile?.id === f.id ? null : f)}
+                                className="text-[11px] font-semibold text-slate-500 hover:text-slate-700 flex items-center gap-1"
+                              >
+                                <FileText className="w-3 h-3" /> {previewFile?.id === f.id ? "Hide Preview" : "Preview"}
+                              </button>
+                            )}
+                            {canDelete && (
+                              <button
+                                onClick={() => handleDeleteFile(f.id)}
+                                className="text-[11px] font-semibold text-red-400 hover:text-red-600 flex items-center gap-1 ml-auto opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <Trash2 className="w-3 h-3" /> Remove
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
