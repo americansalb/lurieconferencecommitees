@@ -61,16 +61,13 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const committeeId = searchParams.get("committeeId");
 
-    if (!committeeId) {
-      return NextResponse.json({ error: "committeeId is required" }, { status: 400 });
-    }
-
     await ensureTasksTable();
 
     const tasks = await prisma.task.findMany({
-      where: { committeeId },
+      where: committeeId ? { committeeId } : undefined,
       include: {
         assignee: { select: { id: true, name: true } },
+        committee: { select: { id: true, name: true, slug: true, color: true } },
       },
       orderBy: [{ sortOrder: "asc" }, { startDate: "asc" }],
     });

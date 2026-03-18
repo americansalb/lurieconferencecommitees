@@ -15,6 +15,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
 import MobileNav from "@/components/layout/MobileNav";
 import GanttChart from "@/components/tasks/GanttChart";
+import DashboardTimeline from "@/components/dashboard/DashboardTimeline";
 
 const SLUG_COLORS: Record<string, { accent: string; bg: string; light: string }> = {
   "logistics-venue": { accent: "#3b82f6", bg: "#1e3a5f", light: "#eff6ff" },
@@ -699,6 +700,11 @@ export default function DashboardPage() {
                       ))}
                     </div>
                   )}
+                </div>
+
+                {/* Task Timeline */}
+                <div className="mt-6">
+                  <DashboardTimeline userId={currentUserId || ""} />
                 </div>
               </div>
             );
