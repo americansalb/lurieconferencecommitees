@@ -3,6 +3,45 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
+let tableEnsured = false;
+
+async function ensureFilesTable() {
+  if (tableEnsured) return;
+  try {
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "lcc_committee_files" (
+        "id" TEXT NOT NULL,
+        "committeeId" TEXT NOT NULL,
+        "title" TEXT NOT NULL,
+        "url" TEXT NOT NULL,
+        "type" TEXT NOT NULL DEFAULT 'link',
+        "addedById" TEXT NOT NULL,
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "lcc_committee_files_pkey" PRIMARY KEY ("id")
+      )
+    `);
+    await prisma.$executeRawUnsafe(`
+      DO $$ BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'lcc_committee_files_committeeId_fkey') THEN
+          ALTER TABLE "lcc_committee_files" ADD CONSTRAINT "lcc_committee_files_committeeId_fkey"
+            FOREIGN KEY ("committeeId") REFERENCES "lcc_committees"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+        END IF;
+      END $$
+    `);
+    await prisma.$executeRawUnsafe(`
+      DO $$ BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'lcc_committee_files_addedById_fkey') THEN
+          ALTER TABLE "lcc_committee_files" ADD CONSTRAINT "lcc_committee_files_addedById_fkey"
+            FOREIGN KEY ("addedById") REFERENCES "lcc_users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+        END IF;
+      END $$
+    `);
+    tableEnsured = true;
+  } catch (err) {
+    console.error("ensureFilesTable error:", err);
+  }
+}
+
 function detectFileType(url: string): string {
   const lower = url.toLowerCase();
   if (lower.includes("docs.google.com/document")) return "google-doc";
@@ -29,6 +68,8 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "committeeId required" }, { status: 400 });
   }
 
+  await ensureFilesTable();
+
   const files = await prisma.committeeFile.findMany({
     where: { committeeId },
     include: { addedBy: { select: { id: true, name: true } } },
@@ -51,6 +92,8 @@ export async function POST(req: Request) {
 
   const userId = (session.user as { id: string }).id;
   const type = detectFileType(url);
+
+  await ensureFilesTable();
 
   const file = await prisma.committeeFile.create({
     data: {
@@ -79,6 +122,8 @@ export async function DELETE(req: Request) {
 
   const userId = (session.user as { id: string }).id;
   const userRole = (session.user as { role: string }).role;
+
+  await ensureFilesTable();
 
   const file = await prisma.committeeFile.findUnique({ where: { id } });
   if (!file) {
