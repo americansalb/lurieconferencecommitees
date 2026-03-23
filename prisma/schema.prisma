@@ -20,6 +20,7 @@ model User {
   posts        Post[]
   tasks        Task[]            @relation("assignee")
   files        CommitteeFile[]
+  devices      Device[]
 
   @@map("lcc_users")
 }
@@ -117,6 +118,17 @@ model CommitteeFile {
   addedBy     User      @relation(fields: [addedById], references: [id], onDelete: Cascade)
 
   @@map("lcc_committee_files")
+}
+
+model Device {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  platform  String   @default("ios")
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("lcc_devices")
 }
 
 model Post {
