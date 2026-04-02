@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import {
   MapPin, Monitor, Megaphone, Handshake, Users,
-  ChevronLeft, ChevronRight, Calendar, Plus, X, Clock, Globe,
+  ChevronLeft, ChevronRight, Calendar, Plus, X, Clock, Globe, Pencil, Trash2,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
@@ -34,6 +34,7 @@ interface CalEvent {
   description: string;
   startTime: string;
   endTime: string;
+  duration: number;
   recurring: boolean;
   timezone?: string;
   meetingUrl?: string;
@@ -84,6 +85,7 @@ export default function CalendarPage() {
   const [eventCommitteeId, setEventCommitteeId] = useState("");
   const [eventRecurring, setEventRecurring] = useState(false);
   const [filterSlug, setFilterSlug] = useState<string | null>(null);
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [userTimezone, setUserTimezone] = useState<string>(() => Intl.DateTimeFormat().resolvedOptions().timeZone);
   const [detectedTimezone] = useState(() => Intl.DateTimeFormat().resolvedOptions().timeZone);
   const [tzSource, setTzSource] = useState<"detected" | "saved">("detected");
@@ -211,6 +213,67 @@ export default function CalendarPage() {
     setEventMeetingUrl("");
     setEventRecurring(false);
     setShowEventForm(false);
+    setEditingEventId(null);
+    fetchEvents();
+  }
+
+  function startEditEvent(ev: CalEvent) {
+    const d = new Date(ev.startTime);
+    setEditingEventId(ev.id);
+    setEventTitle(ev.title);
+    setEventDesc(ev.description);
+    setEventDate(d.toISOString().split("T")[0]);
+    setEventTime(d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: ev.timezone || userTimezone || undefined }));
+    setEventDuration(String(ev.duration || 60));
+    setEventTimezone(ev.timezone || userTimezone);
+    setEventRecurring(ev.recurring);
+    setEventMeetingUrl(ev.meetingUrl || "");
+    setEventCommitteeId(ev.committee.id);
+    setShowEventForm(true);
+  }
+
+  function cancelEventForm() {
+    setShowEventForm(false);
+    setEditingEventId(null);
+    setEventTitle("");
+    setEventDesc("");
+    setEventMeetingUrl("");
+    setEventRecurring(false);
+  }
+
+  async function handleUpdateEvent() {
+    if (!editingEventId || !eventTitle.trim() || !eventDate || !eventTime) return;
+    const tempUtc = new Date(`${eventDate}T${eventTime}:00Z`);
+    const utcFmt = tempUtc.toLocaleString("en-US", { timeZone: "UTC" });
+    const tzFmt = tempUtc.toLocaleString("en-US", { timeZone: eventTimezone });
+    const offsetMs = new Date(utcFmt).getTime() - new Date(tzFmt).getTime();
+    const startTime = new Date(tempUtc.getTime() + offsetMs).toISOString();
+
+    await fetch("/api/events", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: editingEventId,
+        title: eventTitle,
+        description: eventDesc,
+        startTime,
+        duration: parseInt(eventDuration),
+        timezone: eventTimezone,
+        recurring: eventRecurring,
+        meetingUrl: eventMeetingUrl || undefined,
+      }),
+    });
+    cancelEventForm();
+    fetchEvents();
+  }
+
+  async function handleDeleteEvent(eventId: string) {
+    if (!confirm("Delete this event?")) return;
+    await fetch("/api/events", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: eventId }),
+    });
     fetchEvents();
   }
 
@@ -302,9 +365,10 @@ export default function CalendarPage() {
               <div className="bg-white border border-blue-200 rounded-xl p-4 mb-4 shadow-sm">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
-                    <Plus className="w-4 h-4 text-blue-500" /> New Event
+                    {editingEventId ? <Pencil className="w-4 h-4 text-blue-500" /> : <Plus className="w-4 h-4 text-blue-500" />}
+                    {editingEventId ? "Edit Event" : "New Event"}
                   </h3>
-                  <button onClick={() => setShowEventForm(false)} className="p-1 rounded hover:bg-slate-100">
+                  <button onClick={cancelEventForm} className="p-1 rounded hover:bg-slate-100">
                     <X className="w-4 h-4 text-slate-400" />
                   </button>
                 </div>
@@ -405,15 +469,15 @@ export default function CalendarPage() {
                     Recurring
                   </label>
                   <div className="flex gap-2">
-                    <button onClick={() => setShowEventForm(false)} className="text-sm text-slate-500 hover:text-slate-700 px-3 py-1.5">
+                    <button onClick={cancelEventForm} className="text-sm text-slate-500 hover:text-slate-700 px-3 py-1.5">
                       Cancel
                     </button>
                     <button
-                      onClick={handleCreateEvent}
+                      onClick={editingEventId ? handleUpdateEvent : handleCreateEvent}
                       disabled={!eventTitle.trim() || !eventDate || !eventTime}
                       className="text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-lg px-4 py-1.5 transition-colors"
                     >
-                      Create Event
+                      {editingEventId ? "Save Changes" : "Create Event"}
                     </button>
                   </div>
                 </div>
@@ -544,9 +608,23 @@ export default function CalendarPage() {
                           <div key={ev.id} className="px-4 py-3">
                             <div className="flex items-center gap-2 mb-1">
                               <div className="w-2 h-2 rounded-full shrink-0" style={{ background: evColor }} />
-                              <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: evColor }}>
+                              <span className="text-[11px] font-semibold uppercase tracking-wider flex-1" style={{ color: evColor }}>
                                 {ev.committee.name}
                               </span>
+                              <button
+                                onClick={() => startEditEvent(ev)}
+                                className="p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+                                title="Edit event"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteEvent(ev.id)}
+                                className="p-1 rounded hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors"
+                                title="Delete event"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
                             </div>
                             <div className="text-sm font-bold text-slate-900">{ev.title}</div>
                             <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
