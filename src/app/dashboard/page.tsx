@@ -214,6 +214,7 @@ export default function DashboardPage() {
   const [eventTimezone, setEventTimezone] = useState("America/Chicago");
   const [eventRecurring, setEventRecurring] = useState(false);
   const [eventMeetingUrl, setEventMeetingUrl] = useState("");
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [userTimezone, setUserTimezone] = useState("");
   const [showNewCommittee, setShowNewCommittee] = useState(false);
   const [newCommitteeName, setNewCommitteeName] = useState("");
@@ -347,6 +348,64 @@ export default function DashboardPage() {
     setEventRecurring(false);
     setEventMeetingUrl("");
     setShowEventForm(false);
+    setEditingEventId(null);
+    fetchCommittees();
+  }
+
+  function startEditEvent(ev: Event) {
+    const d = new Date(ev.startTime);
+    setEditingEventId(ev.id);
+    setEventTitle(ev.title);
+    setEventDesc(ev.description);
+    setEventDate(d.toISOString().split("T")[0]);
+    setEventTime(d.toTimeString().slice(0, 5));
+    setEventDuration(String(ev.duration));
+    setEventTimezone(ev.timezone);
+    setEventRecurring(ev.recurring);
+    setEventMeetingUrl(ev.meetingUrl || "");
+    setShowEventForm(true);
+  }
+
+  function cancelEventForm() {
+    setShowEventForm(false);
+    setEditingEventId(null);
+    setEventTitle("");
+    setEventDesc("");
+    setEventDate("");
+    setEventTime("");
+    setEventDuration("60");
+    setEventRecurring(false);
+    setEventMeetingUrl("");
+  }
+
+  async function handleUpdateEvent() {
+    if (!editingEventId || !eventTitle.trim() || !eventDate || !eventTime) return;
+    const startTime = new Date(`${eventDate}T${eventTime}`).toISOString();
+    await fetch("/api/events", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: editingEventId,
+        title: eventTitle,
+        description: eventDesc,
+        startTime,
+        duration: parseInt(eventDuration),
+        timezone: eventTimezone,
+        recurring: eventRecurring,
+        meetingUrl: eventMeetingUrl || undefined,
+      }),
+    });
+    cancelEventForm();
+    fetchCommittees();
+  }
+
+  async function handleDeleteEvent(eventId: string) {
+    if (!confirm("Delete this event?")) return;
+    await fetch("/api/events", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: eventId }),
+    });
     fetchCommittees();
   }
 
@@ -941,9 +1000,9 @@ export default function DashboardPage() {
                   <h2 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
                     <Calendar className="w-4 h-4 text-slate-400" /> Events
                   </h2>
-                  {isMember && (
+                  {isMember && !showEventForm && (
                     <button
-                      onClick={() => setShowEventForm(!showEventForm)}
+                      onClick={() => { setEditingEventId(null); setShowEventForm(true); }}
                       className="text-[13px] font-bold text-white rounded-lg px-3 py-1.5 flex items-center gap-1 transition-all hover:opacity-90"
                       style={{ background: col.accent }}
                     >
@@ -952,9 +1011,12 @@ export default function DashboardPage() {
                   )}
                 </div>
 
-                {/* Event creation form */}
+                {/* Event creation/edit form */}
                 {showEventForm && (
                   <div className="bg-white border border-slate-200 rounded-xl p-4 mb-4 shadow-sm space-y-3">
+                    <div className="text-xs font-bold text-slate-500 uppercase tracking-wide">
+                      {editingEventId ? "Edit Event" : "New Event"}
+                    </div>
                     <input
                       value={eventTitle}
                       onChange={e => setEventTitle(e.target.value)}
@@ -1038,17 +1100,17 @@ export default function DashboardPage() {
                       </label>
                       <div className="flex gap-2">
                         <button
-                          onClick={() => setShowEventForm(false)}
+                          onClick={cancelEventForm}
                           className="text-sm text-slate-500 hover:text-slate-700 px-3 py-1.5"
                         >
                           Cancel
                         </button>
                         <button
-                          onClick={handleCreateEvent}
+                          onClick={editingEventId ? handleUpdateEvent : handleCreateEvent}
                           className="text-sm font-bold text-white rounded-lg px-4 py-1.5 transition-all hover:opacity-90"
                           style={{ background: col.accent }}
                         >
-                          Create
+                          {editingEventId ? "Save Changes" : "Create"}
                         </button>
                       </div>
                     </div>
@@ -1079,7 +1141,7 @@ export default function DashboardPage() {
                         const month = d.toLocaleString("default", { month: "short" }).toUpperCase();
                         const day = d.getDate();
                         return (
-                          <div key={ev.id} className="bg-white border border-slate-100 rounded-xl px-4 py-3 flex items-center gap-4 shadow-sm">
+                          <div key={ev.id} className="bg-white border border-slate-100 rounded-xl px-4 py-3 flex items-center gap-4 shadow-sm group">
                             <div className="w-12 text-center shrink-0 rounded-lg py-1.5" style={{ background: col.light }}>
                               <div className="text-[10px] font-bold tracking-wider" style={{ color: col.accent }}>{month}</div>
                               <div className="text-lg font-extrabold leading-tight" style={{ color: col.accent }}>{day}</div>
@@ -1112,6 +1174,24 @@ export default function DashboardPage() {
                               {ev.recurring && (
                                 <span className="text-[10px] font-bold px-2.5 py-1 rounded-full" style={{ background: col.light, color: col.accent }}>
                                   Recurring
+                                </span>
+                              )}
+                              {isMember && (
+                                <span className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <button
+                                    onClick={() => startEditEvent(ev)}
+                                    className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+                                    title="Edit event"
+                                  >
+                                    <Pencil className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteEvent(ev.id)}
+                                    className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors"
+                                    title="Delete event"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
                                 </span>
                               )}
                             </div>
