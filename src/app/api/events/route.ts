@@ -78,3 +78,62 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Failed to create event" }, { status: 500 });
   }
 }
+
+export async function PUT(req: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id, title, description, startTime, duration, timezone, recurring, meetingUrl } = await req.json();
+    if (!id) {
+      return NextResponse.json({ error: "Event id is required" }, { status: 400 });
+    }
+
+    const existing = await prisma.event.findUnique({ where: { id } });
+    if (!existing) {
+      return NextResponse.json({ error: "Event not found" }, { status: 404 });
+    }
+
+    const durationMins = duration || existing.duration;
+    const start = startTime ? new Date(startTime) : existing.startTime;
+    const end = new Date(start.getTime() + durationMins * 60 * 1000);
+
+    const event = await prisma.event.update({
+      where: { id },
+      data: {
+        ...(title !== undefined && { title }),
+        ...(description !== undefined && { description }),
+        startTime: start,
+        endTime: end,
+        duration: durationMins,
+        ...(timezone !== undefined && { timezone }),
+        ...(recurring !== undefined && { recurring }),
+        ...(meetingUrl !== undefined && { meetingUrl: meetingUrl || null }),
+      },
+    });
+    return NextResponse.json(event);
+  } catch {
+    return NextResponse.json({ error: "Failed to update event" }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id } = await req.json();
+    if (!id) {
+      return NextResponse.json({ error: "Event id is required" }, { status: 400 });
+    }
+
+    await prisma.event.delete({ where: { id } });
+    return NextResponse.json({ ok: true });
+  } catch {
+    return NextResponse.json({ error: "Failed to delete event" }, { status: 500 });
+  }
+}
