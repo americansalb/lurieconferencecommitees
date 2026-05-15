@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, CalendarDays, MessageSquare, UserCircle, Shield } from "lucide-react";
+import { LayoutDashboard, CalendarDays, MessageSquare, UserCircle, Shield, Mic } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
 
@@ -10,6 +10,7 @@ const tabs = [
   { href: "/dashboard", label: "Home", icon: LayoutDashboard },
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
   { href: "/discussions", label: "Chat", icon: MessageSquare },
+  { href: "/presenters", label: "Speakers", icon: Mic },
   { href: "/profile", label: "Profile", icon: UserCircle },
   { href: "/admin", label: "Admin", icon: Shield, adminOnly: true },
 ];

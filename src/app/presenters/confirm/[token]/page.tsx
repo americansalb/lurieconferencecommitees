@@ -1,0 +1,45 @@
+import { prisma } from "@/lib/db";
+import { notFound } from "next/navigation";
+import PresenterWizard from "./PresenterWizard";
+
+export const dynamic = "force-dynamic";
+
+export default async function PresenterConfirmPage({ params }: { params: { token: string } }) {
+  const presenter = await prisma.presenter.findUnique({
+    where: { token: params.token },
+    select: {
+      id: true, email: true, name: true, affiliation: true, jobTitle: true,
+      pronouns: true, phone: true,
+      talkTitle: true, talkAbstract: true, sessionFormat: true, sessionTrack: true,
+      sessionLength: true, coPresenters: true, preferredDay: true, learningObjectives: true,
+      bio: true, websiteUrl: true, linkedinUrl: true, twitterHandle: true,
+      headshotMime: true,
+      avNotes: true, needsMic: true, needsProjector: true, needsAudio: true,
+      needsInternet: true, needsRecording: true, needsClicker: true,
+      travelMode: true, travelOrigin: true, travelArrival: true, travelDeparture: true,
+      needsHotel: true, hotelNotes: true, needsParking: true,
+      dietary: true, allergies: true, accessibilityNeeds: true, emergencyContact: true,
+      agreedToRecord: true, agreedToPhoto: true, agreedToTerms: true,
+      status: true, confirmedAt: true,
+      token: true,
+    },
+  });
+
+  if (!presenter) notFound();
+
+  await prisma.presenterEvent.create({
+    data: { presenterId: presenter.id, type: "opened" },
+  });
+
+  return (
+    <PresenterWizard
+      token={params.token}
+      initial={{
+        ...presenter,
+        travelArrival: presenter.travelArrival ? presenter.travelArrival.toISOString() : null,
+        travelDeparture: presenter.travelDeparture ? presenter.travelDeparture.toISOString() : null,
+      }}
+      headshotUrl={presenter.headshotMime ? `/api/presenters/headshot/${presenter.id}` : null}
+    />
+  );
+}
