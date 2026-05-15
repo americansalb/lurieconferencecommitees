@@ -49,19 +49,24 @@ The app serves `conference.aalb.org` as the public landing for everything confer
 
 ```
 DATABASE_URL=postgres://…
-NEXTAUTH_URL=https://conference.aalb.org
 NEXTAUTH_SECRET=<random 32-byte string>
-APP_URL=https://conference.aalb.org
 
-# Gmail / Google Workspace (webservice@aalb.org)
-GMAIL_USER=webservice@aalb.org
+# Gmail / Google Workspace mailbox that sends invitations
+GMAIL_USER=contact@aalb.org
 GMAIL_APP_PASSWORD=<16-char app password>
-MAIL_FROM=Lurie Children's & AALB Conference <webservice@aalb.org>
-MAIL_REPLY_TO=webservice@aalb.org   # optional
-MAIL_BCC=webservice@aalb.org        # optional — BCCs every confirmation to that mailbox
+MAIL_FROM=Lurie Children's & AALB Conference <contact@aalb.org>
+MAIL_REPLY_TO=contact@aalb.org      # optional
+MAIL_BCC=contact@aalb.org           # optional — BCCs every confirmation to that mailbox
 ```
 
-Generate the app password at <https://myaccount.google.com/apppasswords> while signed in as `webservice@aalb.org` (2FA must be enabled on that account).
+The app falls back to `RENDER_EXTERNAL_URL` (which Render injects automatically) for building presenter portal links, so you only need to set the URL vars below when you want to override — e.g. when `conference.aalb.org` goes live:
+
+```
+NEXTAUTH_URL=https://conference.aalb.org
+APP_URL=https://conference.aalb.org
+```
+
+Generate the app password at <https://myaccount.google.com/apppasswords> while signed in as the sending mailbox (2FA must be enabled on that account).
 
 ### Database migration
 

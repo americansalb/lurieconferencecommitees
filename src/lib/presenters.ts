@@ -8,6 +8,7 @@ export function appUrl() {
   return (
     process.env.APP_URL ||
     process.env.NEXTAUTH_URL ||
+    process.env.RENDER_EXTERNAL_URL ||
     "https://conference.aalb.org"
   ).replace(/\/$/, "");
 }
