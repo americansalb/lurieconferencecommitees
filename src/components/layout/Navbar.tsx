@@ -27,6 +27,9 @@ export default function Navbar() {
         <Link href="/discussions" className="text-[13px] font-medium text-slate-500 hover:text-slate-700 transition-colors">
           Discussions
         </Link>
+        <Link href="/presenters" className="text-[13px] font-medium text-slate-500 hover:text-slate-700 transition-colors">
+          Presenters
+        </Link>
         <Link href="/profile" className="text-[13px] font-medium text-slate-500 hover:text-slate-700 transition-colors">
           Profile
         </Link>

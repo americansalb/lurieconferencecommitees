@@ -67,7 +67,7 @@ export default function CommitteesPage() {
               Conference Committees
             </h1>
             <p className="text-sm text-gray-500 mt-1">
-              AALB Conference 2026 at Lurie Children&apos;s
+              2026 Lurie Children&apos;s &amp; AALB Conference
             </p>
           </div>
 

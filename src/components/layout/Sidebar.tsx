@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { LayoutDashboard, CalendarDays, MessageSquare, UserCircle, LogOut, Shield } from "lucide-react";
+import { LayoutDashboard, CalendarDays, MessageSquare, UserCircle, LogOut, Shield, Mic } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, iconBg: "bg-blue-500/20", iconColor: "text-blue-400" },
   { href: "/calendar", label: "Calendar", icon: CalendarDays, iconBg: "bg-emerald-500/20", iconColor: "text-emerald-400" },
   { href: "/discussions", label: "Discussions", icon: MessageSquare, iconBg: "bg-amber-500/20", iconColor: "text-amber-400" },
+  { href: "/presenters", label: "Presenters", icon: Mic, iconBg: "bg-pink-500/20", iconColor: "text-pink-400" },
   { href: "/profile", label: "Profile", icon: UserCircle, iconBg: "bg-purple-500/20", iconColor: "text-purple-400" },
   { href: "/admin", label: "Admin", icon: Shield, iconBg: "bg-red-500/20", iconColor: "text-red-400", adminOnly: true },
 ];
@@ -22,13 +23,13 @@ export default function Sidebar() {
     <aside className="hidden lg:flex flex-col w-56 shrink-0 bg-slate-900 border-r border-slate-800">
       <div className="px-5 pt-6 pb-4">
         <div className="text-[11px] font-semibold tracking-widest text-blue-400 uppercase">
-          Conference 2026
+          Lurie Children&apos;s &amp; AALB
         </div>
         <div className="text-lg font-extrabold mt-1 text-white tracking-tight">
-          Committee Hub
+          Conference 2026
         </div>
         <div className="text-[11px] mt-1 text-slate-500">
-          Aug 15-16 &middot; Lurie Children&apos;s
+          True Language Access
         </div>
       </div>
 

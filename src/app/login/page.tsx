@@ -83,7 +83,7 @@ function LoginForm() {
         <div className="w-full max-w-sm">
           <div className="lg:hidden mb-8">
             <div className="text-xs font-semibold tracking-widest text-blue-600 uppercase">
-              AALB Conference 2026
+              2026 Lurie Children&apos;s &amp; AALB Conference
             </div>
             <h1 className="text-2xl font-extrabold text-slate-900 mt-1">
               Committee Hub

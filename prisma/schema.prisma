@@ -131,3 +131,79 @@ model Post {
 
   @@map("lcc_posts")
 }
+
+model Presenter {
+  id                 String           @id @default(cuid())
+  email              String           @unique
+  name               String
+  affiliation        String?
+  jobTitle           String?
+  pronouns           String?
+  phone              String?
+
+  talkTitle          String?
+  talkAbstract       String?
+  sessionFormat      String?
+  sessionTrack       String?
+  sessionLength      String?
+  coPresenters       String?
+  preferredDay       String?
+  learningObjectives String?
+
+  bio                String?
+  headshotData       Bytes?
+  headshotMime       String?
+  websiteUrl         String?
+  linkedinUrl        String?
+  twitterHandle      String?
+
+  avNotes            String?
+  needsMic           Boolean          @default(false)
+  needsProjector     Boolean          @default(false)
+  needsAudio         Boolean          @default(false)
+  needsInternet      Boolean          @default(false)
+  needsRecording     Boolean          @default(false)
+  needsClicker       Boolean          @default(false)
+
+  travelMode         String?
+  travelOrigin       String?
+  travelArrival      DateTime?
+  travelDeparture    DateTime?
+  needsHotel         Boolean          @default(false)
+  hotelNotes         String?
+  needsParking       Boolean          @default(false)
+
+  dietary            String?
+  allergies          String?
+  accessibilityNeeds String?
+  emergencyContact   String?
+
+  agreedToRecord     Boolean          @default(false)
+  agreedToPhoto      Boolean          @default(false)
+  agreedToTerms      Boolean          @default(false)
+
+  status             String           @default("invited")
+  declineReason      String?
+  token              String           @unique
+  invitedAt          DateTime         @default(now())
+  confirmedAt        DateTime?
+  lastSentAt         DateTime?
+  adminNotes         String?
+  invitedById        String?
+
+  events             PresenterEvent[]
+
+  @@map("lcc_presenters")
+}
+
+model PresenterEvent {
+  id          String    @id @default(cuid())
+  presenterId String
+  type        String
+  meta        String?
+  actorEmail  String?
+  createdAt   DateTime  @default(now())
+  presenter   Presenter @relation(fields: [presenterId], references: [id], onDelete: Cascade)
+
+  @@map("lcc_presenter_events")
+}
