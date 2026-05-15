@@ -86,7 +86,7 @@ export async function POST(req: Request) {
     try {
       await sendMail({
         to: presenter.email,
-        subject: `You're invited to present at the AALB Conference at Lurie Children's`,
+        subject: `You're invited to present at the Lurie Children's & AALB Conference`,
         html: presenterInviteEmail({ name: presenter.name, url, customMessage }),
       });
       await prisma.presenter.update({ where: { id: presenter.id }, data: { lastSentAt: new Date() } });

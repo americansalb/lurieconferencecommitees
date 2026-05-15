@@ -29,7 +29,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
   await sendMail({
     to: presenter.email,
-    subject: `Reminder: your presenter portal for the AALB Conference at Lurie Children's`,
+    subject: `Reminder: your presenter portal for the Lurie Children's & AALB Conference`,
     html: presenterInviteEmail({
       name: presenter.name,
       url: confirmationUrl(presenter.token),

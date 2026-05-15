@@ -275,9 +275,12 @@ function Header({ firstName }: { firstName: string }) {
         Welcome, {firstName} <span className="inline-block">👋</span>
       </h1>
       <p className="text-slate-500 mt-3 max-w-xl mx-auto">
-        Confirm your details for the AALB Conference at Lurie Children&rsquo;s. Takes about 5 minutes. Auto-saves as you go.
+        Confirm your details for the 2026 Lurie Children&rsquo;s &amp; AALB Conference. Takes about 5 minutes. Auto-saves as you go.
       </p>
-      <div className="inline-flex items-center gap-1.5 text-xs text-slate-400 mt-3">
+      <div className="text-xs font-semibold text-blue-700 mt-3 tracking-wide">
+        True Language Access: Yesterday, Today, and Tomorrow
+      </div>
+      <div className="inline-flex items-center gap-1.5 text-xs text-slate-400 mt-2">
         <CalendarDays className="w-3.5 h-3.5" /> August 15&ndash;16, 2026
         <span className="mx-2">&middot;</span>
         <MapPin className="w-3.5 h-3.5" /> Chicago
@@ -346,9 +349,9 @@ function Welcome({
     <div>
       <h2 className="text-2xl font-bold text-slate-900 tracking-tight">A quick hello, {name}</h2>
       <p className="mt-3 text-slate-600 leading-relaxed">
-        We&rsquo;re delighted to have you presenting at the AALB Conference at Lurie Children&rsquo;s on{" "}
-        <strong>August 15&ndash;16, 2026</strong>. Click <strong>Continue</strong> to walk through your talk details, bio,
-        tech needs, and travel — about 5 minutes total.
+        We&rsquo;re delighted to have you presenting at the 2026 Lurie Children&rsquo;s &amp; AALB Conference on{" "}
+        <strong>August 15&ndash;16, 2026</strong>. This year&rsquo;s theme is{" "}
+        <em>True Language Access: Yesterday, Today, and Tomorrow</em>. Click <strong>Continue</strong> to walk through your talk details, bio, tech needs, and travel — about 5 minutes total.
       </p>
 
       <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -766,7 +769,7 @@ function LogisticsStep({ fields, set }: { fields: Fields; set: (k: keyof Fields,
         <CheckCard
           checked={!!fields.agreedToPhoto}
           label="I consent to event photography"
-          desc="May be used in AALB post-event materials."
+          desc="May be used in Lurie Children's & AALB post-event materials."
           onToggle={() => set("agreedToPhoto", !fields.agreedToPhoto)}
         />
       </div>
@@ -851,7 +854,7 @@ function ReviewStep({
           className="mt-1 w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
         />
         <span className="text-sm text-slate-700">
-          I confirm the details above are accurate and agree to present at the AALB Conference at Lurie Children&rsquo;s on August 15&ndash;16, 2026.
+          I confirm the details above are accurate and agree to present at the Lurie Children&rsquo;s &amp; AALB Conference on August 15&ndash;16, 2026.
         </span>
       </label>
     </StepShell>
@@ -872,10 +875,10 @@ function SuccessCard({ name, mode }: { name: string; mode: "confirmed" | "declin
         <p className="mt-3 text-slate-600 leading-relaxed">
           {confirmed
             ? "We've recorded your confirmation and sent you a copy by email. Our program team will be in touch with next steps."
-            : "We've recorded your response. We hope to work with you on a future AALB event."}
+            : "We've recorded your response. We hope to work with you on a future Lurie Children's & AALB event."}
         </p>
         <div className="mt-6 text-xs text-slate-400">
-          AALB Conference at Lurie Children&rsquo;s &middot; August 15&ndash;16, 2026
+          Lurie Children&rsquo;s &amp; AALB Conference &middot; August 15&ndash;16, 2026
         </div>
       </div>
     </div>
@@ -885,7 +888,7 @@ function SuccessCard({ name, mode }: { name: string; mode: "confirmed" | "declin
 function Footer() {
   return (
     <div className="mt-6 text-center text-xs text-slate-400">
-      AALB Conference at Lurie Children&rsquo;s &middot; Questions? Just reply to your invitation email.
+      Lurie Children&rsquo;s &amp; AALB Conference &middot; Questions? Just reply to your invitation email.
     </div>
   );
 }

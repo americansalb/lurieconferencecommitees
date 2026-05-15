@@ -42,7 +42,7 @@ export default function Home() {
           <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-sm">A</span>
           </div>
-          <span className="font-semibold text-gray-900">AALB Conference</span>
+          <span className="font-semibold text-gray-900">Lurie Children&apos;s &amp; AALB Conference</span>
         </div>
         <div className="flex items-center gap-3">
           <Link
@@ -65,19 +65,20 @@ export default function Home() {
         <div className="text-center max-w-3xl mx-auto mb-16">
           <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-100 text-blue-700 text-sm font-medium px-4 py-1.5 rounded-full mb-6">
             <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
-            Conference 2026
+            2026 &middot; True Language Access
           </div>
           <h1 className="text-4xl md:text-6xl font-bold text-gray-900 tracking-tight mb-6">
-            AALB Conference
+            Lurie Children&apos;s &amp; AALB
             <br />
             <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-teal-500 bg-clip-text text-transparent">
-              Committee Hub
+              Conference 2026
             </span>
           </h1>
+          <p className="text-sm md:text-base text-blue-700 font-semibold tracking-wide max-w-2xl mx-auto mb-4">
+            True Language Access: Yesterday, Today, and Tomorrow
+          </p>
           <p className="text-lg md:text-xl text-gray-500 max-w-2xl mx-auto mb-8 leading-relaxed">
-            Your central planning portal for the AALB Conference 2026 at Lurie
-            Children&apos;s. Collaborate with your committee, manage schedules,
-            and coordinate across teams.
+            The shared planning portal for the 2026 Lurie Children&apos;s &amp; AALB Conference. Collaborate with your committee, manage schedules, and coordinate across teams.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
@@ -158,7 +159,7 @@ export default function Home() {
       <footer className="border-t border-gray-100 bg-white/50 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-gray-400">
-            AALB Conference 2026 at Lurie Children&apos;s
+            2026 Lurie Children&apos;s &amp; AALB Conference
           </p>
           <a
             href="https://www.aalb.org/conference-2026"

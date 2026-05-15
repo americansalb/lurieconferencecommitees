@@ -117,7 +117,7 @@ export default function PresentersPage() {
                   Presenter confirmations
                 </h1>
                 <p className="text-sm text-slate-500 mt-1">
-                  Track invitations and confirmations for the AALB Conference at Lurie Children&rsquo;s.
+                  Track invitations and confirmations for the 2026 Lurie Children&rsquo;s &amp; AALB Conference.
                 </p>
               </div>
               {isAdmin && (

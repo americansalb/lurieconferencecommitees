@@ -10,9 +10,9 @@ const geistSans = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "AALB Conference 2026 - Committee Planning",
+  title: "2026 Lurie Children's & AALB Conference — Committee Planning",
   description:
-    "Committee planning portal for the AALB Conference 2026 at Lurie Children's",
+    "Committee planning portal for the 2026 Lurie Children's & AALB Conference. True Language Access: Yesterday, Today, and Tomorrow.",
 };
 
 export default function RootLayout({

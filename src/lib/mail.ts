@@ -33,7 +33,7 @@ export async function sendMail({ to, subject, html, text, replyTo, bcc }: SendAr
     console.warn("[mail] GMAIL_USER / GMAIL_APP_PASSWORD not configured; skipping send", { to, subject });
     return { skipped: true };
   }
-  const from = process.env.MAIL_FROM || `AALB Conference at Lurie Children's <${process.env.GMAIL_USER}>`;
+  const from = process.env.MAIL_FROM || `Lurie Children's & AALB Conference <${process.env.GMAIL_USER}>`;
   const defaultBcc = process.env.MAIL_BCC || undefined;
   return transport.sendMail({
     from,

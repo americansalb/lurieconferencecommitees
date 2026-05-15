@@ -23,13 +23,13 @@ export default function Sidebar() {
     <aside className="hidden lg:flex flex-col w-56 shrink-0 bg-slate-900 border-r border-slate-800">
       <div className="px-5 pt-6 pb-4">
         <div className="text-[11px] font-semibold tracking-widest text-blue-400 uppercase">
-          Conference 2026
+          Lurie Children&apos;s &amp; AALB
         </div>
         <div className="text-lg font-extrabold mt-1 text-white tracking-tight">
-          Committee Hub
+          Conference 2026
         </div>
         <div className="text-[11px] mt-1 text-slate-500">
-          Aug 15-16 &middot; Lurie Children&apos;s
+          True Language Access
         </div>
       </div>
 

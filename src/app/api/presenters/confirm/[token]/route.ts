@@ -106,13 +106,13 @@ export async function POST(req: Request, { params }: { params: { token: string }
       if (action === "submit") {
         await sendMail({
           to: presenter.email,
-          subject: `You're confirmed for the AALB Conference at Lurie Children's`,
+          subject: `You're confirmed for the Lurie Children's & AALB Conference`,
           html: presenterConfirmedEmail({ name: presenter.name, url: portalUrl }),
         });
       } else {
         await sendMail({
           to: presenter.email,
-          subject: `Your response — AALB Conference at Lurie Children's`,
+          subject: `Your response — Lurie Children's & AALB Conference`,
           html: presenterDeclinedEmail({ name: presenter.name }),
         });
       }

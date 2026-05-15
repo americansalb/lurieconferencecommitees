@@ -56,7 +56,7 @@ APP_URL=https://conference.aalb.org
 # Gmail / Google Workspace (webservice@aalb.org)
 GMAIL_USER=webservice@aalb.org
 GMAIL_APP_PASSWORD=<16-char app password>
-MAIL_FROM=AALB Conference at Lurie Children's <webservice@aalb.org>
+MAIL_FROM=Lurie Children's & AALB Conference <webservice@aalb.org>
 MAIL_REPLY_TO=webservice@aalb.org   # optional
 MAIL_BCC=webservice@aalb.org        # optional — BCCs every confirmation to that mailbox
 ```
