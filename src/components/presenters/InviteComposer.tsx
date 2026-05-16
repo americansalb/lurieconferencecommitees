@@ -75,7 +75,7 @@ export function InviteComposer({
 
   const previewHtml = useMemo(() => {
     return presenterInviteEmail({
-      name: name || "Your presenter",
+      name,
       url: "https://conference.aalb.org/presenters/confirm/preview-link",
       customMessage: customMessage || undefined,
       role: role || undefined,
@@ -128,7 +128,8 @@ export function InviteComposer({
     }
   }
 
-  const firstName = (name || "your presenter").split(" ")[0];
+  const firstName = name.trim().split(" ")[0];
+  const greetingName = firstName || "there";
   const article = role ? (/^[aeiou]/i.test(role) ? "an" : "a") : "a";
 
   return (
@@ -183,7 +184,7 @@ export function InviteComposer({
                 <Check className="w-7 h-7" />
               </div>
               <div className="text-2xl font-bold text-slate-900 tracking-tight">
-                {sendNow ? `Invitation sent to ${firstName}` : "Presenter saved"}
+                {sendNow ? `Invitation sent to ${firstName || name || "your presenter"}` : "Presenter saved"}
               </div>
               <p className="text-sm text-slate-500 mt-2 leading-relaxed">
                 {sendNow
@@ -231,23 +232,31 @@ export function InviteComposer({
                       <div className="text-[11px] text-slate-400 mt-1">True Language Access: Yesterday, Today, and Tomorrow</div>
                     </div>
 
-                    <div className="pt-3">
-                      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                        <span className="text-slate-400 text-base">To</span>
-                        <InlineTextSlot value={name} setValue={setName} placeholder="Their name" size="lg" required />
-                        <span className="text-slate-300 text-lg">·</span>
-                        <InlineTextSlot value={email} setValue={setEmail} placeholder="email@example.org" type="email" required />
-                      </div>
-                      <div className="mt-1.5 flex items-baseline gap-2">
-                        <span className="text-slate-400 text-sm">From</span>
-                        <InlineTextSlot value={affiliation} setValue={setAffiliation} placeholder="Their affiliation" size="sm" />
-                      </div>
+                    <div className="pt-2 space-y-2">
+                      <BigSoftInput
+                        value={name}
+                        onChange={setName}
+                        placeholder="Their full name"
+                        required
+                      />
+                      <BigSoftInput
+                        value={email}
+                        onChange={setEmail}
+                        placeholder="Their email address"
+                        type="email"
+                        required
+                      />
+                      <BigSoftInput
+                        value={affiliation}
+                        onChange={setAffiliation}
+                        placeholder="Their affiliation (optional)"
+                      />
                     </div>
 
                     <div className="h-px bg-slate-100" />
 
                     <div className="text-[15px] leading-loose text-slate-700">
-                      Hello <span className="font-semibold text-slate-900">{firstName}</span>,
+                      Hello <span className="font-semibold text-slate-900">{greetingName}</span>,
                       we would love to have you with us. We are inviting you as
                       {" "}{article}{" "}
                       <InlineChip
@@ -456,7 +465,7 @@ export function InviteComposer({
                 caption={
                   <span className="flex items-center gap-2">
                     <Mail className="w-3.5 h-3.5" />
-                    What {firstName} will receive
+                    What {firstName || "they"} will receive
                     <span className="ml-auto text-slate-400">to: {email || "email pending"}</span>
                   </span>
                 }
@@ -502,6 +511,31 @@ export function InviteComposer({
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function BigSoftInput({
+  value, onChange, placeholder, type = "text", required,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  type?: "text" | "email";
+  required?: boolean;
+}) {
+  return (
+    <div className="relative">
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full px-4 py-3 text-base bg-slate-50 border border-transparent rounded-xl focus:bg-white focus:border-[#0066B3] focus:ring-2 focus:ring-[#0066B3]/15 outline-none transition-all placeholder:text-slate-400"
+      />
+      {required && !value && (
+        <span aria-hidden className="absolute right-3 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-rose-400" />
+      )}
     </div>
   );
 }

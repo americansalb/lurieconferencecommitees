@@ -21,7 +21,7 @@ export function InlineTextSlot({
   const sizing = size === "lg" ? "text-2xl font-bold" : size === "sm" ? "text-sm" : "text-base";
   const hasValue = !!value;
   return (
-    <span className="relative inline-block align-baseline">
+    <span className="relative inline-flex items-baseline">
       <input
         type={type}
         value={value}
@@ -33,12 +33,13 @@ export function InlineTextSlot({
           " " +
           (hasValue
             ? "border-slate-300 text-slate-900 focus:border-[#0066B3]"
-            : required
-            ? "border-rose-300 text-rose-700 placeholder:text-rose-400 focus:border-rose-500"
-            : "border-slate-300 text-slate-500 placeholder:text-slate-400 focus:border-[#0066B3]")
+            : "border-slate-300 text-slate-400 placeholder:text-slate-400 focus:border-[#0066B3]")
         }
         style={{ width: `${Math.max((value || placeholder).length + 1, 4)}ch` }}
       />
+      {required && !hasValue && (
+        <span aria-hidden className="ml-1 w-1.5 h-1.5 rounded-full bg-rose-400 self-center" />
+      )}
     </span>
   );
 }
