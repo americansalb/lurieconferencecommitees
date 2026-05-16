@@ -4,6 +4,7 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import {
   Check, ChevronLeft, ChevronRight, X, Upload, AlertCircle, Loader2,
   ArrowRight, ExternalLink, Sparkles, Calendar, MapPin, DollarSign, Plane,
+  Clock, Mic, Tag,
 } from "lucide-react";
 import { parseResponse } from "@/lib/api";
 import { PolicyContent } from "./policy-content";
@@ -456,16 +457,18 @@ function HeroScreen({
     !!(initial.sessionLength || initial.sessionFormat || initial.role || initial.qaLength ||
       initial.preferredDay || initial.sessionTrack || initial.talkTitle);
 
-  const sentence = (() => {
+  const headline = (() => {
     const which = initial.sessionFormat || initial.role;
-    if (!which) return hasAssignment ? "A speaker — final details to come." : "The program team is finalising the details with you.";
-    const article = /^[aeiou]/i.test(which) ? "an" : "a";
-    const noun = which.toLowerCase();
-    const length = initial.sessionLength ? `${initial.sessionLength.toLowerCase()} ` : "";
-    const qa = initial.qaLength ? ` with ${initial.qaLength.toLowerCase()} for Q and A` : "";
-    const day = initial.preferredDay ? ` on ${initial.preferredDay}` : "";
-    return `${capitalize(article)} ${length}${noun}${qa}${day}.`;
+    if (which) return which;
+    if (hasAssignment) return "A speaker — details to come";
+    return "Details being finalised";
   })();
+
+  const sessionChips: { icon: React.ComponentType<{ className?: string }>; label: string }[] = [];
+  if (initial.sessionLength) sessionChips.push({ icon: Clock, label: initial.sessionLength });
+  if (initial.qaLength && initial.qaLength !== "No Q and A") sessionChips.push({ icon: Mic, label: `${initial.qaLength} Q & A` });
+  if (initial.preferredDay) sessionChips.push({ icon: Calendar, label: initial.preferredDay });
+  if (initial.sessionTrack) sessionChips.push({ icon: Tag, label: initial.sessionTrack });
 
   return (
     <div className="flex-1 flex flex-col px-6 py-10 sm:py-14">
@@ -503,9 +506,20 @@ function HeroScreen({
           <div className="h-1.5 w-full" style={{ background: `linear-gradient(to right, ${TEAL}, ${BLUE})` }} />
           <div className="p-8 relative">
             <div className="text-[10px] font-semibold tracking-[0.22em] uppercase text-[#0E5566] mb-3">You are invited as</div>
-            <div className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight leading-snug">{sentence}</div>
+            <div className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight leading-snug">{headline}</div>
 
-            <div className="mt-5 flex flex-wrap gap-2">
+            {sessionChips.length > 0 && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {sessionChips.map((c, i) => (
+                  <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-white/80 backdrop-blur-sm border border-slate-200 text-slate-700">
+                    <c.icon className="w-3.5 h-3.5 text-[#0066B3]" />
+                    {c.label}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-5 pt-5 border-t border-slate-200/60 flex flex-wrap gap-2">
               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-white/80 backdrop-blur-sm border border-slate-200 text-slate-700">
                 <Calendar className="w-3.5 h-3.5 text-[#0066B3]" />
                 August 15 &amp; 16, 2026
@@ -618,25 +632,59 @@ function ReplyCard({
   active: boolean;
   onClick: () => void;
 }) {
-  const accentBg = tone === "primary"
+  const accentRing = tone === "primary"
+    ? "ring-[#0066B3]/40 border-[#0066B3] bg-gradient-to-br from-[#0E5566] to-[#0066B3] text-white"
+    : tone === "neutral"
+    ? "ring-amber-500/40 border-amber-500 bg-amber-500 text-white"
+    : "ring-slate-400/40 border-slate-500 bg-slate-700 text-white";
+  const restingHover = tone === "primary"
+    ? "hover:border-[#0066B3]/50 hover:shadow-md"
+    : tone === "neutral"
+    ? "hover:border-amber-400 hover:shadow-md"
+    : "hover:border-slate-400 hover:shadow-md";
+  const accentTop = tone === "primary"
     ? `linear-gradient(to right, ${TEAL}, ${BLUE})`
     : tone === "neutral"
     ? "linear-gradient(to right, #f59e0b, #d97706)"
     : "linear-gradient(to right, #94a3b8, #64748b)";
+  const arrowColor = active
+    ? "text-white"
+    : tone === "primary"
+    ? "text-[#0066B3]"
+    : tone === "neutral"
+    ? "text-amber-600"
+    : "text-slate-500";
+
   return (
     <button
       type="button"
       onClick={onClick}
       className={
-        "text-left p-5 rounded-2xl bg-white border transition-all relative overflow-hidden " +
+        "group text-left p-6 rounded-2xl border-2 transition-all relative overflow-hidden cursor-pointer min-h-[148px] flex flex-col " +
         (active
-          ? "shadow-md ring-2 ring-offset-2 ring-[#0066B3]/30 border-transparent -translate-y-0.5"
-          : "border-slate-200 hover:border-slate-300 hover:shadow-sm hover:-translate-y-0.5")
+          ? `shadow-xl ring-4 ring-offset-2 -translate-y-1 ${accentRing}`
+          : `bg-white border-slate-200 hover:-translate-y-1 ${restingHover}`)
       }
     >
-      <div className="absolute top-0 left-0 right-0 h-1" style={{ background: accentBg }} />
-      <div className="text-base font-bold text-slate-900 pt-1">{label}</div>
-      <div className="text-xs text-slate-500 mt-1.5 leading-relaxed">{desc}</div>
+      {!active && (
+        <div className="absolute top-0 left-0 right-0 h-1.5" style={{ background: accentTop }} />
+      )}
+      <div className="flex items-start justify-between gap-3">
+        <div className={"text-lg font-bold tracking-tight " + (active ? "text-white" : "text-slate-900")}>
+          {label}
+        </div>
+        <ArrowRight
+          className={
+            "w-5 h-5 shrink-0 transition-all " +
+            arrowColor +
+            " " +
+            (active ? "translate-x-0" : "group-hover:translate-x-0.5")
+          }
+        />
+      </div>
+      <div className={"text-sm mt-2 leading-relaxed flex-1 " + (active ? "text-white/90" : "text-slate-500")}>
+        {desc}
+      </div>
     </button>
   );
 }
@@ -1378,8 +1426,4 @@ function SoftToggle({
       <span className="text-sm text-slate-900 font-medium">{label}</span>
     </button>
   );
-}
-
-function capitalize(s: string) {
-  return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 }
