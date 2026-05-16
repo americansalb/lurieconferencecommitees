@@ -243,7 +243,7 @@ export default function PresenterWizard({
               <FooterNav
                 step={step}
                 saving={saving}
-                canSubmit={!!fields.agreedToTerms && !!fields.agreedToHeadshot}
+                canSubmit={!!fields.agreedToTerms}
                 onBack={back}
                 onNext={next}
                 onSaveDraft={() => persist("save")}
@@ -414,7 +414,7 @@ function InvitationStep({
       <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5">
         <div className="text-[11px] font-semibold tracking-[0.2em] uppercase text-slate-500 mb-3">Before you respond</div>
         <p className="text-sm text-slate-700 leading-relaxed">
-          Accepting commits you to attending in person on August 15 and 16, 2026, providing a high resolution headshot, and the terms in our presenter policy. The wizard that follows collects your bio, headshot, optional logistics, and the consents you wish to grant.
+          Accepting commits you to attending in person on August 15 and 16, 2026 and the terms in our presenter policy. The wizard that follows asks for a short bio, a photo when you have one ready, optional logistics, and the consents you wish to grant.
         </p>
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
           <button
@@ -579,13 +579,15 @@ function AboutStep({
   clearHeadshot: () => void;
 }) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-7">
       <div>
-        <h2 className="text-2xl font-bold text-slate-900 tracking-tight">About you</h2>
-        <p className="mt-1.5 text-sm text-slate-500">This is what attendees and our marketing materials will use.</p>
+        <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Tell us about yourself</h2>
+        <p className="mt-1.5 text-sm text-slate-500 leading-relaxed">
+          A short bio and a recent photo. We use them in the program, on the website, and in introductions on the day.
+        </p>
       </div>
 
-      <Field label="Bio" required hint="Two to four sentences in the third person.">
+      <Field label="Bio" required hint="A couple of sentences, in the third person. The program team can help polish it later.">
         <textarea
           value={(fields.bio as string) || ""}
           onChange={(e) => set("bio", e.target.value)}
@@ -595,85 +597,80 @@ function AboutStep({
         />
       </Field>
 
-      <div className="grid sm:grid-cols-[160px_1fr] gap-6 items-start">
-        <div>
-          <Label text="Headshot" required />
-          <div className="mt-2 aspect-square rounded-xl bg-slate-100 overflow-hidden flex items-center justify-center relative">
-            {headshotPreview ? (
-              <img src={headshotPreview} alt="Headshot preview" className="w-full h-full object-cover" />
-            ) : (
-              <div className="text-slate-400 text-xs text-center px-2">No photo</div>
-            )}
-            {headshotPreview && (
-              <button
-                type="button"
-                onClick={clearHeadshot}
-                className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/95 hover:bg-white shadow flex items-center justify-center text-slate-600"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={onPickHeadshot}
-            className="mt-2 w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200"
-          >
-            <Upload className="w-3.5 h-3.5" /> Upload
-          </button>
-        </div>
-        <div className="space-y-3">
-          <div className="rounded-xl bg-[#0066B3]/5 border border-[#0066B3]/20 px-4 py-3">
-            <div className="text-xs font-semibold text-[#0066B3] uppercase tracking-wider">Quality requirements</div>
-            <ul className="mt-2 text-sm text-slate-700 space-y-1 list-disc list-inside">
-              <li>High resolution, at least 1200 pixels on the long side</li>
-              <li>Color, professional, head and shoulders</li>
-              <li>Neutral or simple background</li>
-              <li>PNG, JPG, or WebP under 4 MB</li>
-            </ul>
-            <div className="text-xs text-slate-500 mt-2">
-              If you do not have one ready, you can upload later. We use this for the program, website, signage, and social media.
+      <div>
+        <Label text="A photo of you" />
+        <p className="text-[12px] text-slate-500 mt-1 leading-relaxed">
+          Optional here. Upload now if you have one, or send it to us later — whatever is easiest. A recent, clear shot of your face works perfectly.
+        </p>
+        <div className="mt-3 grid sm:grid-cols-[160px_1fr] gap-5 items-start">
+          <div>
+            <div className="aspect-square rounded-2xl bg-gradient-to-br from-slate-100 to-slate-50 overflow-hidden flex items-center justify-center relative ring-1 ring-slate-200">
+              {headshotPreview ? (
+                <img src={headshotPreview} alt="Headshot preview" className="w-full h-full object-cover" />
+              ) : (
+                <div className="text-slate-400 text-xs text-center px-2 leading-relaxed">No photo yet</div>
+              )}
+              {headshotPreview && (
+                <button
+                  type="button"
+                  onClick={clearHeadshot}
+                  className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/95 hover:bg-white shadow flex items-center justify-center text-slate-600"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
+            <button
+              type="button"
+              onClick={onPickHeadshot}
+              className="mt-2 w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200"
+            >
+              <Upload className="w-3.5 h-3.5" /> {headshotPreview ? "Replace" : "Upload"}
+            </button>
           </div>
-          <label className="flex items-start gap-3 p-4 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-50/60">
-            <input
-              type="checkbox"
-              checked={!!fields.agreedToHeadshot}
-              onChange={(e) => set("agreedToHeadshot", e.target.checked)}
-              className="mt-0.5 w-4 h-4 rounded border-slate-300 text-[#0066B3] focus:ring-[#0066B3]"
-            />
-            <span className="text-sm text-slate-700">
-              I will provide a high resolution headshot that meets these requirements, by upload above or by sending it to the program team before July 1, 2026.
-            </span>
-          </label>
+          <div className="space-y-3 text-sm text-slate-600 leading-relaxed">
+            <p>
+              If you would like to send one later, email it to the program team any time before <span className="font-semibold text-slate-800">July 1, 2026</span> — a phone selfie, a LinkedIn photo, or whatever you have on hand is fine to start with.
+            </p>
+            <p className="text-[12px] text-slate-400">
+              We will only ask for a higher-resolution version if we need it for print signage. Maximum 4 MB, PNG, JPG, or WebP.
+            </p>
+          </div>
         </div>
       </div>
 
-      <div className="grid sm:grid-cols-2 gap-4">
-        <Field label="Job title" optional>
-          <input type="text" value={(fields.jobTitle as string) || ""} onChange={(e) => set("jobTitle", e.target.value)} className={inputClass} />
-        </Field>
-        <Field label="Affiliation" optional>
-          <input type="text" value={(fields.affiliation as string) || ""} onChange={(e) => set("affiliation", e.target.value)} className={inputClass} />
-        </Field>
+      <div className="space-y-4">
+        <div className="text-sm font-semibold text-slate-900">How you would like to appear</div>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <Field label="Job title">
+            <input type="text" value={(fields.jobTitle as string) || ""} onChange={(e) => set("jobTitle", e.target.value)} placeholder="Director of language services" className={inputClass} />
+          </Field>
+          <Field label="Affiliation">
+            <input type="text" value={(fields.affiliation as string) || ""} onChange={(e) => set("affiliation", e.target.value)} placeholder="Lurie Children's, Northwestern, AALB…" className={inputClass} />
+          </Field>
+          <Field label="Pronouns">
+            <input type="text" value={(fields.pronouns as string) || ""} onChange={(e) => set("pronouns", e.target.value)} placeholder="she/her, they/them" className={inputClass} />
+          </Field>
+          <Field label="Phone for event week" hint="Used only if we need to reach you on August 15 or 16.">
+            <input type="tel" value={(fields.phone as string) || ""} onChange={(e) => set("phone", e.target.value)} className={inputClass} />
+          </Field>
+        </div>
       </div>
-      <div className="grid sm:grid-cols-2 gap-4">
-        <Field label="Pronouns" optional>
-          <input type="text" value={(fields.pronouns as string) || ""} onChange={(e) => set("pronouns", e.target.value)} placeholder="she/her, they/them" className={inputClass} />
-        </Field>
-        <Field label="Phone for event week" optional>
-          <input type="tel" value={(fields.phone as string) || ""} onChange={(e) => set("phone", e.target.value)} className={inputClass} />
-        </Field>
-      </div>
-      <div className="grid sm:grid-cols-3 gap-4">
-        <Field label="Website" optional>
-          <input type="url" value={(fields.websiteUrl as string) || ""} onChange={(e) => set("websiteUrl", e.target.value)} placeholder="https://" className={inputClass} />
-        </Field>
-        <Field label="LinkedIn" optional>
-          <input type="url" value={(fields.linkedinUrl as string) || ""} onChange={(e) => set("linkedinUrl", e.target.value)} placeholder="https://" className={inputClass} />
-        </Field>
-        <Field label="Twitter or X" optional>
-          <input type="text" value={(fields.twitterHandle as string) || ""} onChange={(e) => set("twitterHandle", e.target.value)} placeholder="@handle" className={inputClass} />
+
+      <div className="space-y-4">
+        <div>
+          <div className="text-sm font-semibold text-slate-900">Where to find you online</div>
+          <p className="text-xs text-slate-500 mt-0.5">We can link any of these from your speaker page. Skip whatever you do not use.</p>
+        </div>
+        <div className="grid sm:grid-cols-3 gap-4">
+          <Field label="Website">
+            <input type="url" value={(fields.websiteUrl as string) || ""} onChange={(e) => set("websiteUrl", e.target.value)} placeholder="https://" className={inputClass} />
+          </Field>
+          <Field label="LinkedIn">
+            <input type="url" value={(fields.linkedinUrl as string) || ""} onChange={(e) => set("linkedinUrl", e.target.value)} placeholder="https://" className={inputClass} />
+          </Field>
+          <Field label="Twitter or X">
+            <input type="text" value={(fields.twitterHandle as string) || ""} onChange={(e) => set("twitterHandle", e.target.value)} placeholder="@handle" className={inputClass} />
         </Field>
       </div>
     </div>
@@ -824,8 +821,6 @@ function ConfirmStep({
       />
 
       <div className="space-y-3">
-        <div className="text-[11px] font-semibold tracking-[0.2em] uppercase text-slate-500">Required</div>
-
         <label className="flex items-start gap-3 p-4 rounded-xl border border-[#0066B3]/30 bg-[#0066B3]/5 cursor-pointer">
           <input
             type="checkbox"
@@ -838,19 +833,7 @@ function ConfirmStep({
           </span>
         </label>
 
-        <label className="flex items-start gap-3 p-4 rounded-xl border border-[#0066B3]/30 bg-[#0066B3]/5 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={!!fields.agreedToHeadshot}
-            onChange={(e) => set("agreedToHeadshot", e.target.checked)}
-            className="mt-0.5 w-4 h-4 rounded border-slate-300 text-[#0066B3] focus:ring-[#0066B3]"
-          />
-          <span className="text-sm text-slate-700">
-            I will provide a high resolution headshot that meets the published quality requirements.
-          </span>
-        </label>
-
-        <div className="text-xs text-slate-500 px-1">
+        <div className="text-xs text-slate-500 px-1 leading-relaxed">
           By submitting, you also acknowledge the{" "}
           <button type="button" onClick={onShowPolicy} className="text-[#0066B3] font-semibold hover:underline inline-flex items-center gap-1">
             full presenter policy <ExternalLink className="w-3 h-3" />
@@ -860,7 +843,8 @@ function ConfirmStep({
       </div>
 
       <div className="space-y-3">
-        <div className="text-[11px] font-semibold tracking-[0.2em] uppercase text-slate-500">Optional permissions</div>
+        <div className="text-sm font-semibold text-slate-900">Permissions you can grant</div>
+        <p className="text-xs text-slate-500 -mt-1">All optional. Toggle anything you are comfortable with.</p>
         <Toggle
           checked={!!fields.agreedToRecord}
           label="My session may be recorded and shared with registered attendees"
@@ -878,7 +862,7 @@ function ConfirmStep({
         />
       </div>
 
-      <Field label="Questions or notes for the program team" optional hint="Anything you would like us to know or follow up on. If you have open questions, choose Confirm tentatively below.">
+      <Field label="Questions or notes for the program team" hint="Anything you would like us to know or follow up on. If you have open questions, choose Confirm tentatively below.">
         <textarea
           value={(fields.presenterMessage as string) || ""}
           onChange={(e) => set("presenterMessage", e.target.value)}
@@ -1095,13 +1079,12 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 const inputClass =
   "w-full px-3.5 py-2.5 text-sm bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0066B3]/20 focus:border-[#0066B3] outline-none transition-all placeholder:text-slate-300";
 
-function Label({ text, required, optional }: { text: string; required?: boolean; optional?: boolean }) {
+function Label({ text, required }: { text: string; required?: boolean }) {
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-xs font-semibold text-slate-700">{text}</span>
-      {required && <span className="text-[10px] font-semibold text-rose-600 uppercase tracking-wider">Required</span>}
-      {optional && <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Optional</span>}
-    </div>
+    <span className="text-xs font-semibold text-slate-700">
+      {text}
+      {required && <span className="text-rose-500 ml-1">*</span>}
+    </span>
   );
 }
 
@@ -1114,9 +1097,10 @@ function Field({
   hint?: string;
   children: React.ReactNode;
 }) {
+  void optional;
   return (
     <div className="space-y-1.5">
-      <Label text={label} required={required} optional={optional} />
+      <Label text={label} required={required} />
       {children}
       {hint && <div className="text-[11px] text-slate-400 leading-relaxed">{hint}</div>}
     </div>
