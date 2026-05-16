@@ -7,7 +7,7 @@ import Link from "next/link";
 import {
   Mic, Search, Plus, Download, Send, X, Copy, Check,
   Clock, XCircle, RefreshCw, AlertCircle, CircleHelp, Trash2,
-  ChevronDown,
+  Mail, User, Calendar, DollarSign,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
@@ -15,6 +15,7 @@ import MobileNav from "@/components/layout/MobileNav";
 import {
   STATUS_LABELS, ROLE_OPTIONS, SESSION_LENGTHS, QA_LENGTHS, PREFERRED_DAY,
 } from "@/lib/presenters";
+import { presenterInviteEmail } from "@/lib/mail-templates";
 import { parseResponse } from "@/lib/api";
 
 interface PresenterRow {
@@ -411,12 +412,31 @@ function InviteModal({ onClose, onCreated }: { onClose: () => void; onCreated: (
   }
 
   const hasAssignment = !!(role || sessionFormat || sessionLength || qaLength || sessionTrack || preferredDay);
-  const hasTalk = !!(talkTitle || talkAbstract || learningObjectives);
-  const hasComp = !!(honorariumAmount || travelReimbursement);
+  const hasTalkOrComp = !!(talkTitle || talkAbstract || learningObjectives || honorariumAmount || travelReimbursement);
+
+  type TabId = "recipient" | "session" | "extras";
+  const [tab, setTab] = useState<TabId>("recipient");
+  const [showPreviewMobile, setShowPreviewMobile] = useState(false);
+
+  const previewHtml = useMemo(() => {
+    return presenterInviteEmail({
+      name: name || "Your presenter",
+      url: "https://conference.aalb.org/presenters/confirm/preview-link",
+      customMessage: customMessage || undefined,
+      role: role || undefined,
+      sessionFormat: sessionFormat || undefined,
+    });
+  }, [name, customMessage, role, sessionFormat]);
+
+  const tabs: { id: TabId; label: string; icon: React.ComponentType<{ className?: string }>; done: boolean }[] = [
+    { id: "recipient", label: "Recipient", icon: User, done: !!(name && email) },
+    { id: "session", label: "Session", icon: Calendar, done: hasAssignment },
+    { id: "extras", label: "Talk & money", icon: DollarSign, done: hasTalkOrComp },
+  ];
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
-      <div className="w-full max-w-2xl bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
+      <div className="w-full max-w-6xl bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden max-h-[94vh] flex flex-col">
         <div className="h-1.5 w-full flex shrink-0">
           <div className="w-1/2 bg-[#0E5566]" />
           <div className="w-1/2 bg-[#0066B3]" />
@@ -424,11 +444,20 @@ function InviteModal({ onClose, onCreated }: { onClose: () => void; onCreated: (
         <div className="px-7 py-5 border-b border-slate-100 flex items-start justify-between shrink-0">
           <div>
             <div className="text-xl font-bold text-slate-900 tracking-tight">Invite a presenter</div>
-            <div className="text-sm text-slate-500 mt-0.5">Send them their personal portal to accept or suggest changes.</div>
+            <div className="text-sm text-slate-500 mt-0.5">Compose on the left, see exactly what they will receive on the right.</div>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-700 -mt-1">
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowPreviewMobile((v) => !v)}
+              className="md:hidden text-xs font-medium text-slate-600 hover:text-slate-900 px-3 py-1.5 rounded-lg border border-slate-200"
+            >
+              {showPreviewMobile ? "Edit" : "Preview"}
+            </button>
+            <button onClick={onClose} className="text-slate-400 hover:text-slate-700">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {createdUrl ? (
@@ -467,93 +496,137 @@ function InviteModal({ onClose, onCreated }: { onClose: () => void; onCreated: (
             </button>
           </div>
         ) : (
-          <div className="overflow-y-auto px-7 py-6 space-y-7">
-            {error && (
-              <div className="bg-rose-50 border border-rose-200 text-rose-800 rounded-lg px-3 py-2 text-xs">{error}</div>
-            )}
-
-            <Section title="Who you are inviting">
-              <div className="grid sm:grid-cols-2 gap-3">
-                <Field label="Name" required>
-                  <input value={name} onChange={(e) => setName(e.target.value)} className={mInput} placeholder="Jordan Smith" />
-                </Field>
-                <Field label="Email" required>
-                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={mInput} placeholder="jordan@example.org" />
-                </Field>
+          <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+            <div className={"flex flex-col md:w-[46%] md:border-r md:border-slate-100 " + (showPreviewMobile ? "hidden md:flex" : "flex")}>
+              <div className="flex gap-1 px-7 pt-4 border-b border-slate-100 shrink-0">
+                {tabs.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setTab(t.id)}
+                    className={
+                      "flex items-center gap-2 px-3 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors " +
+                      (tab === t.id
+                        ? "border-[#0066B3] text-slate-900"
+                        : "border-transparent text-slate-500 hover:text-slate-700")
+                    }
+                  >
+                    <t.icon className="w-3.5 h-3.5" />
+                    {t.label}
+                    {t.done && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
+                  </button>
+                ))}
               </div>
-              <Field label="Affiliation">
-                <input value={affiliation} onChange={(e) => setAffiliation(e.target.value)} className={mInput} placeholder="Lurie Children's, Northwestern, AALB, etc." />
-              </Field>
-              <Field
-                label="Personal note"
-                hint="Shows above everything else in their invitation email. Skip this and the email stays warm but generic."
-              >
-                <textarea
-                  value={customMessage}
-                  onChange={(e) => setCustomMessage(e.target.value)}
-                  rows={3}
-                  className={mInput}
-                  placeholder="Looking forward to having you back this year."
+
+              <div className="flex-1 overflow-y-auto px-7 py-6 space-y-5">
+                {error && (
+                  <div className="bg-rose-50 border border-rose-200 text-rose-800 rounded-lg px-3 py-2 text-xs">{error}</div>
+                )}
+
+                {tab === "recipient" && (
+                  <>
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      <Field label="Name" required>
+                        <input value={name} onChange={(e) => setName(e.target.value)} className={mInput} placeholder="Jordan Smith" />
+                      </Field>
+                      <Field label="Email" required>
+                        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={mInput} placeholder="jordan@example.org" />
+                      </Field>
+                    </div>
+                    <Field label="Affiliation">
+                      <input value={affiliation} onChange={(e) => setAffiliation(e.target.value)} className={mInput} placeholder="Lurie Children's, Northwestern, AALB…" />
+                    </Field>
+                    <Field
+                      label="Personal note"
+                      hint="Appears above everything else in their email. Skip it and the email is still warm."
+                    >
+                      <textarea
+                        value={customMessage}
+                        onChange={(e) => setCustomMessage(e.target.value)}
+                        rows={4}
+                        className={mInput}
+                        placeholder="Looking forward to having you back this year."
+                      />
+                    </Field>
+                  </>
+                )}
+
+                {tab === "session" && (
+                  <>
+                    <div className="text-xs text-slate-500 -mt-1 leading-relaxed">
+                      Anything you skip stays open and the presenter can propose their own in the portal.
+                    </div>
+                    <Field label="Role">
+                      <ChipPicker value={role} setValue={setRole} options={ROLE_OPTIONS} allowCustom />
+                    </Field>
+                    <div className="grid sm:grid-cols-2 gap-x-5 gap-y-4">
+                      <Field label="Presentation length">
+                        <ChipPicker value={sessionLength} setValue={setSessionLength} options={SESSION_LENGTHS} allowCustom />
+                      </Field>
+                      <Field label="Q and A length">
+                        <ChipPicker value={qaLength} setValue={setQaLength} options={QA_LENGTHS} allowCustom />
+                      </Field>
+                      <Field label="Preferred day">
+                        <ChipPicker value={preferredDay} setValue={setPreferredDay} options={PREFERRED_DAY} />
+                      </Field>
+                      <Field label="Track or theme">
+                        <input value={sessionTrack} onChange={(e) => setSessionTrack(e.target.value)} className={mInput} placeholder="e.g. Medical interpreting" />
+                      </Field>
+                    </div>
+                    <Field label="Format" hint="Workshop, panel, breakout — only if different from the role.">
+                      <input value={sessionFormat} onChange={(e) => setSessionFormat(e.target.value)} className={mInput} />
+                    </Field>
+                  </>
+                )}
+
+                {tab === "extras" && (
+                  <>
+                    <div>
+                      <div className="text-sm font-semibold text-slate-900">Proposed talk details</div>
+                      <p className="text-xs text-slate-500 mt-0.5">A starting point. The presenter can refine or replace in their portal.</p>
+                    </div>
+                    <Field label="Working title">
+                      <input value={talkTitle} onChange={(e) => setTalkTitle(e.target.value)} className={mInput} placeholder="A draft title — the presenter can refine it." />
+                    </Field>
+                    <Field label="Abstract">
+                      <textarea value={talkAbstract} onChange={(e) => setTalkAbstract(e.target.value)} rows={3} className={mInput} />
+                    </Field>
+                    <Field label="Learning objectives">
+                      <textarea value={learningObjectives} onChange={(e) => setLearningObjectives(e.target.value)} rows={3} className={mInput} placeholder="What attendees will be able to do after the session." />
+                    </Field>
+
+                    <div className="pt-2">
+                      <div className="text-sm font-semibold text-slate-900">Compensation</div>
+                      <p className="text-xs text-slate-500 mt-0.5">Omit both and compensation is unmentioned in the invitation.</p>
+                    </div>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <Field label="Honorarium" hint="Fixed amount, paid after participation.">
+                        <Money value={honorariumAmount} setValue={setHonorariumAmount} placeholder="300" />
+                      </Field>
+                      <Field label="Travel reimbursement cap" hint='Presenter sees "up to $X".'>
+                        <Money value={travelReimbursement} setValue={setTravelReimbursement} placeholder="200" />
+                      </Field>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className={"flex-1 flex-col bg-slate-100/70 " + (showPreviewMobile ? "flex" : "hidden md:flex")}>
+              <div className="px-6 py-3 border-b border-slate-200 flex items-center gap-2 text-xs text-slate-500 shrink-0">
+                <Mail className="w-3.5 h-3.5" />
+                <span className="font-medium">What {name ? name.split(" ")[0] : "they"} will receive</span>
+                <span className="ml-auto text-slate-400">to: {email || "jordan@example.org"}</span>
+              </div>
+              <div className="flex-1 overflow-hidden p-4">
+                <iframe
+                  srcDoc={previewHtml}
+                  title="Email preview"
+                  className="w-full h-full bg-white rounded-xl shadow-sm border border-slate-200"
+                  sandbox=""
                 />
-              </Field>
-            </Section>
-
-            <Section
-              title="What you are offering"
-              hint="Anything you skip stays open and the presenter can propose their own."
-            >
-              <Field label="Role">
-                <ChipPicker value={role} setValue={setRole} options={ROLE_OPTIONS} allowCustom />
-              </Field>
-              <div className="grid sm:grid-cols-2 gap-x-5 gap-y-4">
-                <Field label="Presentation length">
-                  <ChipPicker value={sessionLength} setValue={setSessionLength} options={SESSION_LENGTHS} allowCustom />
-                </Field>
-                <Field label="Q and A length">
-                  <ChipPicker value={qaLength} setValue={setQaLength} options={QA_LENGTHS} allowCustom />
-                </Field>
-                <Field label="Preferred day">
-                  <ChipPicker value={preferredDay} setValue={setPreferredDay} options={PREFERRED_DAY} />
-                </Field>
-                <Field label="Track or theme">
-                  <input value={sessionTrack} onChange={(e) => setSessionTrack(e.target.value)} className={mInput} placeholder="e.g. Medical interpreting" />
-                </Field>
               </div>
-              <Field label="Format" hint="Workshop, panel, breakout — only if different from the role.">
-                <input value={sessionFormat} onChange={(e) => setSessionFormat(e.target.value)} className={mInput} />
-              </Field>
-            </Section>
-
-            <Collapsible
-              title="Proposed talk details"
-              hint="A starting point for the presenter. They can edit or replace in their portal."
-              defaultOpen={hasTalk}
-            >
-              <Field label="Working title">
-                <input value={talkTitle} onChange={(e) => setTalkTitle(e.target.value)} className={mInput} placeholder="A draft title — the presenter can refine it." />
-              </Field>
-              <Field label="Abstract">
-                <textarea value={talkAbstract} onChange={(e) => setTalkAbstract(e.target.value)} rows={3} className={mInput} />
-              </Field>
-              <Field label="Learning objectives">
-                <textarea value={learningObjectives} onChange={(e) => setLearningObjectives(e.target.value)} rows={3} className={mInput} placeholder="What attendees will be able to do after the session." />
-              </Field>
-            </Collapsible>
-
-            <Collapsible
-              title="Compensation"
-              hint="Omit both to leave compensation unmentioned in the invitation."
-              defaultOpen={hasComp}
-            >
-              <div className="grid sm:grid-cols-2 gap-4">
-                <Field label="Honorarium" hint="Fixed amount, paid after participation.">
-                  <Money value={honorariumAmount} setValue={setHonorariumAmount} placeholder="300" />
-                </Field>
-                <Field label="Travel reimbursement cap" hint='Presenter sees "up to $X". Receipts required.'>
-                  <Money value={travelReimbursement} setValue={setTravelReimbursement} placeholder="200" />
-                </Field>
-              </div>
-            </Collapsible>
+            </div>
           </div>
         )}
 
@@ -583,8 +656,6 @@ function InviteModal({ onClose, onCreated }: { onClose: () => void; onCreated: (
       </div>
     </div>
   );
-
-  void hasAssignment;
 }
 
 function Money({ value, setValue, placeholder }: { value: string; setValue: (s: string) => void; placeholder?: string }) {
@@ -666,51 +737,8 @@ function ChipPicker({
   );
 }
 
-function Section({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-4">
-      <div>
-        <div className="text-base font-semibold text-slate-900">{title}</div>
-        {hint && <div className="text-xs text-slate-500 mt-1 leading-relaxed">{hint}</div>}
-      </div>
-      <div className="space-y-4">{children}</div>
-    </div>
-  );
-}
-
-function Collapsible({
-  title, hint, defaultOpen, children,
-}: {
-  title: string;
-  hint?: string;
-  defaultOpen?: boolean;
-  children: React.ReactNode;
-}) {
-  const [open, setOpen] = useState(!!defaultOpen);
-  return (
-    <div className="rounded-xl border border-slate-200 overflow-hidden">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between gap-4 px-5 py-3.5 hover:bg-slate-50 text-left"
-      >
-        <div>
-          <div className="text-sm font-semibold text-slate-900">{title}</div>
-          {hint && <div className="text-xs text-slate-500 mt-0.5 leading-relaxed">{hint}</div>}
-        </div>
-        <ChevronDown className={"w-4 h-4 text-slate-400 transition-transform shrink-0 " + (open ? "rotate-180" : "")} />
-      </button>
-      {open && (
-        <div className="px-5 pb-5 pt-1 space-y-4 border-t border-slate-100">
-          {children}
-        </div>
-      )}
-    </div>
-  );
-}
-
 const mInput =
-  "w-full px-3.5 py-2.5 text-sm bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#0066B3]/20 focus:border-[#0066B3] outline-none transition-all placeholder:text-slate-300";
+  "w-full px-3.5 py-2.5 text-sm bg-slate-50/70 border border-transparent rounded-lg focus:bg-white focus:border-[#0066B3] focus:ring-2 focus:ring-[#0066B3]/15 outline-none transition-all placeholder:text-slate-400";
 
 function Field({ label, hint, required, children }: { label: string; hint?: string; required?: boolean; children: React.ReactNode }) {
   return (
