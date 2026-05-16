@@ -5,12 +5,11 @@ export function newPresenterToken() {
 }
 
 export function appUrl() {
-  return (
-    process.env.APP_URL ||
-    process.env.NEXTAUTH_URL ||
-    process.env.RENDER_EXTERNAL_URL ||
-    "https://conference.aalb.org"
-  ).replace(/\/$/, "");
+  if (process.env.APP_URL) return process.env.APP_URL.replace(/\/$/, "");
+  if (process.env.NODE_ENV !== "production") {
+    return (process.env.NEXTAUTH_URL || "http://localhost:3002").replace(/\/$/, "");
+  }
+  return "https://conference.aalb.org";
 }
 
 export function confirmationUrl(token: string) {

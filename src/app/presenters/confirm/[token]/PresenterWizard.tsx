@@ -243,7 +243,11 @@ export default function PresenterWizard({
               <FooterNav
                 step={step}
                 saving={saving}
-                canSubmit={!!fields.agreedToTerms}
+                canSubmit={!!fields.agreedToTerms && !!headshotPreview}
+                missing={[
+                  !headshotPreview ? "a photo" : null,
+                  !fields.agreedToTerms ? "to confirm the participation terms" : null,
+                ].filter(Boolean) as string[]}
                 onBack={back}
                 onNext={next}
                 onSaveDraft={() => persist("save")}
@@ -411,52 +415,45 @@ function InvitationStep({
         )}
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5">
-        <div className="text-[11px] font-semibold tracking-[0.2em] uppercase text-slate-500 mb-3">Before you respond</div>
-        <p className="text-sm text-slate-700 leading-relaxed">
-          Accepting commits you to attending in person on August 15 and 16, 2026 and the terms in our presenter policy. The wizard that follows asks for a short bio, a photo when you have one ready, optional logistics, and the consents you wish to grant.
-        </p>
-        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+      <div>
+        <div className="flex items-baseline justify-between mb-3">
+          <h3 className="text-lg font-bold text-slate-900 tracking-tight">Your reply</h3>
           <button
             type="button"
             onClick={onShowPolicy}
-            className="inline-flex items-center gap-1.5 font-semibold text-[#0066B3] hover:text-[#004F8C]"
+            className="inline-flex items-center gap-1 text-xs font-medium text-[#0066B3] hover:text-[#004F8C]"
           >
-            Read the full presenter policy <ExternalLink className="w-3.5 h-3.5" />
+            Read the presenter policy <ExternalLink className="w-3 h-3" />
           </button>
-          <span className="text-xs text-slate-400">Covers participation, intellectual property, photography, recording, honorarium, and reimbursement terms.</span>
         </div>
-      </div>
-
-      <div>
-        <div className="text-[11px] font-semibold tracking-[0.2em] uppercase text-slate-500 mb-3">How would you like to respond</div>
         <div className="grid sm:grid-cols-3 gap-3">
           <DecisionCard
             active={decision === "accept"}
             tone="primary"
             label="Accept"
-            desc="Move forward and provide your details."
+            desc="Commit to attending August 15 and 16. We will collect your bio, photo, and logistics next."
             onClick={() => setDecision("accept")}
           />
           <DecisionCard
             active={decision === "request_changes"}
             tone="neutral"
             label="Questions or adjustments"
-            desc="Open a conversation before deciding. Use this for clarifications or changes."
+            desc="Open a conversation with the program team before deciding."
             onClick={() => setDecision("request_changes")}
           />
           <DecisionCard
             active={decision === "decline"}
             tone="muted"
             label="Cannot attend"
-            desc="Decline politely with an optional note."
+            desc="Decline politely, with an optional short note."
             onClick={() => setDecision("decline")}
           />
         </div>
       </div>
 
       {decision === "accept" && (
-        <div className="flex justify-end">
+        <div className="flex items-center justify-end gap-3">
+          <div className="text-xs text-slate-500">Continue to your bio, photo, and logistics.</div>
           <button
             type="button"
             onClick={onAcceptContinue}
@@ -552,19 +549,24 @@ function DecisionCard({
     tone === "primary" ? "ring-[#0066B3]/30 border-[#0066B3]" :
     tone === "neutral" ? "ring-amber-500/20 border-amber-400" :
     "ring-rose-500/20 border-rose-400";
+  const accent =
+    tone === "primary" ? "bg-[#0066B3]" :
+    tone === "neutral" ? "bg-amber-500" :
+    "bg-rose-500";
   return (
     <button
       type="button"
       onClick={onClick}
       className={
-        "text-left p-4 rounded-xl border transition-all " +
+        "text-left p-5 rounded-2xl border transition-all relative overflow-hidden " +
         (active
-          ? `bg-white ring-2 shadow-sm ${ringColor}`
-          : "bg-white border-slate-200 hover:border-slate-300")
+          ? `bg-white ring-2 shadow-md ${ringColor}`
+          : "bg-white border-slate-200 hover:border-slate-300 hover:shadow-sm")
       }
     >
-      <div className="text-sm font-semibold text-slate-900">{label}</div>
-      <div className="text-xs text-slate-500 mt-1 leading-relaxed">{desc}</div>
+      <div className={"absolute top-0 left-0 right-0 h-1 " + (active ? accent : "bg-transparent")} />
+      <div className="text-base font-bold text-slate-900">{label}</div>
+      <div className="text-xs text-slate-500 mt-1.5 leading-relaxed">{desc}</div>
     </button>
   );
 }
@@ -598,9 +600,9 @@ function AboutStep({
       </Field>
 
       <div>
-        <Label text="A photo of you" />
+        <Label text="A photo of you" required />
         <p className="text-[12px] text-slate-500 mt-1 leading-relaxed">
-          Optional here. Upload now if you have one, or send it to us later — whatever is easiest. A recent, clear shot of your face works perfectly.
+          A recent, clear shot of your face. A phone selfie, your LinkedIn photo, or any professional headshot works perfectly.
         </p>
         <div className="mt-3 grid sm:grid-cols-[160px_1fr] gap-5 items-start">
           <div>
@@ -630,10 +632,10 @@ function AboutStep({
           </div>
           <div className="space-y-3 text-sm text-slate-600 leading-relaxed">
             <p>
-              If you would like to send one later, email it to the program team any time before <span className="font-semibold text-slate-800">July 1, 2026</span> — a phone selfie, a LinkedIn photo, or whatever you have on hand is fine to start with.
+              We use this in the program, on the website, and in your introduction on stage. If you do not have a great one handy, even a clear phone selfie is fine — we can swap in something better later.
             </p>
             <p className="text-[12px] text-slate-400">
-              We will only ask for a higher-resolution version if we need it for print signage. Maximum 4 MB, PNG, JPG, or WebP.
+              Maximum 4 MB. PNG, JPG, or WebP.
             </p>
           </div>
         </div>
@@ -876,11 +878,12 @@ function ConfirmStep({
 }
 
 function FooterNav({
-  step, saving, canSubmit, onBack, onNext, onSaveDraft, onSubmit, onTentative,
+  step, saving, canSubmit, missing, onBack, onNext, onSaveDraft, onSubmit, onTentative,
 }: {
   step: number;
   saving: boolean;
   canSubmit: boolean;
+  missing?: string[];
   onBack: () => void;
   onNext: () => void;
   onSaveDraft: () => void;
@@ -889,7 +892,14 @@ function FooterNav({
 }) {
   const isLast = step === STEPS.length - 1;
   return (
-    <div className="mt-10 pt-6 border-t border-slate-200 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
+    <div className="mt-10 pt-6 border-t border-slate-200">
+      {isLast && !canSubmit && missing && missing.length > 0 && (
+        <div className="mb-4 flex items-center gap-2 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+          <span>Almost there — still need {missing.join(" and ")} above.</span>
+        </div>
+      )}
+      <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
       <button
         type="button"
         onClick={onBack}
@@ -938,6 +948,7 @@ function FooterNav({
             </button>
           </>
         )}
+        </div>
       </div>
     </div>
   );

@@ -351,27 +351,52 @@ function PresenterRowItem({
   );
 }
 
-function InviteModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [affiliation, setAffiliation] = useState("");
+export type InviteEditable = {
+  id: string;
+  name: string;
+  email: string;
+  affiliation: string | null;
+  role: string | null;
+  sessionFormat: string | null;
+  sessionLength: string | null;
+  qaLength: string | null;
+  sessionTrack: string | null;
+  preferredDay: string | null;
+  talkTitle: string | null;
+  talkAbstract: string | null;
+  learningObjectives: string | null;
+  honorariumAmount: number | null;
+  travelReimbursement: number | null;
+};
 
-  const [role, setRole] = useState("");
-  const [sessionFormat, setSessionFormat] = useState("");
-  const [sessionLength, setSessionLength] = useState("");
-  const [qaLength, setQaLength] = useState("");
-  const [sessionTrack, setSessionTrack] = useState("");
-  const [preferredDay, setPreferredDay] = useState("");
+export function InviteModal({
+  onClose, onCreated, existing,
+}: {
+  onClose: () => void;
+  onCreated: () => void;
+  existing?: InviteEditable;
+}) {
+  const isEdit = !!existing;
+  const [name, setName] = useState(existing?.name || "");
+  const [email, setEmail] = useState(existing?.email || "");
+  const [affiliation, setAffiliation] = useState(existing?.affiliation || "");
 
-  const [talkTitle, setTalkTitle] = useState("");
-  const [talkAbstract, setTalkAbstract] = useState("");
-  const [learningObjectives, setLearningObjectives] = useState("");
+  const [role, setRole] = useState(existing?.role || "");
+  const [sessionFormat, setSessionFormat] = useState(existing?.sessionFormat || "");
+  const [sessionLength, setSessionLength] = useState(existing?.sessionLength || "");
+  const [qaLength, setQaLength] = useState(existing?.qaLength || "");
+  const [sessionTrack, setSessionTrack] = useState(existing?.sessionTrack || "");
+  const [preferredDay, setPreferredDay] = useState(existing?.preferredDay || "");
 
-  const [honorariumAmount, setHonorariumAmount] = useState<string>("");
-  const [travelReimbursement, setTravelReimbursement] = useState<string>("");
+  const [talkTitle, setTalkTitle] = useState(existing?.talkTitle || "");
+  const [talkAbstract, setTalkAbstract] = useState(existing?.talkAbstract || "");
+  const [learningObjectives, setLearningObjectives] = useState(existing?.learningObjectives || "");
+
+  const [honorariumAmount, setHonorariumAmount] = useState<string>(existing?.honorariumAmount?.toString() || "");
+  const [travelReimbursement, setTravelReimbursement] = useState<string>(existing?.travelReimbursement?.toString() || "");
 
   const [customMessage, setCustomMessage] = useState("");
-  const [sendNow, setSendNow] = useState(true);
+  const [sendNow, setSendNow] = useState(!isEdit);
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -382,24 +407,35 @@ function InviteModal({ onClose, onCreated }: { onClose: () => void; onCreated: (
     setBusy(true);
     try {
       const payload: Record<string, unknown> = {
-        name, email, affiliation, customMessage, sendNow,
-        role: role || undefined,
-        sessionFormat: sessionFormat || undefined,
-        sessionLength: sessionLength || undefined,
-        qaLength: qaLength || undefined,
-        sessionTrack: sessionTrack || undefined,
-        preferredDay: preferredDay || undefined,
-        talkTitle: talkTitle || undefined,
-        talkAbstract: talkAbstract || undefined,
-        learningObjectives: learningObjectives || undefined,
-        honorariumAmount: honorariumAmount ? Number(honorariumAmount) : undefined,
-        travelReimbursement: travelReimbursement ? Number(travelReimbursement) : undefined,
+        name, email, affiliation,
+        role: role || null,
+        sessionFormat: sessionFormat || null,
+        sessionLength: sessionLength || null,
+        qaLength: qaLength || null,
+        sessionTrack: sessionTrack || null,
+        preferredDay: preferredDay || null,
+        talkTitle: talkTitle || null,
+        talkAbstract: talkAbstract || null,
+        learningObjectives: learningObjectives || null,
+        honorariumAmount: honorariumAmount ? Number(honorariumAmount) : null,
+        travelReimbursement: travelReimbursement ? Number(travelReimbursement) : null,
       };
-      const res = await fetch("/api/presenters", {
-        method: "POST",
+      if (!isEdit) {
+        payload.customMessage = customMessage;
+        payload.sendNow = sendNow;
+      }
+      const res = await fetch(isEdit ? `/api/presenters/${existing!.id}` : "/api/presenters", {
+        method: isEdit ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+      if (isEdit) {
+        const { ok, error } = await parseResponse(res);
+        if (!ok) throw new Error(error || "Failed");
+        onCreated();
+        onClose();
+        return;
+      }
       const { ok, data, error } = await parseResponse<{ id: string; url: string }>(res);
       if (!ok || !data) throw new Error(error || "Failed");
       setCreatedUrl(data.url);
@@ -443,8 +479,12 @@ function InviteModal({ onClose, onCreated }: { onClose: () => void; onCreated: (
         </div>
         <div className="px-7 py-5 border-b border-slate-100 flex items-start justify-between shrink-0">
           <div>
-            <div className="text-xl font-bold text-slate-900 tracking-tight">Invite a presenter</div>
-            <div className="text-sm text-slate-500 mt-0.5">Compose on the left, see exactly what they will receive on the right.</div>
+            <div className="text-xl font-bold text-slate-900 tracking-tight">{isEdit ? `Edit invitation` : "Invite a presenter"}</div>
+            <div className="text-sm text-slate-500 mt-0.5">
+              {isEdit
+                ? "Changes apply immediately. Use Resend on the detail page if you want to email an updated invitation."
+                : "Compose on the left, see exactly what they will receive on the right."}
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -536,18 +576,20 @@ function InviteModal({ onClose, onCreated }: { onClose: () => void; onCreated: (
                     <Field label="Affiliation">
                       <input value={affiliation} onChange={(e) => setAffiliation(e.target.value)} className={mInput} placeholder="Lurie Children's, Northwestern, AALB…" />
                     </Field>
-                    <Field
-                      label="Personal note"
-                      hint="Appears above everything else in their email. Skip it and the email is still warm."
-                    >
-                      <textarea
-                        value={customMessage}
-                        onChange={(e) => setCustomMessage(e.target.value)}
-                        rows={4}
-                        className={mInput}
-                        placeholder="Looking forward to having you back this year."
-                      />
-                    </Field>
+                    {!isEdit && (
+                      <Field
+                        label="Personal note"
+                        hint="Appears above everything else in their email. Skip it and the email is still warm."
+                      >
+                        <textarea
+                          value={customMessage}
+                          onChange={(e) => setCustomMessage(e.target.value)}
+                          rows={4}
+                          className={mInput}
+                          placeholder="Looking forward to having you back this year."
+                        />
+                      </Field>
+                    )}
                   </>
                 )}
 
@@ -631,25 +673,45 @@ function InviteModal({ onClose, onCreated }: { onClose: () => void; onCreated: (
         )}
 
         {!createdUrl && (
-          <div className="px-7 py-4 border-t border-slate-100 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0 bg-slate-50/50">
-            <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={sendNow}
-                onChange={(e) => setSendNow(e.target.checked)}
-                className="w-4 h-4 rounded border-slate-300 text-[#0066B3] focus:ring-[#0066B3]"
-              />
-              Email the invitation now
-            </label>
-            <div className="flex items-center gap-2 justify-end">
-              <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900">Cancel</button>
-              <button
-                onClick={submit}
-                disabled={busy || !email || !name}
-                className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-[#0E5566] to-[#0066B3] hover:from-[#0A3F4D] hover:to-[#004F8C] disabled:opacity-50 shadow-sm"
-              >
-                {busy ? "Working" : sendNow ? "Send invitation" : "Save invitation"}
-              </button>
+          <div className="border-t border-slate-100 shrink-0 bg-slate-50/50">
+            {(!role || !hasAssignment) && (
+              <div className="px-7 py-2.5 text-xs text-amber-800 bg-amber-50 border-b border-amber-200 flex items-center gap-2">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                <span>
+                  {!role
+                    ? "No role picked. The email will not mention what you are inviting them as."
+                    : "Session details are sparse. The presenter will see “Specifics being finalized” on their portal."}
+                  {" "}
+                  <button type="button" onClick={() => setTab("session")} className="underline font-medium hover:text-amber-900">
+                    Open Session tab
+                  </button>
+                </span>
+              </div>
+            )}
+            <div className="px-7 py-4 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
+              {isEdit ? (
+                <div className="text-xs text-slate-500">Updates apply immediately. Resend from the detail page to email a new invitation.</div>
+              ) : (
+                <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={sendNow}
+                    onChange={(e) => setSendNow(e.target.checked)}
+                    className="w-4 h-4 rounded border-slate-300 text-[#0066B3] focus:ring-[#0066B3]"
+                  />
+                  Email the invitation now
+                </label>
+              )}
+              <div className="flex items-center gap-2 justify-end">
+                <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900">Cancel</button>
+                <button
+                  onClick={submit}
+                  disabled={busy || !email || !name}
+                  className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-[#0E5566] to-[#0066B3] hover:from-[#0A3F4D] hover:to-[#004F8C] disabled:opacity-50 shadow-sm"
+                >
+                  {busy ? "Working" : isEdit ? "Save changes" : sendNow ? "Send invitation" : "Save invitation"}
+                </button>
+              </div>
             </div>
           </div>
         )}

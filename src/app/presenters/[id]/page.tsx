@@ -12,6 +12,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
 import MobileNav from "@/components/layout/MobileNav";
 import { STATUS_LABELS } from "@/lib/presenters";
+import { InviteModal } from "../page";
 
 interface Presenter {
   id: string;
@@ -76,6 +77,7 @@ export default function PresenterDetailPage() {
   const [loading, setLoading] = useState(true);
   const [adminNotes, setAdminNotes] = useState("");
   const [editingNotes, setEditingNotes] = useState(false);
+  const [editingInvitation, setEditingInvitation] = useState(false);
 
   const role = (session?.user as { role?: string } | undefined)?.role;
   const isAdmin = role === "admin" || role === "developer";
@@ -167,6 +169,9 @@ export default function PresenterDetailPage() {
                 </div>
                 {isAdmin && (
                   <div className="flex items-center gap-1.5">
+                    <button onClick={() => setEditingInvitation(true)} className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 rounded-lg">
+                      <Pencil className="w-3.5 h-3.5" /> Edit invitation
+                    </button>
                     <button onClick={resend} className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 rounded-lg">
                       <Send className="w-3.5 h-3.5" /> Resend
                     </button>
@@ -327,6 +332,29 @@ export default function PresenterDetailPage() {
         </main>
         <MobileNav />
       </div>
+      {editingInvitation && isAdmin && presenter && (
+        <InviteModal
+          onClose={() => setEditingInvitation(false)}
+          onCreated={load}
+          existing={{
+            id: presenter.id,
+            name: presenter.name,
+            email: presenter.email,
+            affiliation: presenter.affiliation,
+            role: presenter.role,
+            sessionFormat: presenter.sessionFormat,
+            sessionLength: presenter.sessionLength,
+            qaLength: presenter.qaLength,
+            sessionTrack: presenter.sessionTrack,
+            preferredDay: presenter.preferredDay,
+            talkTitle: presenter.talkTitle,
+            talkAbstract: presenter.talkAbstract,
+            learningObjectives: presenter.learningObjectives,
+            honorariumAmount: presenter.honorariumAmount,
+            travelReimbursement: presenter.travelReimbursement,
+          }}
+        />
+      )}
     </div>
   );
 }
