@@ -1,10 +1,12 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  schemas  = ["lcc"]
 }
 
 model User {
@@ -22,6 +24,7 @@ model User {
   files        CommitteeFile[]
 
   @@map("lcc_users")
+  @@schema("lcc")
 }
 
 model Committee {
@@ -38,6 +41,7 @@ model Committee {
   files       CommitteeFile[]
 
   @@map("lcc_committees")
+  @@schema("lcc")
 }
 
 model CommitteeMember {
@@ -51,6 +55,7 @@ model CommitteeMember {
 
   @@unique([userId, committeeId])
   @@map("lcc_committee_members")
+  @@schema("lcc")
 }
 
 model Event {
@@ -67,6 +72,7 @@ model Event {
   committee   Committee @relation(fields: [committeeId], references: [id], onDelete: Cascade)
 
   @@map("lcc_events")
+  @@schema("lcc")
 }
 
 model Discussion {
@@ -81,6 +87,7 @@ model Discussion {
   posts       Post[]
 
   @@map("lcc_discussions")
+  @@schema("lcc")
 }
 
 model Task {
@@ -103,6 +110,7 @@ model Task {
   assignee    User?     @relation("assignee", fields: [assigneeId], references: [id], onDelete: SetNull)
 
   @@map("lcc_tasks")
+  @@schema("lcc")
 }
 
 model CommitteeFile {
@@ -117,6 +125,7 @@ model CommitteeFile {
   addedBy     User      @relation(fields: [addedById], references: [id], onDelete: Cascade)
 
   @@map("lcc_committee_files")
+  @@schema("lcc")
 }
 
 model Post {
@@ -130,6 +139,7 @@ model Post {
   author       User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   @@map("lcc_posts")
+  @@schema("lcc")
 }
 
 model Presenter {
@@ -203,6 +213,7 @@ model Presenter {
   events             PresenterEvent[]
 
   @@map("lcc_presenters")
+  @@schema("lcc")
 }
 
 model PresenterEvent {
@@ -215,4 +226,5 @@ model PresenterEvent {
   presenter   Presenter @relation(fields: [presenterId], references: [id], onDelete: Cascade)
 
   @@map("lcc_presenter_events")
+  @@schema("lcc")
 }
