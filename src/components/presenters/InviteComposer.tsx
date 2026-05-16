@@ -8,8 +8,8 @@ import {
 import { presenterInviteEmail } from "@/lib/mail-templates";
 import { parseResponse } from "@/lib/api";
 import {
-  InlineTextSlot, InlineChip, OptionalBlock,
-  SoftInput, SoftTextarea, Money, EmailPreview,
+  InlineChip, OptionalBlock,
+  SoftInput, SoftTextarea, EmailPreview,
 } from "./inline-fields";
 
 export type InviteEditable = {

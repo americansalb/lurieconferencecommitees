@@ -1034,35 +1034,6 @@ function TheDayPage({
   );
 }
 
-function InlineProseSlot({
-  value, onChange, placeholder, type = "text", size = "md",
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  placeholder: string;
-  type?: "text" | "email" | "url" | "tel";
-  size?: "sm" | "md" | "lg";
-}) {
-  const hasValue = !!value;
-  return (
-    <input
-      type={type}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-      className={
-        "inline-block align-baseline bg-transparent outline-none border-b-2 border-dashed transition-colors px-1 -mb-0.5 " +
-        (size === "sm" ? "text-base" : "") +
-        " " +
-        (hasValue
-          ? "border-[#0066B3]/40 text-[#0E5566] font-semibold focus:border-[#0066B3]"
-          : "border-slate-300 text-slate-400 placeholder:text-slate-400 focus:border-[#0066B3] focus:text-[#0E5566]")
-      }
-      style={{ minWidth: "6ch", width: `${Math.max((value || placeholder).length + 1, 7)}ch` }}
-    />
-  );
-}
-
 function InlineDate({
   value, onChange,
 }: {
@@ -1082,71 +1053,6 @@ function InlineDate({
           : "border-slate-300 text-slate-400 focus:border-[#0066B3] focus:text-[#0E5566]")
       }
     />
-  );
-}
-
-function ExpandablePrompt({
-  icon, label, summary, placeholder, rows = 3, hint, onChange, render,
-}: {
-  icon: string;
-  label: string;
-  summary: string;
-  placeholder?: string;
-  rows?: number;
-  hint?: string;
-  onChange?: (v: string) => void;
-  render?: (close: () => void) => React.ReactNode;
-}) {
-  const [open, setOpen] = useState(!!summary);
-  const filled = !!summary.trim();
-  return (
-    <div className={
-      "rounded-2xl border transition-all overflow-hidden " +
-      (open
-        ? "border-[#0066B3]/30 bg-white shadow-sm"
-        : filled
-        ? "border-slate-200 bg-slate-50/50 hover:border-slate-300"
-        : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/40")
-    }>
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-start gap-4 px-5 py-4 text-left"
-      >
-        <span className="text-2xl leading-none mt-0.5 shrink-0" aria-hidden>{icon}</span>
-        <div className="flex-1 min-w-0">
-          <div className="text-base font-semibold text-slate-900">{label}</div>
-          {filled && !open && (
-            <div className="text-sm text-slate-500 mt-1 truncate">{summary}</div>
-          )}
-          {!filled && !open && (
-            <div className="text-xs text-slate-400 mt-0.5">Tap to add</div>
-          )}
-        </div>
-        <span className={"text-xs font-medium shrink-0 mt-1 transition-colors " + (open ? "text-[#0066B3]" : "text-slate-400")}>
-          {open ? "Close" : filled ? "Edit" : "Add"}
-        </span>
-      </button>
-      {open && (
-        <div className="px-5 pb-5 -mt-1">
-          {render ? (
-            render(() => setOpen(false))
-          ) : (
-            <>
-              <textarea
-                autoFocus
-                value={summary}
-                onChange={(e) => onChange?.(e.target.value)}
-                placeholder={placeholder}
-                rows={rows}
-                className="w-full px-4 py-3 text-sm bg-slate-50/60 border border-transparent rounded-xl focus:bg-white focus:border-[#0066B3] focus:ring-2 focus:ring-[#0066B3]/15 outline-none transition-all placeholder:text-slate-400 leading-relaxed"
-              />
-              {hint && <p className="mt-2 text-[11px] text-slate-400">{hint}</p>}
-            </>
-          )}
-        </div>
-      )}
-    </div>
   );
 }
 
