@@ -476,12 +476,6 @@ export function InviteComposer({
 
         {!createdUrl && (
           <div className="border-t border-slate-100 shrink-0 bg-white">
-            {!role && (
-              <div className="px-7 pt-3 text-xs text-amber-700 flex items-center gap-2">
-                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                <span>Without a role, the email will not mention what you are inviting them as.</span>
-              </div>
-            )}
             <div className="px-7 py-4 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
               {!isEdit ? (
                 <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">

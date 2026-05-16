@@ -63,14 +63,11 @@ export type Initial = {
   requestedChanges?: string | null;
 };
 
-type Step = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
+type Step = 0 | 1 | 2 | 3;
 const ACCEPT_STEPS: { id: Step; label: string }[] = [
-  { id: 1, label: "Bio" },
-  { id: 2, label: "Photo" },
-  { id: 3, label: "Profile" },
-  { id: 4, label: "On the day" },
-  { id: 5, label: "Travel" },
-  { id: 6, label: "Confirm" },
+  { id: 1, label: "About you" },
+  { id: 2, label: "The day" },
+  { id: 3, label: "Confirm" },
 ];
 
 const TEAL = "#0E5566";
@@ -202,7 +199,7 @@ export default function PresenterFlow({
     <div className="min-h-screen bg-gradient-to-b from-white to-slate-50 flex flex-col">
       <BrandBar />
 
-      {visibleSteps.length > 0 && step >= 1 && step <= 6 && (
+      {visibleSteps.length > 0 && step >= 1 && step <= 3 && (
         <ProgressStrip
           steps={visibleSteps}
           current={step}
@@ -229,52 +226,30 @@ export default function PresenterFlow({
             />
           )}
           {step === 1 && (
-            <BioScreen
-              bio={(fields.bio as string) || ""}
-              setBio={(v) => set("bio", v)}
+            <AboutYouPage
+              fields={fields}
+              set={set}
+              headshotPreview={headshotPreview}
+              onPick={onHeadshot}
+              onClear={() => { setHeadshotPreview(null); setPendingHeadshot(null); }}
+              error={error}
               onContinue={() => goTo(2)}
               onBack={() => goTo(0, { save: false })}
             />
           )}
           {step === 2 && (
-            <PhotoScreen
-              preview={headshotPreview}
-              onPick={onHeadshot}
-              onClear={() => { setHeadshotPreview(null); setPendingHeadshot(null); }}
-              onContinue={() => goTo(3)}
-              onBack={() => goTo(1)}
-              error={error}
-            />
-          )}
-          {step === 3 && (
-            <AppearScreen
-              fields={fields}
-              set={set}
-              onContinue={() => goTo(4)}
-              onBack={() => goTo(2)}
-            />
-          )}
-          {step === 4 && (
-            <OnTheDayScreen
-              fields={fields}
-              set={set}
-              onContinue={() => goTo(5)}
-              onBack={() => goTo(3)}
-            />
-          )}
-          {step === 5 && (
-            <TravelScreen
+            <TheDayPage
               fields={fields}
               set={set}
               arrival={arrival}
               setArrival={setArrival}
               departure={departure}
               setDeparture={setDeparture}
-              onContinue={() => goTo(6)}
-              onBack={() => goTo(4)}
+              onContinue={() => goTo(3)}
+              onBack={() => goTo(1)}
             />
           )}
-          {step === 6 && (
+          {step === 3 && (
             <ConfirmScreen
               initial={initial}
               fields={fields}
@@ -284,14 +259,14 @@ export default function PresenterFlow({
               onShowPolicy={() => setShowPolicy(true)}
               onSubmit={() => persist("submit")}
               onTentative={() => persist("tentative")}
-              onBack={() => goTo(5, { save: false })}
+              onBack={() => goTo(2, { save: false })}
               saving={saving}
               error={error}
             />
           )}
         </div>
 
-        {step >= 1 && step <= 6 && (
+        {step >= 1 && step <= 3 && (
           <div className="px-6 py-4 text-center">
             <button
               type="button"
@@ -708,333 +683,233 @@ function DeclinePanel({
   );
 }
 
-function BioScreen({
-  bio, setBio, onContinue, onBack,
+function SectionCard({
+  title, subtitle, optional, children,
 }: {
-  bio: string;
-  setBio: (v: string) => void;
-  onContinue: () => void;
-  onBack: () => void;
+  title: string;
+  subtitle?: string;
+  optional?: boolean;
+  children: React.ReactNode;
 }) {
   return (
-    <ScreenShell
-      eyebrow="Step 1"
-      heading="Tell us who you are."
-      subhead="A couple of sentences in the third person. We use this in the program, on the website, and in your introduction on stage."
-      footer={
-        <FooterRow
-          back={{ onClick: onBack }}
-          primary={
-            <PrimaryButton disabled={!bio.trim()} onClick={onContinue}>
-              Continue <ChevronRight className="w-4 h-4" />
-            </PrimaryButton>
-          }
-        />
-      }
-    >
-      <textarea
-        value={bio}
-        onChange={(e) => setBio(e.target.value)}
-        rows={6}
-        autoFocus
-        placeholder="Dr. Jordan Smith leads the pediatric language access program at…"
-        className="w-full px-6 py-5 text-lg bg-slate-50/60 border border-transparent rounded-2xl focus:bg-white focus:border-[#0066B3] focus:ring-2 focus:ring-[#0066B3]/15 outline-none transition-all placeholder:text-slate-300 leading-relaxed"
-      />
-      <p className="mt-3 text-xs text-slate-400">The program team can polish it later if you&rsquo;d like.</p>
-    </ScreenShell>
+    <div className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
+      <div className="px-6 py-5 border-b border-slate-100">
+        <div className="flex items-baseline gap-2 flex-wrap">
+          <h3 className="text-base font-bold text-slate-900 tracking-tight">{title}</h3>
+          {optional && <span className="text-[11px] font-medium text-slate-400">Optional</span>}
+        </div>
+        {subtitle && <p className="text-[13px] text-slate-500 mt-1 leading-relaxed">{subtitle}</p>}
+      </div>
+      <div className="px-6 py-5">{children}</div>
+    </div>
   );
 }
 
-function PhotoScreen({
-  preview, onPick, onClear, onContinue, onBack, error,
+function SectionInput({
+  value, onChange, placeholder, type = "text",
 }: {
-  preview: string | null;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  type?: "text" | "email" | "url" | "tel" | "date";
+}) {
+  return (
+    <input
+      type={type}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      className="w-full px-4 py-3 text-base bg-slate-50 border border-transparent rounded-xl focus:bg-white focus:border-[#0066B3] focus:ring-2 focus:ring-[#0066B3]/15 outline-none transition-all placeholder:text-slate-400"
+    />
+  );
+}
+
+function SectionTextarea({
+  value, onChange, placeholder, rows = 4,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  rows?: number;
+}) {
+  return (
+    <textarea
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      rows={rows}
+      className="w-full px-4 py-3 text-base bg-slate-50 border border-transparent rounded-xl focus:bg-white focus:border-[#0066B3] focus:ring-2 focus:ring-[#0066B3]/15 outline-none transition-all placeholder:text-slate-400 leading-relaxed"
+    />
+  );
+}
+
+function AboutYouPage({
+  fields, set, headshotPreview, onPick, onClear, error, onContinue, onBack,
+}: {
+  fields: Fields;
+  set: (k: keyof Fields, v: Fields[keyof Fields]) => void;
+  headshotPreview: string | null;
   onPick: (file: File) => void;
   onClear: () => void;
+  error: string | null;
   onContinue: () => void;
   onBack: () => void;
-  error: string | null;
 }) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [showLinks, setShowLinks] = useState(!!(fields.websiteUrl || fields.linkedinUrl || fields.twitterHandle));
+  const bio = (fields.bio as string) || "";
+  const canContinue = !!bio.trim() && !!headshotPreview;
 
   return (
-    <ScreenShell
-      eyebrow="Step 2"
-      heading="Now your photo."
-      subhead="A recent, clear shot of your face. A phone selfie is perfectly fine — we can swap in something better later if needed."
-      footer={
-        <FooterRow
-          back={{ onClick: onBack }}
-          primary={
-            <PrimaryButton disabled={!preview} onClick={onContinue}>
-              Continue <ChevronRight className="w-4 h-4" />
-            </PrimaryButton>
-          }
-        />
-      }
-    >
-      <div className="flex flex-col items-center">
-        <div
-          onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={(e) => {
-            e.preventDefault();
-            setDragging(false);
-            const f = e.dataTransfer.files?.[0];
-            if (f) onPick(f);
-          }}
-          onClick={() => inputRef.current?.click()}
-          className={
-            "w-60 h-60 rounded-full overflow-hidden flex items-center justify-center cursor-pointer transition-all relative " +
-            (dragging
-              ? "ring-4 ring-[#0066B3]/30 scale-105"
-              : preview
-              ? "ring-2 ring-slate-200"
-              : "ring-2 ring-dashed ring-slate-300 hover:ring-[#0066B3]/40")
-          }
-          style={{ background: preview ? "transparent" : "linear-gradient(135deg, #f8fafc, #f0f9ff)" }}
-        >
-          {preview ? (
-            <img src={preview} alt="" className="w-full h-full object-cover" />
-          ) : (
-            <div className="text-center px-6">
-              <Upload className="w-7 h-7 text-slate-400 mx-auto mb-2" />
-              <div className="text-sm font-medium text-slate-600">Drop a photo here</div>
-              <div className="text-xs text-slate-400 mt-1">or click to upload</div>
+    <div className="flex-1 px-6 py-10 sm:py-12">
+      <div className="mx-auto w-full max-w-2xl">
+        <div className="text-[10px] font-semibold tracking-[0.22em] uppercase text-[#0E5566] mb-3">Step 1 of 3</div>
+        <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight leading-tight">About you</h1>
+        <p className="mt-3 text-base text-slate-500 leading-relaxed max-w-lg">
+          We use this in the program, on the website, and in your introduction on the day. Required: a short bio and a photo.
+        </p>
+
+        <div className="mt-8 space-y-5">
+          <SectionCard
+            title="Your bio"
+            subtitle="A couple of sentences in the third person. The program team can polish it later."
+          >
+            <SectionTextarea
+              value={bio}
+              onChange={(v) => set("bio", v)}
+              placeholder="Dr. Jordan Smith leads the pediatric language access program at…"
+              rows={5}
+            />
+          </SectionCard>
+
+          <SectionCard
+            title="Your photo"
+            subtitle="A recent, clear shot of your face. A phone selfie is perfectly fine — we can swap in something better later if needed."
+          >
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
+              <div
+                onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+                onDragLeave={() => setDragging(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragging(false);
+                  const f = e.dataTransfer.files?.[0];
+                  if (f) onPick(f);
+                }}
+                onClick={() => inputRef.current?.click()}
+                className={
+                  "w-36 h-36 rounded-full overflow-hidden flex items-center justify-center cursor-pointer transition-all relative shrink-0 " +
+                  (dragging
+                    ? "ring-4 ring-[#0066B3]/30 scale-105"
+                    : headshotPreview
+                    ? "ring-2 ring-slate-200"
+                    : "ring-2 ring-dashed ring-slate-300 hover:ring-[#0066B3]/40")
+                }
+                style={{ background: headshotPreview ? "transparent" : "linear-gradient(135deg, #f8fafc, #f0f9ff)" }}
+              >
+                {headshotPreview ? (
+                  <img src={headshotPreview} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="text-center px-2">
+                    <Upload className="w-5 h-5 text-slate-400 mx-auto mb-1" />
+                    <div className="text-[11px] font-medium text-slate-600">Drop or click</div>
+                  </div>
+                )}
+              </div>
+              <input
+                ref={inputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) onPick(f);
+                }}
+              />
+              <div className="flex-1 text-sm text-slate-500 leading-relaxed">
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => inputRef.current?.click()}
+                    className="text-sm font-medium text-[#0066B3] hover:text-[#004F8C]"
+                  >
+                    {headshotPreview ? "Replace" : "Upload"}
+                  </button>
+                  {headshotPreview && (
+                    <>
+                      <span className="text-slate-300">·</span>
+                      <button
+                        type="button"
+                        onClick={onClear}
+                        className="text-sm font-medium text-slate-400 hover:text-rose-600"
+                      >
+                        Remove
+                      </button>
+                    </>
+                  )}
+                </div>
+                <p className="mt-2 text-[12px] text-slate-400">Maximum 4 MB. PNG, JPG, or WebP.</p>
+                {error && (
+                  <p className="mt-2 text-[12px] text-rose-600 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" /> {error}
+                  </p>
+                )}
+              </div>
             </div>
+          </SectionCard>
+
+          <SectionCard
+            title="How you'll appear"
+            subtitle="This becomes the line under your name in the program."
+            optional
+          >
+            <div className="space-y-2">
+              <SectionInput value={(fields.jobTitle as string) || ""} onChange={(v) => set("jobTitle", v)} placeholder="Job title (e.g. Director of language services)" />
+              <SectionInput value={(fields.affiliation as string) || ""} onChange={(v) => set("affiliation", v)} placeholder="Affiliation (Lurie Children's, Northwestern, AALB…)" />
+              <SectionInput value={(fields.pronouns as string) || ""} onChange={(v) => set("pronouns", v)} placeholder="Pronouns (she/her, they/them)" />
+              <SectionInput value={(fields.phone as string) || ""} onChange={(v) => set("phone", v)} placeholder="Phone (only used Aug 15 & 16)" type="tel" />
+            </div>
+
+            <div className="mt-4">
+              {!showLinks ? (
+                <button
+                  type="button"
+                  onClick={() => setShowLinks(true)}
+                  className="text-sm font-medium text-slate-500 hover:text-[#0066B3]"
+                >
+                  + Add links (website, LinkedIn, Twitter)
+                </button>
+              ) : (
+                <div className="space-y-2 pt-2 border-t border-slate-100">
+                  <SectionInput value={(fields.websiteUrl as string) || ""} onChange={(v) => set("websiteUrl", v)} placeholder="Website (https://…)" type="url" />
+                  <SectionInput value={(fields.linkedinUrl as string) || ""} onChange={(v) => set("linkedinUrl", v)} placeholder="LinkedIn (https://…)" type="url" />
+                  <SectionInput value={(fields.twitterHandle as string) || ""} onChange={(v) => set("twitterHandle", v)} placeholder="Twitter or X (@handle)" />
+                </div>
+              )}
+            </div>
+          </SectionCard>
+        </div>
+
+        <div className="mt-10">
+          <FooterRow
+            back={{ onClick: onBack }}
+            primary={
+              <PrimaryButton onClick={onContinue} disabled={!canContinue}>
+                Continue <ChevronRight className="w-4 h-4" />
+              </PrimaryButton>
+            }
+          />
+          {!canContinue && (
+            <p className="mt-3 text-xs text-slate-400 text-right">A bio and a photo are required to continue.</p>
           )}
         </div>
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/png,image/jpeg,image/webp"
-          className="hidden"
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) onPick(f);
-          }}
-        />
-        {preview && (
-          <div className="mt-4 flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => inputRef.current?.click()}
-              className="text-sm font-medium text-[#0066B3] hover:text-[#004F8C]"
-            >
-              Replace
-            </button>
-            <span className="text-slate-300">·</span>
-            <button
-              type="button"
-              onClick={onClear}
-              className="text-sm font-medium text-slate-400 hover:text-rose-600"
-            >
-              Remove
-            </button>
-          </div>
-        )}
-        <p className="mt-5 text-xs text-slate-400 text-center">Maximum 4 MB. PNG, JPG, or WebP.</p>
-        {error && (
-          <p className="mt-2 text-xs text-rose-600 flex items-center gap-1">
-            <AlertCircle className="w-3 h-3" /> {error}
-          </p>
-        )}
       </div>
-    </ScreenShell>
+    </div>
   );
 }
 
-function AppearScreen({
-  fields, set, onContinue, onBack,
-}: {
-  fields: Fields;
-  set: (k: keyof Fields, v: Fields[keyof Fields]) => void;
-  onContinue: () => void;
-  onBack: () => void;
-}) {
-  const [showLinks, setShowLinks] = useState(!!(fields.websiteUrl || fields.linkedinUrl || fields.twitterHandle));
-  return (
-    <ScreenShell
-      eyebrow="Step 3"
-      heading="How would you like to appear?"
-      subhead="This becomes the line under your name in the program and on the speaker page."
-      footer={
-        <FooterRow
-          back={{ onClick: onBack }}
-          primary={
-            <PrimaryButton onClick={onContinue}>
-              Continue <ChevronRight className="w-4 h-4" />
-            </PrimaryButton>
-          }
-        />
-      }
-    >
-      <div className="text-xl sm:text-2xl leading-loose text-slate-700 font-medium">
-        I&rsquo;m{" "}
-        <InlineProseSlot
-          value={(fields.jobTitle as string) || ""}
-          onChange={(v) => set("jobTitle", v)}
-          placeholder="job title"
-        />
-        {" "}at{" "}
-        <InlineProseSlot
-          value={(fields.affiliation as string) || ""}
-          onChange={(v) => set("affiliation", v)}
-          placeholder="affiliation"
-        />
-        .
-      </div>
-      <div className="mt-5 text-xl sm:text-2xl leading-loose text-slate-700 font-medium">
-        My pronouns are{" "}
-        <InlineProseSlot
-          value={(fields.pronouns as string) || ""}
-          onChange={(v) => set("pronouns", v)}
-          placeholder="she/her, they/them…"
-        />
-        .
-        <span className="ml-2 text-sm font-normal text-slate-400">Skip if you&rsquo;d rather not say.</span>
-      </div>
-      <div className="mt-5 text-xl sm:text-2xl leading-loose text-slate-700 font-medium">
-        Reach me on the day at{" "}
-        <InlineProseSlot
-          value={(fields.phone as string) || ""}
-          onChange={(v) => set("phone", v)}
-          placeholder="phone number"
-          type="tel"
-        />
-        .
-        <span className="ml-2 text-sm font-normal text-slate-400">Only used Aug 15 &amp; 16.</span>
-      </div>
-
-      <div className="mt-10">
-        {!showLinks ? (
-          <button
-            type="button"
-            onClick={() => setShowLinks(true)}
-            className="text-sm font-medium text-slate-500 hover:text-[#0066B3]"
-          >
-            + Add links (website, LinkedIn, Twitter)
-          </button>
-        ) : (
-          <div className="text-xl sm:text-2xl leading-loose text-slate-700 font-medium space-y-3">
-            <div>
-              Find me online at{" "}
-              <InlineProseSlot
-                value={(fields.websiteUrl as string) || ""}
-                onChange={(v) => set("websiteUrl", v)}
-                placeholder="https://…"
-                type="url"
-              />
-              .
-            </div>
-            <div className="text-base text-slate-500 leading-relaxed">
-              LinkedIn{" "}
-              <InlineProseSlot
-                value={(fields.linkedinUrl as string) || ""}
-                onChange={(v) => set("linkedinUrl", v)}
-                placeholder="https://…"
-                type="url"
-                size="sm"
-              />
-              {" "}· Twitter{" "}
-              <InlineProseSlot
-                value={(fields.twitterHandle as string) || ""}
-                onChange={(v) => set("twitterHandle", v)}
-                placeholder="@handle"
-                size="sm"
-              />
-            </div>
-          </div>
-        )}
-      </div>
-    </ScreenShell>
-  );
-}
-
-function OnTheDayScreen({
-  fields, set, onContinue, onBack,
-}: {
-  fields: Fields;
-  set: (k: keyof Fields, v: Fields[keyof Fields]) => void;
-  onContinue: () => void;
-  onBack: () => void;
-}) {
-  return (
-    <ScreenShell
-      eyebrow="Step 4"
-      heading="Anything we should know for the day?"
-      subhead="All optional. Tap a topic to add a note — leave the rest blank."
-      footer={
-        <FooterRow
-          back={{ onClick: onBack }}
-          primary={
-            <PrimaryButton onClick={onContinue}>
-              Continue <ChevronRight className="w-4 h-4" />
-            </PrimaryButton>
-          }
-        />
-      }
-    >
-      <div className="space-y-3">
-        <ExpandablePrompt
-          icon="🎙️"
-          label="Tech and A/V"
-          summary={(fields.avNotes as string) || ""}
-          placeholder="A live demo with internet, a second display, a slide clicker… we will follow up to confirm anything beyond the standard mic, projector, and audio."
-          rows={3}
-          onChange={(v) => set("avNotes", v)}
-        />
-        <ExpandablePrompt
-          icon="♿︎"
-          label="Accessibility"
-          summary={(fields.accessibilityNeeds as string) || ""}
-          placeholder="ASL, captioning, mobility, seating, lighting — anything that helps you do your best work."
-          rows={3}
-          onChange={(v) => set("accessibilityNeeds", v)}
-        />
-        <ExpandablePrompt
-          icon="🍽️"
-          label="Dietary preferences and allergies"
-          summary={[fields.dietary, fields.allergies].filter(Boolean).join(" · ")}
-          render={(close) => (
-            <div className="space-y-4">
-              <div className="text-base sm:text-lg leading-loose text-slate-700 font-medium">
-                I prefer{" "}
-                <InlineProseSlot
-                  value={(fields.dietary as string) || ""}
-                  onChange={(v) => set("dietary", v)}
-                  placeholder="vegetarian, halal…"
-                  size="sm"
-                />
-                {" "}and avoid{" "}
-                <InlineProseSlot
-                  value={(fields.allergies as string) || ""}
-                  onChange={(v) => set("allergies", v)}
-                  placeholder="peanuts, latex…"
-                  size="sm"
-                />
-                .
-              </div>
-              <button type="button" onClick={close} className="text-xs font-medium text-slate-400 hover:text-slate-700">Done</button>
-            </div>
-          )}
-        />
-        <ExpandablePrompt
-          icon="📞"
-          label="Emergency contact"
-          summary={(fields.emergencyContact as string) || ""}
-          placeholder="Sam Smith (spouse) +1 555 555 0123"
-          rows={2}
-          hint="Used only during the event if we need to reach someone for you."
-          onChange={(v) => set("emergencyContact", v)}
-        />
-      </div>
-    </ScreenShell>
-  );
-}
-
-function TravelScreen({
+function TheDayPage({
   fields, set, arrival, setArrival, departure, setDeparture, onContinue, onBack,
 }: {
   fields: Fields;
@@ -1047,48 +922,115 @@ function TravelScreen({
   onBack: () => void;
 }) {
   return (
-    <ScreenShell
-      eyebrow="Step 5"
-      heading="Getting there?"
-      subhead="Skip if you are local or have it arranged."
-      footer={
-        <FooterRow
-          back={{ onClick: onBack }}
-          primary={
-            <PrimaryButton onClick={onContinue}>
-              Continue <ChevronRight className="w-4 h-4" />
-            </PrimaryButton>
-          }
-        />
-      }
-    >
-      <div className="text-xl sm:text-2xl leading-loose text-slate-700 font-medium">
-        Arriving{" "}
-        <InlineDate value={arrival} onChange={setArrival} />
-        {arrival && departure ? "," : "."}
-        {(arrival || departure) && (
-          <>
-            {" "}leaving{" "}
-            <InlineDate value={departure} onChange={setDeparture} />.
-          </>
-        )}
-      </div>
+    <div className="flex-1 px-6 py-10 sm:py-12">
+      <div className="mx-auto w-full max-w-2xl">
+        <div className="text-[10px] font-semibold tracking-[0.22em] uppercase text-[#0E5566] mb-3">Step 2 of 3</div>
+        <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight leading-tight">The day</h1>
+        <p className="mt-3 text-base text-slate-500 leading-relaxed max-w-lg">
+          Logistics for August 15 and 16. All of this is optional — skip whatever does not apply.
+        </p>
 
-      <div className="mt-10 grid sm:grid-cols-2 gap-3">
-        <BigToggle
-          checked={!!fields.needsHotel}
-          label="Help with hotel booking"
-          desc="We can suggest a partner hotel near the venue."
-          onToggle={() => set("needsHotel", !fields.needsHotel)}
-        />
-        <BigToggle
-          checked={!!fields.needsParking}
-          label="Parking pass for the venue"
-          desc="We will reserve a spot for you on the day."
-          onToggle={() => set("needsParking", !fields.needsParking)}
-        />
+        <div className="mt-8 space-y-5">
+          <SectionCard
+            title="Tech and A/V"
+            subtitle="Anything beyond a microphone, projector, and standard audio. We will follow up to confirm."
+            optional
+          >
+            <SectionTextarea
+              value={(fields.avNotes as string) || ""}
+              onChange={(v) => set("avNotes", v)}
+              placeholder="Live demo with internet, a second display, a slide clicker, Mac dongle…"
+              rows={3}
+            />
+          </SectionCard>
+
+          <SectionCard
+            title="Accessibility"
+            subtitle="ASL, captioning, mobility, seating, lighting — anything that helps you do your best work."
+            optional
+          >
+            <SectionTextarea
+              value={(fields.accessibilityNeeds as string) || ""}
+              onChange={(v) => set("accessibilityNeeds", v)}
+              placeholder=""
+              rows={3}
+            />
+          </SectionCard>
+
+          <SectionCard
+            title="Food and allergies"
+            subtitle="So we plan meals you can actually eat."
+            optional
+          >
+            <div className="space-y-2">
+              <SectionInput
+                value={(fields.dietary as string) || ""}
+                onChange={(v) => set("dietary", v)}
+                placeholder="Dietary preferences (vegetarian, kosher, halal, gluten free…)"
+              />
+              <SectionInput
+                value={(fields.allergies as string) || ""}
+                onChange={(v) => set("allergies", v)}
+                placeholder="Allergies (peanuts, shellfish, latex…)"
+              />
+            </div>
+          </SectionCard>
+
+          <SectionCard
+            title="Emergency contact"
+            subtitle="Used only during the event if we need to reach someone for you."
+            optional
+          >
+            <SectionInput
+              value={(fields.emergencyContact as string) || ""}
+              onChange={(v) => set("emergencyContact", v)}
+              placeholder="Sam Smith (spouse) +1 555 555 0123"
+            />
+          </SectionCard>
+
+          <SectionCard
+            title="Travel"
+            subtitle="Skip if you are local or already arranged."
+            optional
+          >
+            <div className="text-lg sm:text-xl leading-loose text-slate-700 font-medium">
+              Arriving <InlineDate value={arrival} onChange={setArrival} />
+              {arrival && departure ? "," : "."}
+              {(arrival || departure) && (
+                <>
+                  {" "}leaving <InlineDate value={departure} onChange={setDeparture} />.
+                </>
+              )}
+            </div>
+            <div className="mt-5 grid sm:grid-cols-2 gap-3">
+              <BigToggle
+                checked={!!fields.needsHotel}
+                label="Help with hotel booking"
+                desc="We can suggest a partner hotel near the venue."
+                onToggle={() => set("needsHotel", !fields.needsHotel)}
+              />
+              <BigToggle
+                checked={!!fields.needsParking}
+                label="Parking pass for the venue"
+                desc="We will reserve a spot for you on the day."
+                onToggle={() => set("needsParking", !fields.needsParking)}
+              />
+            </div>
+          </SectionCard>
+        </div>
+
+        <div className="mt-10">
+          <FooterRow
+            back={{ onClick: onBack }}
+            primary={
+              <PrimaryButton onClick={onContinue}>
+                Continue <ChevronRight className="w-4 h-4" />
+              </PrimaryButton>
+            }
+          />
+        </div>
       </div>
-    </ScreenShell>
+    </div>
   );
 }
 
@@ -1266,7 +1208,7 @@ function ConfirmScreen({
   return (
     <ScreenShell
       wide
-      eyebrow="Last step"
+      eyebrow="Step 3 of 3"
       heading={`Ready to lock it in, ${firstName}?`}
       subhead="Review, agree, and submit."
       footer={
