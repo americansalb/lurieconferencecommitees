@@ -671,7 +671,8 @@ function AboutStep({
           </Field>
           <Field label="Twitter or X">
             <input type="text" value={(fields.twitterHandle as string) || ""} onChange={(e) => set("twitterHandle", e.target.value)} placeholder="@handle" className={inputClass} />
-        </Field>
+          </Field>
+        </div>
       </div>
     </div>
   );
