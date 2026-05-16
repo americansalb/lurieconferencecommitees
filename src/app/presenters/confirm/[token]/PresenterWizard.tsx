@@ -188,6 +188,7 @@ export default function PresenterWizard({
                 onDecline={() => persist("decline")}
                 onRequestChanges={() => persist("request_changes")}
                 onAcceptContinue={() => setStep(1)}
+                onShowPolicy={() => setShowPolicy(true)}
               />
             )}
 
@@ -329,6 +330,7 @@ function InvitationStep({
   onDecline,
   onRequestChanges,
   onAcceptContinue,
+  onShowPolicy,
 }: {
   initial: Initial;
   decision: "accept" | "request_changes" | "decline" | null;
@@ -340,10 +342,14 @@ function InvitationStep({
   onDecline: () => Promise<boolean>;
   onRequestChanges: () => Promise<boolean>;
   onAcceptContinue: () => void;
+  onShowPolicy: () => void;
 }) {
+  const hasAnyAssignment =
+    !!(initial.sessionLength || initial.sessionFormat || initial.role || initial.qaLength ||
+      initial.preferredDay || initial.sessionTrack || initial.talkTitle);
   const headline =
     [initial.sessionLength, initial.sessionFormat || initial.role].filter(Boolean).join(" ") ||
-    initial.role || "A presenter";
+    initial.role || (hasAnyAssignment ? "A presenter" : "Specifics being finalized");
   const showCompensation = initial.honorariumAmount != null || initial.travelReimbursement != null;
 
   return (
@@ -370,6 +376,11 @@ function InvitationStep({
           {initial.learningObjectives && <DetailRow icon={Check} label="Learning objectives" value={initial.learningObjectives} multiline />}
           <DetailRow icon={MapPin} label="Venue" value="Lurie Children's, Chicago" />
           <DetailRow icon={Clock} label="Conference dates" value="August 15 and 16, 2026" />
+          {!hasAnyAssignment && (
+            <div className="px-6 py-4 bg-slate-50 text-sm text-slate-600 leading-relaxed">
+              Specifics like role, length, and day are being finalized by the program team. You can accept now and we will confirm details together, or use Request adjustments below to start that conversation first.
+            </div>
+          )}
         </div>
 
         {showCompensation && (
@@ -395,6 +406,23 @@ function InvitationStep({
         )}
       </div>
 
+      <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5">
+        <div className="text-[11px] font-semibold tracking-[0.2em] uppercase text-slate-500 mb-3">Before you respond</div>
+        <p className="text-sm text-slate-700 leading-relaxed">
+          Accepting commits you to attending in person on August 15 and 16, 2026, providing a high resolution headshot, and the terms in our presenter policy. The wizard that follows collects your bio, headshot, optional logistics, and the consents you wish to grant.
+        </p>
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+          <button
+            type="button"
+            onClick={onShowPolicy}
+            className="inline-flex items-center gap-1.5 font-semibold text-[#0066B3] hover:text-[#004F8C]"
+          >
+            Read the full presenter policy <ExternalLink className="w-3.5 h-3.5" />
+          </button>
+          <span className="text-xs text-slate-400">Covers participation, intellectual property, photography, recording, honorarium, and reimbursement terms.</span>
+        </div>
+      </div>
+
       <div>
         <div className="text-[11px] font-semibold tracking-[0.2em] uppercase text-slate-500 mb-3">How would you like to respond</div>
         <div className="grid sm:grid-cols-3 gap-3">
@@ -408,8 +436,8 @@ function InvitationStep({
           <DecisionCard
             active={decision === "request_changes"}
             tone="neutral"
-            label="Request adjustments"
-            desc="Propose a different format, length, day, or scope."
+            label="Questions or adjustments"
+            desc="Open a conversation before deciding. Use this for clarifications or changes."
             onClick={() => setDecision("request_changes")}
           />
           <DecisionCard
@@ -436,13 +464,13 @@ function InvitationStep({
 
       {decision === "request_changes" && (
         <div className="rounded-xl border border-amber-200 bg-amber-50/40 p-5">
-          <div className="text-sm font-semibold text-slate-900">What would you like to change?</div>
-          <p className="text-xs text-slate-500 mt-1">Tell us what you would prefer. Our program team will review and reply directly.</p>
+          <div className="text-sm font-semibold text-slate-900">What would you like to discuss?</div>
+          <p className="text-xs text-slate-500 mt-1">Ask any questions, share constraints, or propose changes. Our program team will reply directly.</p>
           <textarea
             value={requestedChangesText}
             onChange={(e) => setRequestedChangesText(e.target.value)}
-            rows={4}
-            placeholder="For example, a 45 minute slot instead of 60, or a panel format instead of a workshop."
+            rows={5}
+            placeholder="For example: questions about format, length, or compensation; a request to move to a different day; a proposed alternate topic; clarification on the policy terms."
             className={inputClass + " mt-3 bg-white"}
           />
           <div className="mt-3 flex justify-end">
@@ -452,7 +480,7 @@ function InvitationStep({
               disabled={!requestedChangesText.trim()}
               className="px-5 py-2 rounded-xl text-sm font-semibold text-white bg-[#0E5566] hover:bg-[#0A3F4D] disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              Send request to program team
+              Send to program team
             </button>
           </div>
         </div>
