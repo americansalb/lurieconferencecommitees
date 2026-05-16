@@ -12,7 +12,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
 import MobileNav from "@/components/layout/MobileNav";
 import { STATUS_LABELS } from "@/lib/presenters";
-import { InviteModal } from "../page";
+import { InviteComposer } from "@/components/presenters/InviteComposer";
 
 interface Presenter {
   id: string;
@@ -333,7 +333,7 @@ export default function PresenterDetailPage() {
         <MobileNav />
       </div>
       {editingInvitation && isAdmin && presenter && (
-        <InviteModal
+        <InviteComposer
           onClose={() => setEditingInvitation(false)}
           onCreated={load}
           existing={{

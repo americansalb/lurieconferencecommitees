@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { notFound } from "next/navigation";
-import PresenterWizard from "./PresenterWizard";
+import PresenterFlow from "./PresenterFlow";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +36,7 @@ export default async function PresenterConfirmPage({ params }: { params: { token
   });
 
   return (
-    <PresenterWizard
+    <PresenterFlow
       token={params.token}
       initial={{
         ...presenter,
