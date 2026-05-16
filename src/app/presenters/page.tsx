@@ -12,6 +12,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
 import MobileNav from "@/components/layout/MobileNav";
 import { STATUS_LABELS } from "@/lib/presenters";
+import { parseResponse } from "@/lib/api";
 
 interface PresenterRow {
   id: string;
@@ -311,8 +312,8 @@ function InviteModal({ onClose, onCreated }: { onClose: () => void; onCreated: (
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, name, affiliation, talkTitle, customMessage, sendNow }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed");
+      const { ok, data, error } = await parseResponse<{ id: string; url: string }>(res);
+      if (!ok || !data) throw new Error(error || "Failed");
       setCreatedUrl(data.url);
       onCreated();
     } catch (e) {

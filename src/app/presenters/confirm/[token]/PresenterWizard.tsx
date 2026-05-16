@@ -8,6 +8,7 @@ import {
 import {
   SESSION_FORMATS, SESSION_LENGTHS, TRAVEL_MODES, PREFERRED_DAY,
 } from "@/lib/presenters";
+import { parseResponse } from "@/lib/api";
 
 type Fields = Record<string, string | boolean | null | undefined>;
 
@@ -108,8 +109,8 @@ export default function PresenterWizard({
           headshot: pendingHeadshot ?? undefined,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Something went wrong");
+      const { ok, error } = await parseResponse(res);
+      if (!ok) throw new Error(error || "Something went wrong");
       if (action === "submit") setSubmitted(true);
       if (action === "decline") setDeclined(true);
       if (pendingHeadshot) setPendingHeadshot(null);
