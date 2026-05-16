@@ -8,7 +8,6 @@ import {
 import { presenterInviteEmail } from "@/lib/mail-templates";
 import { parseResponse } from "@/lib/api";
 import {
-  InlineChip,
   SoftInput, SoftTextarea, EmailPreview,
 } from "./inline-fields";
 
@@ -137,7 +136,6 @@ export function InviteComposer({
   }
 
   const firstName = name.trim().split(" ")[0];
-  const article = role ? (/^[aeiou]/i.test(role) ? "an" : "a") : "a";
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
@@ -292,41 +290,20 @@ export function InviteComposer({
 
                 {step === "session" && (
                   <div className="space-y-5 mt-6">
-                    <ComposerSection title="What you're offering" subtitle="The role and timing. Anything left blank stays open and the presenter can propose their own in the portal.">
-                      <div className="text-[15px] leading-loose text-slate-700">
-                        We are inviting them as
-                        {" "}{article}{" "}
-                        <InlineChip
-                          value={role}
-                          setValue={setRole}
-                          options={ROLE_OPTIONS}
-                          emptyLabel="pick a role"
-                          tone={role ? "neutral" : "warn"}
-                        />
-                        {" "}for{" "}
-                        <InlineChip
-                          value={sessionLength}
-                          setValue={setSessionLength}
-                          options={SESSION_LENGTHS}
-                          emptyLabel="choose length"
-                        />
-                        {" "}with{" "}
-                        <InlineChip
-                          value={qaLength}
-                          setValue={setQaLength}
-                          options={QA_LENGTHS}
-                          emptyLabel="Q & A"
-                        />
-                        {" "}for Q and A on{" "}
-                        <InlineChip
-                          value={preferredDay}
-                          setValue={setPreferredDay}
-                          options={PREFERRED_DAY}
-                          emptyLabel="pick a day"
-                          allowCustom={false}
-                        />
-                        .
-                      </div>
+                    <ComposerSection title="Role" subtitle="What you are inviting them to do.">
+                      <ChipRow value={role} setValue={setRole} options={ROLE_OPTIONS} allowCustom />
+                    </ComposerSection>
+
+                    <ComposerSection title="Length" subtitle="How long the session runs.">
+                      <ChipRow value={sessionLength} setValue={setSessionLength} options={SESSION_LENGTHS} allowCustom />
+                    </ComposerSection>
+
+                    <ComposerSection title="Q and A" subtitle="Time set aside for audience questions.">
+                      <ChipRow value={qaLength} setValue={setQaLength} options={QA_LENGTHS} allowCustom />
+                    </ComposerSection>
+
+                    <ComposerSection title="Day" subtitle="The conference runs August 15 and 16, 2026.">
+                      <ChipRow value={preferredDay} setValue={setPreferredDay} options={PREFERRED_DAY} />
                     </ComposerSection>
 
                     <ComposerSection title="Track and format" subtitle="Only if they apply.">
@@ -518,12 +495,76 @@ function ComposerSection({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
+    <div className="rounded-2xl bg-white border border-slate-100 shadow-sm">
       <div className="px-5 py-4 border-b border-slate-100">
         <h3 className="text-sm font-bold text-slate-900">{title}</h3>
         {subtitle && <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">{subtitle}</p>}
       </div>
       <div className="px-5 py-5">{children}</div>
+    </div>
+  );
+}
+
+function ChipRow({
+  value, setValue, options, allowCustom,
+}: {
+  value: string;
+  setValue: (v: string) => void;
+  options: readonly string[];
+  allowCustom?: boolean;
+}) {
+  const [customMode, setCustomMode] = useState(!!value && !options.includes(value));
+  const [draft, setDraft] = useState(value && !options.includes(value) ? value : "");
+  return (
+    <div className="flex flex-wrap gap-1.5 items-center">
+      {options.map((o) => {
+        const active = o === value;
+        return (
+          <button
+            key={o}
+            type="button"
+            onClick={() => { setValue(active ? "" : o); setCustomMode(false); }}
+            className={
+              "px-3 py-1.5 rounded-lg text-sm font-medium border transition-all " +
+              (active
+                ? "bg-[#0066B3] text-white border-[#0066B3] shadow-sm"
+                : "bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50")
+            }
+          >
+            {o}
+          </button>
+        );
+      })}
+      {allowCustom && (
+        customMode ? (
+          <span className="inline-flex items-center gap-1">
+            <input
+              autoFocus
+              value={draft}
+              onChange={(e) => { setDraft(e.target.value); setValue(e.target.value); }}
+              onBlur={() => { if (!draft.trim()) setCustomMode(false); }}
+              placeholder="Type a custom value"
+              className="px-3 py-1.5 text-sm bg-white border border-[#0066B3] rounded-lg outline-none focus:ring-2 focus:ring-[#0066B3]/15 placeholder:text-slate-400"
+              style={{ width: `${Math.max((draft || "Type a custom value").length + 1, 18)}ch` }}
+            />
+            <button
+              type="button"
+              onClick={() => { setDraft(""); setValue(""); setCustomMode(false); }}
+              className="text-slate-400 hover:text-rose-600 p-1"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setCustomMode(true)}
+            className="px-3 py-1.5 rounded-lg text-sm font-medium border border-dashed border-slate-300 text-slate-500 hover:border-slate-400 hover:text-slate-700"
+          >
+            + Custom
+          </button>
+        )
+      )}
     </div>
   );
 }
