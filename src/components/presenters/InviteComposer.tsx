@@ -232,13 +232,14 @@ export function InviteComposer({
                     </div>
 
                     <div className="pt-3">
-                      <div className="text-xs font-semibold tracking-wider uppercase text-slate-400 mb-1.5">To</div>
                       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                        <span className="text-slate-400 text-base">To</span>
                         <InlineTextSlot value={name} setValue={setName} placeholder="Their name" size="lg" required />
                         <span className="text-slate-300 text-lg">·</span>
                         <InlineTextSlot value={email} setValue={setEmail} placeholder="email@example.org" type="email" required />
                       </div>
-                      <div className="mt-1.5">
+                      <div className="mt-1.5 flex items-baseline gap-2">
+                        <span className="text-slate-400 text-sm">From</span>
                         <InlineTextSlot value={affiliation} setValue={setAffiliation} placeholder="Their affiliation" size="sm" />
                       </div>
                     </div>
@@ -328,28 +329,25 @@ export function InviteComposer({
                     </div>
 
                     {(openTrack || openFormat) && (
-                      <div className="grid sm:grid-cols-2 gap-3 pt-1">
+                      <div className="text-base leading-loose text-slate-600 font-medium pt-1">
                         {openTrack && (
-                          <div>
-                            <div className="text-[11px] font-semibold tracking-wider uppercase text-slate-400 mb-1">Track or theme</div>
-                            <div className="flex items-center gap-2">
-                              <SoftInput value={sessionTrack} onChange={setSessionTrack} placeholder="e.g. Medical interpreting" />
-                              <button type="button" onClick={() => { setSessionTrack(""); setOpenTrack(false); }} className="text-slate-400 hover:text-rose-600">
-                                <X className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </div>
+                          <span className="inline-flex items-center gap-1">
+                            Track:{" "}
+                            <SoftInput value={sessionTrack} onChange={setSessionTrack} placeholder="e.g. Medical interpreting" />
+                            <button type="button" onClick={() => { setSessionTrack(""); setOpenTrack(false); }} className="text-slate-400 hover:text-rose-600 ml-1">
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                            {openFormat && <span className="mx-2 text-slate-300">·</span>}
+                          </span>
                         )}
                         {openFormat && (
-                          <div>
-                            <div className="text-[11px] font-semibold tracking-wider uppercase text-slate-400 mb-1">Format</div>
-                            <div className="flex items-center gap-2">
-                              <SoftInput value={sessionFormat} onChange={setSessionFormat} placeholder="Workshop, panel, breakout…" />
-                              <button type="button" onClick={() => { setSessionFormat(""); setOpenFormat(false); }} className="text-slate-400 hover:text-rose-600">
-                                <X className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </div>
+                          <span className="inline-flex items-center gap-1">
+                            Format:{" "}
+                            <SoftInput value={sessionFormat} onChange={setSessionFormat} placeholder="Workshop, panel, breakout…" />
+                            <button type="button" onClick={() => { setSessionFormat(""); setOpenFormat(false); }} className="text-slate-400 hover:text-rose-600 ml-1">
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </span>
                         )}
                       </div>
                     )}
@@ -371,7 +369,7 @@ export function InviteComposer({
                         rows={3}
                         placeholder="Looking forward to having you back this year."
                       />
-                      <p className="text-[11px] text-slate-400">This appears highlighted at the top of their invitation email.</p>
+                      <p className="text-[11px] text-slate-400">Appears highlighted at the top of their email.</p>
                     </OptionalBlock>
                   )}
 
@@ -382,19 +380,31 @@ export function InviteComposer({
                     onRemove={() => { setOpenTalk(false); setTalkTitle(""); setTalkAbstract(""); setLearningObjectives(""); }}
                     icon={FileText}
                   >
-                    <div className="space-y-3">
-                      <div>
-                        <div className="text-[11px] font-semibold tracking-wider uppercase text-slate-500 mb-1">Working title</div>
-                        <SoftInput value={talkTitle} onChange={setTalkTitle} placeholder="A draft they can refine in their portal" />
+                    <div className="space-y-4">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-sm text-slate-500 shrink-0">A draft title —</span>
+                        <input
+                          type="text"
+                          value={talkTitle}
+                          onChange={(e) => setTalkTitle(e.target.value)}
+                          placeholder="they can refine it in their portal"
+                          className="flex-1 bg-transparent border-b border-dashed border-slate-300 px-1 py-1 text-sm focus:border-[#0066B3] outline-none placeholder:text-slate-400"
+                        />
                       </div>
-                      <div>
-                        <div className="text-[11px] font-semibold tracking-wider uppercase text-slate-500 mb-1">Abstract</div>
-                        <SoftTextarea value={talkAbstract} onChange={setTalkAbstract} rows={3} />
-                      </div>
-                      <div>
-                        <div className="text-[11px] font-semibold tracking-wider uppercase text-slate-500 mb-1">Learning objectives</div>
-                        <SoftTextarea value={learningObjectives} onChange={setLearningObjectives} rows={3} placeholder="What attendees will take away" />
-                      </div>
+                      <textarea
+                        value={talkAbstract}
+                        onChange={(e) => setTalkAbstract(e.target.value)}
+                        rows={3}
+                        placeholder="The talk in a paragraph or two…"
+                        className="w-full px-4 py-3 text-sm bg-white border border-slate-200 rounded-xl focus:border-[#0066B3] focus:ring-2 focus:ring-[#0066B3]/15 outline-none transition-all placeholder:text-slate-400"
+                      />
+                      <textarea
+                        value={learningObjectives}
+                        onChange={(e) => setLearningObjectives(e.target.value)}
+                        rows={3}
+                        placeholder="What attendees will take away…"
+                        className="w-full px-4 py-3 text-sm bg-white border border-slate-200 rounded-xl focus:border-[#0066B3] focus:ring-2 focus:ring-[#0066B3]/15 outline-none transition-all placeholder:text-slate-400"
+                      />
                     </div>
                   </OptionalBlock>
 
@@ -405,18 +415,36 @@ export function InviteComposer({
                     onRemove={() => { setOpenComp(false); setHonorariumAmount(""); setTravelReimbursement(""); }}
                     icon={DollarSign}
                   >
-                    <div className="grid sm:grid-cols-2 gap-3">
-                      <div>
-                        <div className="text-[11px] font-semibold tracking-wider uppercase text-slate-500 mb-1">Honorarium</div>
-                        <Money value={honorariumAmount} onChange={setHonorariumAmount} placeholder="300" />
-                        <p className="text-[11px] text-slate-400 mt-1">Paid after participation.</p>
-                      </div>
-                      <div>
-                        <div className="text-[11px] font-semibold tracking-wider uppercase text-slate-500 mb-1">Travel reimbursement cap</div>
-                        <Money value={travelReimbursement} onChange={setTravelReimbursement} placeholder="200" />
-                        <p className="text-[11px] text-slate-400 mt-1">They see &ldquo;up to $X&rdquo;. Receipts required.</p>
-                      </div>
+                    <div className="text-base leading-loose text-slate-600 font-medium">
+                      Pay them{" "}
+                      <span className="inline-flex items-center">
+                        <span className="text-slate-400 mr-0.5">$</span>
+                        <input
+                          type="number"
+                          min={0}
+                          value={honorariumAmount}
+                          onChange={(e) => setHonorariumAmount(e.target.value)}
+                          placeholder="300"
+                          className="bg-transparent border-b border-dashed border-slate-300 px-1 py-0.5 text-base focus:border-[#0066B3] outline-none placeholder:text-slate-400 text-[#0E5566] font-semibold"
+                          style={{ width: "6ch" }}
+                        />
+                      </span>
+                      {" "}after the event, and cover up to{" "}
+                      <span className="inline-flex items-center">
+                        <span className="text-slate-400 mr-0.5">$</span>
+                        <input
+                          type="number"
+                          min={0}
+                          value={travelReimbursement}
+                          onChange={(e) => setTravelReimbursement(e.target.value)}
+                          placeholder="200"
+                          className="bg-transparent border-b border-dashed border-slate-300 px-1 py-0.5 text-base focus:border-[#0066B3] outline-none placeholder:text-slate-400 text-[#0E5566] font-semibold"
+                          style={{ width: "6ch" }}
+                        />
+                      </span>
+                      {" "}in travel receipts.
                     </div>
+                    <p className="text-[11px] text-slate-400 mt-2">They see &ldquo;up to $X&rdquo; for travel. Receipts required.</p>
                   </OptionalBlock>
                 </div>
               </div>

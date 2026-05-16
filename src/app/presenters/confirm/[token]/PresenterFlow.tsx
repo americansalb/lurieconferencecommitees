@@ -998,26 +998,23 @@ function OnTheDayScreen({
           label="Dietary preferences and allergies"
           summary={[fields.dietary, fields.allergies].filter(Boolean).join(" · ")}
           render={(close) => (
-            <div className="space-y-3">
-              <div>
-                <div className="text-xs font-semibold text-slate-500 mb-1.5">Dietary preferences</div>
-                <input
-                  type="text"
+            <div className="space-y-4">
+              <div className="text-base sm:text-lg leading-loose text-slate-700 font-medium">
+                I prefer{" "}
+                <InlineProseSlot
                   value={(fields.dietary as string) || ""}
-                  onChange={(e) => set("dietary", e.target.value)}
-                  placeholder="Vegetarian, kosher, halal, gluten free…"
-                  className="w-full px-0 py-2 text-base bg-transparent border-0 border-b border-slate-200 focus:border-[#0066B3] focus:ring-0 outline-none placeholder:text-slate-300"
+                  onChange={(v) => set("dietary", v)}
+                  placeholder="vegetarian, halal…"
+                  size="sm"
                 />
-              </div>
-              <div>
-                <div className="text-xs font-semibold text-slate-500 mb-1.5">Allergies</div>
-                <input
-                  type="text"
+                {" "}and avoid{" "}
+                <InlineProseSlot
                   value={(fields.allergies as string) || ""}
-                  onChange={(e) => set("allergies", e.target.value)}
-                  placeholder="Peanuts, shellfish, latex…"
-                  className="w-full px-0 py-2 text-base bg-transparent border-0 border-b border-slate-200 focus:border-[#0066B3] focus:ring-0 outline-none placeholder:text-slate-300"
+                  onChange={(v) => set("allergies", v)}
+                  placeholder="peanuts, latex…"
+                  size="sm"
                 />
+                .
               </div>
               <button type="button" onClick={close} className="text-xs font-medium text-slate-400 hover:text-slate-700">Done</button>
             </div>
@@ -1358,14 +1355,16 @@ function ConfirmScreen({
           />
         </div>
 
-        <SoftField label="Any final questions or notes for the program team?" hint="If you have open questions, choose Confirm tentatively below instead.">
+        <div>
           <textarea
             value={(fields.presenterMessage as string) || ""}
             onChange={(e) => set("presenterMessage", e.target.value)}
             rows={3}
-            className="w-full px-4 py-3 text-sm bg-slate-50/60 border border-transparent rounded-xl focus:bg-white focus:border-[#0066B3] focus:ring-2 focus:ring-[#0066B3]/15 outline-none transition-all placeholder:text-slate-400"
+            placeholder="Any final questions or notes for the program team? (optional)"
+            className="w-full px-4 py-3 text-base bg-slate-50/60 border border-transparent rounded-xl focus:bg-white focus:border-[#0066B3] focus:ring-2 focus:ring-[#0066B3]/15 outline-none transition-all placeholder:text-slate-400 leading-relaxed"
           />
-        </SoftField>
+          <p className="mt-2 text-[11px] text-slate-400">If you have open questions, choose Confirm tentatively below instead.</p>
+        </div>
 
         <div className="text-xs text-slate-400">
           By submitting, you acknowledge the{" "}
@@ -1474,22 +1473,6 @@ function PolicyDrawer({ onClose }: { onClose: () => void }) {
           </button>
         </div>
       </div>
-    </div>
-  );
-}
-
-function SoftField({
-  label, hint, children,
-}: {
-  label: string;
-  hint?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div>
-      <div className="text-xs font-semibold text-slate-700 mb-2">{label}</div>
-      {children}
-      {hint && <p className="mt-1.5 text-[11px] text-slate-400 leading-relaxed">{hint}</p>}
     </div>
   );
 }
