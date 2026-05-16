@@ -35,6 +35,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         name: presenter.name,
         url: confirmationUrl(presenter.token),
         customMessage,
+        role: presenter.role,
+        sessionFormat: presenter.sessionFormat,
       }),
     });
 

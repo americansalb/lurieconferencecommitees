@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import {
   Check, ChevronLeft, ChevronRight, Upload, X, AlertCircle,
-  Calendar, MapPin, Clock, Users, FileText, MessageSquare, DollarSign, Mic,
+  Calendar, MapPin, Clock, Users, FileText, MessageSquare, DollarSign,
   ExternalLink,
 } from "lucide-react";
 import { parseResponse } from "@/lib/api";
@@ -348,8 +348,11 @@ function InvitationStep({
     !!(initial.sessionLength || initial.sessionFormat || initial.role || initial.qaLength ||
       initial.preferredDay || initial.sessionTrack || initial.talkTitle);
   const headline =
-    [initial.sessionLength, initial.sessionFormat || initial.role].filter(Boolean).join(" ") ||
-    initial.role || (hasAnyAssignment ? "A presenter" : "Specifics being finalized");
+    initial.sessionFormat || initial.role || (hasAnyAssignment ? "A presenter" : "Specifics being finalized");
+  const lengthSubtitle = [
+    initial.sessionLength,
+    initial.qaLength ? `${initial.qaLength} Q and A` : null,
+  ].filter(Boolean).join(", plus ");
   const showCompensation = initial.honorariumAmount != null || initial.travelReimbursement != null;
 
   return (
@@ -366,19 +369,21 @@ function InvitationStep({
             {headline}
             {initial.sessionTrack ? `, ${initial.sessionTrack}` : ""}
           </div>
+          {lengthSubtitle && (
+            <div className="text-sm opacity-90 mt-1.5">{lengthSubtitle}</div>
+          )}
         </div>
         <div className="divide-y divide-slate-100">
           {initial.talkTitle && <DetailRow icon={FileText} label="Working title" value={initial.talkTitle} />}
           {initial.talkAbstract && <DetailRow icon={MessageSquare} label="Abstract" value={initial.talkAbstract} multiline />}
-          {initial.qaLength && <DetailRow icon={Mic} label="Q and A" value={initial.qaLength} />}
           {initial.preferredDay && <DetailRow icon={Calendar} label="Day" value={initial.preferredDay} />}
           {initial.coPresenters && <DetailRow icon={Users} label="Co presenters" value={initial.coPresenters} />}
           {initial.learningObjectives && <DetailRow icon={Check} label="Learning objectives" value={initial.learningObjectives} multiline />}
-          <DetailRow icon={MapPin} label="Venue" value="Lurie Children's, Chicago" />
           <DetailRow icon={Clock} label="Conference dates" value="August 15 and 16, 2026" />
+          <DetailRow icon={MapPin} label="Venue" value="Ann & Robert H. Lurie Children's Hospital of Chicago" />
           {!hasAnyAssignment && (
             <div className="px-6 py-4 bg-slate-50 text-sm text-slate-600 leading-relaxed">
-              Specifics like role, length, and day are being finalized by the program team. You can accept now and we will confirm details together, or use Request adjustments below to start that conversation first.
+              Specifics like role, length, and day are being finalized by the program team. You can accept now and we will confirm details together, or use Questions or adjustments below to start that conversation first.
             </div>
           )}
         </div>
@@ -798,8 +803,9 @@ function ConfirmStep({
           <div className="font-semibold text-slate-900">{initial.name}</div>
           <div className="text-xs text-slate-500">{initial.email}</div>
           <div className="text-xs text-slate-700 mt-1">
-            {[initial.sessionLength, initial.sessionFormat || initial.role].filter(Boolean).join(" ") || "Presentation"}
-            {initial.talkTitle ? `, ${initial.talkTitle}` : ""}
+            {initial.sessionFormat || initial.role || "Presentation"}
+            {initial.sessionLength ? `, ${initial.sessionLength}` : ""}
+            {initial.talkTitle ? ` — ${initial.talkTitle}` : ""}
           </div>
         </div>
       </div>

@@ -117,14 +117,7 @@ export async function POST(req: Request) {
             url,
             customMessage,
             role: presenter.role,
-            talkTitle: presenter.talkTitle,
             sessionFormat: presenter.sessionFormat,
-            sessionLength: presenter.sessionLength,
-            qaLength: presenter.qaLength,
-            preferredDay: presenter.preferredDay,
-            sessionTrack: presenter.sessionTrack,
-            honorariumAmount: presenter.honorariumAmount,
-            travelReimbursement: presenter.travelReimbursement,
           }),
         });
         await prisma.presenter.update({ where: { id: presenter.id }, data: { lastSentAt: new Date() } });

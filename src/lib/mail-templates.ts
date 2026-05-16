@@ -1,20 +1,10 @@
-type AssignmentDetails = {
-  role?: string | null;
-  talkTitle?: string | null;
-  sessionFormat?: string | null;
-  sessionLength?: string | null;
-  qaLength?: string | null;
-  preferredDay?: string | null;
-  sessionTrack?: string | null;
-  honorariumAmount?: number | null;
-  travelReimbursement?: number | null;
-};
-
 type InviteArgs = {
   name: string;
   url: string;
   customMessage?: string;
-} & AssignmentDetails;
+  role?: string | null;
+  sessionFormat?: string | null;
+};
 
 const TEAL = "#0E5566";
 const BLUE = "#0066B3";
@@ -54,56 +44,33 @@ function button(href: string, label: string) {
   </td></tr></table>`;
 }
 
-function detailRow(label: string, value: string) {
-  return `<tr>
-    <td style="padding:10px 0;border-bottom:1px solid #f1f5f9;width:38%;color:${MUTED};font-size:13px;">${escapeHtml(label)}</td>
-    <td style="padding:10px 0;border-bottom:1px solid #f1f5f9;color:${TEXT};font-size:14px;">${escapeHtml(value)}</td>
-  </tr>`;
+function roleArticle(role: string) {
+  return /^[aeiou]/i.test(role) ? "an" : "a";
 }
 
-function assignmentBlock(a: AssignmentDetails) {
-  const rows: string[] = [];
-  const headline = [a.sessionLength, a.sessionFormat || a.role].filter(Boolean).join(" ");
-  if (a.talkTitle) rows.push(detailRow("Working title", a.talkTitle));
-  if (a.role && a.sessionFormat) rows.push(detailRow("Role", a.role));
-  if (a.qaLength) rows.push(detailRow("Q and A", a.qaLength));
-  if (a.sessionTrack) rows.push(detailRow("Track", a.sessionTrack));
-  if (a.preferredDay) rows.push(detailRow("Day", a.preferredDay));
-  if (a.honorariumAmount) rows.push(detailRow("Honorarium", `$${a.honorariumAmount.toLocaleString("en-US")}`));
-  if (a.travelReimbursement) rows.push(detailRow("Travel reimbursement", `up to $${a.travelReimbursement.toLocaleString("en-US")}`));
-  rows.push(detailRow("Conference dates", "August 15 and 16, 2026"));
-  rows.push(detailRow("Venue", "Lurie Children’s, Chicago"));
-  return `
-    <div style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;margin:18px 0 8px 0;">
-      <div style="padding:14px 18px;background:linear-gradient(to right, ${TEAL}, ${BLUE});color:#fff;">
-        <div style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;opacity:0.9;">You are invited as</div>
-        <div style="font-size:18px;font-weight:700;margin-top:4px;">${escapeHtml(headline || a.role || "A presenter")}</div>
-      </div>
-      <table cellpadding="0" cellspacing="0" style="width:100%;padding:0 18px 8px 18px;">
-        ${rows.join("")}
-      </table>
-    </div>`;
-}
-
-export function presenterInviteEmail({ name, url, customMessage, ...a }: InviteArgs) {
+export function presenterInviteEmail({ name, url, customMessage, role, sessionFormat }: InviteArgs) {
   const first = (name || "").split(" ")[0] || "there";
+  const which = sessionFormat || role;
+  const roleSentence = which
+    ? `<p style="font-size:15px;line-height:1.65;color:${TEXT};margin:0 0 14px 0;">We have you in mind as ${roleArticle(which)} <strong>${escapeHtml(which.toLowerCase())}</strong>. Your presenter portal has the proposed details for your session, our policy, and the consents we ask presenters to grant. From there you can accept, suggest adjustments, or let us know if you cannot attend.</p>`
+    : `<p style="font-size:15px;line-height:1.65;color:${TEXT};margin:0 0 14px 0;">Your presenter portal has the proposed details for your session, our policy, and the consents we ask presenters to grant. From there you can accept, suggest adjustments, or let us know if you cannot attend.</p>`;
   const extra = customMessage
     ? `<p style="font-size:15px;line-height:1.65;color:${TEXT};margin:14px 0;background:#f8fafc;border-left:3px solid ${BLUE};padding:14px 16px;border-radius:6px;">${escapeHtml(customMessage)}</p>`
     : "";
   return shell(`
-    <h1 style="font-size:22px;font-weight:700;margin:0 0 12px 0;letter-spacing:-0.01em;">Hello ${escapeHtml(first)},</h1>
-    <p style="font-size:15px;line-height:1.65;color:${TEXT};margin:0 0 14px 0;">
-      We would like to invite you to participate in the 2026 Lurie Children&rsquo;s and AALB Conference.
+    <h1 style="font-size:22px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">Hello ${escapeHtml(first)},</h1>
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
+      We would love to have you with us at the 2026 Lurie Children&rsquo;s and AALB Conference, August 15 and 16, 2026, at Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago.
     </p>
     ${extra}
-    ${assignmentBlock(a)}
-    <p style="font-size:15px;line-height:1.65;color:${TEXT};margin:18px 0 0 0;">
-      Use the link below to confirm your participation, request adjustments, or let us know if you cannot attend. The link is unique to you.
-    </p>
+    ${roleSentence}
     ${button(url, "Open your presenter portal")}
     <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:8px 0 0 0;">
       Or paste this link into your browser:<br/>
       <a href="${url}" style="color:${BLUE};word-break:break-all;">${url}</a>
+    </p>
+    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;">
+      The link is unique to you. We look forward to your reply.
     </p>
   `);
 }
