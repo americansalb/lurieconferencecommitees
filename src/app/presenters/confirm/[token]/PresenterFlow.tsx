@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
   Check, ChevronLeft, ChevronRight, X, Upload, AlertCircle, Loader2,
-  ArrowRight, ExternalLink, Sparkles,
+  ArrowRight, ExternalLink, Sparkles, Calendar, MapPin, DollarSign, Plane,
 } from "lucide-react";
 import { parseResponse } from "@/lib/api";
 import { PolicyContent } from "./policy-content";
@@ -481,16 +481,55 @@ function HeroScreen({
         </p>
 
         <div
-          className="mt-8 rounded-3xl overflow-hidden shadow-sm"
+          className="mt-8 rounded-3xl overflow-hidden shadow-sm relative"
           style={{ background: "linear-gradient(135deg, #f8fafc 0%, #f0f9ff 100%)" }}
         >
+          <svg
+            aria-hidden
+            viewBox="0 0 200 200"
+            className="absolute -right-12 -top-12 w-64 h-64 opacity-[0.08] pointer-events-none"
+          >
+            <defs>
+              <radialGradient id="hero-pat" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor={TEAL} />
+                <stop offset="100%" stopColor={BLUE} />
+              </radialGradient>
+            </defs>
+            <circle cx="100" cy="100" r="90" stroke="url(#hero-pat)" strokeWidth="1.5" fill="none" />
+            <circle cx="100" cy="100" r="65" stroke="url(#hero-pat)" strokeWidth="1.5" fill="none" />
+            <circle cx="100" cy="100" r="40" stroke="url(#hero-pat)" strokeWidth="1.5" fill="none" />
+            <circle cx="100" cy="100" r="15" fill="url(#hero-pat)" />
+          </svg>
           <div className="h-1.5 w-full" style={{ background: `linear-gradient(to right, ${TEAL}, ${BLUE})` }} />
-          <div className="p-8">
+          <div className="p-8 relative">
             <div className="text-[10px] font-semibold tracking-[0.22em] uppercase text-[#0E5566] mb-3">You are invited as</div>
             <div className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight leading-snug">{sentence}</div>
 
+            <div className="mt-5 flex flex-wrap gap-2">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-white/80 backdrop-blur-sm border border-slate-200 text-slate-700">
+                <Calendar className="w-3.5 h-3.5 text-[#0066B3]" />
+                August 15 &amp; 16, 2026
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-white/80 backdrop-blur-sm border border-slate-200 text-slate-700">
+                <MapPin className="w-3.5 h-3.5 text-[#0066B3]" />
+                Lurie Children&rsquo;s, Chicago
+              </span>
+              {!!initial.honorariumAmount && initial.honorariumAmount > 0 && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-white/80 backdrop-blur-sm border border-slate-200 text-[#0E5566]">
+                  <DollarSign className="w-3.5 h-3.5" />
+                  ${initial.honorariumAmount.toLocaleString("en-US")} honorarium
+                </span>
+              )}
+              {!!initial.travelReimbursement && initial.travelReimbursement > 0 && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-white/80 backdrop-blur-sm border border-slate-200 text-[#0E5566]">
+                  <Plane className="w-3.5 h-3.5" />
+                  up to ${initial.travelReimbursement.toLocaleString("en-US")} travel
+                </span>
+              )}
+            </div>
+
             {(initial.talkTitle || initial.talkAbstract) && (
-              <div className="mt-6 space-y-2">
+              <div className="mt-6 pt-5 border-t border-slate-200/60 space-y-2">
                 {initial.talkTitle && (
                   <div className="text-sm text-slate-700">
                     <span className="font-semibold text-slate-900">Working title.</span> {initial.talkTitle}
@@ -498,21 +537,6 @@ function HeroScreen({
                 )}
                 {initial.talkAbstract && (
                   <div className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{initial.talkAbstract}</div>
-                )}
-              </div>
-            )}
-
-            {(initial.honorariumAmount != null || initial.travelReimbursement != null) && (
-              <div className="mt-6 flex flex-wrap gap-2">
-                {initial.honorariumAmount != null && (
-                  <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold bg-white border border-slate-200 text-[#0E5566]">
-                    ${initial.honorariumAmount.toLocaleString("en-US")} honorarium
-                  </span>
-                )}
-                {initial.travelReimbursement != null && (
-                  <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold bg-white border border-slate-200 text-[#0E5566]">
-                    up to ${initial.travelReimbursement.toLocaleString("en-US")} travel
-                  </span>
                 )}
               </div>
             )}
