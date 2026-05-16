@@ -7,6 +7,7 @@ import Link from "next/link";
 import {
   Mic, Search, Plus, Download, Send, X, Copy, Check,
   Clock, XCircle, RefreshCw, AlertCircle, CircleHelp, Trash2,
+  ChevronDown,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
@@ -409,6 +410,10 @@ function InviteModal({ onClose, onCreated }: { onClose: () => void; onCreated: (
     }
   }
 
+  const hasAssignment = !!(role || sessionFormat || sessionLength || qaLength || sessionTrack || preferredDay);
+  const hasTalk = !!(talkTitle || talkAbstract || learningObjectives);
+  const hasComp = !!(honorariumAmount || travelReimbursement);
+
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="w-full max-w-2xl bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
@@ -416,18 +421,18 @@ function InviteModal({ onClose, onCreated }: { onClose: () => void; onCreated: (
           <div className="w-1/2 bg-[#0E5566]" />
           <div className="w-1/2 bg-[#0066B3]" />
         </div>
-        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between shrink-0">
+        <div className="px-7 py-5 border-b border-slate-100 flex items-start justify-between shrink-0">
           <div>
-            <div className="text-[11px] font-semibold tracking-[0.2em] uppercase text-[#0E5566]">New invitation</div>
-            <div className="font-semibold text-slate-900">Invite a presenter</div>
+            <div className="text-xl font-bold text-slate-900 tracking-tight">Invite a presenter</div>
+            <div className="text-sm text-slate-500 mt-0.5">Send them their personal portal to accept or suggest changes.</div>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-700">
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-700 -mt-1">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {createdUrl ? (
-          <div className="p-6 space-y-4 overflow-y-auto">
+          <div className="p-7 space-y-4 overflow-y-auto">
             <div className="flex items-start gap-3 bg-emerald-50 border border-emerald-200 rounded-xl p-4">
               <Check className="w-5 h-5 text-emerald-600 mt-0.5 shrink-0" />
               <div>
@@ -462,104 +467,124 @@ function InviteModal({ onClose, onCreated }: { onClose: () => void; onCreated: (
             </button>
           </div>
         ) : (
-          <div className="overflow-y-auto px-6 py-5 space-y-6">
+          <div className="overflow-y-auto px-7 py-6 space-y-7">
             {error && (
               <div className="bg-rose-50 border border-rose-200 text-rose-800 rounded-lg px-3 py-2 text-xs">{error}</div>
             )}
 
-            <Group title="Recipient" required>
+            <Section title="Who you are inviting">
               <div className="grid sm:grid-cols-2 gap-3">
-                <Mfield label="Name" required>
-                  <input value={name} onChange={(e) => setName(e.target.value)} className={mInput} />
-                </Mfield>
-                <Mfield label="Email" required>
-                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={mInput} />
-                </Mfield>
+                <Field label="Name" required>
+                  <input value={name} onChange={(e) => setName(e.target.value)} className={mInput} placeholder="Jordan Smith" />
+                </Field>
+                <Field label="Email" required>
+                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={mInput} placeholder="jordan@example.org" />
+                </Field>
               </div>
-              <Mfield label="Affiliation">
-                <input value={affiliation} onChange={(e) => setAffiliation(e.target.value)} className={mInput} placeholder="Optional" />
-              </Mfield>
-            </Group>
+              <Field label="Affiliation">
+                <input value={affiliation} onChange={(e) => setAffiliation(e.target.value)} className={mInput} placeholder="Lurie Children's, Northwestern, AALB, etc." />
+              </Field>
+              <Field
+                label="Personal note"
+                hint="Shows above everything else in their invitation email. Skip this and the email stays warm but generic."
+              >
+                <textarea
+                  value={customMessage}
+                  onChange={(e) => setCustomMessage(e.target.value)}
+                  rows={3}
+                  className={mInput}
+                  placeholder="Looking forward to having you back this year."
+                />
+              </Field>
+            </Section>
 
-            <Group title="Assignment" hint="Anything left blank is hidden from the presenter and treated as undetermined.">
-              <div className="grid sm:grid-cols-2 gap-3">
-                <Mfield label="Role">
-                  <SelectWithCustom value={role} setValue={setRole} options={ROLE_OPTIONS} placeholder="Choose a role" />
-                </Mfield>
-                <Mfield label="Track or theme">
-                  <input value={sessionTrack} onChange={(e) => setSessionTrack(e.target.value)} className={mInput} placeholder="Optional" />
-                </Mfield>
+            <Section
+              title="What you are offering"
+              hint="Anything you skip stays open and the presenter can propose their own."
+            >
+              <Field label="Role">
+                <ChipPicker value={role} setValue={setRole} options={ROLE_OPTIONS} allowCustom />
+              </Field>
+              <div className="grid sm:grid-cols-2 gap-x-5 gap-y-4">
+                <Field label="Presentation length">
+                  <ChipPicker value={sessionLength} setValue={setSessionLength} options={SESSION_LENGTHS} allowCustom />
+                </Field>
+                <Field label="Q and A length">
+                  <ChipPicker value={qaLength} setValue={setQaLength} options={QA_LENGTHS} allowCustom />
+                </Field>
+                <Field label="Preferred day">
+                  <ChipPicker value={preferredDay} setValue={setPreferredDay} options={PREFERRED_DAY} />
+                </Field>
+                <Field label="Track or theme">
+                  <input value={sessionTrack} onChange={(e) => setSessionTrack(e.target.value)} className={mInput} placeholder="e.g. Medical interpreting" />
+                </Field>
               </div>
-              <div className="grid sm:grid-cols-3 gap-3">
-                <Mfield label="Presentation length">
-                  <SelectWithCustom value={sessionLength} setValue={setSessionLength} options={SESSION_LENGTHS} placeholder="Optional" />
-                </Mfield>
-                <Mfield label="Q and A length">
-                  <SelectWithCustom value={qaLength} setValue={setQaLength} options={QA_LENGTHS} placeholder="Optional" />
-                </Mfield>
-                <Mfield label="Day">
-                  <SelectWithCustom value={preferredDay} setValue={setPreferredDay} options={PREFERRED_DAY} placeholder="To be decided" />
-                </Mfield>
-              </div>
-              <Mfield label="Format" hint="Workshop, panel, breakout, etc. Leave blank if same as role.">
-                <input value={sessionFormat} onChange={(e) => setSessionFormat(e.target.value)} className={mInput} placeholder="Optional" />
-              </Mfield>
-            </Group>
+              <Field label="Format" hint="Workshop, panel, breakout — only if different from the role.">
+                <input value={sessionFormat} onChange={(e) => setSessionFormat(e.target.value)} className={mInput} />
+              </Field>
+            </Section>
 
-            <Group title="Talk details" hint="If left blank the presenter can propose their own.">
-              <Mfield label="Working title">
-                <input value={talkTitle} onChange={(e) => setTalkTitle(e.target.value)} className={mInput} />
-              </Mfield>
-              <Mfield label="Abstract">
+            <Collapsible
+              title="Proposed talk details"
+              hint="A starting point for the presenter. They can edit or replace in their portal."
+              defaultOpen={hasTalk}
+            >
+              <Field label="Working title">
+                <input value={talkTitle} onChange={(e) => setTalkTitle(e.target.value)} className={mInput} placeholder="A draft title — the presenter can refine it." />
+              </Field>
+              <Field label="Abstract">
                 <textarea value={talkAbstract} onChange={(e) => setTalkAbstract(e.target.value)} rows={3} className={mInput} />
-              </Mfield>
-              <Mfield label="Learning objectives">
-                <textarea value={learningObjectives} onChange={(e) => setLearningObjectives(e.target.value)} rows={3} className={mInput} />
-              </Mfield>
-            </Group>
+              </Field>
+              <Field label="Learning objectives">
+                <textarea value={learningObjectives} onChange={(e) => setLearningObjectives(e.target.value)} rows={3} className={mInput} placeholder="What attendees will be able to do after the session." />
+              </Field>
+            </Collapsible>
 
-            <Group title="Compensation" hint="If both are blank, no compensation is mentioned in the invitation.">
-              <div className="grid sm:grid-cols-2 gap-3">
-                <Mfield label="Honorarium" hint="Fixed amount, paid after participation.">
-                  <Money value={honorariumAmount} setValue={setHonorariumAmount} placeholder="e.g. 300" />
-                </Mfield>
-                <Mfield label="Travel reimbursement cap" hint='Shown to presenter as "up to $X". Receipts required.'>
-                  <Money value={travelReimbursement} setValue={setTravelReimbursement} placeholder="e.g. 200" />
-                </Mfield>
+            <Collapsible
+              title="Compensation"
+              hint="Omit both to leave compensation unmentioned in the invitation."
+              defaultOpen={hasComp}
+            >
+              <div className="grid sm:grid-cols-2 gap-4">
+                <Field label="Honorarium" hint="Fixed amount, paid after participation.">
+                  <Money value={honorariumAmount} setValue={setHonorariumAmount} placeholder="300" />
+                </Field>
+                <Field label="Travel reimbursement cap" hint='Presenter sees "up to $X". Receipts required.'>
+                  <Money value={travelReimbursement} setValue={setTravelReimbursement} placeholder="200" />
+                </Field>
               </div>
-            </Group>
-
-            <Group title="Personal note" hint="Shows in the invitation email above the assignment details.">
-              <textarea
-                value={customMessage}
-                onChange={(e) => setCustomMessage(e.target.value)}
-                rows={3}
-                className={mInput}
-                placeholder="Looking forward to having you back this year."
-              />
-              <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer pt-1">
-                <input type="checkbox" checked={sendNow} onChange={(e) => setSendNow(e.target.checked)} className="w-4 h-4 rounded border-slate-300 text-[#0066B3] focus:ring-[#0066B3]" />
-                Email the invitation now
-              </label>
-            </Group>
+            </Collapsible>
           </div>
         )}
 
         {!createdUrl && (
-          <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-end gap-2 shrink-0">
-            <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900">Cancel</button>
-            <button
-              onClick={submit}
-              disabled={busy || !email || !name}
-              className="px-5 py-2 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-[#0E5566] to-[#0066B3] hover:from-[#0A3F4D] hover:to-[#004F8C] disabled:opacity-50"
-            >
-              {busy ? "Working" : sendNow ? "Send invitation" : "Save invitation"}
-            </button>
+          <div className="px-7 py-4 border-t border-slate-100 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0 bg-slate-50/50">
+            <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={sendNow}
+                onChange={(e) => setSendNow(e.target.checked)}
+                className="w-4 h-4 rounded border-slate-300 text-[#0066B3] focus:ring-[#0066B3]"
+              />
+              Email the invitation now
+            </label>
+            <div className="flex items-center gap-2 justify-end">
+              <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900">Cancel</button>
+              <button
+                onClick={submit}
+                disabled={busy || !email || !name}
+                className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-[#0E5566] to-[#0066B3] hover:from-[#0A3F4D] hover:to-[#004F8C] disabled:opacity-50 shadow-sm"
+              >
+                {busy ? "Working" : sendNow ? "Send invitation" : "Save invitation"}
+              </button>
+            </div>
           </div>
         )}
       </div>
     </div>
   );
+
+  void hasAssignment;
 }
 
 function Money({ value, setValue, placeholder }: { value: string; setValue: (s: string) => void; placeholder?: string }) {
@@ -579,83 +604,123 @@ function Money({ value, setValue, placeholder }: { value: string; setValue: (s: 
   );
 }
 
-function SelectWithCustom({
-  value, setValue, options, placeholder,
+function ChipPicker({
+  value, setValue, options, allowCustom,
 }: {
   value: string;
   setValue: (s: string) => void;
   options: string[];
-  placeholder?: string;
+  allowCustom?: boolean;
 }) {
-  const [custom, setCustom] = useState(value && !options.includes(value));
+  const [custom, setCustom] = useState(!!value && !options.includes(value));
   if (custom) {
     return (
-      <div className="flex gap-2">
+      <div className="flex items-center gap-2">
         <input
+          autoFocus
           value={value}
           onChange={(e) => setValue(e.target.value)}
           className={mInput}
-          autoFocus
+          placeholder="Type a custom value"
         />
         <button
           type="button"
           onClick={() => { setCustom(false); setValue(""); }}
-          className="px-3 py-2 text-xs text-slate-500 hover:text-slate-900"
+          className="text-xs font-medium text-slate-500 hover:text-slate-900 whitespace-nowrap px-2 py-1"
         >
-          List
+          Pick from list
         </button>
       </div>
     );
   }
   return (
-    <div className="flex gap-2">
-      <select
-        value={value}
-        onChange={(e) => {
-          if (e.target.value === "__custom__") {
-            setCustom(true);
-            setValue("");
-          } else {
-            setValue(e.target.value);
-          }
-        }}
-        className={mInput}
-      >
-        <option value="">{placeholder || "Choose"}</option>
-        {options.map((o) => <option key={o} value={o}>{o}</option>)}
-        <option value="__custom__">Custom value</option>
-      </select>
+    <div className="flex flex-wrap gap-1.5">
+      {options.map((o) => {
+        const active = o === value;
+        return (
+          <button
+            key={o}
+            type="button"
+            onClick={() => setValue(active ? "" : o)}
+            className={
+              "px-3 py-1.5 rounded-lg text-xs font-medium border transition-all " +
+              (active
+                ? "bg-[#0066B3] text-white border-[#0066B3] shadow-sm"
+                : "bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50")
+            }
+          >
+            {o}
+          </button>
+        );
+      })}
+      {allowCustom && (
+        <button
+          type="button"
+          onClick={() => setCustom(true)}
+          className="px-3 py-1.5 rounded-lg text-xs font-medium border border-dashed border-slate-300 text-slate-500 hover:border-slate-400 hover:text-slate-700"
+        >
+          Custom…
+        </button>
+      )}
     </div>
   );
 }
 
-function Group({ title, hint, required, children }: { title: string; hint?: string; required?: boolean; children: React.ReactNode }) {
+function Section({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-3">
-      <div className="flex items-baseline justify-between">
-        <div className="text-[11px] font-semibold tracking-[0.2em] uppercase text-[#0E5566] flex items-center gap-2">
-          {title}
-          {required && <span className="text-[10px] text-rose-600 normal-case tracking-normal">required</span>}
-        </div>
-        {hint && <div className="text-[11px] text-slate-400 max-w-xs text-right">{hint}</div>}
+    <div className="space-y-4">
+      <div>
+        <div className="text-base font-semibold text-slate-900">{title}</div>
+        {hint && <div className="text-xs text-slate-500 mt-1 leading-relaxed">{hint}</div>}
       </div>
-      <div className="space-y-3">{children}</div>
+      <div className="space-y-4">{children}</div>
+    </div>
+  );
+}
+
+function Collapsible({
+  title, hint, defaultOpen, children,
+}: {
+  title: string;
+  hint?: string;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(!!defaultOpen);
+  return (
+    <div className="rounded-xl border border-slate-200 overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between gap-4 px-5 py-3.5 hover:bg-slate-50 text-left"
+      >
+        <div>
+          <div className="text-sm font-semibold text-slate-900">{title}</div>
+          {hint && <div className="text-xs text-slate-500 mt-0.5 leading-relaxed">{hint}</div>}
+        </div>
+        <ChevronDown className={"w-4 h-4 text-slate-400 transition-transform shrink-0 " + (open ? "rotate-180" : "")} />
+      </button>
+      {open && (
+        <div className="px-5 pb-5 pt-1 space-y-4 border-t border-slate-100">
+          {children}
+        </div>
+      )}
     </div>
   );
 }
 
 const mInput =
-  "w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#0066B3]/20 focus:border-[#0066B3] outline-none";
+  "w-full px-3.5 py-2.5 text-sm bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#0066B3]/20 focus:border-[#0066B3] outline-none transition-all placeholder:text-slate-300";
 
-function Mfield({ label, hint, required, children }: { label: string; hint?: string; required?: boolean; children: React.ReactNode }) {
+function Field({ label, hint, required, children }: { label: string; hint?: string; required?: boolean; children: React.ReactNode }) {
   return (
-    <div className="space-y-1">
-      <div className="flex items-center gap-2">
-        <label className="block text-xs font-semibold text-slate-700">{label}</label>
-        {required && <span className="text-[10px] font-semibold text-rose-600 uppercase tracking-wider">Required</span>}
-      </div>
+    <div className="space-y-1.5">
+      <label className="block text-xs font-semibold text-slate-700">
+        {label}
+        {required && <span className="text-rose-500 ml-1">*</span>}
+      </label>
       {children}
-      {hint && <div className="text-[11px] text-slate-400">{hint}</div>}
+      {hint && <div className="text-[11px] text-slate-400 leading-relaxed">{hint}</div>}
     </div>
   );
 }
