@@ -450,8 +450,26 @@ export function InviteModal({
   const hasAssignment = !!(role || sessionFormat || sessionLength || qaLength || sessionTrack || preferredDay);
   const hasTalkOrComp = !!(talkTitle || talkAbstract || learningObjectives || honorariumAmount || travelReimbursement);
 
-  type TabId = "recipient" | "session" | "extras";
-  const [tab, setTab] = useState<TabId>("recipient");
+  const STEPS = [
+    { id: "recipient", label: "Recipient", icon: User },
+    { id: "session", label: "Session", icon: Calendar },
+    { id: "extras", label: "Talk & money", icon: DollarSign },
+  ] as const;
+  type StepId = (typeof STEPS)[number]["id"];
+  const [step, setStep] = useState<StepId>("recipient");
+  const stepIndex = STEPS.findIndex((s) => s.id === step);
+  const isLastStep = stepIndex === STEPS.length - 1;
+  const isFirstStep = stepIndex === 0;
+  const goNext = () => setStep(STEPS[Math.min(stepIndex + 1, STEPS.length - 1)].id);
+  const goBack = () => setStep(STEPS[Math.max(stepIndex - 1, 0)].id);
+  const canAdvance = step === "recipient" ? !!(name && email) : true;
+
+  const stepDone: Record<StepId, boolean> = {
+    recipient: !!(name && email),
+    session: hasAssignment,
+    extras: hasTalkOrComp,
+  };
+
   const [showPreviewMobile, setShowPreviewMobile] = useState(false);
 
   const previewHtml = useMemo(() => {
@@ -463,12 +481,6 @@ export function InviteModal({
       sessionFormat: sessionFormat || undefined,
     });
   }, [name, customMessage, role, sessionFormat]);
-
-  const tabs: { id: TabId; label: string; icon: React.ComponentType<{ className?: string }>; done: boolean }[] = [
-    { id: "recipient", label: "Recipient", icon: User, done: !!(name && email) },
-    { id: "session", label: "Session", icon: Calendar, done: hasAssignment },
-    { id: "extras", label: "Talk & money", icon: DollarSign, done: hasTalkOrComp },
-  ];
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
@@ -538,24 +550,49 @@ export function InviteModal({
         ) : (
           <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
             <div className={"flex flex-col md:w-[46%] md:border-r md:border-slate-100 " + (showPreviewMobile ? "hidden md:flex" : "flex")}>
-              <div className="flex gap-1 px-7 pt-4 border-b border-slate-100 shrink-0">
-                {tabs.map((t) => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => setTab(t.id)}
-                    className={
-                      "flex items-center gap-2 px-3 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors " +
-                      (tab === t.id
-                        ? "border-[#0066B3] text-slate-900"
-                        : "border-transparent text-slate-500 hover:text-slate-700")
-                    }
-                  >
-                    <t.icon className="w-3.5 h-3.5" />
-                    {t.label}
-                    {t.done && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
-                  </button>
-                ))}
+              <div className="px-7 py-4 border-b border-slate-100 shrink-0">
+                <div className="flex items-center gap-2">
+                  {STEPS.map((s, i) => {
+                    const active = i === stepIndex;
+                    const done = i < stepIndex || stepDone[s.id];
+                    const reachable = i <= stepIndex || stepDone.recipient;
+                    return (
+                      <div key={s.id} className="flex items-center gap-2 flex-1 min-w-0">
+                        <button
+                          type="button"
+                          onClick={() => reachable && setStep(s.id)}
+                          disabled={!reachable}
+                          className={
+                            "flex items-center gap-2 min-w-0 transition-colors " +
+                            (reachable ? "cursor-pointer" : "cursor-not-allowed opacity-50")
+                          }
+                        >
+                          <span
+                            className={
+                              "w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-semibold shrink-0 transition-all " +
+                              (active
+                                ? "bg-[#0066B3] text-white ring-4 ring-[#0066B3]/15"
+                                : done
+                                ? "bg-[#0E5566] text-white"
+                                : "bg-slate-100 text-slate-400")
+                            }
+                          >
+                            {done && !active ? <Check className="w-3 h-3" /> : i + 1}
+                          </span>
+                          <span
+                            className={
+                              "text-xs font-semibold truncate " +
+                              (active ? "text-slate-900" : done ? "text-slate-700" : "text-slate-400")
+                            }
+                          >
+                            {s.label}
+                          </span>
+                        </button>
+                        {i < STEPS.length - 1 && <div className={"flex-1 h-px " + (done ? "bg-[#0E5566]" : "bg-slate-200")} />}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
               <div className="flex-1 overflow-y-auto px-7 py-6 space-y-5">
@@ -563,7 +600,7 @@ export function InviteModal({
                   <div className="bg-rose-50 border border-rose-200 text-rose-800 rounded-lg px-3 py-2 text-xs">{error}</div>
                 )}
 
-                {tab === "recipient" && (
+                {step === "recipient" && (
                   <>
                     <div className="grid sm:grid-cols-2 gap-3">
                       <Field label="Name" required>
@@ -593,7 +630,7 @@ export function InviteModal({
                   </>
                 )}
 
-                {tab === "session" && (
+                {step === "session" && (
                   <>
                     <div className="text-xs text-slate-500 -mt-1 leading-relaxed">
                       Anything you skip stays open and the presenter can propose their own in the portal.
@@ -621,7 +658,7 @@ export function InviteModal({
                   </>
                 )}
 
-                {tab === "extras" && (
+                {step === "extras" && (
                   <>
                     <div>
                       <div className="text-sm font-semibold text-slate-900">Proposed talk details</div>
@@ -674,24 +711,20 @@ export function InviteModal({
 
         {!createdUrl && (
           <div className="border-t border-slate-100 shrink-0 bg-slate-50/50">
-            {(!role || !hasAssignment) && (
+            {isLastStep && !isEdit && !role && (
               <div className="px-7 py-2.5 text-xs text-amber-800 bg-amber-50 border-b border-amber-200 flex items-center gap-2">
                 <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                 <span>
-                  {!role
-                    ? "No role picked. The email will not mention what you are inviting them as."
-                    : "Session details are sparse. The presenter will see “Specifics being finalized” on their portal."}
+                  No role picked. The email will not mention what you are inviting them as.
                   {" "}
-                  <button type="button" onClick={() => setTab("session")} className="underline font-medium hover:text-amber-900">
-                    Open Session tab
+                  <button type="button" onClick={() => setStep("session")} className="underline font-medium hover:text-amber-900">
+                    Go back to Session
                   </button>
                 </span>
               </div>
             )}
             <div className="px-7 py-4 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
-              {isEdit ? (
-                <div className="text-xs text-slate-500">Updates apply immediately. Resend from the detail page to email a new invitation.</div>
-              ) : (
+              {isLastStep && !isEdit ? (
                 <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
                   <input
                     type="checkbox"
@@ -701,16 +734,47 @@ export function InviteModal({
                   />
                   Email the invitation now
                 </label>
+              ) : isEdit ? (
+                <div className="text-xs text-slate-500">Step {stepIndex + 1} of {STEPS.length} · Updates apply immediately.</div>
+              ) : (
+                <div className="text-xs text-slate-500">Step {stepIndex + 1} of {STEPS.length}</div>
               )}
               <div className="flex items-center gap-2 justify-end">
-                <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900">Cancel</button>
                 <button
-                  onClick={submit}
-                  disabled={busy || !email || !name}
-                  className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-[#0E5566] to-[#0066B3] hover:from-[#0A3F4D] hover:to-[#004F8C] disabled:opacity-50 shadow-sm"
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900"
                 >
-                  {busy ? "Working" : isEdit ? "Save changes" : sendNow ? "Send invitation" : "Save invitation"}
+                  Cancel
                 </button>
+                {!isFirstStep && (
+                  <button
+                    type="button"
+                    onClick={goBack}
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50"
+                  >
+                    Back
+                  </button>
+                )}
+                {!isLastStep ? (
+                  <button
+                    type="button"
+                    onClick={goNext}
+                    disabled={!canAdvance}
+                    className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-[#0E5566] to-[#0066B3] hover:from-[#0A3F4D] hover:to-[#004F8C] disabled:opacity-50 shadow-sm"
+                  >
+                    Next
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={submit}
+                    disabled={busy || !email || !name}
+                    className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-[#0E5566] to-[#0066B3] hover:from-[#0A3F4D] hover:to-[#004F8C] disabled:opacity-50 shadow-sm"
+                  >
+                    {busy ? "Working" : isEdit ? "Save changes" : sendNow ? "Send invitation" : "Save invitation"}
+                  </button>
+                )}
               </div>
             </div>
           </div>
