@@ -23,7 +23,18 @@ const SUBMITTABLE = new Set([
 
 const MAX_HEADSHOT_BYTES = 4 * 1024 * 1024;
 
+function errMsg(e: unknown): string {
+  if (e instanceof Error) {
+    if (e.message.includes("does not exist") || e.message.includes("relation")) {
+      return "Database table not found — the migration has not run yet.";
+    }
+    return e.message;
+  }
+  return "Internal server error";
+}
+
 export async function GET(_req: Request, { params }: { params: { token: string } }) {
+  try {
   const presenter = await prisma.presenter.findUnique({
     where: { token: params.token },
     select: {
@@ -44,9 +55,14 @@ export async function GET(_req: Request, { params }: { params: { token: string }
   });
   if (!presenter) return NextResponse.json({ error: "Invalid link" }, { status: 404 });
   return NextResponse.json({ ...presenter, hasHeadshot: !!presenter.headshotMime });
+  } catch (e) {
+    console.error("[presenters/confirm] GET error", e);
+    return NextResponse.json({ error: errMsg(e) }, { status: 500 });
+  }
 }
 
 export async function POST(req: Request, { params }: { params: { token: string } }) {
+  try {
   const presenter = await prisma.presenter.findUnique({ where: { token: params.token } });
   if (!presenter) return NextResponse.json({ error: "Invalid link" }, { status: 404 });
 
@@ -134,4 +150,8 @@ export async function POST(req: Request, { params }: { params: { token: string }
   }
 
   return NextResponse.json({ success: true, status: data.status || presenter.status });
+  } catch (e) {
+    console.error("[presenters/confirm] POST error", e);
+    return NextResponse.json({ error: errMsg(e) }, { status: 500 });
+  }
 }
