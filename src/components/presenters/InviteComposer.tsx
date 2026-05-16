@@ -95,7 +95,7 @@ export function InviteComposer({
     setBusy(true);
     try {
       const payload: Record<string, unknown> = {
-        name, email, affiliation: affiliation || null,
+        name, affiliation: affiliation || null,
         role: role || null,
         sessionFormat: sessionFormat || null,
         sessionLength: sessionLength || null,
@@ -109,6 +109,7 @@ export function InviteComposer({
         travelReimbursement: travelReimbursement ? Number(travelReimbursement) : null,
       };
       if (!isEdit) {
+        payload.email = email;
         payload.customMessage = customMessage;
         payload.sendNow = sendNow;
       }
