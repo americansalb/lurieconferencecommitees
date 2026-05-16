@@ -10,6 +10,22 @@ function isAdmin(role?: string) {
   return role === "admin" || role === "developer";
 }
 
+function errorMessage(e: unknown): string {
+  if (e instanceof Error) {
+    if (e.message.includes("does not exist") || e.message.includes("relation")) {
+      return "Database table not found. Trigger a redeploy on Render.";
+    }
+    return e.message;
+  }
+  return "Internal server error";
+}
+
+const ASSIGNMENT_FIELDS = [
+  "role", "talkTitle", "talkAbstract", "sessionFormat", "sessionTrack",
+  "sessionLength", "qaLength", "preferredDay", "learningObjectives",
+  "honorariumAmount", "travelReimbursement",
+];
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
@@ -24,9 +40,14 @@ export async function GET() {
         name: true,
         affiliation: true,
         jobTitle: true,
+        role: true,
         talkTitle: true,
         sessionFormat: true,
+        sessionLength: true,
         sessionTrack: true,
+        preferredDay: true,
+        honorariumAmount: true,
+        travelReimbursement: true,
         status: true,
         invitedAt: true,
         confirmedAt: true,
@@ -53,47 +74,58 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const {
-      email,
-      name,
-      affiliation,
-      talkTitle,
-      sessionFormat,
-      customMessage,
-      sendNow = true,
-    } = body || {};
+    const { email, name, customMessage, sendNow = true } = body || {};
 
     if (!email || !name) {
-      return NextResponse.json({ error: "email and name are required" }, { status: 400 });
+      return NextResponse.json({ error: "Name and email are required." }, { status: 400 });
     }
 
     const existing = await prisma.presenter.findUnique({ where: { email: String(email).toLowerCase() } });
     if (existing) {
-      return NextResponse.json({ error: "A presenter with this email already exists", id: existing.id }, { status: 409 });
+      return NextResponse.json({ error: "A presenter with this email already exists.", id: existing.id }, { status: 409 });
     }
 
-    const token = newPresenterToken();
-    const invitedById = (session.user as { id?: string }).id;
-    const presenter = await prisma.presenter.create({
-      data: {
-        email: String(email).toLowerCase(),
-        name,
-        affiliation: affiliation || null,
-        talkTitle: talkTitle || null,
-        sessionFormat: sessionFormat || null,
-        token,
-        invitedById,
-      },
-    });
+    const data: Record<string, unknown> = {
+      email: String(email).toLowerCase(),
+      name,
+      token: newPresenterToken(),
+      invitedById: (session.user as { id?: string }).id,
+    };
 
-    const url = confirmationUrl(token);
+    for (const f of ASSIGNMENT_FIELDS) {
+      const v = body[f];
+      if (v !== undefined && v !== "" && v !== null) {
+        if (f === "honorariumAmount" || f === "travelReimbursement") {
+          const n = Number(v);
+          if (!Number.isNaN(n) && n >= 0) data[f] = Math.round(n);
+        } else {
+          data[f] = v;
+        }
+      }
+    }
+
+    const presenter = await prisma.presenter.create({ data: data as never });
+    const url = confirmationUrl(presenter.token);
 
     if (sendNow) {
       try {
         await sendMail({
           to: presenter.email,
-          subject: `You're invited to present at the Lurie Children's & AALB Conference`,
-          html: presenterInviteEmail({ name: presenter.name, url, customMessage }),
+          subject: `Invitation to join the 2026 Lurie Children's and AALB Conference`,
+          html: presenterInviteEmail({
+            name: presenter.name,
+            url,
+            customMessage,
+            role: presenter.role,
+            talkTitle: presenter.talkTitle,
+            sessionFormat: presenter.sessionFormat,
+            sessionLength: presenter.sessionLength,
+            qaLength: presenter.qaLength,
+            preferredDay: presenter.preferredDay,
+            sessionTrack: presenter.sessionTrack,
+            honorariumAmount: presenter.honorariumAmount,
+            travelReimbursement: presenter.travelReimbursement,
+          }),
         });
         await prisma.presenter.update({ where: { id: presenter.id }, data: { lastSentAt: new Date() } });
         await prisma.presenterEvent.create({
@@ -109,19 +141,9 @@ export async function POST(req: Request) {
       }
     }
 
-    return NextResponse.json({ id: presenter.id, token, url, appUrl: appUrl() });
+    return NextResponse.json({ id: presenter.id, token: presenter.token, url, appUrl: appUrl() });
   } catch (e) {
     console.error("[presenters] POST error", e);
     return NextResponse.json({ error: errorMessage(e) }, { status: 500 });
   }
-}
-
-function errorMessage(e: unknown): string {
-  if (e instanceof Error) {
-    if (e.message.includes("does not exist") || e.message.includes("relation")) {
-      return "Database table not found — the migration has not run yet. Trigger a redeploy on Render.";
-    }
-    return e.message;
-  }
-  return "Internal server error";
 }

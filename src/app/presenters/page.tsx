@@ -5,13 +5,15 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  Mic, Search, Plus, Download, Send, X, Copy, CheckCircle2,
-  Clock, XCircle, RefreshCw,
+  Mic, Search, Plus, Download, Send, X, Copy, Check,
+  Clock, XCircle, RefreshCw, AlertCircle, CircleHelp,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
 import MobileNav from "@/components/layout/MobileNav";
-import { STATUS_LABELS } from "@/lib/presenters";
+import {
+  STATUS_LABELS, ROLE_OPTIONS, SESSION_LENGTHS, QA_LENGTHS, PREFERRED_DAY,
+} from "@/lib/presenters";
 import { parseResponse } from "@/lib/api";
 
 interface PresenterRow {
@@ -20,9 +22,14 @@ interface PresenterRow {
   name: string;
   affiliation: string | null;
   jobTitle: string | null;
+  role: string | null;
   talkTitle: string | null;
   sessionFormat: string | null;
+  sessionLength: string | null;
   sessionTrack: string | null;
+  preferredDay: string | null;
+  honorariumAmount: number | null;
+  travelReimbursement: number | null;
   status: string;
   invitedAt: string;
   confirmedAt: string | null;
@@ -76,17 +83,21 @@ export default function PresentersPage() {
     all: rows.length,
     invited: rows.filter((r) => r.status === "invited").length,
     confirmed: rows.filter((r) => r.status === "confirmed").length,
+    tentative: rows.filter((r) => r.status === "tentative").length,
+    changes_requested: rows.filter((r) => r.status === "changes_requested").length,
     declined: rows.filter((r) => r.status === "declined").length,
   }), [rows]);
 
   function exportCsv() {
-    const headers = ["Name", "Email", "Affiliation", "Talk title", "Format", "Track", "Status", "Invited", "Confirmed"];
+    const headers = ["Name", "Email", "Affiliation", "Role", "Talk title", "Length", "Track", "Day", "Honorarium", "Travel", "Status", "Invited", "Confirmed"];
     const lines = [headers.join(",")];
     for (const r of filtered) {
       lines.push([
-        r.name, r.email, r.affiliation || "", r.talkTitle || "",
-        r.sessionFormat || "", r.sessionTrack || "", r.status,
-        r.invitedAt, r.confirmedAt || "",
+        r.name, r.email, r.affiliation || "", r.role || "", r.talkTitle || "",
+        r.sessionLength || "", r.sessionTrack || "", r.preferredDay || "",
+        r.honorariumAmount ? `$${r.honorariumAmount}` : "",
+        r.travelReimbursement ? `up to $${r.travelReimbursement}` : "",
+        r.status, r.invitedAt, r.confirmedAt || "",
       ].map(csvEscape).join(","));
     }
     const blob = new Blob([lines.join("\n")], { type: "text/csv" });
@@ -99,7 +110,7 @@ export default function PresentersPage() {
   }
 
   if (status === "loading" || loading) {
-    return <div className="min-h-screen flex items-center justify-center text-slate-400 text-sm">Loading…</div>;
+    return <div className="min-h-screen flex items-center justify-center text-slate-400 text-sm">Loading...</div>;
   }
 
   return (
@@ -111,31 +122,33 @@ export default function PresentersPage() {
           <div className="max-w-6xl mx-auto">
             <div className="flex items-start justify-between gap-3 mb-6">
               <div>
-                <div className="flex items-center gap-2 text-[11px] font-semibold tracking-widest uppercase text-blue-500">
+                <div className="flex items-center gap-2 text-[11px] font-semibold tracking-[0.2em] uppercase text-[#0E5566]">
                   <Mic className="w-3.5 h-3.5" /> Presenters
                 </div>
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1">
+                <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight mt-1">
                   Presenter confirmations
                 </h1>
                 <p className="text-sm text-slate-500 mt-1">
-                  Track invitations and confirmations for the 2026 Lurie Children&rsquo;s &amp; AALB Conference.
+                  Track invitations and confirmations for the 2026 Lurie Children&rsquo;s and AALB Conference.
                 </p>
               </div>
               {isAdmin && (
                 <button
                   type="button"
                   onClick={() => setShowInvite(true)}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-md shadow-blue-600/20 transition-all"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-[#0E5566] to-[#0066B3] hover:from-[#0A3F4D] hover:to-[#004F8C] shadow-sm"
                 >
                   <Plus className="w-4 h-4" /> Invite presenter
                 </button>
               )}
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
               <Stat label="Total" value={counts.all} active={filter === "all"} onClick={() => setFilter("all")} />
               <Stat label="Awaiting" value={counts.invited} icon={<Clock className="w-4 h-4 text-amber-500" />} active={filter === "invited"} onClick={() => setFilter("invited")} />
-              <Stat label="Confirmed" value={counts.confirmed} icon={<CheckCircle2 className="w-4 h-4 text-emerald-500" />} active={filter === "confirmed"} onClick={() => setFilter("confirmed")} />
+              <Stat label="Confirmed" value={counts.confirmed} icon={<Check className="w-4 h-4 text-emerald-500" />} active={filter === "confirmed"} onClick={() => setFilter("confirmed")} />
+              <Stat label="Tentative" value={counts.tentative} icon={<CircleHelp className="w-4 h-4 text-sky-500" />} active={filter === "tentative"} onClick={() => setFilter("tentative")} />
+              <Stat label="Changes" value={counts.changes_requested} icon={<AlertCircle className="w-4 h-4 text-amber-600" />} active={filter === "changes_requested"} onClick={() => setFilter("changes_requested")} />
               <Stat label="Declined" value={counts.declined} icon={<XCircle className="w-4 h-4 text-rose-500" />} active={filter === "declined"} onClick={() => setFilter("declined")} />
             </div>
 
@@ -147,14 +160,14 @@ export default function PresentersPage() {
                     type="search"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Search by name, email, talk title…"
-                    className="w-full pl-9 pr-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none"
+                    placeholder="Search by name, email, talk title"
+                    className="w-full pl-9 pr-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#0066B3]/20 focus:border-[#0066B3] outline-none"
                   />
                 </div>
                 <button
                   type="button"
                   onClick={load}
-                  className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+                  className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg"
                   title="Refresh"
                 >
                   <RefreshCw className="w-4 h-4" />
@@ -162,7 +175,7 @@ export default function PresentersPage() {
                 <button
                   type="button"
                   onClick={exportCsv}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 rounded-lg"
                 >
                   <Download className="w-3.5 h-3.5" /> CSV
                 </button>
@@ -188,10 +201,7 @@ export default function PresentersPage() {
       {showInvite && isAdmin && (
         <InviteModal
           onClose={() => setShowInvite(false)}
-          onCreated={() => {
-            setShowInvite(false);
-            load();
-          }}
+          onCreated={() => { setShowInvite(false); load(); }}
         />
       )}
     </div>
@@ -214,7 +224,7 @@ function Stat({
       className={
         "text-left p-4 rounded-2xl border transition-all " +
         (active
-          ? "bg-white border-blue-300 ring-1 ring-blue-200 shadow-sm"
+          ? "bg-white border-[#0066B3] ring-1 ring-[#0066B3]/20 shadow-sm"
           : "bg-white border-slate-200 hover:border-slate-300")
       }
     >
@@ -222,7 +232,7 @@ function Stat({
         {icon}
         <div className="text-[11px] font-semibold tracking-widest uppercase text-slate-400">{label}</div>
       </div>
-      <div className="text-2xl font-extrabold text-slate-900 mt-1">{value}</div>
+      <div className="text-2xl font-bold text-slate-900 mt-1">{value}</div>
     </button>
   );
 }
@@ -249,6 +259,12 @@ function PresenterRowItem({
     onChanged();
   }
 
+  const subtitle = [
+    row.role || row.sessionFormat,
+    row.sessionLength,
+    row.preferredDay,
+  ].filter(Boolean).join(" | ");
+
   return (
     <div className="px-5 py-4 hover:bg-slate-50/60 transition-colors flex flex-col sm:flex-row gap-3 sm:items-center">
       <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -260,12 +276,12 @@ function PresenterRowItem({
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <Link href={`/presenters/${row.id}`} className="text-sm font-semibold text-slate-900 hover:text-blue-600 truncate block">
+          <Link href={`/presenters/${row.id}`} className="text-sm font-semibold text-slate-900 hover:text-[#0066B3] truncate block">
             {row.name}
           </Link>
           <div className="text-xs text-slate-500 truncate">
             {row.talkTitle || row.email}
-            {row.affiliation && <span className="text-slate-300"> &middot; {row.affiliation}</span>}
+            {subtitle && <span className="text-slate-300"> | {subtitle}</span>}
           </div>
         </div>
       </div>
@@ -278,13 +294,13 @@ function PresenterRowItem({
             type="button"
             onClick={resend}
             disabled={busy}
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-40"
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-slate-600 hover:text-[#0066B3] hover:bg-[#0066B3]/5 disabled:opacity-40"
             title="Resend invitation"
           >
-            <Send className="w-3 h-3" /> {busy ? "Sending…" : "Resend"}
+            <Send className="w-3 h-3" /> {busy ? "Sending" : "Resend"}
           </button>
         )}
-        <Link href={`/presenters/${row.id}`} className="text-xs font-semibold text-blue-600 hover:underline">
+        <Link href={`/presenters/${row.id}`} className="text-xs font-semibold text-[#0066B3] hover:underline">
           View
         </Link>
       </div>
@@ -293,12 +309,27 @@ function PresenterRowItem({
 }
 
 function InviteModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
-  const [email, setEmail] = useState("");
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [affiliation, setAffiliation] = useState("");
+
+  const [role, setRole] = useState("");
+  const [sessionFormat, setSessionFormat] = useState("");
+  const [sessionLength, setSessionLength] = useState("");
+  const [qaLength, setQaLength] = useState("");
+  const [sessionTrack, setSessionTrack] = useState("");
+  const [preferredDay, setPreferredDay] = useState("");
+
   const [talkTitle, setTalkTitle] = useState("");
+  const [talkAbstract, setTalkAbstract] = useState("");
+  const [learningObjectives, setLearningObjectives] = useState("");
+
+  const [honorariumAmount, setHonorariumAmount] = useState<string>("");
+  const [travelReimbursement, setTravelReimbursement] = useState<string>("");
+
   const [customMessage, setCustomMessage] = useState("");
   const [sendNow, setSendNow] = useState(true);
+
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdUrl, setCreatedUrl] = useState<string | null>(null);
@@ -307,10 +338,24 @@ function InviteModal({ onClose, onCreated }: { onClose: () => void; onCreated: (
     setError(null);
     setBusy(true);
     try {
+      const payload: Record<string, unknown> = {
+        name, email, affiliation, customMessage, sendNow,
+        role: role || undefined,
+        sessionFormat: sessionFormat || undefined,
+        sessionLength: sessionLength || undefined,
+        qaLength: qaLength || undefined,
+        sessionTrack: sessionTrack || undefined,
+        preferredDay: preferredDay || undefined,
+        talkTitle: talkTitle || undefined,
+        talkAbstract: talkAbstract || undefined,
+        learningObjectives: learningObjectives || undefined,
+        honorariumAmount: honorariumAmount ? Number(honorariumAmount) : undefined,
+        travelReimbursement: travelReimbursement ? Number(travelReimbursement) : undefined,
+      };
       const res = await fetch("/api/presenters", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, name, affiliation, talkTitle, customMessage, sendNow }),
+        body: JSON.stringify(payload),
       });
       const { ok, data, error } = await parseResponse<{ id: string; url: string }>(res);
       if (!ok || !data) throw new Error(error || "Failed");
@@ -325,18 +370,25 @@ function InviteModal({ onClose, onCreated }: { onClose: () => void; onCreated: (
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
-      <div className="w-full max-w-md bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-          <div className="font-semibold text-slate-900">Invite a presenter</div>
+      <div className="w-full max-w-2xl bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
+        <div className="h-1.5 w-full flex shrink-0">
+          <div className="w-1/2 bg-[#0E5566]" />
+          <div className="w-1/2 bg-[#0066B3]" />
+        </div>
+        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between shrink-0">
+          <div>
+            <div className="text-[11px] font-semibold tracking-[0.2em] uppercase text-[#0E5566]">New invitation</div>
+            <div className="font-semibold text-slate-900">Invite a presenter</div>
+          </div>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-700">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {createdUrl ? (
-          <div className="p-6 space-y-4">
+          <div className="p-6 space-y-4 overflow-y-auto">
             <div className="flex items-start gap-3 bg-emerald-50 border border-emerald-200 rounded-xl p-4">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 mt-0.5 shrink-0" />
+              <Check className="w-5 h-5 text-emerald-600 mt-0.5 shrink-0" />
               <div>
                 <div className="text-sm font-semibold text-emerald-900">
                   {sendNow ? "Invitation sent" : "Presenter created"}
@@ -349,7 +401,7 @@ function InviteModal({ onClose, onCreated }: { onClose: () => void; onCreated: (
               </div>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Personal portal link</label>
+              <div className="text-xs font-semibold text-slate-700 mb-1">Personal portal link</div>
               <div className="flex items-center gap-2">
                 <input readOnly value={createdUrl} className="flex-1 px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg" />
                 <button
@@ -363,51 +415,105 @@ function InviteModal({ onClose, onCreated }: { onClose: () => void; onCreated: (
             </div>
             <button
               onClick={onClose}
-              className="w-full px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-slate-900 hover:bg-slate-800"
+              className="w-full px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#0E5566] hover:bg-[#0A3F4D]"
             >
               Done
             </button>
           </div>
         ) : (
-          <div className="p-6 space-y-4">
+          <div className="overflow-y-auto px-6 py-5 space-y-6">
             {error && (
               <div className="bg-rose-50 border border-rose-200 text-rose-800 rounded-lg px-3 py-2 text-xs">{error}</div>
             )}
-            <ModalField label="Name" required>
-              <input value={name} onChange={(e) => setName(e.target.value)} className={modalInput} />
-            </ModalField>
-            <ModalField label="Email" required>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={modalInput} />
-            </ModalField>
-            <ModalField label="Affiliation">
-              <input value={affiliation} onChange={(e) => setAffiliation(e.target.value)} className={modalInput} />
-            </ModalField>
-            <ModalField label="Talk title (you can leave blank)">
-              <input value={talkTitle} onChange={(e) => setTalkTitle(e.target.value)} className={modalInput} />
-            </ModalField>
-            <ModalField label="Personal note (optional)" hint="Shows in the invitation email.">
+
+            <Group title="Recipient" required>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <Mfield label="Name" required>
+                  <input value={name} onChange={(e) => setName(e.target.value)} className={mInput} />
+                </Mfield>
+                <Mfield label="Email" required>
+                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={mInput} />
+                </Mfield>
+              </div>
+              <Mfield label="Affiliation">
+                <input value={affiliation} onChange={(e) => setAffiliation(e.target.value)} className={mInput} placeholder="Optional" />
+              </Mfield>
+            </Group>
+
+            <Group title="Assignment" hint="Anything left blank is hidden from the presenter and treated as undetermined.">
+              <div className="grid sm:grid-cols-2 gap-3">
+                <Mfield label="Role">
+                  <SelectWithCustom value={role} setValue={setRole} options={ROLE_OPTIONS} placeholder="Choose a role" />
+                </Mfield>
+                <Mfield label="Track or theme">
+                  <input value={sessionTrack} onChange={(e) => setSessionTrack(e.target.value)} className={mInput} placeholder="Optional" />
+                </Mfield>
+              </div>
+              <div className="grid sm:grid-cols-3 gap-3">
+                <Mfield label="Presentation length">
+                  <SelectWithCustom value={sessionLength} setValue={setSessionLength} options={SESSION_LENGTHS} placeholder="Optional" />
+                </Mfield>
+                <Mfield label="Q and A length">
+                  <SelectWithCustom value={qaLength} setValue={setQaLength} options={QA_LENGTHS} placeholder="Optional" />
+                </Mfield>
+                <Mfield label="Day">
+                  <SelectWithCustom value={preferredDay} setValue={setPreferredDay} options={PREFERRED_DAY} placeholder="To be decided" />
+                </Mfield>
+              </div>
+              <Mfield label="Format" hint="Workshop, panel, breakout, etc. Leave blank if same as role.">
+                <input value={sessionFormat} onChange={(e) => setSessionFormat(e.target.value)} className={mInput} placeholder="Optional" />
+              </Mfield>
+            </Group>
+
+            <Group title="Talk details" hint="If left blank the presenter can propose their own.">
+              <Mfield label="Working title">
+                <input value={talkTitle} onChange={(e) => setTalkTitle(e.target.value)} className={mInput} />
+              </Mfield>
+              <Mfield label="Abstract">
+                <textarea value={talkAbstract} onChange={(e) => setTalkAbstract(e.target.value)} rows={3} className={mInput} />
+              </Mfield>
+              <Mfield label="Learning objectives">
+                <textarea value={learningObjectives} onChange={(e) => setLearningObjectives(e.target.value)} rows={3} className={mInput} />
+              </Mfield>
+            </Group>
+
+            <Group title="Compensation" hint="If both are blank, no compensation is mentioned in the invitation.">
+              <div className="grid sm:grid-cols-2 gap-3">
+                <Mfield label="Honorarium" hint="Fixed amount, paid after participation.">
+                  <Money value={honorariumAmount} setValue={setHonorariumAmount} placeholder="e.g. 300" />
+                </Mfield>
+                <Mfield label="Travel reimbursement cap" hint='Shown to presenter as "up to $X". Receipts required.'>
+                  <Money value={travelReimbursement} setValue={setTravelReimbursement} placeholder="e.g. 200" />
+                </Mfield>
+              </div>
+            </Group>
+
+            <Group title="Personal note" hint="Shows in the invitation email above the assignment details.">
               <textarea
                 value={customMessage}
                 onChange={(e) => setCustomMessage(e.target.value)}
                 rows={3}
-                className={modalInput}
-                placeholder="Looking forward to having you back this year…"
+                className={mInput}
+                placeholder="Looking forward to having you back this year."
               />
-            </ModalField>
-            <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
-              <input type="checkbox" checked={sendNow} onChange={(e) => setSendNow(e.target.checked)} className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
-              Email the invitation now
-            </label>
-            <div className="flex gap-2 justify-end pt-2">
-              <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900">Cancel</button>
-              <button
-                onClick={submit}
-                disabled={busy || !email || !name}
-                className="px-5 py-2 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:opacity-50"
-              >
-                {busy ? "Working…" : "Send invitation"}
-              </button>
-            </div>
+              <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer pt-1">
+                <input type="checkbox" checked={sendNow} onChange={(e) => setSendNow(e.target.checked)} className="w-4 h-4 rounded border-slate-300 text-[#0066B3] focus:ring-[#0066B3]" />
+                Email the invitation now
+              </label>
+            </Group>
+          </div>
+        )}
+
+        {!createdUrl && (
+          <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-end gap-2 shrink-0">
+            <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900">Cancel</button>
+            <button
+              onClick={submit}
+              disabled={busy || !email || !name}
+              className="px-5 py-2 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-[#0E5566] to-[#0066B3] hover:from-[#0A3F4D] hover:to-[#004F8C] disabled:opacity-50"
+            >
+              {busy ? "Working" : sendNow ? "Send invitation" : "Save invitation"}
+            </button>
           </div>
         )}
       </div>
@@ -415,15 +521,98 @@ function InviteModal({ onClose, onCreated }: { onClose: () => void; onCreated: (
   );
 }
 
-const modalInput =
-  "w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none";
+function Money({ value, setValue, placeholder }: { value: string; setValue: (s: string) => void; placeholder?: string }) {
+  return (
+    <div className="relative">
+      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">$</span>
+      <input
+        type="number"
+        min={0}
+        step={1}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder={placeholder}
+        className={mInput + " pl-7"}
+      />
+    </div>
+  );
+}
 
-function ModalField({ label, hint, required, children }: { label: string; hint?: string; required?: boolean; children: React.ReactNode }) {
+function SelectWithCustom({
+  value, setValue, options, placeholder,
+}: {
+  value: string;
+  setValue: (s: string) => void;
+  options: string[];
+  placeholder?: string;
+}) {
+  const [custom, setCustom] = useState(value && !options.includes(value));
+  if (custom) {
+    return (
+      <div className="flex gap-2">
+        <input
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          className={mInput}
+          autoFocus
+        />
+        <button
+          type="button"
+          onClick={() => { setCustom(false); setValue(""); }}
+          className="px-3 py-2 text-xs text-slate-500 hover:text-slate-900"
+        >
+          List
+        </button>
+      </div>
+    );
+  }
+  return (
+    <div className="flex gap-2">
+      <select
+        value={value}
+        onChange={(e) => {
+          if (e.target.value === "__custom__") {
+            setCustom(true);
+            setValue("");
+          } else {
+            setValue(e.target.value);
+          }
+        }}
+        className={mInput}
+      >
+        <option value="">{placeholder || "Choose"}</option>
+        {options.map((o) => <option key={o} value={o}>{o}</option>)}
+        <option value="__custom__">Custom value</option>
+      </select>
+    </div>
+  );
+}
+
+function Group({ title, hint, required, children }: { title: string; hint?: string; required?: boolean; children: React.ReactNode }) {
+  return (
+    <div className="space-y-3">
+      <div className="flex items-baseline justify-between">
+        <div className="text-[11px] font-semibold tracking-[0.2em] uppercase text-[#0E5566] flex items-center gap-2">
+          {title}
+          {required && <span className="text-[10px] text-rose-600 normal-case tracking-normal">required</span>}
+        </div>
+        {hint && <div className="text-[11px] text-slate-400 max-w-xs text-right">{hint}</div>}
+      </div>
+      <div className="space-y-3">{children}</div>
+    </div>
+  );
+}
+
+const mInput =
+  "w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#0066B3]/20 focus:border-[#0066B3] outline-none";
+
+function Mfield({ label, hint, required, children }: { label: string; hint?: string; required?: boolean; children: React.ReactNode }) {
   return (
     <div className="space-y-1">
-      <label className="block text-xs font-semibold text-slate-700">
-        {label} {required && <span className="text-rose-500">*</span>}
-      </label>
+      <div className="flex items-center gap-2">
+        <label className="block text-xs font-semibold text-slate-700">{label}</label>
+        {required && <span className="text-[10px] font-semibold text-rose-600 uppercase tracking-wider">Required</span>}
+      </div>
       {children}
       {hint && <div className="text-[11px] text-slate-400">{hint}</div>}
     </div>

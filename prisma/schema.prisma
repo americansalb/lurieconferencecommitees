@@ -141,14 +141,19 @@ model Presenter {
   pronouns           String?
   phone              String?
 
+  role               String?
   talkTitle          String?
   talkAbstract       String?
   sessionFormat      String?
   sessionTrack       String?
   sessionLength      String?
+  qaLength           String?
   coPresenters       String?
   preferredDay       String?
   learningObjectives String?
+  honorariumAmount   Int?
+  travelReimbursement Int?
+  presenterMessage   String?
 
   bio                String?
   headshotData       Bytes?
@@ -181,9 +186,13 @@ model Presenter {
   agreedToRecord     Boolean          @default(false)
   agreedToPhoto      Boolean          @default(false)
   agreedToTerms      Boolean          @default(false)
+  agreedToCe         Boolean          @default(false)
+  agreedToHeadshot   Boolean          @default(false)
+  policiesAcceptedAt DateTime?
 
   status             String           @default("invited")
   declineReason      String?
+  requestedChanges   String?
   token              String           @unique
   invitedAt          DateTime         @default(now())
   confirmedAt        DateTime?
