@@ -2,12 +2,10 @@
 
 import { useMemo, useRef, useState } from "react";
 import {
-  CheckCircle2, ChevronLeft, ChevronRight, Sparkles, User, Mic2, Plane,
-  UtensilsCrossed, ClipboardCheck, Upload, X, CalendarDays, MapPin, AlertCircle,
+  Check, ChevronLeft, ChevronRight, Upload, X, AlertCircle,
+  Calendar, MapPin, Clock, Users, FileText, MessageSquare, DollarSign, Mic,
+  ExternalLink,
 } from "lucide-react";
-import {
-  SESSION_FORMATS, SESSION_LENGTHS, TRAVEL_MODES, PREFERRED_DAY,
-} from "@/lib/presenters";
 import { parseResponse } from "@/lib/api";
 
 type Fields = Record<string, string | boolean | null | undefined>;
@@ -20,14 +18,19 @@ type Initial = {
   jobTitle: string | null;
   pronouns: string | null;
   phone: string | null;
+  role: string | null;
   talkTitle: string | null;
   talkAbstract: string | null;
   sessionFormat: string | null;
   sessionTrack: string | null;
   sessionLength: string | null;
+  qaLength: string | null;
   coPresenters: string | null;
   preferredDay: string | null;
   learningObjectives: string | null;
+  honorariumAmount: number | null;
+  travelReimbursement: number | null;
+  presenterMessage: string | null;
   bio: string | null;
   websiteUrl: string | null;
   linkedinUrl: string | null;
@@ -54,18 +57,13 @@ type Initial = {
   agreedToRecord: boolean;
   agreedToPhoto: boolean;
   agreedToTerms: boolean;
+  agreedToCe: boolean;
+  agreedToHeadshot: boolean;
   status: string;
+  requestedChanges?: string | null;
 };
 
-const STEPS = [
-  { key: "welcome", label: "Welcome", icon: Sparkles },
-  { key: "talk", label: "Your talk", icon: ClipboardCheck },
-  { key: "about", label: "About you", icon: User },
-  { key: "av", label: "Tech & A/V", icon: Mic2 },
-  { key: "travel", label: "Travel", icon: Plane },
-  { key: "logistics", label: "Logistics", icon: UtensilsCrossed },
-  { key: "review", label: "Review", icon: CheckCircle2 },
-] as const;
+const STEPS = ["Invitation", "About you", "Logistics", "Confirm"] as const;
 
 export default function PresenterWizard({
   token,
@@ -77,24 +75,34 @@ export default function PresenterWizard({
   headshotUrl: string | null;
 }) {
   const [step, setStep] = useState(0);
+  const [decision, setDecision] = useState<"accept" | "request_changes" | "decline" | null>(
+    initial.status === "confirmed" || initial.status === "tentative" ? "accept" :
+    initial.status === "declined" ? "decline" :
+    initial.status === "changes_requested" ? "request_changes" : null
+  );
   const [fields, setFields] = useState<Fields>(() => ({ ...initial }));
   const [arrival, setArrival] = useState(initial.travelArrival ? initial.travelArrival.slice(0, 10) : "");
   const [departure, setDeparture] = useState(initial.travelDeparture ? initial.travelDeparture.slice(0, 10) : "");
   const [headshotPreview, setHeadshotPreview] = useState<string | null>(headshotUrl);
   const [pendingHeadshot, setPendingHeadshot] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [submitted, setSubmitted] = useState(initial.status === "confirmed");
-  const [declined, setDeclined] = useState(initial.status === "declined");
+  const [completion, setCompletion] = useState<"confirmed" | "tentative" | "declined" | "changes" | null>(
+    initial.status === "confirmed" ? "confirmed" :
+    initial.status === "tentative" ? "tentative" :
+    initial.status === "declined" ? "declined" :
+    initial.status === "changes_requested" ? "changes" : null
+  );
   const [error, setError] = useState<string | null>(null);
+  const [showPolicy, setShowPolicy] = useState(false);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
-  const firstName = useMemo(() => (initial.name || "there").split(" ")[0], [initial.name]);
+  const firstName = useMemo(() => (initial.name || "").split(" ")[0] || initial.name, [initial.name]);
 
   function set<K extends keyof Fields>(key: K, value: Fields[K]) {
     setFields((f) => ({ ...f, [key]: value }));
   }
 
-  async function persist(action: "save" | "submit" | "decline") {
+  async function persist(action: "save" | "submit" | "tentative" | "decline" | "request_changes") {
     setError(null);
     setSaving(true);
     try {
@@ -111,8 +119,10 @@ export default function PresenterWizard({
       });
       const { ok, error } = await parseResponse(res);
       if (!ok) throw new Error(error || "Something went wrong");
-      if (action === "submit") setSubmitted(true);
-      if (action === "decline") setDeclined(true);
+      if (action === "submit") setCompletion("confirmed");
+      if (action === "tentative") setCompletion("tentative");
+      if (action === "decline") setCompletion("declined");
+      if (action === "request_changes") setCompletion("changes");
       if (pendingHeadshot) setPendingHeadshot(null);
       return true;
     } catch (e) {
@@ -146,16 +156,17 @@ export default function PresenterWizard({
     setStep((s) => Math.max(0, s - 1));
   }
 
-  if (submitted) return <SuccessCard name={firstName} mode="confirmed" />;
-  if (declined) return <SuccessCard name={firstName} mode="declined" />;
+  if (completion) return <CompletionCard name={firstName} mode={completion} />;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-8 px-4 sm:py-12">
-      <div className="max-w-3xl mx-auto">
+    <div className="min-h-screen bg-white">
+      <BrandBar />
+
+      <div className="max-w-3xl mx-auto px-5 sm:px-8 py-8 sm:py-12">
         <Header firstName={firstName} />
 
-        <div className="bg-white rounded-2xl shadow-xl shadow-blue-900/5 border border-slate-200/60 overflow-hidden">
-          <Stepper current={step} />
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <Stepper current={step} decision={decision} />
 
           <div className="px-6 sm:px-10 py-8 sm:py-10">
             {error && (
@@ -165,9 +176,22 @@ export default function PresenterWizard({
               </div>
             )}
 
-            {step === 0 && <Welcome name={firstName} onDecline={() => persist("decline")} declineReason={fields.declineReason as string} setDeclineReason={(v) => set("declineReason", v)} />}
-            {step === 1 && <TalkStep fields={fields} set={set} />}
-            {step === 2 && (
+            {step === 0 && (
+              <InvitationStep
+                initial={initial}
+                decision={decision}
+                setDecision={setDecision}
+                declineReason={(fields.declineReason as string) || ""}
+                setDeclineReason={(v) => set("declineReason", v)}
+                requestedChangesText={(fields.requestedChanges as string) || ""}
+                setRequestedChangesText={(v) => set("requestedChanges", v)}
+                onDecline={() => persist("decline")}
+                onRequestChanges={() => persist("request_changes")}
+                onAcceptContinue={() => setStep(1)}
+              />
+            )}
+
+            {step === 1 && decision === "accept" && (
               <AboutStep
                 fields={fields}
                 set={set}
@@ -179,9 +203,9 @@ export default function PresenterWizard({
                 }}
               />
             )}
-            {step === 3 && <AvStep fields={fields} set={set} />}
-            {step === 4 && (
-              <TravelStep
+
+            {step === 2 && decision === "accept" && (
+              <LogisticsStep
                 fields={fields}
                 set={set}
                 arrival={arrival}
@@ -190,15 +214,16 @@ export default function PresenterWizard({
                 setDeparture={setDeparture}
               />
             )}
-            {step === 5 && <LogisticsStep fields={fields} set={set} />}
-            {step === 6 && (
-              <ReviewStep
+
+            {step === 3 && decision === "accept" && (
+              <ConfirmStep
                 fields={fields}
                 set={set}
+                initial={initial}
                 arrival={arrival}
                 departure={departure}
                 headshotPreview={headshotPreview}
-                email={initial.email}
+                onShowPolicy={() => setShowPolicy(true)}
               />
             )}
 
@@ -213,197 +238,244 @@ export default function PresenterWizard({
               }}
             />
 
-            <div className="mt-10 pt-6 border-t border-slate-200 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
-              <button
-                type="button"
-                onClick={back}
-                disabled={step === 0 || saving}
-                className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:text-slate-900 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronLeft className="w-4 h-4" /> Back
-              </button>
-
-              <div className="flex items-center gap-2 sm:gap-3">
-                {step < STEPS.length - 1 && step > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => persist("save")}
-                    disabled={saving}
-                    className="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:text-slate-900 disabled:opacity-40 transition-colors"
-                  >
-                    Save & finish later
-                  </button>
-                )}
-                {step < STEPS.length - 1 ? (
-                  <button
-                    type="button"
-                    onClick={next}
-                    disabled={saving}
-                    className="inline-flex items-center justify-center gap-1.5 px-6 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-md shadow-blue-600/20 hover:shadow-lg disabled:opacity-50 transition-all"
-                  >
-                    Continue <ChevronRight className="w-4 h-4" />
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => persist("submit")}
-                    disabled={saving || !fields.agreedToTerms}
-                    className="inline-flex items-center justify-center gap-1.5 px-6 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-md shadow-emerald-600/20 hover:shadow-lg disabled:opacity-50 transition-all"
-                  >
-                    {saving ? "Submitting…" : "Confirm my participation"}
-                    <CheckCircle2 className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-            </div>
+            {step > 0 && decision === "accept" && (
+              <FooterNav
+                step={step}
+                saving={saving}
+                canSubmit={!!fields.agreedToTerms && !!fields.agreedToHeadshot}
+                onBack={back}
+                onNext={next}
+                onSaveDraft={() => persist("save")}
+                onSubmit={() => persist("submit")}
+                onTentative={() => persist("tentative")}
+              />
+            )}
           </div>
         </div>
-
-        <Footer />
       </div>
+
+      {showPolicy && <PolicyDialog onClose={() => setShowPolicy(false)} />}
+    </div>
+  );
+}
+
+function BrandBar() {
+  return (
+    <div className="h-2 w-full flex">
+      <div className="w-1/2 bg-[#0E5566]" />
+      <div className="w-1/2 bg-[#0066B3]" />
     </div>
   );
 }
 
 function Header({ firstName }: { firstName: string }) {
   return (
-    <div className="mb-8 text-center">
-      <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-100 text-blue-700 text-xs font-semibold tracking-widest uppercase px-3 py-1 rounded-full mb-4">
-        <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
+    <div className="mb-8">
+      <div className="text-[11px] font-semibold tracking-[0.2em] uppercase text-[#0E5566]">
         Presenter portal
       </div>
-      <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">
-        Welcome, {firstName} <span className="inline-block">👋</span>
+      <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight mt-2">
+        Welcome, {firstName}.
       </h1>
-      <p className="text-slate-500 mt-3 max-w-xl mx-auto">
-        Confirm your details for the 2026 Lurie Children&rsquo;s &amp; AALB Conference. Takes about 5 minutes. Auto-saves as you go.
+      <p className="text-slate-500 mt-3 max-w-xl text-[15px] leading-relaxed">
+        The 2026 Lurie Children&apos;s and AALB Conference. True Language Access: Yesterday, Today, and Tomorrow.
       </p>
-      <div className="text-xs font-semibold text-blue-700 mt-3 tracking-wide">
-        True Language Access: Yesterday, Today, and Tomorrow
-      </div>
-      <div className="inline-flex items-center gap-1.5 text-xs text-slate-400 mt-2">
-        <CalendarDays className="w-3.5 h-3.5" /> August 15&ndash;16, 2026
-        <span className="mx-2">&middot;</span>
-        <MapPin className="w-3.5 h-3.5" /> Chicago
-      </div>
     </div>
   );
 }
 
-function Stepper({ current }: { current: number }) {
+function Stepper({ current, decision }: { current: number; decision: string | null }) {
+  const visible = decision === "accept" ? STEPS.length : 1;
   return (
-    <div className="px-4 sm:px-8 pt-6">
-      <div className="grid grid-cols-7 gap-1 sm:gap-2">
-        {STEPS.map((s, i) => {
-          const Icon = s.icon;
+    <div className="px-6 sm:px-10 pt-6">
+      <div className="flex items-center gap-2">
+        {STEPS.slice(0, visible).map((label, i) => {
           const done = i < current;
           const active = i === current;
           return (
-            <div key={s.key} className="flex flex-col items-center gap-1.5">
+            <div key={label} className="flex items-center gap-2 flex-1">
               <div
                 className={
-                  "w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-xs font-semibold transition-all " +
+                  "w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 transition-all " +
                   (done
-                    ? "bg-emerald-500 text-white"
+                    ? "bg-[#0E5566] text-white"
                     : active
-                    ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-md shadow-blue-600/30 scale-110"
+                    ? "bg-[#0066B3] text-white ring-4 ring-[#0066B3]/15"
                     : "bg-slate-100 text-slate-400")
                 }
               >
-                {done ? <CheckCircle2 className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
+                {done ? <Check className="w-3.5 h-3.5" /> : i + 1}
               </div>
-              <div
-                className={
-                  "text-[10px] sm:text-[11px] font-medium text-center leading-tight " +
-                  (active ? "text-slate-900" : "text-slate-400")
-                }
-              >
-                {s.label}
+              <div className={"text-xs font-semibold " + (active ? "text-slate-900" : done ? "text-slate-700" : "text-slate-400")}>
+                {label}
               </div>
+              {i < visible - 1 && <div className={"flex-1 h-px " + (done ? "bg-[#0E5566]" : "bg-slate-200")} />}
             </div>
           );
         })}
       </div>
-      <div className="mt-4 h-1 bg-slate-100 rounded-full overflow-hidden">
-        <div
-          className="h-full bg-gradient-to-r from-blue-500 to-emerald-500 transition-all duration-500"
-          style={{ width: `${((current + 1) / STEPS.length) * 100}%` }}
-        />
-      </div>
     </div>
   );
 }
 
-function Welcome({
-  name,
-  onDecline,
+function InvitationStep({
+  initial,
+  decision,
+  setDecision,
   declineReason,
   setDeclineReason,
+  requestedChangesText,
+  setRequestedChangesText,
+  onDecline,
+  onRequestChanges,
+  onAcceptContinue,
 }: {
-  name: string;
+  initial: Initial;
+  decision: "accept" | "request_changes" | "decline" | null;
+  setDecision: (d: "accept" | "request_changes" | "decline" | null) => void;
+  declineReason: string;
+  setDeclineReason: (s: string) => void;
+  requestedChangesText: string;
+  setRequestedChangesText: (s: string) => void;
   onDecline: () => Promise<boolean>;
-  declineReason: string | undefined;
-  setDeclineReason: (v: string) => void;
+  onRequestChanges: () => Promise<boolean>;
+  onAcceptContinue: () => void;
 }) {
-  const [showDecline, setShowDecline] = useState(false);
-  return (
-    <div>
-      <h2 className="text-2xl font-bold text-slate-900 tracking-tight">A quick hello, {name}</h2>
-      <p className="mt-3 text-slate-600 leading-relaxed">
-        We&rsquo;re delighted to have you presenting at the 2026 Lurie Children&rsquo;s &amp; AALB Conference on{" "}
-        <strong>August 15&ndash;16, 2026</strong>. This year&rsquo;s theme is{" "}
-        <em>True Language Access: Yesterday, Today, and Tomorrow</em>. Click <strong>Continue</strong> to walk through your talk details, bio, tech needs, and travel — about 5 minutes total.
-      </p>
+  const headline =
+    [initial.sessionLength, initial.sessionFormat || initial.role].filter(Boolean).join(" ") ||
+    initial.role || "A presenter";
+  const showCompensation = initial.honorariumAmount != null || initial.travelReimbursement != null;
 
-      <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {[
-          { icon: ClipboardCheck, label: "Talk details", desc: "Title, abstract, format" },
-          { icon: User, label: "About you", desc: "Bio, headshot, links" },
-          { icon: Plane, label: "Travel & needs", desc: "A/V, dietary, accessibility" },
-        ].map((c) => (
-          <div key={c.label} className="rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3">
-            <c.icon className="w-4 h-4 text-blue-600 mb-1" />
-            <div className="text-sm font-semibold text-slate-900">{c.label}</div>
-            <div className="text-xs text-slate-500">{c.desc}</div>
-          </div>
-        ))}
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Your invitation</h2>
+        <p className="mt-1.5 text-sm text-slate-500">Here is what we are asking. Review the details, then choose how to respond.</p>
       </div>
 
-      {!showDecline ? (
-        <div className="mt-8 text-center">
+      <div className="rounded-2xl border border-slate-200 overflow-hidden">
+        <div className="px-6 py-5 bg-gradient-to-r from-[#0E5566] to-[#0066B3] text-white">
+          <div className="text-[11px] font-semibold tracking-[0.2em] uppercase opacity-90">You are invited to participate as</div>
+          <div className="text-xl font-bold mt-1">
+            {headline}
+            {initial.sessionTrack ? `, ${initial.sessionTrack}` : ""}
+          </div>
+        </div>
+        <div className="divide-y divide-slate-100">
+          {initial.talkTitle && <DetailRow icon={FileText} label="Working title" value={initial.talkTitle} />}
+          {initial.talkAbstract && <DetailRow icon={MessageSquare} label="Abstract" value={initial.talkAbstract} multiline />}
+          {initial.qaLength && <DetailRow icon={Mic} label="Q and A" value={initial.qaLength} />}
+          {initial.preferredDay && <DetailRow icon={Calendar} label="Day" value={initial.preferredDay} />}
+          {initial.coPresenters && <DetailRow icon={Users} label="Co presenters" value={initial.coPresenters} />}
+          {initial.learningObjectives && <DetailRow icon={Check} label="Learning objectives" value={initial.learningObjectives} multiline />}
+          <DetailRow icon={MapPin} label="Venue" value="Lurie Children's, Chicago" />
+          <DetailRow icon={Clock} label="Conference dates" value="August 15 and 16, 2026" />
+        </div>
+
+        {showCompensation && (
+          <div className="px-6 py-5 bg-slate-50 border-t border-slate-200">
+            <div className="text-[11px] font-semibold tracking-[0.2em] uppercase text-slate-500 mb-3">Compensation</div>
+            <div className="grid sm:grid-cols-2 gap-3">
+              {initial.honorariumAmount != null && (
+                <CompCard
+                  label="Honorarium"
+                  value={`$${initial.honorariumAmount.toLocaleString("en-US")}`}
+                  caption="Paid after participation"
+                />
+              )}
+              {initial.travelReimbursement != null && (
+                <CompCard
+                  label="Travel reimbursement"
+                  value={`up to $${initial.travelReimbursement.toLocaleString("en-US")}`}
+                  caption="Receipts required"
+                />
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div>
+        <div className="text-[11px] font-semibold tracking-[0.2em] uppercase text-slate-500 mb-3">How would you like to respond</div>
+        <div className="grid sm:grid-cols-3 gap-3">
+          <DecisionCard
+            active={decision === "accept"}
+            tone="primary"
+            label="Accept"
+            desc="Move forward and provide your details."
+            onClick={() => setDecision("accept")}
+          />
+          <DecisionCard
+            active={decision === "request_changes"}
+            tone="neutral"
+            label="Request adjustments"
+            desc="Propose a different format, length, day, or scope."
+            onClick={() => setDecision("request_changes")}
+          />
+          <DecisionCard
+            active={decision === "decline"}
+            tone="muted"
+            label="Cannot attend"
+            desc="Decline politely with an optional note."
+            onClick={() => setDecision("decline")}
+          />
+        </div>
+      </div>
+
+      {decision === "accept" && (
+        <div className="flex justify-end">
           <button
             type="button"
-            onClick={() => setShowDecline(true)}
-            className="text-sm text-slate-400 hover:text-rose-600 underline-offset-2 hover:underline transition-colors"
+            onClick={onAcceptContinue}
+            className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-[#0E5566] to-[#0066B3] hover:from-[#0A3F4D] hover:to-[#004F8C] shadow-sm"
           >
-            Can&rsquo;t make it this year?
+            Continue <ChevronRight className="w-4 h-4" />
           </button>
         </div>
-      ) : (
-        <div className="mt-8 p-5 bg-rose-50/60 border border-rose-200 rounded-xl">
-          <div className="text-sm font-semibold text-slate-900">We're sorry to hear that.</div>
-          <p className="text-xs text-slate-500 mt-1">A short note helps us plan — and we&rsquo;ll keep you in mind for the future.</p>
+      )}
+
+      {decision === "request_changes" && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50/40 p-5">
+          <div className="text-sm font-semibold text-slate-900">What would you like to change?</div>
+          <p className="text-xs text-slate-500 mt-1">Tell us what you would prefer. Our program team will review and reply directly.</p>
           <textarea
-            value={declineReason || ""}
-            onChange={(e) => setDeclineReason(e.target.value)}
-            rows={3}
-            placeholder="Optional — schedule conflict, traveling, etc."
-            className="mt-3 w-full px-3 py-2 text-sm border border-rose-200 rounded-lg focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none bg-white"
+            value={requestedChangesText}
+            onChange={(e) => setRequestedChangesText(e.target.value)}
+            rows={4}
+            placeholder="For example, a 45 minute slot instead of 60, or a panel format instead of a workshop."
+            className={inputClass + " mt-3 bg-white"}
           />
-          <div className="mt-3 flex gap-2 justify-end">
+          <div className="mt-3 flex justify-end">
             <button
               type="button"
-              onClick={() => setShowDecline(false)}
-              className="px-3 py-1.5 text-sm font-medium text-slate-600 hover:text-slate-900"
+              onClick={onRequestChanges}
+              disabled={!requestedChangesText.trim()}
+              className="px-5 py-2 rounded-xl text-sm font-semibold text-white bg-[#0E5566] hover:bg-[#0A3F4D] disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              Never mind
+              Send request to program team
             </button>
+          </div>
+        </div>
+      )}
+
+      {decision === "decline" && (
+        <div className="rounded-xl border border-rose-200 bg-rose-50/40 p-5">
+          <div className="text-sm font-semibold text-slate-900">Sorry to hear that.</div>
+          <p className="text-xs text-slate-500 mt-1">A short note helps us plan. Optional.</p>
+          <textarea
+            value={declineReason}
+            onChange={(e) => setDeclineReason(e.target.value)}
+            rows={3}
+            placeholder="Schedule conflict, traveling, other commitments, etc."
+            className={inputClass + " mt-3 bg-white"}
+          />
+          <div className="mt-3 flex justify-end">
             <button
               type="button"
               onClick={onDecline}
-              className="px-4 py-1.5 text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-lg"
+              className="px-5 py-2 rounded-xl text-sm font-semibold text-white bg-rose-700 hover:bg-rose-800"
             >
-              Decline politely
+              Submit decline
             </button>
           </div>
         </div>
@@ -412,89 +484,55 @@ function Welcome({
   );
 }
 
-function TalkStep({ fields, set }: { fields: Fields; set: (k: keyof Fields, v: Fields[keyof Fields]) => void }) {
+function CompCard({ label, value, caption }: { label: string; value: string; caption: string }) {
   return (
-    <StepShell title="Your talk" subtitle="Tell us what you'll be presenting. You can refine this later — but the title and abstract are what we'll publish.">
-      <Field label="Talk title" required>
-        <input
-          type="text"
-          value={(fields.talkTitle as string) || ""}
-          onChange={(e) => set("talkTitle", e.target.value)}
-          placeholder="The future of pediatric care delivery"
-          className={inputClass}
-        />
-      </Field>
-      <Field label="Abstract" hint="2–3 short paragraphs that help attendees decide to come.">
-        <textarea
-          value={(fields.talkAbstract as string) || ""}
-          onChange={(e) => set("talkAbstract", e.target.value)}
-          rows={6}
-          placeholder="What's your talk about? Who's it for? What will they walk away with?"
-          className={inputClass}
-        />
-      </Field>
-      <div className="grid sm:grid-cols-2 gap-4">
-        <Field label="Session format">
-          <select
-            value={(fields.sessionFormat as string) || ""}
-            onChange={(e) => set("sessionFormat", e.target.value)}
-            className={inputClass}
-          >
-            <option value="">Choose…</option>
-            {SESSION_FORMATS.map((f) => <option key={f} value={f}>{f}</option>)}
-          </select>
-        </Field>
-        <Field label="Length you'd prefer">
-          <select
-            value={(fields.sessionLength as string) || ""}
-            onChange={(e) => set("sessionLength", e.target.value)}
-            className={inputClass}
-          >
-            <option value="">Choose…</option>
-            {SESSION_LENGTHS.map((f) => <option key={f} value={f}>{f}</option>)}
-          </select>
-        </Field>
+    <div className="bg-white border border-slate-200 rounded-xl p-4">
+      <div className="flex items-center gap-1.5 text-[11px] font-semibold tracking-wider uppercase text-slate-500">
+        <DollarSign className="w-3.5 h-3.5" /> {label}
       </div>
-      <div className="grid sm:grid-cols-2 gap-4">
-        <Field label="Track / theme">
-          <input
-            type="text"
-            value={(fields.sessionTrack as string) || ""}
-            onChange={(e) => set("sessionTrack", e.target.value)}
-            placeholder="Clinical, Research, Tech, etc."
-            className={inputClass}
-          />
-        </Field>
-        <Field label="Preferred day">
-          <select
-            value={(fields.preferredDay as string) || ""}
-            onChange={(e) => set("preferredDay", e.target.value)}
-            className={inputClass}
-          >
-            <option value="">No preference</option>
-            {PREFERRED_DAY.map((f) => <option key={f} value={f}>{f}</option>)}
-          </select>
-        </Field>
-      </div>
-      <Field label="Co-presenters (if any)" hint="Comma-separated. We'll reach out to them with their own portal link.">
-        <input
-          type="text"
-          value={(fields.coPresenters as string) || ""}
-          onChange={(e) => set("coPresenters", e.target.value)}
-          placeholder="Jordan Smith, Dr. Alex Lee"
-          className={inputClass}
-        />
-      </Field>
-      <Field label="Learning objectives" hint="2–4 bullet points. What will attendees be able to do after your talk?">
-        <textarea
-          value={(fields.learningObjectives as string) || ""}
-          onChange={(e) => set("learningObjectives", e.target.value)}
-          rows={4}
-          placeholder={"• Understand…\n• Apply…\n• Identify…"}
-          className={inputClass}
-        />
-      </Field>
-    </StepShell>
+      <div className="text-2xl font-bold text-[#0E5566] mt-1">{value}</div>
+      <div className="text-[11px] text-slate-500 mt-0.5">{caption}</div>
+    </div>
+  );
+}
+
+function DetailRow({ icon: Icon, label, value, multiline }: { icon: React.ComponentType<{ className?: string }>; label: string; value: string; multiline?: boolean }) {
+  return (
+    <div className="px-6 py-4 grid grid-cols-[24px_140px_1fr] gap-4 items-start">
+      <Icon className="w-4 h-4 text-slate-400 mt-0.5" />
+      <div className="text-xs font-semibold text-slate-500">{label}</div>
+      <div className={"text-sm text-slate-900 " + (multiline ? "whitespace-pre-wrap leading-relaxed" : "")}>{value}</div>
+    </div>
+  );
+}
+
+function DecisionCard({
+  active, tone, label, desc, onClick,
+}: {
+  active: boolean;
+  tone: "primary" | "neutral" | "muted";
+  label: string;
+  desc: string;
+  onClick: () => void;
+}) {
+  const ringColor =
+    tone === "primary" ? "ring-[#0066B3]/30 border-[#0066B3]" :
+    tone === "neutral" ? "ring-amber-500/20 border-amber-400" :
+    "ring-rose-500/20 border-rose-400";
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={
+        "text-left p-4 rounded-xl border transition-all " +
+        (active
+          ? `bg-white ring-2 shadow-sm ${ringColor}`
+          : "bg-white border-slate-200 hover:border-slate-300")
+      }
+    >
+      <div className="text-sm font-semibold text-slate-900">{label}</div>
+      <div className="text-xs text-slate-500 mt-1 leading-relaxed">{desc}</div>
+    </button>
   );
 }
 
@@ -508,21 +546,36 @@ function AboutStep({
   clearHeadshot: () => void;
 }) {
   return (
-    <StepShell title="About you" subtitle="This is what attendees will see in the program. Headshot is optional but recommended.">
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold text-slate-900 tracking-tight">About you</h2>
+        <p className="mt-1.5 text-sm text-slate-500">This is what attendees and our marketing materials will use.</p>
+      </div>
+
+      <Field label="Bio" required hint="Two to four sentences in the third person.">
+        <textarea
+          value={(fields.bio as string) || ""}
+          onChange={(e) => set("bio", e.target.value)}
+          rows={5}
+          placeholder="Dr. Jordan Smith leads the pediatric language access program at..."
+          className={inputClass}
+        />
+      </Field>
+
       <div className="grid sm:grid-cols-[160px_1fr] gap-6 items-start">
         <div>
-          <div className="aspect-square rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden flex items-center justify-center relative">
+          <Label text="Headshot" required />
+          <div className="mt-2 aspect-square rounded-xl bg-slate-100 overflow-hidden flex items-center justify-center relative">
             {headshotPreview ? (
               <img src={headshotPreview} alt="Headshot preview" className="w-full h-full object-cover" />
             ) : (
-              <User className="w-12 h-12 text-slate-300" />
+              <div className="text-slate-400 text-xs text-center px-2">No photo</div>
             )}
             {headshotPreview && (
               <button
                 type="button"
                 onClick={clearHeadshot}
-                className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/90 hover:bg-white shadow flex items-center justify-center text-slate-600"
-                aria-label="Remove headshot"
+                className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/95 hover:bg-white shadow flex items-center justify-center text-slate-600"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -531,140 +584,70 @@ function AboutStep({
           <button
             type="button"
             onClick={onPickHeadshot}
-            className="mt-2 w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
+            className="mt-2 w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200"
           >
-            <Upload className="w-3.5 h-3.5" /> Upload headshot
+            <Upload className="w-3.5 h-3.5" /> Upload
           </button>
-          <div className="mt-1 text-[10px] text-slate-400 text-center">PNG/JPG/WebP &middot; under 4 MB</div>
         </div>
-        <div className="space-y-4">
-          <Field label="Short bio" hint="2–4 sentences in the third person — this is what we'll print in the program.">
-            <textarea
-              value={(fields.bio as string) || ""}
-              onChange={(e) => set("bio", e.target.value)}
-              rows={5}
-              placeholder="Dr. Jordan Smith leads the pediatric innovation lab at…"
-              className={inputClass}
+        <div className="space-y-3">
+          <div className="rounded-xl bg-[#0066B3]/5 border border-[#0066B3]/20 px-4 py-3">
+            <div className="text-xs font-semibold text-[#0066B3] uppercase tracking-wider">Quality requirements</div>
+            <ul className="mt-2 text-sm text-slate-700 space-y-1 list-disc list-inside">
+              <li>High resolution, at least 1200 pixels on the long side</li>
+              <li>Color, professional, head and shoulders</li>
+              <li>Neutral or simple background</li>
+              <li>PNG, JPG, or WebP under 4 MB</li>
+            </ul>
+            <div className="text-xs text-slate-500 mt-2">
+              If you do not have one ready, you can upload later. We use this for the program, website, signage, and social media.
+            </div>
+          </div>
+          <label className="flex items-start gap-3 p-4 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-50/60">
+            <input
+              type="checkbox"
+              checked={!!fields.agreedToHeadshot}
+              onChange={(e) => set("agreedToHeadshot", e.target.checked)}
+              className="mt-0.5 w-4 h-4 rounded border-slate-300 text-[#0066B3] focus:ring-[#0066B3]"
             />
-          </Field>
-          <div className="grid sm:grid-cols-2 gap-4">
-            <Field label="Job title">
-              <input
-                type="text"
-                value={(fields.jobTitle as string) || ""}
-                onChange={(e) => set("jobTitle", e.target.value)}
-                className={inputClass}
-              />
-            </Field>
-            <Field label="Affiliation / organization">
-              <input
-                type="text"
-                value={(fields.affiliation as string) || ""}
-                onChange={(e) => set("affiliation", e.target.value)}
-                className={inputClass}
-              />
-            </Field>
-          </div>
-          <div className="grid sm:grid-cols-2 gap-4">
-            <Field label="Pronouns">
-              <input
-                type="text"
-                value={(fields.pronouns as string) || ""}
-                onChange={(e) => set("pronouns", e.target.value)}
-                placeholder="she/her, they/them, …"
-                className={inputClass}
-              />
-            </Field>
-            <Field label="Phone (event-week only)">
-              <input
-                type="tel"
-                value={(fields.phone as string) || ""}
-                onChange={(e) => set("phone", e.target.value)}
-                placeholder="+1 555 000 1234"
-                className={inputClass}
-              />
-            </Field>
-          </div>
+            <span className="text-sm text-slate-700">
+              I will provide a high resolution headshot that meets these requirements, by upload above or by sending it to the program team before July 1, 2026.
+            </span>
+          </label>
         </div>
       </div>
 
+      <div className="grid sm:grid-cols-2 gap-4">
+        <Field label="Job title" optional>
+          <input type="text" value={(fields.jobTitle as string) || ""} onChange={(e) => set("jobTitle", e.target.value)} className={inputClass} />
+        </Field>
+        <Field label="Affiliation" optional>
+          <input type="text" value={(fields.affiliation as string) || ""} onChange={(e) => set("affiliation", e.target.value)} className={inputClass} />
+        </Field>
+      </div>
+      <div className="grid sm:grid-cols-2 gap-4">
+        <Field label="Pronouns" optional>
+          <input type="text" value={(fields.pronouns as string) || ""} onChange={(e) => set("pronouns", e.target.value)} placeholder="she/her, they/them" className={inputClass} />
+        </Field>
+        <Field label="Phone for event week" optional>
+          <input type="tel" value={(fields.phone as string) || ""} onChange={(e) => set("phone", e.target.value)} className={inputClass} />
+        </Field>
+      </div>
       <div className="grid sm:grid-cols-3 gap-4">
-        <Field label="Website">
-          <input
-            type="url"
-            value={(fields.websiteUrl as string) || ""}
-            onChange={(e) => set("websiteUrl", e.target.value)}
-            placeholder="https://"
-            className={inputClass}
-          />
+        <Field label="Website" optional>
+          <input type="url" value={(fields.websiteUrl as string) || ""} onChange={(e) => set("websiteUrl", e.target.value)} placeholder="https://" className={inputClass} />
         </Field>
-        <Field label="LinkedIn">
-          <input
-            type="url"
-            value={(fields.linkedinUrl as string) || ""}
-            onChange={(e) => set("linkedinUrl", e.target.value)}
-            placeholder="https://linkedin.com/in/…"
-            className={inputClass}
-          />
+        <Field label="LinkedIn" optional>
+          <input type="url" value={(fields.linkedinUrl as string) || ""} onChange={(e) => set("linkedinUrl", e.target.value)} placeholder="https://" className={inputClass} />
         </Field>
-        <Field label="Twitter / X handle">
-          <input
-            type="text"
-            value={(fields.twitterHandle as string) || ""}
-            onChange={(e) => set("twitterHandle", e.target.value)}
-            placeholder="@handle"
-            className={inputClass}
-          />
+        <Field label="Twitter or X" optional>
+          <input type="text" value={(fields.twitterHandle as string) || ""} onChange={(e) => set("twitterHandle", e.target.value)} placeholder="@handle" className={inputClass} />
         </Field>
       </div>
-    </StepShell>
+    </div>
   );
 }
 
-function AvStep({ fields, set }: { fields: Fields; set: (k: keyof Fields, v: Fields[keyof Fields]) => void }) {
-  const toggles: { key: keyof Fields; label: string; desc: string }[] = [
-    { key: "needsMic", label: "Wireless lavalier mic", desc: "Standard for all sessions" },
-    { key: "needsProjector", label: "Projector + HDMI", desc: "Slides at 16:9, please" },
-    { key: "needsAudio", label: "Audio playback", desc: "Sound from laptop" },
-    { key: "needsInternet", label: "Reliable Wi-Fi", desc: "Live demo or web content" },
-    { key: "needsRecording", label: "Session recorded", desc: "Shared with attendees afterward" },
-    { key: "needsClicker", label: "Wireless slide clicker", desc: "We'll provide one" },
-  ];
-  return (
-    <StepShell title="Tech & A/V" subtitle="Check what you'll need. Our tech team will reach out a week before with details and a soundcheck slot.">
-      <div className="grid sm:grid-cols-2 gap-3">
-        {toggles.map((t) => (
-          <CheckCard
-            key={String(t.key)}
-            checked={!!fields[t.key]}
-            label={t.label}
-            desc={t.desc}
-            onToggle={() => set(t.key, !fields[t.key])}
-          />
-        ))}
-      </div>
-      <Field label="Other A/V or tech notes">
-        <textarea
-          value={(fields.avNotes as string) || ""}
-          onChange={(e) => set("avNotes", e.target.value)}
-          rows={3}
-          placeholder="Anything special — Mac dongle, second display, demo equipment, etc."
-          className={inputClass}
-        />
-      </Field>
-      <Field label="Accessibility needs we should plan for" hint="ASL, captioning, mobility, seating, lighting — anything that helps you do your best work.">
-        <textarea
-          value={(fields.accessibilityNeeds as string) || ""}
-          onChange={(e) => set("accessibilityNeeds", e.target.value)}
-          rows={3}
-          className={inputClass}
-        />
-      </Field>
-    </StepShell>
-  );
-}
-
-function TravelStep({
+function LogisticsStep({
   fields, set, arrival, setArrival, departure, setDeparture,
 }: {
   fields: Fields;
@@ -675,83 +658,76 @@ function TravelStep({
   setDeparture: (s: string) => void;
 }) {
   return (
-    <StepShell title="Travel" subtitle="Optional but helpful — helps us coordinate hotel blocks and ground transport.">
-      <div className="grid sm:grid-cols-2 gap-4">
-        <Field label="How are you getting here?">
-          <select
-            value={(fields.travelMode as string) || ""}
-            onChange={(e) => set("travelMode", e.target.value)}
-            className={inputClass}
-          >
-            <option value="">Choose…</option>
-            {TRAVEL_MODES.map((m) => <option key={m} value={m}>{m}</option>)}
-          </select>
-        </Field>
-        <Field label="City / origin">
-          <input
-            type="text"
-            value={(fields.travelOrigin as string) || ""}
-            onChange={(e) => set("travelOrigin", e.target.value)}
-            placeholder="Boston, MA"
-            className={inputClass}
-          />
-        </Field>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Logistics</h2>
+        <p className="mt-1.5 text-sm text-slate-500">All optional. Skip anything that does not apply.</p>
       </div>
-      <div className="grid sm:grid-cols-2 gap-4">
-        <Field label="Arriving">
-          <input type="date" value={arrival} onChange={(e) => setArrival(e.target.value)} className={inputClass} />
-        </Field>
-        <Field label="Departing">
-          <input type="date" value={departure} onChange={(e) => setDeparture(e.target.value)} className={inputClass} />
-        </Field>
-      </div>
-      <div className="grid sm:grid-cols-2 gap-3">
-        <CheckCard
-          checked={!!fields.needsHotel}
-          label="Help with hotel booking"
-          desc="We have a discounted block near the venue"
-          onToggle={() => set("needsHotel", !fields.needsHotel)}
-        />
-        <CheckCard
-          checked={!!fields.needsParking}
-          label="Parking pass for the venue"
-          desc="Underground garage at Lurie Children's"
-          onToggle={() => set("needsParking", !fields.needsParking)}
-        />
-      </div>
-      <Field label="Other travel notes" hint="Flight times, arrival logistics, ground transport — anything that helps.">
-        <textarea
-          value={(fields.hotelNotes as string) || ""}
-          onChange={(e) => set("hotelNotes", e.target.value)}
-          rows={3}
-          className={inputClass}
-        />
-      </Field>
-    </StepShell>
-  );
-}
 
-function LogisticsStep({ fields, set }: { fields: Fields; set: (k: keyof Fields, v: Fields[keyof Fields]) => void }) {
-  return (
-    <StepShell title="Logistics" subtitle="Dietary, allergies, and your emergency contact. Confidential and only used during the event.">
-      <Field label="Dietary preferences">
-        <input
-          type="text"
-          value={(fields.dietary as string) || ""}
-          onChange={(e) => set("dietary", e.target.value)}
-          placeholder="Vegetarian, kosher, halal, gluten-free, etc."
+      <Field label="Tech and A/V notes" optional hint="Anything beyond a microphone, projector, and audio. We will follow up to confirm.">
+        <textarea
+          value={(fields.avNotes as string) || ""}
+          onChange={(e) => set("avNotes", e.target.value)}
+          rows={3}
+          placeholder="Live demo with internet, second display, Mac dongle, slide clicker, etc."
           className={inputClass}
         />
       </Field>
-      <Field label="Allergies or sensitivities" hint="We use this for catering — better to over-share.">
+
+      <Field label="Accessibility needs" optional hint="ASL, captioning, mobility, seating, lighting. Anything that helps you do your best work.">
         <textarea
-          value={(fields.allergies as string) || ""}
-          onChange={(e) => set("allergies", e.target.value)}
+          value={(fields.accessibilityNeeds as string) || ""}
+          onChange={(e) => set("accessibilityNeeds", e.target.value)}
           rows={2}
           className={inputClass}
         />
       </Field>
-      <Field label="Emergency contact" hint="Name, relationship, and phone — used only if needed during the event.">
+
+      <div className="grid sm:grid-cols-2 gap-4">
+        <Field label="Dietary preferences" optional>
+          <input
+            type="text"
+            value={(fields.dietary as string) || ""}
+            onChange={(e) => set("dietary", e.target.value)}
+            placeholder="Vegetarian, kosher, halal, gluten free"
+            className={inputClass}
+          />
+        </Field>
+        <Field label="Allergies" optional>
+          <input
+            type="text"
+            value={(fields.allergies as string) || ""}
+            onChange={(e) => set("allergies", e.target.value)}
+            className={inputClass}
+          />
+        </Field>
+      </div>
+
+      <div className="rounded-xl border border-slate-200 p-5 space-y-4">
+        <div className="text-sm font-semibold text-slate-900">Travel</div>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <Field label="Arriving" optional>
+            <input type="date" value={arrival} onChange={(e) => setArrival(e.target.value)} className={inputClass} />
+          </Field>
+          <Field label="Departing" optional>
+            <input type="date" value={departure} onChange={(e) => setDeparture(e.target.value)} className={inputClass} />
+          </Field>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-3">
+          <Toggle
+            checked={!!fields.needsHotel}
+            label="Help with hotel booking"
+            onToggle={() => set("needsHotel", !fields.needsHotel)}
+          />
+          <Toggle
+            checked={!!fields.needsParking}
+            label="Parking pass for the venue"
+            onToggle={() => set("needsParking", !fields.needsParking)}
+          />
+        </div>
+      </div>
+
+      <Field label="Emergency contact" optional hint="Name, relationship, phone. Used only during the event if needed.">
         <input
           type="text"
           value={(fields.emergencyContact as string) || ""}
@@ -760,214 +736,380 @@ function LogisticsStep({ fields, set }: { fields: Fields; set: (k: keyof Fields,
           className={inputClass}
         />
       </Field>
-      <div className="pt-2 space-y-3">
-        <CheckCard
-          checked={!!fields.agreedToRecord}
-          label="I consent to my session being recorded"
-          desc="Recordings are shared only with registered attendees."
-          onToggle={() => set("agreedToRecord", !fields.agreedToRecord)}
-        />
-        <CheckCard
-          checked={!!fields.agreedToPhoto}
-          label="I consent to event photography"
-          desc="May be used in Lurie Children's & AALB post-event materials."
-          onToggle={() => set("agreedToPhoto", !fields.agreedToPhoto)}
-        />
-      </div>
-    </StepShell>
+    </div>
   );
 }
 
-function ReviewStep({
-  fields, set, arrival, departure, headshotPreview, email,
+function ConfirmStep({
+  fields, set, initial, arrival, departure, headshotPreview, onShowPolicy,
 }: {
   fields: Fields;
   set: (k: keyof Fields, v: Fields[keyof Fields]) => void;
+  initial: Initial;
   arrival: string;
   departure: string;
   headshotPreview: string | null;
-  email: string;
+  onShowPolicy: () => void;
 }) {
-  const Row = ({ label, value }: { label: string; value: string | null | undefined }) => (
-    <div className="py-2 grid grid-cols-3 gap-3 text-sm border-b border-slate-100 last:border-0">
-      <div className="text-slate-500">{label}</div>
-      <div className="col-span-2 text-slate-900">{value || <span className="text-slate-300">—</span>}</div>
-    </div>
-  );
-  const yes = (b: unknown) => (b ? "Yes" : "No");
   return (
-    <StepShell title="Review & confirm" subtitle="Make sure everything looks right. You can come back to this portal any time to update.">
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Confirm</h2>
+        <p className="mt-1.5 text-sm text-slate-500">Review, agree, and submit.</p>
+      </div>
+
       <div className="grid sm:grid-cols-[80px_1fr] gap-4 items-center bg-slate-50 rounded-xl p-4 border border-slate-200">
         <div className="w-20 h-20 rounded-xl bg-slate-200 overflow-hidden flex items-center justify-center">
           {headshotPreview ? (
             <img src={headshotPreview} alt="" className="w-full h-full object-cover" />
           ) : (
-            <User className="w-8 h-8 text-slate-400" />
+            <span className="text-slate-400 text-2xl font-semibold">{initial.name.charAt(0)}</span>
           )}
         </div>
         <div>
-          <div className="font-semibold text-slate-900">{(fields.talkTitle as string) || <span className="text-slate-400">Talk title not set</span>}</div>
-          <div className="text-xs text-slate-500 mt-0.5">{email}</div>
+          <div className="font-semibold text-slate-900">{initial.name}</div>
+          <div className="text-xs text-slate-500">{initial.email}</div>
+          <div className="text-xs text-slate-700 mt-1">
+            {[initial.sessionLength, initial.sessionFormat || initial.role].filter(Boolean).join(" ") || "Presentation"}
+            {initial.talkTitle ? `, ${initial.talkTitle}` : ""}
+          </div>
         </div>
       </div>
 
-      <Section title="Talk">
-        <Row label="Title" value={fields.talkTitle as string} />
-        <Row label="Format" value={fields.sessionFormat as string} />
-        <Row label="Length" value={fields.sessionLength as string} />
-        <Row label="Track" value={fields.sessionTrack as string} />
-        <Row label="Preferred day" value={fields.preferredDay as string} />
-        <Row label="Co-presenters" value={fields.coPresenters as string} />
-      </Section>
-      <Section title="About">
-        <Row label="Bio" value={fields.bio as string} />
-        <Row label="Job title" value={fields.jobTitle as string} />
-        <Row label="Affiliation" value={fields.affiliation as string} />
-        <Row label="Pronouns" value={fields.pronouns as string} />
-      </Section>
-      <Section title="Tech & A/V">
-        <Row label="Mic" value={yes(fields.needsMic)} />
-        <Row label="Projector" value={yes(fields.needsProjector)} />
-        <Row label="Audio" value={yes(fields.needsAudio)} />
-        <Row label="Wi-Fi" value={yes(fields.needsInternet)} />
-        <Row label="Record session" value={yes(fields.needsRecording)} />
-        <Row label="Notes" value={fields.avNotes as string} />
-      </Section>
-      <Section title="Travel">
-        <Row label="Mode" value={fields.travelMode as string} />
-        <Row label="From" value={fields.travelOrigin as string} />
-        <Row label="Arrives" value={arrival} />
-        <Row label="Departs" value={departure} />
-        <Row label="Hotel help" value={yes(fields.needsHotel)} />
-        <Row label="Parking" value={yes(fields.needsParking)} />
-      </Section>
-      <Section title="Logistics">
-        <Row label="Dietary" value={fields.dietary as string} />
-        <Row label="Allergies" value={fields.allergies as string} />
-        <Row label="Accessibility" value={fields.accessibilityNeeds as string} />
-      </Section>
+      <Summary
+        items={[
+          { label: "Bio", value: fields.bio as string },
+          { label: "Headshot", value: headshotPreview ? "Provided" : null },
+          { label: "Job title", value: fields.jobTitle as string },
+          { label: "Affiliation", value: fields.affiliation as string },
+          { label: "A/V notes", value: fields.avNotes as string },
+          { label: "Accessibility", value: fields.accessibilityNeeds as string },
+          { label: "Dietary", value: fields.dietary as string },
+          { label: "Travel", value: [arrival, departure].filter(Boolean).join(" to ") },
+        ]}
+      />
 
-      <label className="flex items-start gap-3 p-4 mt-4 bg-blue-50/60 border border-blue-200 rounded-xl cursor-pointer">
-        <input
-          type="checkbox"
-          checked={!!fields.agreedToTerms}
-          onChange={(e) => set("agreedToTerms", e.target.checked)}
-          className="mt-1 w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+      <div className="space-y-3">
+        <div className="text-[11px] font-semibold tracking-[0.2em] uppercase text-slate-500">Required</div>
+
+        <label className="flex items-start gap-3 p-4 rounded-xl border border-[#0066B3]/30 bg-[#0066B3]/5 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={!!fields.agreedToTerms}
+            onChange={(e) => set("agreedToTerms", e.target.checked)}
+            className="mt-0.5 w-4 h-4 rounded border-slate-300 text-[#0066B3] focus:ring-[#0066B3]"
+          />
+          <span className="text-sm text-slate-700">
+            I confirm I will participate in the 2026 Lurie Children&apos;s and AALB Conference on August 15 and 16, 2026, in person, and the details above are accurate.
+          </span>
+        </label>
+
+        <label className="flex items-start gap-3 p-4 rounded-xl border border-[#0066B3]/30 bg-[#0066B3]/5 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={!!fields.agreedToHeadshot}
+            onChange={(e) => set("agreedToHeadshot", e.target.checked)}
+            className="mt-0.5 w-4 h-4 rounded border-slate-300 text-[#0066B3] focus:ring-[#0066B3]"
+          />
+          <span className="text-sm text-slate-700">
+            I will provide a high resolution headshot that meets the published quality requirements.
+          </span>
+        </label>
+
+        <div className="text-xs text-slate-500 px-1">
+          By submitting, you also acknowledge the{" "}
+          <button type="button" onClick={onShowPolicy} className="text-[#0066B3] font-semibold hover:underline inline-flex items-center gap-1">
+            full presenter policy <ExternalLink className="w-3 h-3" />
+          </button>
+          {" "}covering participation, intellectual property, photography, recording, and reimbursement terms.
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <div className="text-[11px] font-semibold tracking-[0.2em] uppercase text-slate-500">Optional permissions</div>
+        <Toggle
+          checked={!!fields.agreedToRecord}
+          label="My session may be recorded and shared with registered attendees"
+          onToggle={() => set("agreedToRecord", !fields.agreedToRecord)}
         />
-        <span className="text-sm text-slate-700">
-          I confirm the details above are accurate and agree to present at the Lurie Children&rsquo;s &amp; AALB Conference on August 15&ndash;16, 2026.
-        </span>
-      </label>
-    </StepShell>
+        <Toggle
+          checked={!!fields.agreedToPhoto}
+          label="My photo and likeness may be used for event marketing and social media"
+          onToggle={() => set("agreedToPhoto", !fields.agreedToPhoto)}
+        />
+        <Toggle
+          checked={!!fields.agreedToCe}
+          label="My session may be offered for continuing education credit afterward"
+          onToggle={() => set("agreedToCe", !fields.agreedToCe)}
+        />
+      </div>
+
+      <Field label="Questions or notes for the program team" optional hint="Anything you would like us to know or follow up on. If you have open questions, choose Confirm tentatively below.">
+        <textarea
+          value={(fields.presenterMessage as string) || ""}
+          onChange={(e) => set("presenterMessage", e.target.value)}
+          rows={3}
+          className={inputClass}
+        />
+      </Field>
+    </div>
   );
 }
 
-function SuccessCard({ name, mode }: { name: string; mode: "confirmed" | "declined" }) {
-  const confirmed = mode === "confirmed";
+function FooterNav({
+  step, saving, canSubmit, onBack, onNext, onSaveDraft, onSubmit, onTentative,
+}: {
+  step: number;
+  saving: boolean;
+  canSubmit: boolean;
+  onBack: () => void;
+  onNext: () => void;
+  onSaveDraft: () => void;
+  onSubmit: () => void;
+  onTentative: () => void;
+}) {
+  const isLast = step === STEPS.length - 1;
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50 flex items-center justify-center px-4">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-slate-200/60 p-10 text-center">
-        <div className={"w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5 " + (confirmed ? "bg-emerald-100 text-emerald-600" : "bg-slate-100 text-slate-500")}>
-          {confirmed ? <CheckCircle2 className="w-9 h-9" /> : <ClipboardCheck className="w-9 h-9" />}
+    <div className="mt-10 pt-6 border-t border-slate-200 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
+      <button
+        type="button"
+        onClick={onBack}
+        disabled={saving}
+        className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:text-slate-900 disabled:opacity-40"
+      >
+        <ChevronLeft className="w-4 h-4" /> Back
+      </button>
+      <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-end">
+        {!isLast && (
+          <button
+            type="button"
+            onClick={onSaveDraft}
+            disabled={saving}
+            className="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:text-slate-900 disabled:opacity-40"
+          >
+            Save and finish later
+          </button>
+        )}
+        {!isLast ? (
+          <button
+            type="button"
+            onClick={onNext}
+            disabled={saving}
+            className="inline-flex items-center justify-center gap-1.5 px-6 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-[#0E5566] to-[#0066B3] hover:from-[#0A3F4D] hover:to-[#004F8C] shadow-sm disabled:opacity-50"
+          >
+            Continue <ChevronRight className="w-4 h-4" />
+          </button>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={onTentative}
+              disabled={saving || !canSubmit}
+              className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl text-sm font-semibold text-[#0E5566] bg-white border border-[#0E5566] hover:bg-[#0E5566]/5 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Confirm tentatively
+            </button>
+            <button
+              type="button"
+              onClick={onSubmit}
+              disabled={saving || !canSubmit}
+              className="inline-flex items-center justify-center px-6 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#0E5566] hover:bg-[#0A3F4D] shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {saving ? "Submitting..." : "Confirm participation"}
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Summary({ items }: { items: { label: string; value: string | null | undefined }[] }) {
+  const filled = items.filter((i) => i.value);
+  if (filled.length === 0) {
+    return <div className="text-sm text-slate-400 italic">Nothing optional was filled in. That is fine.</div>;
+  }
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 divide-y divide-slate-100">
+      {filled.map((i) => (
+        <div key={i.label} className="px-4 py-3 grid grid-cols-3 gap-3 text-sm">
+          <div className="text-slate-500">{i.label}</div>
+          <div className="col-span-2 text-slate-900 truncate">{i.value}</div>
         </div>
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-          {confirmed ? `You're all set, ${name}!` : `Thanks for letting us know, ${name}.`}
-        </h1>
-        <p className="mt-3 text-slate-600 leading-relaxed">
-          {confirmed
-            ? "We've recorded your confirmation and sent you a copy by email. Our program team will be in touch with next steps."
-            : "We've recorded your response. We hope to work with you on a future Lurie Children's & AALB event."}
-        </p>
-        <div className="mt-6 text-xs text-slate-400">
-          Lurie Children&rsquo;s &amp; AALB Conference &middot; August 15&ndash;16, 2026
+      ))}
+    </div>
+  );
+}
+
+function CompletionCard({ name, mode }: { name: string; mode: "confirmed" | "tentative" | "declined" | "changes" }) {
+  const config = {
+    confirmed: {
+      label: "Confirmed",
+      title: `Thank you, ${name}.`,
+      body: "Your participation is confirmed. We have emailed you a copy. Our program team will be in touch with next steps.",
+      accent: "text-[#0066B3]",
+    },
+    tentative: {
+      label: "Tentative",
+      title: `Got it, ${name}.`,
+      body: "We have noted your tentative confirmation. Our program team will follow up on the questions you raised before final confirmation.",
+      accent: "text-sky-700",
+    },
+    declined: {
+      label: "Response received",
+      title: `Thanks for letting us know, ${name}.`,
+      body: "We have recorded your response. We hope to work with you on a future event.",
+      accent: "text-slate-500",
+    },
+    changes: {
+      label: "Request received",
+      title: `Got it, ${name}.`,
+      body: "Your request has been sent to the program team. We will follow up directly to discuss adjustments.",
+      accent: "text-amber-700",
+    },
+  }[mode];
+
+  return (
+    <div className="min-h-screen bg-white">
+      <BrandBar />
+      <div className="max-w-md mx-auto px-5 py-24 text-center">
+        <div className={"text-[11px] font-semibold tracking-[0.2em] uppercase " + config.accent}>
+          {config.label}
+        </div>
+        <h1 className="text-3xl font-bold text-slate-900 tracking-tight mt-3">{config.title}</h1>
+        <p className="mt-4 text-slate-600 leading-relaxed">{config.body}</p>
+        <div className="mt-10 text-xs text-slate-400">
+          2026 Lurie Children&apos;s and AALB Conference
         </div>
       </div>
     </div>
   );
 }
 
-function Footer() {
+function PolicyDialog({ onClose }: { onClose: () => void }) {
   return (
-    <div className="mt-6 text-center text-xs text-slate-400">
-      Lurie Children&rsquo;s &amp; AALB Conference &middot; Questions? Just reply to your invitation email.
+    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col">
+        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+          <div>
+            <div className="text-[11px] font-semibold tracking-[0.2em] uppercase text-[#0E5566]">Presenter policy</div>
+            <div className="font-semibold text-slate-900 mt-0.5">2026 Lurie Children&apos;s and AALB Conference</div>
+          </div>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-700">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="overflow-y-auto px-6 py-5 text-sm text-slate-700 leading-relaxed space-y-4">
+          <PolicyContent />
+        </div>
+        <div className="px-6 py-3 border-t border-slate-200 flex justify-end">
+          <button onClick={onClose} className="px-5 py-2 rounded-xl text-sm font-semibold text-white bg-[#0E5566] hover:bg-[#0A3F4D]">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PolicyContent() {
+  return (
+    <>
+      <Section title="1. Participation">
+        Acceptance of an invitation is a commitment to be present in person on the dates and at the times communicated by the program team. Substantial changes to your assigned format, length, day, or content require advance written approval from the program team. Failure to appear without timely notice may forfeit any honorarium and may affect future invitations.
+      </Section>
+      <Section title="2. Content and intellectual property">
+        You retain ownership of your original presentation materials. You grant Lurie Children&apos;s and the American Association of Latino Behavioralists (AALB) a non exclusive, worldwide, royalty free license to record, reproduce, transmit, distribute, and publicly display your presentation and likeness for the purposes of the conference, post conference education, accreditation, marketing, and archival use. You represent that you have the right to grant this license and that your materials do not infringe any third party rights. You will provide attribution to the conference in any external publication of these materials.
+      </Section>
+      <Section title="3. Photography, video, and audio">
+        The conference will produce photography and audio or video recordings of public sessions. By accepting this invitation you consent to the capture and editorial use of your image, voice, and remarks for educational, promotional, and historical purposes by Lurie Children&apos;s and AALB and their authorized partners. Specific opt in permissions for session recording, social media use, and continuing education credit are collected separately in the portal.
+      </Section>
+      <Section title="4. Continuing education credit">
+        If you opt in to continuing education use, you authorize the conference to register your session with applicable accrediting bodies, distribute approved post session materials, and provide attendee assessment data. You agree to meet documentation timelines that the program team will share, including learning objectives, references, and disclosures of any commercial relationships.
+      </Section>
+      <Section title="5. Disclosure of conflicts">
+        You will disclose in writing any financial relationships with commercial interests relevant to your presentation. The program team may require modifications to mitigate identified conflicts, consistent with applicable accreditation standards.
+      </Section>
+      <Section title="6. Honorarium and reimbursement">
+        Any honorarium offered is stated in your invitation and is paid following the conference, subject to United States tax withholding and reporting requirements. Travel reimbursement, when offered, is capped at the amount stated in your invitation, requires original itemized receipts, and follows the conference reimbursement guidelines that the program team will share. Government employees are responsible for compliance with their agency&apos;s ethics rules, including any limits or required pre approvals on honoraria, gifts, and travel.
+      </Section>
+      <Section title="7. Code of conduct">
+        Presenters agree to abide by the conference code of conduct, including respect for attendees, staff, and venue personnel, accessibility requirements, and the conference&apos;s policies prohibiting harassment and discrimination. The program team may decline to platform any presenter found in violation.
+      </Section>
+      <Section title="8. Cancellation and withdrawal">
+        If circumstances change after acceptance, notify the program team in writing as soon as possible. Withdrawals after July 1, 2026 may be limited to substitution by mutual agreement, and may forfeit any honorarium previously committed.
+      </Section>
+      <Section title="9. Privacy">
+        Information you provide in this portal is used by the conference organizers to plan, communicate, and document the event, and is shared with vendors only as needed to deliver event services. Honorarium and reimbursement records are retained as required by tax and audit policies.
+      </Section>
+      <Section title="10. Governing terms">
+        These terms are governed by the laws of the State of Illinois without regard to conflict of laws principles. Disputes will be resolved in the state or federal courts of Cook County, Illinois. If any provision is held unenforceable, the remaining provisions remain in effect. Questions about this policy may be directed to the program team at the address used to send your invitation.
+      </Section>
+    </>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div className="font-semibold text-slate-900 mb-1">{title}</div>
+      <div className="text-slate-600">{children}</div>
     </div>
   );
 }
 
 const inputClass =
-  "w-full px-3.5 py-2.5 text-sm bg-white border border-slate-200 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none transition-all placeholder:text-slate-300";
+  "w-full px-3.5 py-2.5 text-sm bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0066B3]/20 focus:border-[#0066B3] outline-none transition-all placeholder:text-slate-300";
+
+function Label({ text, required, optional }: { text: string; required?: boolean; optional?: boolean }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-xs font-semibold text-slate-700">{text}</span>
+      {required && <span className="text-[10px] font-semibold text-rose-600 uppercase tracking-wider">Required</span>}
+      {optional && <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Optional</span>}
+    </div>
+  );
+}
 
 function Field({
-  label, hint, required, children,
+  label, required, optional, hint, children,
 }: {
   label: string;
-  hint?: string;
   required?: boolean;
+  optional?: boolean;
+  hint?: string;
   children: React.ReactNode;
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="block text-xs font-semibold text-slate-700 tracking-wide">
-        {label} {required && <span className="text-rose-500">*</span>}
-      </label>
+      <Label text={label} required={required} optional={optional} />
       {children}
       {hint && <div className="text-[11px] text-slate-400 leading-relaxed">{hint}</div>}
     </div>
   );
 }
 
-function StepShell({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-5">
-      <div>
-        <h2 className="text-2xl font-bold text-slate-900 tracking-tight">{title}</h2>
-        <p className="mt-1.5 text-sm text-slate-500">{subtitle}</p>
-      </div>
-      <div className="space-y-5">{children}</div>
-    </div>
-  );
-}
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="mt-5">
-      <div className="text-[11px] font-semibold tracking-widest text-slate-400 uppercase mb-1">{title}</div>
-      <div className="bg-white rounded-xl border border-slate-200 px-4">{children}</div>
-    </div>
-  );
-}
-
-function CheckCard({
-  checked, label, desc, onToggle,
-}: {
-  checked: boolean;
-  label: string;
-  desc: string;
-  onToggle: () => void;
-}) {
+function Toggle({ checked, label, onToggle }: { checked: boolean; label: string; onToggle: () => void }) {
   return (
     <button
       type="button"
       onClick={onToggle}
       className={
-        "text-left flex items-start gap-3 p-4 rounded-xl border transition-all " +
+        "text-left flex items-center gap-3 px-4 py-3 rounded-xl border transition-all w-full " +
         (checked
-          ? "bg-blue-50/70 border-blue-300 ring-1 ring-blue-200"
+          ? "bg-[#0066B3]/5 border-[#0066B3]/30 ring-1 ring-[#0066B3]/15"
           : "bg-white border-slate-200 hover:border-slate-300")
       }
     >
       <div
         className={
-          "mt-0.5 w-5 h-5 rounded-md flex items-center justify-center shrink-0 transition-all " +
-          (checked ? "bg-blue-600 text-white" : "bg-white border border-slate-300")
+          "w-5 h-5 rounded-md flex items-center justify-center shrink-0 transition-all " +
+          (checked ? "bg-[#0066B3] text-white" : "bg-white border border-slate-300")
         }
       >
-        {checked && <CheckCircle2 className="w-3.5 h-3.5" />}
+        {checked && <Check className="w-3.5 h-3.5" />}
       </div>
-      <div className="min-w-0">
-        <div className="text-sm font-semibold text-slate-900">{label}</div>
-        <div className="text-xs text-slate-500 mt-0.5">{desc}</div>
-      </div>
+      <span className="text-sm text-slate-900 font-medium">{label}</span>
     </button>
   );
 }

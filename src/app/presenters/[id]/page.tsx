@@ -21,14 +21,20 @@ interface Presenter {
   jobTitle: string | null;
   pronouns: string | null;
   phone: string | null;
+  role: string | null;
   talkTitle: string | null;
   talkAbstract: string | null;
   sessionFormat: string | null;
   sessionTrack: string | null;
   sessionLength: string | null;
+  qaLength: string | null;
   coPresenters: string | null;
   preferredDay: string | null;
   learningObjectives: string | null;
+  honorariumAmount: number | null;
+  travelReimbursement: number | null;
+  presenterMessage: string | null;
+  requestedChanges: string | null;
   bio: string | null;
   websiteUrl: string | null;
   linkedinUrl: string | null;
@@ -194,16 +200,28 @@ export default function PresenterDetailPage() {
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-0">
                 <div className="lg:col-span-2 p-6 space-y-6 lg:border-r border-slate-200">
-                  <Section title="Talk">
-                    <KV label="Title" value={presenter.talkTitle} />
+                  <Section title="Assignment">
+                    <KV label="Role" value={presenter.role} />
                     <KV label="Format" value={presenter.sessionFormat} />
                     <KV label="Length" value={presenter.sessionLength} />
+                    <KV label="Q and A" value={presenter.qaLength} />
                     <KV label="Track" value={presenter.sessionTrack} />
-                    <KV label="Preferred day" value={presenter.preferredDay} />
-                    <KV label="Co-presenters" value={presenter.coPresenters} />
+                    <KV label="Day" value={presenter.preferredDay} />
+                    <KV label="Honorarium" value={presenter.honorariumAmount != null ? `$${presenter.honorariumAmount.toLocaleString("en-US")}` : null} />
+                    <KV label="Travel reimbursement" value={presenter.travelReimbursement != null ? `up to $${presenter.travelReimbursement.toLocaleString("en-US")}` : null} />
+                  </Section>
+                  <Section title="Talk">
+                    <KV label="Title" value={presenter.talkTitle} />
+                    <KV label="Co presenters" value={presenter.coPresenters} />
                     <KV label="Abstract" value={presenter.talkAbstract} multiline />
                     <KV label="Learning objectives" value={presenter.learningObjectives} multiline />
                   </Section>
+                  {(presenter.requestedChanges || presenter.presenterMessage) && (
+                    <Section title="From the presenter">
+                      <KV label="Requested adjustments" value={presenter.requestedChanges} multiline />
+                      <KV label="Notes and questions" value={presenter.presenterMessage} multiline />
+                    </Section>
+                  )}
                   <Section title="About">
                     <KV label="Bio" value={presenter.bio} multiline />
                     <KV label="Pronouns" value={presenter.pronouns} />

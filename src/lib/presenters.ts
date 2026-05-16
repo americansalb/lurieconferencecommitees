@@ -17,39 +17,71 @@ export function confirmationUrl(token: string) {
   return `${appUrl()}/presenters/confirm/${token}`;
 }
 
-export const SESSION_FORMATS = [
+export const ROLE_OPTIONS = [
+  "Presenter",
   "Keynote",
-  "Plenary",
-  "Panel",
-  "Workshop / Breakout",
-  "Lightning Talk",
-  "Poster",
-  "Roundtable",
-  "Other",
+  "Plenary speaker",
+  "Panelist",
+  "Debater",
+  "Moderator",
+  "Workshop leader",
+  "Lightning talk speaker",
+  "Poster presenter",
+  "Roundtable host",
 ];
 
 export const SESSION_LENGTHS = [
   "15 minutes",
+  "20 minutes",
   "30 minutes",
   "45 minutes",
   "60 minutes",
+  "75 minutes",
   "90 minutes",
   "Half day",
   "Full day",
+];
+
+export const QA_LENGTHS = [
+  "No Q and A",
+  "5 minutes",
+  "10 minutes",
+  "15 minutes",
+  "20 minutes",
+  "30 minutes",
+];
+
+export const PREFERRED_DAY = [
+  "Day 1, August 15",
+  "Day 2, August 16",
+  "Either day",
+  "Both days",
 ];
 
 export const TRAVEL_MODES = [
   "Flying",
   "Driving",
   "Train",
-  "Local — already in Chicago area",
-  "Virtual / remote",
+  "Local, already in Chicago",
+  "Virtual",
 ];
-
-export const PREFERRED_DAY = ["Day 1", "Day 2", "Either day", "Both days"];
 
 export const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   invited: { label: "Invited", color: "bg-slate-100 text-slate-700 border-slate-200" },
   confirmed: { label: "Confirmed", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  tentative: { label: "Tentative", color: "bg-sky-50 text-sky-700 border-sky-200" },
+  changes_requested: { label: "Changes requested", color: "bg-amber-50 text-amber-800 border-amber-200" },
   declined: { label: "Declined", color: "bg-rose-50 text-rose-700 border-rose-200" },
 };
+
+export const BRAND = {
+  teal: "#0E5566",
+  tealDark: "#0A3F4D",
+  blue: "#0066B3",
+  blueDark: "#004F8C",
+};
+
+export function formatMoney(cents: number | null | undefined) {
+  if (cents == null) return null;
+  return `$${cents.toLocaleString("en-US")}`;
+}

@@ -10,8 +10,11 @@ export default async function PresenterConfirmPage({ params }: { params: { token
     select: {
       id: true, email: true, name: true, affiliation: true, jobTitle: true,
       pronouns: true, phone: true,
+      role: true,
       talkTitle: true, talkAbstract: true, sessionFormat: true, sessionTrack: true,
-      sessionLength: true, coPresenters: true, preferredDay: true, learningObjectives: true,
+      sessionLength: true, qaLength: true, coPresenters: true, preferredDay: true,
+      learningObjectives: true,
+      honorariumAmount: true, travelReimbursement: true, presenterMessage: true,
       bio: true, websiteUrl: true, linkedinUrl: true, twitterHandle: true,
       headshotMime: true,
       avNotes: true, needsMic: true, needsProjector: true, needsAudio: true,
@@ -20,7 +23,8 @@ export default async function PresenterConfirmPage({ params }: { params: { token
       needsHotel: true, hotelNotes: true, needsParking: true,
       dietary: true, allergies: true, accessibilityNeeds: true, emergencyContact: true,
       agreedToRecord: true, agreedToPhoto: true, agreedToTerms: true,
-      status: true, confirmedAt: true,
+      agreedToCe: true, agreedToHeadshot: true,
+      status: true, confirmedAt: true, requestedChanges: true,
       token: true,
     },
   });

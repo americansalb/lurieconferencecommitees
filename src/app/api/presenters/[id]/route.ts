@@ -19,8 +19,9 @@ function errorMessage(e: unknown): string {
 
 const EDITABLE_FIELDS = new Set([
   "name", "affiliation", "jobTitle", "pronouns", "phone",
-  "talkTitle", "talkAbstract", "sessionFormat", "sessionTrack", "sessionLength",
-  "coPresenters", "preferredDay", "learningObjectives",
+  "role", "talkTitle", "talkAbstract", "sessionFormat", "sessionTrack",
+  "sessionLength", "qaLength", "coPresenters", "preferredDay", "learningObjectives",
+  "honorariumAmount", "travelReimbursement", "presenterMessage", "requestedChanges",
   "bio", "websiteUrl", "linkedinUrl", "twitterHandle",
   "avNotes", "needsMic", "needsProjector", "needsAudio", "needsInternet",
   "needsRecording", "needsClicker",
