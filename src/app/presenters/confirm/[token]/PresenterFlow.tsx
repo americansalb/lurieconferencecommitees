@@ -858,7 +858,7 @@ function AppearScreen({
     <ScreenShell
       eyebrow="Step 3"
       heading="How would you like to appear?"
-      subhead="This is what attendees see next to your name in the program and on the website."
+      subhead="This becomes the line under your name in the program and on the speaker page."
       footer={
         <FooterRow
           back={{ onClick: onBack }}
@@ -870,29 +870,80 @@ function AppearScreen({
         />
       }
     >
-      <div className="space-y-5">
-        <div className="grid sm:grid-cols-2 gap-4">
-          <UnderlineInput label="Job title" value={(fields.jobTitle as string) || ""} onChange={(v) => set("jobTitle", v)} placeholder="Director of language services" />
-          <UnderlineInput label="Affiliation" value={(fields.affiliation as string) || ""} onChange={(v) => set("affiliation", v)} placeholder="Lurie Children's, Northwestern, AALB…" />
-          <UnderlineInput label="Pronouns" value={(fields.pronouns as string) || ""} onChange={(v) => set("pronouns", v)} placeholder="she/her, they/them" />
-          <UnderlineInput label="Phone for event week" value={(fields.phone as string) || ""} onChange={(v) => set("phone", v)} placeholder="+1 555 555 0123" type="tel" hint="Only used if we need to reach you on August 15 or 16." />
-        </div>
+      <div className="text-xl sm:text-2xl leading-loose text-slate-700 font-medium">
+        I&rsquo;m{" "}
+        <InlineProseSlot
+          value={(fields.jobTitle as string) || ""}
+          onChange={(v) => set("jobTitle", v)}
+          placeholder="job title"
+        />
+        {" "}at{" "}
+        <InlineProseSlot
+          value={(fields.affiliation as string) || ""}
+          onChange={(v) => set("affiliation", v)}
+          placeholder="affiliation"
+        />
+        .
+      </div>
+      <div className="mt-5 text-xl sm:text-2xl leading-loose text-slate-700 font-medium">
+        My pronouns are{" "}
+        <InlineProseSlot
+          value={(fields.pronouns as string) || ""}
+          onChange={(v) => set("pronouns", v)}
+          placeholder="she/her, they/them…"
+        />
+        .
+        <span className="ml-2 text-sm font-normal text-slate-400">Skip if you&rsquo;d rather not say.</span>
+      </div>
+      <div className="mt-5 text-xl sm:text-2xl leading-loose text-slate-700 font-medium">
+        Reach me on the day at{" "}
+        <InlineProseSlot
+          value={(fields.phone as string) || ""}
+          onChange={(v) => set("phone", v)}
+          placeholder="phone number"
+          type="tel"
+        />
+        .
+        <span className="ml-2 text-sm font-normal text-slate-400">Only used Aug 15 &amp; 16.</span>
+      </div>
 
+      <div className="mt-10">
         {!showLinks ? (
           <button
             type="button"
             onClick={() => setShowLinks(true)}
             className="text-sm font-medium text-slate-500 hover:text-[#0066B3]"
           >
-            + Add links
+            + Add links (website, LinkedIn, Twitter)
           </button>
         ) : (
-          <div>
-            <div className="text-xs font-semibold tracking-wider uppercase text-slate-400 mb-3">Where to find you online</div>
-            <div className="grid sm:grid-cols-3 gap-4">
-              <UnderlineInput label="Website" value={(fields.websiteUrl as string) || ""} onChange={(v) => set("websiteUrl", v)} placeholder="https://" type="url" />
-              <UnderlineInput label="LinkedIn" value={(fields.linkedinUrl as string) || ""} onChange={(v) => set("linkedinUrl", v)} placeholder="https://" type="url" />
-              <UnderlineInput label="Twitter or X" value={(fields.twitterHandle as string) || ""} onChange={(v) => set("twitterHandle", v)} placeholder="@handle" />
+          <div className="text-xl sm:text-2xl leading-loose text-slate-700 font-medium space-y-3">
+            <div>
+              Find me online at{" "}
+              <InlineProseSlot
+                value={(fields.websiteUrl as string) || ""}
+                onChange={(v) => set("websiteUrl", v)}
+                placeholder="https://…"
+                type="url"
+              />
+              .
+            </div>
+            <div className="text-base text-slate-500 leading-relaxed">
+              LinkedIn{" "}
+              <InlineProseSlot
+                value={(fields.linkedinUrl as string) || ""}
+                onChange={(v) => set("linkedinUrl", v)}
+                placeholder="https://…"
+                type="url"
+                size="sm"
+              />
+              {" "}· Twitter{" "}
+              <InlineProseSlot
+                value={(fields.twitterHandle as string) || ""}
+                onChange={(v) => set("twitterHandle", v)}
+                placeholder="@handle"
+                size="sm"
+              />
             </div>
           </div>
         )}
@@ -913,7 +964,7 @@ function OnTheDayScreen({
     <ScreenShell
       eyebrow="Step 4"
       heading="Anything we should know for the day?"
-      subhead="All optional. Skip whatever does not apply."
+      subhead="All optional. Tap a topic to add a note — leave the rest blank."
       footer={
         <FooterRow
           back={{ onClick: onBack }}
@@ -925,29 +976,62 @@ function OnTheDayScreen({
         />
       }
     >
-      <div className="space-y-5">
-        <SoftField label="Tech and A/V notes" hint="Anything beyond a microphone, projector, and audio. We will follow up to confirm.">
-          <textarea
-            value={(fields.avNotes as string) || ""}
-            onChange={(e) => set("avNotes", e.target.value)}
-            rows={3}
-            placeholder="Live demo with internet, second display, Mac dongle, slide clicker, etc."
-            className="w-full px-4 py-3 text-sm bg-slate-50/60 border border-transparent rounded-xl focus:bg-white focus:border-[#0066B3] focus:ring-2 focus:ring-[#0066B3]/15 outline-none transition-all placeholder:text-slate-400"
-          />
-        </SoftField>
-        <SoftField label="Accessibility needs" hint="ASL, captioning, mobility, seating, lighting. Anything that helps you do your best work.">
-          <textarea
-            value={(fields.accessibilityNeeds as string) || ""}
-            onChange={(e) => set("accessibilityNeeds", e.target.value)}
-            rows={2}
-            className="w-full px-4 py-3 text-sm bg-slate-50/60 border border-transparent rounded-xl focus:bg-white focus:border-[#0066B3] focus:ring-2 focus:ring-[#0066B3]/15 outline-none transition-all placeholder:text-slate-400"
-          />
-        </SoftField>
-        <div className="grid sm:grid-cols-2 gap-4">
-          <UnderlineInput label="Dietary preferences" value={(fields.dietary as string) || ""} onChange={(v) => set("dietary", v)} placeholder="Vegetarian, kosher, halal, gluten free" />
-          <UnderlineInput label="Allergies" value={(fields.allergies as string) || ""} onChange={(v) => set("allergies", v)} />
-        </div>
-        <UnderlineInput label="Emergency contact" value={(fields.emergencyContact as string) || ""} onChange={(v) => set("emergencyContact", v)} placeholder="Sam Smith (spouse) +1 555 555 0123" hint="Name, relationship, phone. Used only during the event if needed." />
+      <div className="space-y-3">
+        <ExpandablePrompt
+          icon="🎙️"
+          label="Tech and A/V"
+          summary={(fields.avNotes as string) || ""}
+          placeholder="A live demo with internet, a second display, a slide clicker… we will follow up to confirm anything beyond the standard mic, projector, and audio."
+          rows={3}
+          onChange={(v) => set("avNotes", v)}
+        />
+        <ExpandablePrompt
+          icon="♿︎"
+          label="Accessibility"
+          summary={(fields.accessibilityNeeds as string) || ""}
+          placeholder="ASL, captioning, mobility, seating, lighting — anything that helps you do your best work."
+          rows={3}
+          onChange={(v) => set("accessibilityNeeds", v)}
+        />
+        <ExpandablePrompt
+          icon="🍽️"
+          label="Dietary preferences and allergies"
+          summary={[fields.dietary, fields.allergies].filter(Boolean).join(" · ")}
+          render={(close) => (
+            <div className="space-y-3">
+              <div>
+                <div className="text-xs font-semibold text-slate-500 mb-1.5">Dietary preferences</div>
+                <input
+                  type="text"
+                  value={(fields.dietary as string) || ""}
+                  onChange={(e) => set("dietary", e.target.value)}
+                  placeholder="Vegetarian, kosher, halal, gluten free…"
+                  className="w-full px-0 py-2 text-base bg-transparent border-0 border-b border-slate-200 focus:border-[#0066B3] focus:ring-0 outline-none placeholder:text-slate-300"
+                />
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-slate-500 mb-1.5">Allergies</div>
+                <input
+                  type="text"
+                  value={(fields.allergies as string) || ""}
+                  onChange={(e) => set("allergies", e.target.value)}
+                  placeholder="Peanuts, shellfish, latex…"
+                  className="w-full px-0 py-2 text-base bg-transparent border-0 border-b border-slate-200 focus:border-[#0066B3] focus:ring-0 outline-none placeholder:text-slate-300"
+                />
+              </div>
+              <button type="button" onClick={close} className="text-xs font-medium text-slate-400 hover:text-slate-700">Done</button>
+            </div>
+          )}
+        />
+        <ExpandablePrompt
+          icon="📞"
+          label="Emergency contact"
+          summary={(fields.emergencyContact as string) || ""}
+          placeholder="Sam Smith (spouse) +1 555 555 0123"
+          rows={2}
+          hint="Used only during the event if we need to reach someone for you."
+          onChange={(v) => set("emergencyContact", v)}
+        />
       </div>
     </ScreenShell>
   );
@@ -969,7 +1053,7 @@ function TravelScreen({
     <ScreenShell
       eyebrow="Step 5"
       heading="Getting there?"
-      subhead="Travel details, if relevant. Skip if you are local or have it arranged."
+      subhead="Skip if you are local or have it arranged."
       footer={
         <FooterRow
           back={{ onClick: onBack }}
@@ -981,25 +1065,184 @@ function TravelScreen({
         />
       }
     >
-      <div className="space-y-5">
-        <div className="grid sm:grid-cols-2 gap-4">
-          <UnderlineInput label="Arriving" value={arrival} onChange={setArrival} type="date" />
-          <UnderlineInput label="Departing" value={departure} onChange={setDeparture} type="date" />
-        </div>
-        <div className="grid sm:grid-cols-2 gap-3">
-          <SoftToggle
-            checked={!!fields.needsHotel}
-            label="Help with hotel booking"
-            onToggle={() => set("needsHotel", !fields.needsHotel)}
-          />
-          <SoftToggle
-            checked={!!fields.needsParking}
-            label="Parking pass for the venue"
-            onToggle={() => set("needsParking", !fields.needsParking)}
-          />
-        </div>
+      <div className="text-xl sm:text-2xl leading-loose text-slate-700 font-medium">
+        Arriving{" "}
+        <InlineDate value={arrival} onChange={setArrival} />
+        {arrival && departure ? "," : "."}
+        {(arrival || departure) && (
+          <>
+            {" "}leaving{" "}
+            <InlineDate value={departure} onChange={setDeparture} />.
+          </>
+        )}
+      </div>
+
+      <div className="mt-10 grid sm:grid-cols-2 gap-3">
+        <BigToggle
+          checked={!!fields.needsHotel}
+          label="Help with hotel booking"
+          desc="We can suggest a partner hotel near the venue."
+          onToggle={() => set("needsHotel", !fields.needsHotel)}
+        />
+        <BigToggle
+          checked={!!fields.needsParking}
+          label="Parking pass for the venue"
+          desc="We will reserve a spot for you on the day."
+          onToggle={() => set("needsParking", !fields.needsParking)}
+        />
       </div>
     </ScreenShell>
+  );
+}
+
+function InlineProseSlot({
+  value, onChange, placeholder, type = "text", size = "md",
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  type?: "text" | "email" | "url" | "tel";
+  size?: "sm" | "md" | "lg";
+}) {
+  const hasValue = !!value;
+  return (
+    <input
+      type={type}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      className={
+        "inline-block align-baseline bg-transparent outline-none border-b-2 border-dashed transition-colors px-1 -mb-0.5 " +
+        (size === "sm" ? "text-base" : "") +
+        " " +
+        (hasValue
+          ? "border-[#0066B3]/40 text-[#0E5566] font-semibold focus:border-[#0066B3]"
+          : "border-slate-300 text-slate-400 placeholder:text-slate-400 focus:border-[#0066B3] focus:text-[#0E5566]")
+      }
+      style={{ minWidth: "6ch", width: `${Math.max((value || placeholder).length + 1, 7)}ch` }}
+    />
+  );
+}
+
+function InlineDate({
+  value, onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const hasValue = !!value;
+  return (
+    <input
+      type="date"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className={
+        "inline-block align-baseline bg-transparent outline-none border-b-2 border-dashed transition-colors px-1 -mb-0.5 " +
+        (hasValue
+          ? "border-[#0066B3]/40 text-[#0E5566] font-semibold focus:border-[#0066B3]"
+          : "border-slate-300 text-slate-400 focus:border-[#0066B3] focus:text-[#0E5566]")
+      }
+    />
+  );
+}
+
+function ExpandablePrompt({
+  icon, label, summary, placeholder, rows = 3, hint, onChange, render,
+}: {
+  icon: string;
+  label: string;
+  summary: string;
+  placeholder?: string;
+  rows?: number;
+  hint?: string;
+  onChange?: (v: string) => void;
+  render?: (close: () => void) => React.ReactNode;
+}) {
+  const [open, setOpen] = useState(!!summary);
+  const filled = !!summary.trim();
+  return (
+    <div className={
+      "rounded-2xl border transition-all overflow-hidden " +
+      (open
+        ? "border-[#0066B3]/30 bg-white shadow-sm"
+        : filled
+        ? "border-slate-200 bg-slate-50/50 hover:border-slate-300"
+        : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/40")
+    }>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-start gap-4 px-5 py-4 text-left"
+      >
+        <span className="text-2xl leading-none mt-0.5 shrink-0" aria-hidden>{icon}</span>
+        <div className="flex-1 min-w-0">
+          <div className="text-base font-semibold text-slate-900">{label}</div>
+          {filled && !open && (
+            <div className="text-sm text-slate-500 mt-1 truncate">{summary}</div>
+          )}
+          {!filled && !open && (
+            <div className="text-xs text-slate-400 mt-0.5">Tap to add</div>
+          )}
+        </div>
+        <span className={"text-xs font-medium shrink-0 mt-1 transition-colors " + (open ? "text-[#0066B3]" : "text-slate-400")}>
+          {open ? "Close" : filled ? "Edit" : "Add"}
+        </span>
+      </button>
+      {open && (
+        <div className="px-5 pb-5 -mt-1">
+          {render ? (
+            render(() => setOpen(false))
+          ) : (
+            <>
+              <textarea
+                autoFocus
+                value={summary}
+                onChange={(e) => onChange?.(e.target.value)}
+                placeholder={placeholder}
+                rows={rows}
+                className="w-full px-4 py-3 text-sm bg-slate-50/60 border border-transparent rounded-xl focus:bg-white focus:border-[#0066B3] focus:ring-2 focus:ring-[#0066B3]/15 outline-none transition-all placeholder:text-slate-400 leading-relaxed"
+              />
+              {hint && <p className="mt-2 text-[11px] text-slate-400">{hint}</p>}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BigToggle({
+  checked, label, desc, onToggle,
+}: {
+  checked: boolean;
+  label: string;
+  desc: string;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className={
+        "text-left p-5 rounded-2xl border transition-all " +
+        (checked
+          ? "bg-[#0066B3]/5 border-[#0066B3]/30 ring-1 ring-[#0066B3]/15"
+          : "bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/40")
+      }
+    >
+      <div className="flex items-center gap-3">
+        <div
+          className={
+            "w-5 h-5 rounded-md flex items-center justify-center shrink-0 transition-all " +
+            (checked ? "bg-[#0066B3] text-white" : "bg-white border border-slate-300")
+          }
+        >
+          {checked && <Check className="w-3.5 h-3.5" />}
+        </div>
+        <div className="text-base font-semibold text-slate-900">{label}</div>
+      </div>
+      <div className="mt-2 text-xs text-slate-500 leading-relaxed">{desc}</div>
+    </button>
   );
 }
 
@@ -1231,31 +1474,6 @@ function PolicyDrawer({ onClose }: { onClose: () => void }) {
           </button>
         </div>
       </div>
-    </div>
-  );
-}
-
-function UnderlineInput({
-  label, value, onChange, placeholder, type = "text", hint,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-  type?: "text" | "email" | "url" | "tel" | "date" | "number";
-  hint?: string;
-}) {
-  return (
-    <div>
-      <div className="text-xs font-semibold text-slate-700 mb-1.5">{label}</div>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="w-full px-0 py-2 text-sm bg-transparent border-0 border-b border-slate-200 focus:border-[#0066B3] focus:ring-0 outline-none transition-colors placeholder:text-slate-300"
-      />
-      {hint && <p className="mt-1 text-[11px] text-slate-400">{hint}</p>}
     </div>
   );
 }
