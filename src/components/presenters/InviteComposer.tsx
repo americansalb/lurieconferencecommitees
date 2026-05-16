@@ -1,14 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { X, Check, Copy, FileText, DollarSign, MessageSquare, Send, AlertCircle, Mail } from "lucide-react";
+import { X, Check, Copy, Send, AlertCircle, Mail } from "lucide-react";
 import {
   ROLE_OPTIONS, SESSION_LENGTHS, QA_LENGTHS, PREFERRED_DAY,
 } from "@/lib/presenters";
 import { presenterInviteEmail } from "@/lib/mail-templates";
 import { parseResponse } from "@/lib/api";
 import {
-  InlineChip, OptionalBlock,
+  InlineChip,
   SoftInput, SoftTextarea, EmailPreview,
 } from "./inline-fields";
 
@@ -60,11 +60,19 @@ export function InviteComposer({
   const [customMessage, setCustomMessage] = useState("");
   const [sendNow, setSendNow] = useState(!isEdit);
 
-  const [openTalk, setOpenTalk] = useState(!!(existing?.talkTitle || existing?.talkAbstract || existing?.learningObjectives));
-  const [openComp, setOpenComp] = useState(!!(existing?.honorariumAmount || existing?.travelReimbursement));
-  const [openNote, setOpenNote] = useState(false);
-  const [openTrack, setOpenTrack] = useState(!!existing?.sessionTrack);
-  const [openFormat, setOpenFormat] = useState(!!existing?.sessionFormat);
+  const STEPS = [
+    { id: "recipient", label: "Recipient" },
+    { id: "session", label: "Session" },
+    { id: "extras", label: "Talk & money" },
+  ] as const;
+  type StepId = (typeof STEPS)[number]["id"];
+  const [step, setStep] = useState<StepId>("recipient");
+  const stepIndex = STEPS.findIndex((s) => s.id === step);
+  const isFirstStep = stepIndex === 0;
+  const isLastStep = stepIndex === STEPS.length - 1;
+  const goNext = () => setStep(STEPS[Math.min(stepIndex + 1, STEPS.length - 1)].id);
+  const goBack = () => setStep(STEPS[Math.max(stepIndex - 1, 0)].id);
+  const canAdvance = step === "recipient" ? !!(name.trim() && email.trim()) : true;
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -129,7 +137,6 @@ export function InviteComposer({
   }
 
   const firstName = name.trim().split(" ")[0];
-  const greetingName = firstName || "there";
   const article = role ? (/^[aeiou]/i.test(role) ? "an" : "a") : "a";
 
   return (
@@ -224,238 +231,156 @@ export function InviteComposer({
                   </div>
                 )}
 
-                <div className="bg-white rounded-3xl shadow-sm overflow-hidden border border-slate-100">
-                  <div className="h-1 w-full" style={{ background: "linear-gradient(to right, #0E5566, #0066B3)" }} />
-                  <div className="px-7 py-8 space-y-5">
-                    <div>
-                      <div className="text-[10px] font-semibold tracking-[0.22em] uppercase text-[#0E5566]">2026 Lurie Children&rsquo;s and AALB Conference</div>
-                      <div className="text-[11px] text-slate-400 mt-1">True Language Access: Yesterday, Today, and Tomorrow</div>
-                    </div>
+                <div className="mb-6">
+                  <div className="text-[10px] font-semibold tracking-[0.22em] uppercase text-[#0E5566]">2026 Lurie Children&rsquo;s and AALB Conference</div>
+                  <div className="text-[11px] text-slate-400 mt-1">True Language Access: Yesterday, Today, and Tomorrow</div>
+                </div>
 
-                    <div className="pt-2 space-y-2">
-                      <BigSoftInput
-                        value={name}
-                        onChange={setName}
-                        placeholder="Their full name"
-                        required
-                      />
-                      <BigSoftInput
-                        value={email}
-                        onChange={setEmail}
-                        placeholder="Their email address"
-                        type="email"
-                        required
-                      />
-                      <BigSoftInput
-                        value={affiliation}
-                        onChange={setAffiliation}
-                        placeholder="Their affiliation (optional)"
-                      />
-                    </div>
+                <ComposerStepper steps={STEPS} current={step} onJump={(s) => { const i = STEPS.findIndex(x => x.id === s); if (i <= stepIndex) setStep(s); }} />
 
-                    <div className="h-px bg-slate-100" />
-
-                    <div className="text-[15px] leading-loose text-slate-700">
-                      Hello <span className="font-semibold text-slate-900">{greetingName}</span>,
-                      we would love to have you with us. We are inviting you as
-                      {" "}{article}{" "}
-                      <InlineChip
-                        value={role}
-                        setValue={setRole}
-                        options={ROLE_OPTIONS}
-                        emptyLabel="pick a role"
-                        tone={role ? "neutral" : "warn"}
-                      />
-                      {(sessionLength || sessionFormat || !role) && (
-                        <>
-                          {" "}for{" "}
-                          <InlineChip
-                            value={sessionLength}
-                            setValue={setSessionLength}
-                            options={SESSION_LENGTHS}
-                            emptyLabel="choose length"
+                {step === "recipient" && (
+                  <div className="space-y-5 mt-6">
+                    <ComposerSection title="Recipient" subtitle="Who you are inviting. The required fields are marked.">
+                      <div className="group focus-within:bg-white bg-slate-50/80 rounded-2xl p-5 transition-all border border-transparent focus-within:border-[#0066B3]/30 focus-within:shadow-sm flex items-start gap-4">
+                        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-slate-200 to-slate-100 ring-1 ring-slate-200 shrink-0 flex items-center justify-center text-slate-400 text-xl font-bold">
+                          {(name.trim().charAt(0) || "?").toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0 space-y-0.5">
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={name}
+                              onChange={(e) => setName(e.target.value)}
+                              placeholder="Their full name"
+                              className="flex-1 bg-transparent text-lg font-bold text-slate-900 placeholder:text-slate-400 placeholder:font-normal outline-none"
+                            />
+                            {!name && <span aria-hidden className="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0" />}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="email"
+                              value={email}
+                              onChange={(e) => setEmail(e.target.value)}
+                              placeholder="their.email@example.org"
+                              className="flex-1 bg-transparent text-sm text-slate-700 placeholder:text-slate-400 outline-none"
+                            />
+                            {!email && <span aria-hidden className="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0" />}
+                          </div>
+                          <input
+                            type="text"
+                            value={affiliation}
+                            onChange={(e) => setAffiliation(e.target.value)}
+                            placeholder="Their organisation, optional"
+                            className="w-full bg-transparent text-xs text-slate-500 placeholder:text-slate-400 outline-none"
                           />
-                        </>
-                      )}
-                      {(qaLength || preferredDay) ? (
-                        <>
-                          {qaLength && (
-                            <>
-                              {" "}with{" "}
-                              <InlineChip
-                                value={qaLength}
-                                setValue={setQaLength}
-                                options={QA_LENGTHS}
-                                emptyLabel="Q & A"
-                              />
-                              {" "}for Q and A
-                            </>
-                          )}
-                          {preferredDay && (
-                            <>
-                              {" "}on{" "}
-                              <InlineChip
-                                value={preferredDay}
-                                setValue={setPreferredDay}
-                                options={PREFERRED_DAY}
-                                emptyLabel="day"
-                                allowCustom={false}
-                              />
-                            </>
-                          )}
-                          .
-                        </>
-                      ) : (
-                        <>
-                          .{" "}
-                          <span className="inline-flex items-center gap-2 text-xs">
-                            {!qaLength && (
-                              <button type="button" onClick={() => setQaLength("10 minutes")} className="text-slate-400 hover:text-[#0066B3] underline decoration-dotted">
-                                add Q & A
-                              </button>
-                            )}
-                            {!preferredDay && (
-                              <button type="button" onClick={() => setPreferredDay("Day 1, August 15")} className="text-slate-400 hover:text-[#0066B3] underline decoration-dotted">
-                                pick a day
-                              </button>
-                            )}
-                          </span>
-                        </>
-                      )}
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-3 pt-1">
-                      {!openTrack && (
-                        <button type="button" onClick={() => setOpenTrack(true)} className="text-xs font-medium text-slate-400 hover:text-[#0066B3] underline decoration-dotted">
-                          + Add a track
-                        </button>
-                      )}
-                      {!openFormat && (
-                        <button type="button" onClick={() => setOpenFormat(true)} className="text-xs font-medium text-slate-400 hover:text-[#0066B3] underline decoration-dotted">
-                          + Specify a format
-                        </button>
-                      )}
-                    </div>
-
-                    {(openTrack || openFormat) && (
-                      <div className="text-base leading-loose text-slate-600 font-medium pt-1">
-                        {openTrack && (
-                          <span className="inline-flex items-center gap-1">
-                            Track:{" "}
-                            <SoftInput value={sessionTrack} onChange={setSessionTrack} placeholder="e.g. Medical interpreting" />
-                            <button type="button" onClick={() => { setSessionTrack(""); setOpenTrack(false); }} className="text-slate-400 hover:text-rose-600 ml-1">
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                            {openFormat && <span className="mx-2 text-slate-300">·</span>}
-                          </span>
-                        )}
-                        {openFormat && (
-                          <span className="inline-flex items-center gap-1">
-                            Format:{" "}
-                            <SoftInput value={sessionFormat} onChange={setSessionFormat} placeholder="Workshop, panel, breakout…" />
-                            <button type="button" onClick={() => { setSessionFormat(""); setOpenFormat(false); }} className="text-slate-400 hover:text-rose-600 ml-1">
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          </span>
-                        )}
+                        </div>
                       </div>
+                    </ComposerSection>
+
+                    {!isEdit && (
+                      <ComposerSection title="A personal note" subtitle="Appears highlighted at the top of their email. Skip and the email is still warm.">
+                        <SoftTextarea
+                          value={customMessage}
+                          onChange={setCustomMessage}
+                          rows={3}
+                          placeholder="Looking forward to having you back this year."
+                        />
+                      </ComposerSection>
                     )}
                   </div>
-                </div>
+                )}
 
-                <div className="mt-6 space-y-4">
-                  {!isEdit && (
-                    <OptionalBlock
-                      title="Add a personal note"
-                      isOpen={openNote}
-                      onOpen={() => setOpenNote(true)}
-                      onRemove={() => { setOpenNote(false); setCustomMessage(""); }}
-                      icon={MessageSquare}
-                    >
-                      <SoftTextarea
-                        value={customMessage}
-                        onChange={setCustomMessage}
-                        rows={3}
-                        placeholder="Looking forward to having you back this year."
-                      />
-                      <p className="text-[11px] text-slate-400">Appears highlighted at the top of their email.</p>
-                    </OptionalBlock>
-                  )}
-
-                  <OptionalBlock
-                    title="Propose talk details"
-                    isOpen={openTalk}
-                    onOpen={() => setOpenTalk(true)}
-                    onRemove={() => { setOpenTalk(false); setTalkTitle(""); setTalkAbstract(""); setLearningObjectives(""); }}
-                    icon={FileText}
-                  >
-                    <div className="space-y-4">
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-sm text-slate-500 shrink-0">A draft title —</span>
-                        <input
-                          type="text"
-                          value={talkTitle}
-                          onChange={(e) => setTalkTitle(e.target.value)}
-                          placeholder="they can refine it in their portal"
-                          className="flex-1 bg-transparent border-b border-dashed border-slate-300 px-1 py-1 text-sm focus:border-[#0066B3] outline-none placeholder:text-slate-400"
+                {step === "session" && (
+                  <div className="space-y-5 mt-6">
+                    <ComposerSection title="What you're offering" subtitle="The role and timing. Anything left blank stays open and the presenter can propose their own in the portal.">
+                      <div className="text-[15px] leading-loose text-slate-700">
+                        We are inviting them as
+                        {" "}{article}{" "}
+                        <InlineChip
+                          value={role}
+                          setValue={setRole}
+                          options={ROLE_OPTIONS}
+                          emptyLabel="pick a role"
+                          tone={role ? "neutral" : "warn"}
                         />
+                        {" "}for{" "}
+                        <InlineChip
+                          value={sessionLength}
+                          setValue={setSessionLength}
+                          options={SESSION_LENGTHS}
+                          emptyLabel="choose length"
+                        />
+                        {" "}with{" "}
+                        <InlineChip
+                          value={qaLength}
+                          setValue={setQaLength}
+                          options={QA_LENGTHS}
+                          emptyLabel="Q & A"
+                        />
+                        {" "}for Q and A on{" "}
+                        <InlineChip
+                          value={preferredDay}
+                          setValue={setPreferredDay}
+                          options={PREFERRED_DAY}
+                          emptyLabel="pick a day"
+                          allowCustom={false}
+                        />
+                        .
                       </div>
-                      <textarea
-                        value={talkAbstract}
-                        onChange={(e) => setTalkAbstract(e.target.value)}
-                        rows={3}
-                        placeholder="The talk in a paragraph or two…"
-                        className="w-full px-4 py-3 text-sm bg-white border border-slate-200 rounded-xl focus:border-[#0066B3] focus:ring-2 focus:ring-[#0066B3]/15 outline-none transition-all placeholder:text-slate-400"
-                      />
-                      <textarea
-                        value={learningObjectives}
-                        onChange={(e) => setLearningObjectives(e.target.value)}
-                        rows={3}
-                        placeholder="What attendees will take away…"
-                        className="w-full px-4 py-3 text-sm bg-white border border-slate-200 rounded-xl focus:border-[#0066B3] focus:ring-2 focus:ring-[#0066B3]/15 outline-none transition-all placeholder:text-slate-400"
-                      />
-                    </div>
-                  </OptionalBlock>
+                    </ComposerSection>
 
-                  <OptionalBlock
-                    title="Add compensation"
-                    isOpen={openComp}
-                    onOpen={() => setOpenComp(true)}
-                    onRemove={() => { setOpenComp(false); setHonorariumAmount(""); setTravelReimbursement(""); }}
-                    icon={DollarSign}
-                  >
-                    <div className="text-base leading-loose text-slate-600 font-medium">
-                      Pay them{" "}
-                      <span className="inline-flex items-center">
-                        <span className="text-slate-400 mr-0.5">$</span>
-                        <input
-                          type="number"
-                          min={0}
-                          value={honorariumAmount}
-                          onChange={(e) => setHonorariumAmount(e.target.value)}
-                          placeholder="300"
-                          className="bg-transparent border-b border-dashed border-slate-300 px-1 py-0.5 text-base focus:border-[#0066B3] outline-none placeholder:text-slate-400 text-[#0E5566] font-semibold"
-                          style={{ width: "6ch" }}
-                        />
-                      </span>
-                      {" "}after the event, and cover up to{" "}
-                      <span className="inline-flex items-center">
-                        <span className="text-slate-400 mr-0.5">$</span>
-                        <input
-                          type="number"
-                          min={0}
-                          value={travelReimbursement}
-                          onChange={(e) => setTravelReimbursement(e.target.value)}
-                          placeholder="200"
-                          className="bg-transparent border-b border-dashed border-slate-300 px-1 py-0.5 text-base focus:border-[#0066B3] outline-none placeholder:text-slate-400 text-[#0E5566] font-semibold"
-                          style={{ width: "6ch" }}
-                        />
-                      </span>
-                      {" "}in travel receipts.
-                    </div>
-                    <p className="text-[11px] text-slate-400 mt-2">They see &ldquo;up to $X&rdquo; for travel. Receipts required.</p>
-                  </OptionalBlock>
-                </div>
+                    <ComposerSection title="Track and format" subtitle="Only if they apply.">
+                      <div className="space-y-3">
+                        <SoftInput value={sessionTrack} onChange={setSessionTrack} placeholder="Track or theme (e.g. Medical interpreting)" />
+                        <SoftInput value={sessionFormat} onChange={setSessionFormat} placeholder="Format (Workshop, panel, breakout…)" />
+                      </div>
+                    </ComposerSection>
+                  </div>
+                )}
+
+                {step === "extras" && (
+                  <div className="space-y-5 mt-6">
+                    <ComposerSection title="Proposed talk details" subtitle="A starting point — the presenter can refine or replace in their portal.">
+                      <div className="space-y-3">
+                        <SoftInput value={talkTitle} onChange={setTalkTitle} placeholder="A draft working title" />
+                        <SoftTextarea value={talkAbstract} onChange={setTalkAbstract} rows={3} placeholder="The talk in a paragraph or two…" />
+                        <SoftTextarea value={learningObjectives} onChange={setLearningObjectives} rows={3} placeholder="What attendees will take away…" />
+                      </div>
+                    </ComposerSection>
+
+                    <ComposerSection title="Compensation" subtitle='Leave both blank and compensation is unmentioned. They see "up to $X" for travel.'>
+                      <div className="text-base leading-loose text-slate-600 font-medium">
+                        Pay them{" "}
+                        <span className="inline-flex items-center">
+                          <span className="text-slate-400 mr-0.5">$</span>
+                          <input
+                            type="number"
+                            min={0}
+                            value={honorariumAmount}
+                            onChange={(e) => setHonorariumAmount(e.target.value)}
+                            placeholder="300"
+                            className="bg-transparent border-b border-dashed border-slate-300 px-1 py-0.5 text-base focus:border-[#0066B3] outline-none placeholder:text-slate-400 text-[#0E5566] font-semibold"
+                            style={{ width: "6ch" }}
+                          />
+                        </span>
+                        {" "}after the event, and cover up to{" "}
+                        <span className="inline-flex items-center">
+                          <span className="text-slate-400 mr-0.5">$</span>
+                          <input
+                            type="number"
+                            min={0}
+                            value={travelReimbursement}
+                            onChange={(e) => setTravelReimbursement(e.target.value)}
+                            placeholder="200"
+                            className="bg-transparent border-b border-dashed border-slate-300 px-1 py-0.5 text-base focus:border-[#0066B3] outline-none placeholder:text-slate-400 text-[#0E5566] font-semibold"
+                            style={{ width: "6ch" }}
+                          />
+                        </span>
+                        {" "}in travel receipts.
+                      </div>
+                    </ComposerSection>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -477,7 +402,7 @@ export function InviteComposer({
         {!createdUrl && (
           <div className="border-t border-slate-100 shrink-0 bg-white">
             <div className="px-7 py-4 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
-              {!isEdit ? (
+              {isLastStep && !isEdit ? (
                 <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
                   <input
                     type="checkbox"
@@ -488,18 +413,40 @@ export function InviteComposer({
                   Email it now
                 </label>
               ) : (
-                <div className="text-xs text-slate-500">Updates apply immediately.</div>
+                <div className="text-xs text-slate-500">Step {stepIndex + 1} of {STEPS.length}{isEdit ? " · Updates apply immediately" : ""}</div>
               )}
               <div className="flex items-center gap-2 justify-end">
-                <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-900">Cancel</button>
-                <button
-                  onClick={submit}
-                  disabled={!canSubmit}
-                  className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                  style={{ background: canSubmit ? "linear-gradient(to right, #0E5566, #0066B3)" : "#94a3b8" }}
-                >
-                  {busy ? "Working…" : isEdit ? "Save changes" : sendNow ? (<>Send invitation <Send className="w-4 h-4" /></>) : "Save invitation"}
-                </button>
+                <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-900">Cancel</button>
+                {!isFirstStep && (
+                  <button
+                    type="button"
+                    onClick={goBack}
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50"
+                  >
+                    Back
+                  </button>
+                )}
+                {!isLastStep ? (
+                  <button
+                    type="button"
+                    onClick={goNext}
+                    disabled={!canAdvance}
+                    className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    style={{ background: canAdvance ? "linear-gradient(to right, #0E5566, #0066B3)" : "#94a3b8" }}
+                  >
+                    Next
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={submit}
+                    disabled={!canSubmit}
+                    className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    style={{ background: canSubmit ? "linear-gradient(to right, #0E5566, #0066B3)" : "#94a3b8" }}
+                  >
+                    {busy ? "Working…" : isEdit ? "Save changes" : sendNow ? (<>Send invitation <Send className="w-4 h-4" /></>) : "Save invitation"}
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -509,27 +456,74 @@ export function InviteComposer({
   );
 }
 
-function BigSoftInput({
-  value, onChange, placeholder, type = "text", required,
+function ComposerStepper({
+  steps, current, onJump,
 }: {
-  value: string;
-  onChange: (v: string) => void;
-  placeholder: string;
-  type?: "text" | "email";
-  required?: boolean;
+  steps: readonly { id: string; label: string }[];
+  current: string;
+  onJump: (id: string) => void;
+}) {
+  const currentIndex = steps.findIndex((s) => s.id === current);
+  return (
+    <div className="flex items-center gap-2">
+      {steps.map((s, i) => {
+        const done = i < currentIndex;
+        const active = i === currentIndex;
+        const reachable = i <= currentIndex;
+        return (
+          <div key={s.id} className="flex items-center gap-2 flex-1 min-w-0">
+            <button
+              type="button"
+              onClick={() => reachable && onJump(s.id)}
+              disabled={!reachable}
+              className={
+                "flex items-center gap-2 min-w-0 transition-colors " +
+                (reachable ? "cursor-pointer" : "cursor-not-allowed opacity-50")
+              }
+            >
+              <span
+                className={
+                  "w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-semibold shrink-0 transition-all " +
+                  (active
+                    ? "bg-[#0066B3] text-white ring-4 ring-[#0066B3]/15"
+                    : done
+                    ? "bg-[#0E5566] text-white"
+                    : "bg-slate-100 text-slate-400")
+                }
+              >
+                {done && !active ? <Check className="w-3 h-3" /> : i + 1}
+              </span>
+              <span
+                className={
+                  "text-xs font-semibold truncate " +
+                  (active ? "text-slate-900" : done ? "text-slate-700" : "text-slate-400")
+                }
+              >
+                {s.label}
+              </span>
+            </button>
+            {i < steps.length - 1 && <div className={"flex-1 h-px " + (done ? "bg-[#0E5566]" : "bg-slate-200")} />}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function ComposerSection({
+  title, subtitle, children,
+}: {
+  title: string;
+  subtitle?: string;
+  children: React.ReactNode;
 }) {
   return (
-    <div className="relative">
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="w-full px-4 py-3 text-base bg-slate-50 border border-transparent rounded-xl focus:bg-white focus:border-[#0066B3] focus:ring-2 focus:ring-[#0066B3]/15 outline-none transition-all placeholder:text-slate-400"
-      />
-      {required && !value && (
-        <span aria-hidden className="absolute right-3 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-rose-400" />
-      )}
+    <div className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
+      <div className="px-5 py-4 border-b border-slate-100">
+        <h3 className="text-sm font-bold text-slate-900">{title}</h3>
+        {subtitle && <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">{subtitle}</p>}
+      </div>
+      <div className="px-5 py-5">{children}</div>
     </div>
   );
 }
