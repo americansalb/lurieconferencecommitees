@@ -17,18 +17,25 @@ export async function GET() {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  const rawUser = process.env.GMAIL_USER;
+  const rawPass = process.env.GMAIL_APP_PASSWORD;
+  const user = rawUser?.trim();
+  const pass = rawPass?.replace(/\s+/g, "");
   const env = {
-    GMAIL_USER: !!process.env.GMAIL_USER,
-    GMAIL_USER_value_if_set: process.env.GMAIL_USER || null,
-    GMAIL_APP_PASSWORD: !!process.env.GMAIL_APP_PASSWORD,
-    GMAIL_APP_PASSWORD_length: process.env.GMAIL_APP_PASSWORD ? process.env.GMAIL_APP_PASSWORD.length : 0,
+    GMAIL_USER: !!rawUser,
+    GMAIL_USER_value_if_set: rawUser || null,
+    GMAIL_USER_had_whitespace: !!rawUser && rawUser !== user,
+    GMAIL_APP_PASSWORD: !!rawPass,
+    GMAIL_APP_PASSWORD_length_raw: rawPass ? rawPass.length : 0,
+    GMAIL_APP_PASSWORD_length_normalised: pass ? pass.length : 0,
+    GMAIL_APP_PASSWORD_had_whitespace: !!rawPass && rawPass !== pass,
     MAIL_FROM: process.env.MAIL_FROM || null,
     MAIL_REPLY_TO: process.env.MAIL_REPLY_TO || null,
     MAIL_BCC: process.env.MAIL_BCC || null,
     NODE_ENV: process.env.NODE_ENV || null,
   };
 
-  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+  if (!user || !pass) {
     return NextResponse.json({
       step: "env-check",
       ok: false,
@@ -38,11 +45,10 @@ export async function GET() {
   }
 
   const transport = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.GMAIL_USER,
-      pass: process.env.GMAIL_APP_PASSWORD,
-    },
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true,
+    auth: { user, pass },
   });
 
   try {
@@ -88,21 +94,22 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Body must be { to: 'email@example.com' }" }, { status: 400 });
   }
 
-  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+  const user = process.env.GMAIL_USER?.trim();
+  const pass = process.env.GMAIL_APP_PASSWORD?.replace(/\s+/g, "");
+  if (!user || !pass) {
     return NextResponse.json({ ok: false, reason: "GMAIL_USER or GMAIL_APP_PASSWORD not set." }, { status: 503 });
   }
 
   const transport = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.GMAIL_USER,
-      pass: process.env.GMAIL_APP_PASSWORD,
-    },
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true,
+    auth: { user, pass },
   });
 
   try {
     const info = await transport.sendMail({
-      from: process.env.MAIL_FROM || `Lurie Children's & AALB Conference <${process.env.GMAIL_USER}>`,
+      from: process.env.MAIL_FROM || `Lurie Children's & AALB Conference <${user}>`,
       to,
       subject: "Mail debug test from /api/__mail-debug",
       text: "If you see this, the mail path is end-to-end functional.",
