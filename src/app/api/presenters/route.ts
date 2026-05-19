@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { newPresenterToken, confirmationUrl, appUrl } from "@/lib/presenters";
-import { sendMail } from "@/lib/mail";
+import { sendMail, isMailConfigured } from "@/lib/mail";
 import { presenterInviteEmail } from "@/lib/mail-templates";
 
 function isAdmin(role?: string) {
@@ -107,34 +107,51 @@ export async function POST(req: Request) {
     const presenter = await prisma.presenter.create({ data: data as never });
     const url = confirmationUrl(presenter.token);
 
+    let mailStatus: "sent" | "skipped" | "failed" | "not_requested" = "not_requested";
+    let mailError: string | undefined;
+
     if (sendNow) {
-      try {
-        await sendMail({
-          to: presenter.email,
-          subject: `Invitation to join the 2026 Lurie Children's and AALB Conference`,
-          html: presenterInviteEmail({
-            name: presenter.name,
-            url,
-            customMessage,
-            role: presenter.role,
-            sessionFormat: presenter.sessionFormat,
-          }),
-        });
-        await prisma.presenter.update({ where: { id: presenter.id }, data: { lastSentAt: new Date() } });
-        await prisma.presenterEvent.create({
-          data: {
-            presenterId: presenter.id,
-            type: "invited",
-            actorEmail: session.user.email || null,
-            meta: customMessage ? JSON.stringify({ customMessage }) : null,
-          },
-        });
-      } catch (e) {
-        console.error("[presenters] invite send failed", e);
+      if (!isMailConfigured()) {
+        mailStatus = "skipped";
+        mailError = "GMAIL_USER or GMAIL_APP_PASSWORD env var is not set on this service.";
+        console.warn("[presenters] mail not configured; presenter created but no email sent", { presenterId: presenter.id });
+      } else {
+        try {
+          const result = await sendMail({
+            to: presenter.email,
+            subject: `Invitation to join the 2026 Lurie Children's and AALB Conference`,
+            html: presenterInviteEmail({
+              name: presenter.name,
+              url,
+              customMessage,
+              role: presenter.role,
+              sessionFormat: presenter.sessionFormat,
+            }),
+          });
+          if ((result as { skipped?: boolean }).skipped) {
+            mailStatus = "skipped";
+            mailError = "Mail transport returned skipped — env vars likely missing.";
+          } else {
+            mailStatus = "sent";
+            await prisma.presenter.update({ where: { id: presenter.id }, data: { lastSentAt: new Date() } });
+            await prisma.presenterEvent.create({
+              data: {
+                presenterId: presenter.id,
+                type: "invited",
+                actorEmail: session.user.email || null,
+                meta: customMessage ? JSON.stringify({ customMessage }) : null,
+              },
+            });
+          }
+        } catch (e) {
+          mailStatus = "failed";
+          mailError = e instanceof Error ? e.message : String(e);
+          console.error("[presenters] invite send failed", e);
+        }
       }
     }
 
-    return NextResponse.json({ id: presenter.id, token: presenter.token, url, appUrl: appUrl() });
+    return NextResponse.json({ id: presenter.id, token: presenter.token, url, appUrl: appUrl(), mailStatus, mailError });
   } catch (e) {
     console.error("[presenters] POST error", e);
     return NextResponse.json({ error: errorMessage(e) }, { status: 500 });

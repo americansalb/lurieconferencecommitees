@@ -76,6 +76,8 @@ export function InviteComposer({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdUrl, setCreatedUrl] = useState<string | null>(null);
+  const [mailStatus, setMailStatus] = useState<"sent" | "skipped" | "failed" | "not_requested" | null>(null);
+  const [mailError, setMailError] = useState<string | null>(null);
   const [view, setView] = useState<"compose" | "preview">("compose");
 
   const canSubmit = !!(name.trim() && email.trim()) && !busy;
@@ -125,9 +127,11 @@ export function InviteComposer({
         onClose();
         return;
       }
-      const { ok, data, error } = await parseResponse<{ id: string; url: string }>(res);
+      const { ok, data, error } = await parseResponse<{ id: string; url: string; mailStatus?: "sent" | "skipped" | "failed" | "not_requested"; mailError?: string }>(res);
       if (!ok || !data) throw new Error(error || "Failed");
       setCreatedUrl(data.url);
+      setMailStatus(data.mailStatus ?? null);
+      setMailError(data.mailError ?? null);
       onCreated();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to invite");
@@ -185,19 +189,40 @@ export function InviteComposer({
             <div className="text-center">
               <div
                 className="w-16 h-16 mx-auto rounded-full flex items-center justify-center text-white mb-4"
-                style={{ background: "linear-gradient(135deg, #0E5566, #0066B3)" }}
+                style={{
+                  background: mailStatus === "sent" || mailStatus === "not_requested"
+                    ? "linear-gradient(135deg, #0E5566, #0066B3)"
+                    : "linear-gradient(135deg, #b45309, #d97706)",
+                }}
               >
-                <Check className="w-7 h-7" />
+                {mailStatus === "sent" || mailStatus === "not_requested" ? <Check className="w-7 h-7" /> : <AlertCircle className="w-7 h-7" />}
               </div>
               <div className="text-2xl font-bold text-slate-900 tracking-tight">
-                {sendNow ? `Invitation sent to ${firstName || name || "your presenter"}` : "Presenter saved"}
+                {mailStatus === "sent"
+                  ? `Invitation sent to ${firstName || name || "your presenter"}`
+                  : mailStatus === "skipped" || mailStatus === "failed"
+                  ? "Presenter saved — email did not go out"
+                  : "Presenter saved"}
               </div>
               <p className="text-sm text-slate-500 mt-2 leading-relaxed">
-                {sendNow
+                {mailStatus === "sent"
                   ? "We emailed them a personal portal link. They can accept, suggest adjustments, or decline from there."
+                  : mailStatus === "skipped" || mailStatus === "failed"
+                  ? "The presenter record was created but the email could not be delivered. Copy the link below and send it manually, or fix the issue and resend from the detail page."
                   : "Send them their personal portal link whenever you are ready."}
               </p>
             </div>
+            {(mailStatus === "skipped" || mailStatus === "failed") && mailError && (
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 text-xs text-amber-900 flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                <div>
+                  <div className="font-semibold mb-0.5">
+                    {mailStatus === "skipped" ? "Mail not configured" : "Mail send failed"}
+                  </div>
+                  <div className="leading-relaxed">{mailError}</div>
+                </div>
+              </div>
+            )}
             <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
               <div className="text-[11px] font-semibold tracking-widest uppercase text-slate-500 mb-2">Their personal portal</div>
               <div className="flex items-center gap-2">
