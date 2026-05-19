@@ -1,5 +1,3 @@
-import nodemailer, { type Transporter } from "nodemailer";
-
 type SendArgs = {
   to: string;
   subject: string;
@@ -9,78 +7,74 @@ type SendArgs = {
   bcc?: string;
 };
 
-let cached: Transporter | null = null;
-
-// Google App Passwords are displayed as "abcd efgh ijkl mnop" in the UI.
-// The actual password is 16 chars, no spaces. Copy-pasting from Google with
-// the spaces produces auth failures that look like "Username and Password
-// not accepted". Strip whitespace defensively.
-function normaliseAppPassword(raw: string | undefined): string | undefined {
-  if (!raw) return raw;
-  return raw.replace(/\s+/g, "");
-}
-
-function getTransport(): Transporter | null {
-  if (cached) return cached;
-  const user = process.env.GMAIL_USER?.trim();
-  const pass = normaliseAppPassword(process.env.GMAIL_APP_PASSWORD);
-  if (!user || !pass) return null;
-  // Explicit SMTP config rather than the `service: "gmail"` shortcut.
-  // Some nodemailer v7 builds + Render's outbound networking trip the shortcut's
-  // auto-detected port (587 STARTTLS). Pinning to 465 + secure:true is the
-  // path Google documents and is the most reliable for app-password auth.
-  cached = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 465,
-    secure: true,
-    auth: { user, pass },
-  });
-  return cached;
-}
-
 export function isMailConfigured() {
-  return Boolean(process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD);
+  return Boolean(process.env.RESEND_API_KEY && process.env.MAIL_FROM);
 }
 
-export function resetMailTransport() {
-  cached = null;
+export function mailConfigDetail() {
+  return {
+    RESEND_API_KEY: !!process.env.RESEND_API_KEY,
+    RESEND_API_KEY_length: process.env.RESEND_API_KEY ? process.env.RESEND_API_KEY.length : 0,
+    RESEND_API_KEY_prefix: process.env.RESEND_API_KEY ? process.env.RESEND_API_KEY.slice(0, 4) : null,
+    MAIL_FROM: process.env.MAIL_FROM || null,
+    MAIL_REPLY_TO: process.env.MAIL_REPLY_TO || null,
+    MAIL_BCC: process.env.MAIL_BCC || null,
+  };
 }
 
 export async function sendMail({ to, subject, html, text, replyTo, bcc }: SendArgs) {
-  const transport = getTransport();
-  if (!transport) {
-    console.warn("[mail] GMAIL_USER / GMAIL_APP_PASSWORD not configured; skipping send", { to, subject });
+  const apiKey = process.env.RESEND_API_KEY?.trim();
+  const from = process.env.MAIL_FROM?.trim();
+  if (!apiKey || !from) {
+    console.warn("[mail] RESEND_API_KEY or MAIL_FROM not set; skipping send", { to, subject });
     return { skipped: true };
   }
-  const from = process.env.MAIL_FROM || `Lurie Children's & AALB Conference <${process.env.GMAIL_USER?.trim()}>`;
-  const defaultBcc = process.env.MAIL_BCC || undefined;
+
+  const body: Record<string, unknown> = {
+    from,
+    to: [to],
+    subject,
+    html,
+    text: text || stripHtml(html),
+  };
+  const finalReplyTo = replyTo || process.env.MAIL_REPLY_TO;
+  if (finalReplyTo) body.reply_to = finalReplyTo;
+  const finalBcc = bcc || process.env.MAIL_BCC;
+  if (finalBcc) body.bcc = [finalBcc];
+
+  let res: Response;
   try {
-    const info = await transport.sendMail({
-      from,
-      to,
-      subject,
-      html,
-      text: text || stripHtml(html),
-      replyTo: replyTo || process.env.MAIL_REPLY_TO,
-      bcc: bcc || defaultBcc,
+    res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
     });
-    console.log("[mail] sent", { to, subject, messageId: info.messageId, response: info.response, accepted: info.accepted, rejected: info.rejected });
-    return info;
   } catch (e) {
-    const err = e as { message?: string; code?: string; responseCode?: number; command?: string };
-    console.error("[mail] send failed", {
-      to,
-      subject,
-      message: err?.message,
-      code: err?.code,
-      responseCode: err?.responseCode,
-      command: err?.command,
-    });
-    // Bust the cached transporter so a follow-up send rebuilds it. Helps if the
-    // failure was a stale connection or revoked credentials being lazily detected.
-    cached = null;
+    console.error("[mail] network error reaching Resend", { to, subject, error: e instanceof Error ? e.message : String(e) });
     throw e;
   }
+
+  const payload = await res.json().catch(() => null) as { id?: string; message?: string; name?: string } | null;
+
+  if (!res.ok) {
+    console.error("[mail] Resend rejected", {
+      to,
+      subject,
+      status: res.status,
+      message: payload?.message || null,
+      name: payload?.name || null,
+    });
+    const err = new Error(payload?.message || `Resend returned ${res.status}`);
+    (err as { status?: number }).status = res.status;
+    (err as { responseBody?: unknown }).responseBody = payload;
+    throw err;
+  }
+
+  console.log("[mail] sent", { to, subject, id: payload?.id || null });
+  return { id: payload?.id, response: "ok" };
 }
 
 function stripHtml(html: string) {

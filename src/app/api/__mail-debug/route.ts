@@ -1,133 +1,142 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import nodemailer from "nodemailer";
+import { mailConfigDetail } from "@/lib/mail";
 
-// Admin-only diagnostic. Hit GET /api/__mail-debug while logged in as admin.
-// Returns the actual state of the mail transport — env presence, transport.verify() result, etc.
-// Delete this route once mail is working.
+// Admin-only diagnostic. Hit GET /api/__mail-debug while logged in as admin
+// to see env-var state. POST { "to": "you@example.com" } to send a real test.
+// Delete this route once mail is healthy.
 
-export async function GET() {
+async function requireAdmin() {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
   }
   const userRole = (session.user as { role?: string }).role;
   if (userRole !== "admin" && userRole !== "developer") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return { error: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
   }
+  return { session };
+}
 
-  const rawUser = process.env.GMAIL_USER;
-  const rawPass = process.env.GMAIL_APP_PASSWORD;
-  const user = rawUser?.trim();
-  const pass = rawPass?.replace(/\s+/g, "");
-  const env = {
-    GMAIL_USER: !!rawUser,
-    GMAIL_USER_value_if_set: rawUser || null,
-    GMAIL_USER_had_whitespace: !!rawUser && rawUser !== user,
-    GMAIL_APP_PASSWORD: !!rawPass,
-    GMAIL_APP_PASSWORD_length_raw: rawPass ? rawPass.length : 0,
-    GMAIL_APP_PASSWORD_length_normalised: pass ? pass.length : 0,
-    GMAIL_APP_PASSWORD_had_whitespace: !!rawPass && rawPass !== pass,
-    MAIL_FROM: process.env.MAIL_FROM || null,
-    MAIL_REPLY_TO: process.env.MAIL_REPLY_TO || null,
-    MAIL_BCC: process.env.MAIL_BCC || null,
-    NODE_ENV: process.env.NODE_ENV || null,
-  };
+export async function GET() {
+  const gate = await requireAdmin();
+  if ("error" in gate) return gate.error;
 
-  if (!user || !pass) {
+  const env = mailConfigDetail();
+
+  if (!env.RESEND_API_KEY || !env.MAIL_FROM) {
     return NextResponse.json({
       step: "env-check",
       ok: false,
-      reason: "GMAIL_USER and/or GMAIL_APP_PASSWORD env vars are not set on this service.",
+      reason: "RESEND_API_KEY and/or MAIL_FROM env vars are not set on this service.",
       env,
     });
   }
 
-  const transport = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 465,
-    secure: true,
-    auth: { user, pass },
-  });
-
+  // Resend has no read-only verify endpoint; hit /domains as a lightweight auth check.
+  let domainsRes: Response;
   try {
-    await transport.verify();
+    domainsRes = await fetch("https://api.resend.com/domains", {
+      headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY!.trim()}` },
+    });
   } catch (e) {
     return NextResponse.json({
-      step: "transport.verify",
+      step: "resend.reach",
       ok: false,
       reason: e instanceof Error ? e.message : String(e),
-      errorCode: (e as { code?: string })?.code || null,
-      errorResponseCode: (e as { responseCode?: number })?.responseCode || null,
       env,
     });
   }
 
-  const url = new URL("https://example.com").searchParams;
-  if (!url) {
-    // unreachable, just to keep variable referenced
+  const payload = await domainsRes.json().catch(() => null);
+  if (!domainsRes.ok) {
+    return NextResponse.json({
+      step: "resend.auth",
+      ok: false,
+      status: domainsRes.status,
+      reason: (payload as { message?: string })?.message || `Resend returned ${domainsRes.status}`,
+      hint: domainsRes.status === 401
+        ? "API key is invalid or revoked. Generate a new one in Resend → API Keys."
+        : domainsRes.status === 403
+        ? "API key lacks permission. Use a key with 'Full access' scope."
+        : null,
+      env,
+    });
   }
 
-  // Optionally do a real send if ?send=<email>
+  // Look at the configured MAIL_FROM domain and check whether it is verified.
+  const fromAddr = (process.env.MAIL_FROM || "").match(/<([^>]+)>/)?.[1] || process.env.MAIL_FROM || "";
+  const fromDomain = fromAddr.split("@")[1]?.toLowerCase() || null;
+  const domains = (payload as { data?: { name: string; status: string }[] })?.data || [];
+  const matched = fromDomain ? domains.find(d => d.name.toLowerCase() === fromDomain) : null;
+
   return NextResponse.json({
-    step: "transport.verify",
+    step: "resend.auth",
     ok: true,
-    reason: "Gmail accepted the credentials. The transport is configured correctly.",
-    nextStep: "To do a live test, hit /api/__mail-debug?send=YOUR_EMAIL@example.com",
+    reason: "Resend accepted the API key.",
+    fromAddress: fromAddr,
+    fromDomain,
+    fromDomainStatus: matched ? matched.status : "not-found",
+    fromDomainWarning: !matched
+      ? `MAIL_FROM uses '${fromDomain}' but no matching domain is registered in Resend. Sends will be rejected. Add and verify the domain in Resend → Domains.`
+      : matched.status !== "verified"
+      ? `MAIL_FROM domain '${fromDomain}' is registered but status is '${matched.status}' (not 'verified'). Sends may be rejected.`
+      : null,
+    nextStep: "POST /api/__mail-debug with body { to: 'you@example.com' } to send a real test.",
     env,
   });
 }
 
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  const userRole = (session.user as { role?: string }).role;
-  if (userRole !== "admin" && userRole !== "developer") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const gate = await requireAdmin();
+  if ("error" in gate) return gate.error;
 
   const { to } = await req.json().catch(() => ({ to: null }));
   if (!to || typeof to !== "string") {
     return NextResponse.json({ error: "Body must be { to: 'email@example.com' }" }, { status: 400 });
   }
 
-  const user = process.env.GMAIL_USER?.trim();
-  const pass = process.env.GMAIL_APP_PASSWORD?.replace(/\s+/g, "");
-  if (!user || !pass) {
-    return NextResponse.json({ ok: false, reason: "GMAIL_USER or GMAIL_APP_PASSWORD not set." }, { status: 503 });
+  const apiKey = process.env.RESEND_API_KEY?.trim();
+  const from = process.env.MAIL_FROM?.trim();
+  if (!apiKey || !from) {
+    return NextResponse.json({ ok: false, reason: "RESEND_API_KEY or MAIL_FROM not set." }, { status: 503 });
   }
 
-  const transport = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 465,
-    secure: true,
-    auth: { user, pass },
-  });
-
+  let res: Response;
   try {
-    const info = await transport.sendMail({
-      from: process.env.MAIL_FROM || `Lurie Children's & AALB Conference <${user}>`,
-      to,
-      subject: "Mail debug test from /api/__mail-debug",
-      text: "If you see this, the mail path is end-to-end functional.",
-    });
-    return NextResponse.json({
-      ok: true,
-      messageId: info.messageId,
-      response: info.response,
-      accepted: info.accepted,
-      rejected: info.rejected,
+    res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from,
+        to: [to],
+        subject: "Mail debug test from /api/__mail-debug",
+        text: "If you see this, the Resend path is end-to-end functional.",
+      }),
     });
   } catch (e) {
     return NextResponse.json({
       ok: false,
       reason: e instanceof Error ? e.message : String(e),
-      errorCode: (e as { code?: string })?.code || null,
-      errorResponseCode: (e as { responseCode?: number })?.responseCode || null,
-      errorCommand: (e as { command?: string })?.command || null,
     }, { status: 500 });
   }
+
+  const payload = await res.json().catch(() => null);
+  if (!res.ok) {
+    return NextResponse.json({
+      ok: false,
+      status: res.status,
+      response: payload,
+    }, { status: 500 });
+  }
+
+  return NextResponse.json({
+    ok: true,
+    id: (payload as { id?: string })?.id || null,
+    response: payload,
+  });
 }
