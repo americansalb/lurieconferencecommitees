@@ -141,6 +141,35 @@ export function adminNotificationEmail({
   `);
 }
 
+export function passwordResetEmail({
+  name,
+  url,
+  initiatedByAdmin,
+}: {
+  name: string;
+  url: string;
+  initiatedByAdmin?: boolean;
+}) {
+  const first = (name || "").split(" ")[0] || "there";
+  const intro = initiatedByAdmin
+    ? `An administrator has started a password reset for your Conference Committee Hub account. Use the button below to choose a new password.`
+    : `We received a request to reset the password for your Conference Committee Hub account. Use the button below to choose a new password.`;
+  return shell(`
+    <h1 style="font-size:22px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">Hello ${escapeHtml(first)},</h1>
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
+      ${intro}
+    </p>
+    ${button(url, "Reset my password")}
+    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:8px 0 0 0;">
+      Or paste this link into your browser:<br/>
+      <a href="${url}" style="color:${BLUE};word-break:break-all;">${url}</a>
+    </p>
+    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;">
+      This link will expire in 24 hours. If you did not request this, you can safely ignore this email &mdash; your password will not change.
+    </p>
+  `);
+}
+
 function escapeHtml(s: string) {
   return s
     .replace(/&/g, "&amp;")

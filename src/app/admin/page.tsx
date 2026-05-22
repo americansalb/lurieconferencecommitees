@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import {
   Users, Calendar, Shield, Trash2, Pencil, X, Check,
-  Clock, Globe, Search, MessageSquare, Pin, Crown,
+  Clock, Globe, Search, MessageSquare, Pin, Crown, KeyRound,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
@@ -129,6 +129,21 @@ export default function AdminPage() {
     });
     setEditingMemberId(null);
     fetchData();
+  }
+
+  async function sendReset(userId: string, name: string, email: string) {
+    if (!confirm(`Send a password reset email to ${name} (${email})?`)) return;
+    const res = await fetch("/api/admin/members/send-reset", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    });
+    if (res.ok) {
+      alert(`Password reset email sent to ${email}.`);
+    } else {
+      const data = await res.json().catch(() => ({}));
+      alert(data.error || "Failed to send reset email.");
+    }
   }
 
   async function removeMember(userId: string, name: string) {
@@ -417,6 +432,9 @@ export default function AdminPage() {
                                 <div className="flex items-center justify-end gap-1">
                                   <button onClick={() => startEditMember(m)} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors" title="Edit member">
                                     <Pencil className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button onClick={() => sendReset(m.id, m.name, m.email)} className="p-1.5 rounded-lg hover:bg-blue-50 text-slate-400 hover:text-blue-600 transition-colors" title="Send password reset email">
+                                    <KeyRound className="w-3.5 h-3.5" />
                                   </button>
                                   {!isSelf && (
                                     <button onClick={() => removeMember(m.id, m.name)} className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors" title="Remove member">
