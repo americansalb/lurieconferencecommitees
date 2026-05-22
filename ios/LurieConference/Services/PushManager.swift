@@ -26,7 +26,7 @@ final class PushManager: ObservableObject {
                 .requestAuthorization(options: [.alert, .badge, .sound])
             await refreshStatus()
             if granted {
-                await MainActor.run { UIApplication.shared.registerForRemoteNotifications() }
+                UIApplication.shared.registerForRemoteNotifications()
             }
         } catch {
             lastError = error.localizedDescription
@@ -35,9 +35,9 @@ final class PushManager: ObservableObject {
 
     func handleAPNsToken(_ token: String) {
         lastToken = token
-        Task {
+        Task { @MainActor in
             guard AuthStore.shared.token != nil else { return }
-            let name = await UIDevice.current.name
+            let name = UIDevice.current.name
             let version = (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String) ?? "1.0"
             do {
                 try await APIClient.shared.registerDevice(

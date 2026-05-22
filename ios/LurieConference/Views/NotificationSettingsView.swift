@@ -175,12 +175,17 @@ private func leadTimePicker(selected: Binding<[Int]>) -> some View {
         Text("Remind me")
             .font(.caption).fontWeight(.semibold)
             .foregroundStyle(.secondary)
-        FlexibleChipGrid(items: leadOptions, isSelected: { selected.wrappedValue.contains($0.1) }) { opt in
-            var next = selected.wrappedValue
-            if next.contains(opt.1) { next.removeAll { $0 == opt.1 } }
-            else { next.append(opt.1); next.sort() }
-            selected.wrappedValue = next
-        }
+        ChipGrid(
+            items: leadOptions,
+            label: { $0.0 },
+            isSelected: { selected.wrappedValue.contains($0.1) },
+            onTap: { opt in
+                var next = selected.wrappedValue
+                if next.contains(opt.1) { next.removeAll { $0 == opt.1 } }
+                else { next.append(opt.1); next.sort() }
+                selected.wrappedValue = next
+            }
+        )
     }
     .padding(.vertical, 4)
 }
@@ -190,17 +195,23 @@ private struct DayPicker: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Mute on").font(.caption).fontWeight(.semibold).foregroundStyle(.secondary)
-            FlexibleChipGrid(items: dayKeys, isSelected: { selected.contains($0.0) }) { d in
-                if selected.contains(d.0) { selected.removeAll { $0 == d.0 } }
-                else { selected.append(d.0) }
-            }
+            ChipGrid(
+                items: dayKeys,
+                label: { $0.1 },
+                isSelected: { selected.contains($0.0) },
+                onTap: { d in
+                    if selected.contains(d.0) { selected.removeAll { $0 == d.0 } }
+                    else { selected.append(d.0) }
+                }
+            )
         }
         .padding(.vertical, 4)
     }
 }
 
-private struct FlexibleChipGrid<T>: View {
+private struct ChipGrid<T>: View {
     let items: [T]
+    let label: (T) -> String
     let isSelected: (T) -> Bool
     let onTap: (T) -> Void
 
@@ -214,12 +225,11 @@ private struct FlexibleChipGrid<T>: View {
     }
 
     @ViewBuilder private func chip(_ item: T) -> some View {
-        let label = (item as? (String, Int)).map { $0.0 } ?? (item as? (String, String))?.1 ?? ""
         let on = isSelected(item)
         Button {
             onTap(item)
         } label: {
-            Text(label)
+            Text(label(item))
                 .font(.caption).fontWeight(.semibold)
                 .padding(.horizontal, 12).padding(.vertical, 6)
                 .background(on ? Color.accentColor.opacity(0.18) : Color(.secondarySystemBackground),

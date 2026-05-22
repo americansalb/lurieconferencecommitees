@@ -21,7 +21,7 @@ final class APIClient {
     var baseURL: URL {
         let raw = (Bundle.main.object(forInfoDictionaryKey: "LurieAPIBaseURL") as? String)
             ?? "https://conference.aalb.org"
-        return URL(string: raw)!
+        return URL(string: raw) ?? URL(string: "https://conference.aalb.org")!
     }
 
     private let decoder: JSONDecoder = {

@@ -2,19 +2,19 @@ name: LurieConference
 options:
   bundleIdPrefix: org.aalb
   deploymentTarget:
-    iOS: "16.4"
+    iOS: "17.0"
   developmentLanguage: en
   createIntermediateGroups: true
 settings:
   base:
     SWIFT_VERSION: "5.9"
-    IPHONEOS_DEPLOYMENT_TARGET: "16.4"
+    IPHONEOS_DEPLOYMENT_TARGET: "17.0"
     DEVELOPMENT_TEAM: $(LURIE_TEAM_ID)
 targets:
   LurieConference:
     type: application
     platform: iOS
-    deploymentTarget: "16.4"
+    deploymentTarget: "17.0"
     sources:
       - path: LurieConference
     resources:
