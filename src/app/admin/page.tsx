@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import {
   Users, Calendar, Shield, Trash2, Pencil, X, Check,
-  Clock, Globe, Search, MessageSquare, Pin, Crown, KeyRound,
+  Clock, Globe, Search, MessageSquare, Pin, Crown, KeyRound, Megaphone, Send,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
@@ -64,7 +64,13 @@ const ROLE_LABELS: Record<string, { label: string; color: string }> = {
 export default function AdminPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [tab, setTab] = useState<"members" | "events" | "discussions">("members");
+  const [tab, setTab] = useState<"members" | "events" | "discussions" | "broadcast">("members");
+  const [broadcastTitle, setBroadcastTitle] = useState("");
+  const [broadcastMessage, setBroadcastMessage] = useState("");
+  const [broadcastAudience, setBroadcastAudience] = useState<"all" | "committee">("all");
+  const [broadcastCommittees, setBroadcastCommittees] = useState<string[]>([]);
+  const [broadcastSending, setBroadcastSending] = useState(false);
+  const [broadcastResult, setBroadcastResult] = useState<string | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [events, setEvents] = useState<CalEvent[]>([]);
   const [discussions, setDiscussions] = useState<Discussion[]>([]);
@@ -129,6 +135,35 @@ export default function AdminPage() {
     });
     setEditingMemberId(null);
     fetchData();
+  }
+
+  async function sendBroadcast() {
+    if (!broadcastTitle.trim() || !broadcastMessage.trim()) return;
+    setBroadcastSending(true);
+    setBroadcastResult(null);
+    const audience = broadcastAudience === "all"
+      ? { type: "all" as const }
+      : { type: "committee" as const, committeeIds: broadcastCommittees };
+    const res = await fetch("/api/admin/broadcast", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: broadcastTitle, message: broadcastMessage, audience }),
+    });
+    const data = await res.json().catch(() => ({}));
+    setBroadcastSending(false);
+    if (res.ok) {
+      setBroadcastResult(`Sent to ${data.recipients} recipients (${data.delivered} device(s) delivered, ${data.skipped} skipped).`);
+      setBroadcastTitle("");
+      setBroadcastMessage("");
+    } else {
+      setBroadcastResult(data.error || "Failed to send broadcast.");
+    }
+  }
+
+  function toggleBroadcastCommittee(cid: string) {
+    setBroadcastCommittees((prev) =>
+      prev.includes(cid) ? prev.filter((x) => x !== cid) : [...prev, cid]
+    );
   }
 
   async function sendReset(userId: string, name: string, email: string) {
@@ -266,6 +301,7 @@ export default function AdminPage() {
     members: "Search members...",
     events: "Search events...",
     discussions: "Search discussions...",
+    broadcast: "",
   };
 
   if (status === "loading" || !session || loading) {
@@ -322,18 +358,28 @@ export default function AdminPage() {
               >
                 <MessageSquare className="w-4 h-4" /> Discussions ({discussions.length})
               </button>
+              <button
+                onClick={() => { setTab("broadcast"); setSearch(""); setBroadcastResult(null); }}
+                className={`flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-md transition-colors ${
+                  tab === "broadcast" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                <Megaphone className="w-4 h-4" /> Broadcast
+              </button>
             </div>
 
             {/* Search */}
-            <div className="relative mb-4">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder={searchPlaceholders[tab]}
-                className="w-full pl-9 pr-4 py-2.5 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/10 bg-white"
-              />
-            </div>
+            {tab !== "broadcast" && (
+              <div className="relative mb-4">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder={searchPlaceholders[tab]}
+                  className="w-full pl-9 pr-4 py-2.5 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/10 bg-white"
+                />
+              </div>
+            )}
 
             {/* Members Tab */}
             {tab === "members" && (
@@ -648,6 +694,89 @@ export default function AdminPage() {
                     </div>
                   );
                 })}
+              </div>
+            )}
+
+            {/* Broadcast Tab */}
+            {tab === "broadcast" && (
+              <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-5 space-y-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Megaphone className="w-4 h-4 text-slate-500" />
+                    <h3 className="text-sm font-bold text-slate-900">Send a push broadcast</h3>
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    Bypasses members&apos; quiet hours. Sent only to users with the mobile app registered for push.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Title</label>
+                  <input
+                    value={broadcastTitle}
+                    onChange={(e) => setBroadcastTitle(e.target.value)}
+                    placeholder="Weather delay tomorrow"
+                    maxLength={80}
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/10"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Message</label>
+                  <textarea
+                    value={broadcastMessage}
+                    onChange={(e) => setBroadcastMessage(e.target.value)}
+                    rows={3}
+                    placeholder="Tomorrow's 9am committee meeting is moved to noon."
+                    maxLength={300}
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/10 resize-none"
+                  />
+                  <div className="text-[11px] text-slate-400 mt-1">{broadcastMessage.length}/300</div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Audience</label>
+                  <div className="flex gap-3 mb-3">
+                    <label className="flex items-center gap-1.5 text-sm text-slate-700 cursor-pointer">
+                      <input type="radio" checked={broadcastAudience === "all"} onChange={() => setBroadcastAudience("all")} />
+                      Everyone
+                    </label>
+                    <label className="flex items-center gap-1.5 text-sm text-slate-700 cursor-pointer">
+                      <input type="radio" checked={broadcastAudience === "committee"} onChange={() => setBroadcastAudience("committee")} />
+                      Specific committees
+                    </label>
+                  </div>
+                  {broadcastAudience === "committee" && (
+                    <div className="flex flex-wrap gap-2">
+                      {committees.map((c) => (
+                        <button
+                          key={c.id}
+                          onClick={() => toggleBroadcastCommittee(c.id)}
+                          className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${
+                            broadcastCommittees.includes(c.id)
+                              ? "bg-blue-100 text-blue-700 border-blue-200"
+                              : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"
+                          }`}
+                        >
+                          {c.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  onClick={sendBroadcast}
+                  disabled={broadcastSending || !broadcastTitle.trim() || !broadcastMessage.trim() || (broadcastAudience === "committee" && broadcastCommittees.length === 0)}
+                  className="inline-flex items-center gap-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-lg px-4 py-2"
+                >
+                  <Send className="w-4 h-4" /> {broadcastSending ? "Sending..." : "Send broadcast"}
+                </button>
+
+                {broadcastResult && (
+                  <div className="text-sm rounded-lg p-3 bg-slate-50 border border-slate-200 text-slate-700">
+                    {broadcastResult}
+                  </div>
+                )}
               </div>
             )}
           </div>

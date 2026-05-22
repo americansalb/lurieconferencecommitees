@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { dispatchToUsers } from "@/lib/push";
+import { parseSettings, discussionScopeFor } from "@/lib/notification-prefs";
 
 export async function POST(
   req: Request,
@@ -41,8 +43,48 @@ export async function POST(
       include: { author: { select: { id: true, name: true } } },
     });
 
+    notifyDiscussionPost(discussion.committeeId, discussion.id, discussion.title, post.author.name, userId)
+      .catch((e) => console.error("[posts] push notify error", e));
+
     return NextResponse.json(post, { status: 201 });
   } catch {
     return NextResponse.json({ error: "Failed to create post" }, { status: 500 });
   }
+}
+
+async function notifyDiscussionPost(
+  committeeId: string | null,
+  discussionId: string,
+  discussionTitle: string,
+  authorName: string,
+  authorId: string,
+) {
+  if (!committeeId) return;
+  const members = await prisma.committeeMember.findMany({
+    where: { committeeId },
+    select: {
+      userId: true,
+      user: {
+        select: { id: true, notificationPrefs: { select: { settings: true } } },
+      },
+    },
+  });
+  const recipients = members
+    .filter((m) => m.userId !== authorId)
+    .filter((m) => {
+      const settings = parseSettings(m.user.notificationPrefs?.settings);
+      const scope = discussionScopeFor(settings, committeeId);
+      return scope === "all" || scope === "subscribed";
+    })
+    .map((m) => m.userId);
+
+  if (!recipients.length) return;
+
+  await dispatchToUsers(recipients, {
+    channel: "discussions",
+    title: discussionTitle,
+    body: `${authorName} replied`,
+    threadId: discussionId,
+    data: { kind: "discussion_post", discussionId, committeeId },
+  });
 }
