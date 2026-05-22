@@ -1,0 +1,13 @@
+services:
+  - type: cron
+    name: lurie-dispatch-reminders
+    runtime: node
+    schedule: "* * * * *"
+    buildCommand: "echo no build needed"
+    startCommand: |
+      node -e "fetch(process.env.SCHEDULER_URL, { method: 'POST', headers: { 'x-cron-secret': process.env.CRON_SECRET || '' } }).then(r => r.text()).then(t => { console.log(t); process.exit(0) }).catch(e => { console.error(e); process.exit(1) })"
+    envVars:
+      - key: SCHEDULER_URL
+        value: https://conference.aalb.org/api/cron/dispatch-reminders
+      - key: CRON_SECRET
+        sync: false

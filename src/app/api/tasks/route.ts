@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { rebuildScheduleForTask } from "@/lib/schedule-builder";
+import { dispatchToUser } from "@/lib/push";
+import { parseSettings } from "@/lib/notification-prefs";
 
 let tableEnsured = false;
 
@@ -121,6 +124,13 @@ export async function POST(req: Request) {
       },
     });
 
+    rebuildScheduleForTask(task.id).catch((e) => console.error("[tasks] enqueue", e));
+    if (task.assigneeId && task.assigneeId !== userId) {
+      notifyTaskAssigned(task.assigneeId, task.id, task.title).catch((e) =>
+        console.error("[tasks] assignment push", e)
+      );
+    }
+
     return NextResponse.json(task, { status: 201 });
   } catch (err) {
     console.error("POST /api/tasks error:", err);
@@ -156,6 +166,11 @@ export async function PUT(req: Request) {
     if (assigneeId !== undefined) data.assigneeId = assigneeId || null;
     if (sortOrder !== undefined) data.sortOrder = sortOrder;
 
+    const previous = await prisma.task.findUnique({
+      where: { id: taskId },
+      select: { assigneeId: true, status: true },
+    });
+
     const task = await prisma.task.update({
       where: { id: taskId },
       data,
@@ -163,6 +178,30 @@ export async function PUT(req: Request) {
         assignee: { select: { id: true, name: true } },
       },
     });
+
+    rebuildScheduleForTask(task.id).catch((e) => console.error("[tasks] enqueue", e));
+
+    const currentUserId = (session.user as { id: string }).id;
+    if (
+      task.assigneeId &&
+      task.assigneeId !== previous?.assigneeId &&
+      task.assigneeId !== currentUserId
+    ) {
+      notifyTaskAssigned(task.assigneeId, task.id, task.title).catch((e) =>
+        console.error("[tasks] assignment push", e)
+      );
+    }
+    if (
+      status !== undefined &&
+      previous &&
+      previous.status !== task.status &&
+      task.assigneeId &&
+      task.assigneeId !== currentUserId
+    ) {
+      notifyTaskStatus(task.assigneeId, task.id, task.title, task.status).catch((e) =>
+        console.error("[tasks] status push", e)
+      );
+    }
 
     return NextResponse.json(task);
   } catch (err) {
@@ -186,10 +225,43 @@ export async function DELETE(req: Request) {
 
     await ensureTasksTable();
 
+    await prisma.scheduledNotification.deleteMany({
+      where: { source: `task:${taskId}`, status: "pending" },
+    });
     await prisma.task.delete({ where: { id: taskId } });
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("DELETE /api/tasks error:", err);
     return NextResponse.json({ error: "Failed to delete task" }, { status: 500 });
   }
+}
+
+async function notifyTaskAssigned(userId: string, taskId: string, title: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { notificationPrefs: { select: { settings: true } } },
+  });
+  const settings = parseSettings(user?.notificationPrefs?.settings);
+  if (!settings.tasks.enabled || !settings.tasks.onAssigned) return;
+  await dispatchToUser(userId, {
+    channel: "tasks",
+    title: "Task assigned to you",
+    body: title,
+    data: { kind: "task_assigned", taskId },
+  });
+}
+
+async function notifyTaskStatus(userId: string, taskId: string, title: string, status: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { notificationPrefs: { select: { settings: true } } },
+  });
+  const settings = parseSettings(user?.notificationPrefs?.settings);
+  if (!settings.tasks.enabled || !settings.tasks.onStatusChange) return;
+  await dispatchToUser(userId, {
+    channel: "tasks",
+    title,
+    body: `Status changed to ${status}`,
+    data: { kind: "task_status", taskId, status },
+  });
 }

@@ -1,0 +1,3 @@
+-keepattributes Signature
+-keepattributes *Annotation*
+-keep,allowobfuscation,allowshrinking class kotlinx.serialization.** { *; }

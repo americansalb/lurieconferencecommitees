@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getMobileUserFromRequest } from "@/lib/mobile-auth";
 import { DEFAULT_SETTINGS, parseSettings } from "@/lib/notification-prefs";
+import { rebuildScheduleForUser } from "@/lib/schedule-builder";
 
 async function getUserId(req: Request): Promise<string | null> {
   const mobile = await getMobileUserFromRequest(req);
@@ -37,5 +38,6 @@ export async function PUT(req: Request) {
     create: { userId, settings: JSON.stringify(merged) },
     update: { settings: JSON.stringify(merged) },
   });
+  rebuildScheduleForUser(userId).catch((e) => console.error("[prefs] rebuild", e));
   return NextResponse.json({ settings: parseSettings(row.settings), updatedAt: row.updatedAt });
 }

@@ -98,6 +98,18 @@ export default function NotificationsPage() {
     load();
   }
 
+  async function sendTest() {
+    const res = await fetch("/api/notifications/test", { method: "POST" });
+    const data = await res.json().catch(() => ({}));
+    if (data?.delivered > 0) {
+      alert(`Test sent. ${data.delivered} device(s) received it.`);
+    } else if (data?.reason === "no devices") {
+      alert("No devices registered. Sign in on the iOS or Android app first.");
+    } else {
+      alert("Test was skipped (check preferences / quiet hours).");
+    }
+  }
+
   function toggleLeadTime(channel: "events" | "tasks", minutes: number) {
     if (!settings) return;
     const arr = settings[channel].leadTimesMinutes;
@@ -153,6 +165,13 @@ export default function NotificationsPage() {
                   No devices yet. When you sign in on the iOS or Android app, it will appear here.
                 </p>
               ) : (
+                <>
+                <button
+                  onClick={sendTest}
+                  className="mb-3 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg px-3 py-1.5"
+                >
+                  Send test notification
+                </button>
                 <ul className="divide-y divide-slate-100">
                   {devices.map((d) => (
                     <li key={d.id} className="py-3 flex items-center gap-3">
@@ -174,6 +193,7 @@ export default function NotificationsPage() {
                     </li>
                   ))}
                 </ul>
+                </>
               )}
             </Section>
 

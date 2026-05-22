@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { rebuildScheduleForEvent } from "@/lib/schedule-builder";
 
 function isAdmin(role: string) {
   return role === "admin" || role === "developer";
@@ -64,6 +65,7 @@ export async function PUT(req: Request) {
     },
   });
 
+  rebuildScheduleForEvent(event.id).catch((e) => console.error("[admin/events] enqueue", e));
   return NextResponse.json(event);
 }
 

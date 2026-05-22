@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Lurie Conference</string>
+    <string name="notification_channel_default">lurie_default</string>
+    <string name="notification_channel_default_name">Conference reminders</string>
+    <string name="notification_channel_default_description">Reminders for events, tasks, discussions and broadcasts.</string>
+</resources>

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { rebuildScheduleForEvent } from "@/lib/schedule-builder";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -57,6 +58,9 @@ export async function POST(req: Request) {
           })
         )
       );
+      await Promise.all(
+        created.map((e: { id: string }) => rebuildScheduleForEvent(e.id).catch(() => {}))
+      );
       return NextResponse.json(created, { status: 201 });
     }
 
@@ -73,6 +77,7 @@ export async function POST(req: Request) {
         meetingUrl: meetingUrl || null,
       },
     });
+    rebuildScheduleForEvent(event.id).catch((e) => console.error("[events] enqueue", e));
     return NextResponse.json(event, { status: 201 });
   } catch {
     return NextResponse.json({ error: "Failed to create event" }, { status: 500 });
@@ -113,6 +118,7 @@ export async function PUT(req: Request) {
         ...(meetingUrl !== undefined && { meetingUrl: meetingUrl || null }),
       },
     });
+    rebuildScheduleForEvent(event.id).catch((e) => console.error("[events] enqueue", e));
     return NextResponse.json(event);
   } catch {
     return NextResponse.json({ error: "Failed to update event" }, { status: 500 });
