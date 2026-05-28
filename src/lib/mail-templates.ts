@@ -199,10 +199,10 @@ export function attendeeInviteEmail({
       I&rsquo;m writing to invite you to the 2026 Lurie Children&rsquo;s and AALB Conference on August 15 and 16, 2026, at Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago.
     </p>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
-      Two days dedicated to language access in healthcare. The program is organized around three movements: the foundations the field was built on, the practice and standards of today, and where it is going as technology and evidence reshape the work.
+      Two days made for the people actually doing the work: medical interpreters, sign language interpreters, translators, and language services staff in healthcare. The program is built around what changes the job day to day. Standards that are shifting, remote interpreting and AI tools landing on real assignments, and the ethics calls you have to make on the spot.
     </p>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 18px 0;">
-      Sessions are submitted for continuing education credit through CCHI, NBCMI, RID, and ATA, with tracks for spoken-language medical interpretation and sign language interpretation in clinical settings.
+      10+ continuing education hours, submitted through CCHI, NBCMI, RID, and ATA. Tracks for spoken-language medical interpretation and sign language interpretation in clinical settings.
     </p>
     ${extra}
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 10px 0;">

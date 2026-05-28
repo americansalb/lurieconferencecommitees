@@ -181,10 +181,12 @@ export default function AttendeeFunnel({
                 Welcome, {data.firstName}.
               </h2>
               <p className="text-sm sm:text-base text-slate-700 leading-relaxed">
-                Two days dedicated to language access in healthcare. The program
-                is organized around three movements: the foundations the field
-                was built on, the practice and standards of today, and where it
-                is going as technology and evidence reshape the work.
+                Two days made for the people actually doing the work: medical
+                interpreters, sign language interpreters, translators, and
+                language services staff in healthcare. The program is built
+                around what changes the job day to day. Standards that are
+                shifting, remote interpreting and AI tools landing on real
+                assignments, and the ethics calls you have to make on the spot.
               </p>
 
               {data.inviteMessage && (
@@ -196,10 +198,10 @@ export default function AttendeeFunnel({
 
               <ul className="mt-6 space-y-2.5 text-sm text-slate-700">
                 {[
-                  "10+ hours of CEUs, submitted through CCHI, NBCMI, RID, and ATA",
-                  "Tracks for spoken-language medical interpretation and sign language interpretation in clinical settings",
+                  "10+ CEUs, submitted through CCHI, NBCMI, RID, and ATA",
+                  "Tracks for medical interpreters and sign language interpreters in clinical settings",
                   "Hosted at Ann & Robert H. Lurie Children's Hospital of Chicago",
-                  "Virtual attendance available for those who can't travel",
+                  "Virtual attendance for those who can't travel",
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-2">
                     <Check className="w-4 h-4 mt-0.5 shrink-0" style={{ color: TEAL }} />
