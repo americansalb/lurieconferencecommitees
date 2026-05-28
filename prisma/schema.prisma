@@ -458,3 +458,58 @@ model SystemSetting {
   @@map("lcc_system_settings")
   @@schema("lcc")
 }
+
+model Sponsor {
+  id                    String         @id @default(cuid())
+  companyName           String
+  contactName           String
+  contactEmail          String
+  contactPhone          String?
+  contactRole           String?
+  website               String?
+
+  tier                  String
+  customTierName        String?
+  amountCents           Int
+  donateFoodInstead     Boolean        @default(false)
+
+  message               String?
+
+  status                String         @default("submitted")
+  paid                  Boolean        @default(false)
+  paidAt                DateTime?
+  stripeSessionId       String?
+  stripePaymentIntentId String?
+
+  applicationToken      String         @unique
+
+  inviteMessage         String?
+  invitedById           String?
+  invitedAt             DateTime?
+  lastSentAt            DateTime?
+
+  adminNotes            String?
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime?      @updatedAt
+
+  events                SponsorEvent[]
+
+  @@index([status])
+  @@index([tier])
+  @@map("lcc_sponsors")
+  @@schema("lcc")
+}
+
+model SponsorEvent {
+  id         String   @id @default(cuid())
+  sponsorId  String
+  type       String
+  meta       String?
+  actorEmail String?
+  createdAt  DateTime @default(now())
+  sponsor    Sponsor  @relation(fields: [sponsorId], references: [id], onDelete: Cascade)
+
+  @@index([sponsorId])
+  @@map("lcc_sponsor_events")
+  @@schema("lcc")
+}

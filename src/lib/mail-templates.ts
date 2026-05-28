@@ -265,6 +265,95 @@ export function attendeeConfirmedEmail({
   `);
 }
 
+type SponsorApplicationArgs = {
+  firstName: string;
+  companyName: string;
+  tier: { name: string; amountLabel: string; ticketsIncluded: number };
+  statusUrl: string;
+  donatesFoodInstead: boolean;
+};
+
+export function sponsorApplicationReceivedEmail({
+  firstName, companyName, tier, statusUrl, donatesFoodInstead,
+}: SponsorApplicationArgs) {
+  const first = firstName || "there";
+  const amountLine = donatesFoodInstead
+    ? "You indicated you would like to donate food in kind rather than make a cash sponsorship. We will be in touch shortly to coordinate menu, quantities, and logistics."
+    : `Your selected level is the <strong>${escapeHtml(tier.name)}</strong> at ${escapeHtml(tier.amountLabel)}, which includes ${tier.ticketsIncluded} conference ticket${tier.ticketsIncluded === 1 ? "" : "s"}.`;
+  return shell(`
+    <h1 style="font-size:22px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">Thank you, ${escapeHtml(first)}.</h1>
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
+      We have received ${escapeHtml(companyName)}&rsquo;s application to sponsor the 2026 Lurie Children&rsquo;s and AALB Conference, August 15 and 16, 2026, at Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago.
+    </p>
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
+      ${amountLine}
+    </p>
+    ${donatesFoodInstead ? "" : `${button(statusUrl, "Review and complete payment")}`}
+    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;">
+      All sponsorship payments are tax-deductible to the fullest extent allowed by law under IRS code 501(c)(3). EINs: 83-3016421 and 36-2170833.
+    </p>
+    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:8px 0 0 0;">
+      If you have any questions, simply reply to this email.
+    </p>
+  `);
+}
+
+type SponsorPaidArgs = {
+  firstName: string;
+  companyName: string;
+  tierName: string;
+  amountCents: number;
+  statusUrl: string;
+};
+
+export function sponsorPaidEmail({
+  firstName, companyName, tierName, amountCents, statusUrl,
+}: SponsorPaidArgs) {
+  const first = firstName || "there";
+  const amount = `$${(amountCents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return shell(`
+    <h1 style="font-size:22px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">Thank you for your sponsorship, ${escapeHtml(first)}.</h1>
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
+      ${escapeHtml(companyName)} is confirmed as a sponsor of the 2026 Lurie Children&rsquo;s and AALB Conference at the ${escapeHtml(tierName)} level. Your payment of ${escapeHtml(amount)} has been received.
+    </p>
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
+      Our team will follow up shortly with logo and material specifications, ticket allocation, and any tier-specific details we need to coordinate.
+    </p>
+    ${button(statusUrl, "View your sponsorship")}
+    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;">
+      Your payment is tax-deductible to the fullest extent allowed by law under IRS code 501(c)(3). EINs: 83-3016421 and 36-2170833. Keep this email as your receipt.
+    </p>
+  `);
+}
+
+type SponsorAdminNotifyArgs = {
+  sponsor: {
+    companyName: string;
+    contactName: string;
+    contactEmail: string;
+    contactPhone: string | null;
+    website: string | null;
+    message: string | null;
+    tierName: string;
+    amountLabel: string;
+  };
+};
+
+export function sponsorAdminNotificationEmail({ sponsor }: SponsorAdminNotifyArgs) {
+  return shell(`
+    <h1 style="font-size:20px;font-weight:700;margin:0 0 8px 0;">New sponsorship application</h1>
+    <p style="font-size:14px;color:${MUTED};margin:0 0 18px 0;">${escapeHtml(sponsor.tierName)} &middot; ${escapeHtml(sponsor.amountLabel)}</p>
+    <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:separate;">
+      <tr><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:13px;color:${MUTED};width:140px;">Company</td><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;color:${TEXT};font-weight:600;">${escapeHtml(sponsor.companyName)}</td></tr>
+      <tr><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:13px;color:${MUTED};">Contact</td><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;color:${TEXT};">${escapeHtml(sponsor.contactName)}</td></tr>
+      <tr><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:13px;color:${MUTED};">Email</td><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;color:${TEXT};">${escapeHtml(sponsor.contactEmail)}</td></tr>
+      ${sponsor.contactPhone ? `<tr><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:13px;color:${MUTED};">Phone</td><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;color:${TEXT};">${escapeHtml(sponsor.contactPhone)}</td></tr>` : ""}
+      ${sponsor.website ? `<tr><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:13px;color:${MUTED};">Website</td><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;color:${BLUE};"><a style="color:${BLUE};" href="${escapeHtml(sponsor.website)}">${escapeHtml(sponsor.website)}</a></td></tr>` : ""}
+    </table>
+    ${sponsor.message ? `<p style="font-size:14px;line-height:1.6;color:${TEXT};margin:18px 0 0 0;background:#f8fafc;border-left:3px solid ${BLUE};padding:12px 14px;border-radius:6px;">${escapeHtml(sponsor.message)}</p>` : ""}
+  `);
+}
+
 function escapeHtml(s: string) {
   return s
     .replace(/&/g, "&amp;")
