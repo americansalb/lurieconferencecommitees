@@ -10,9 +10,27 @@ const geistSans = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "2026 Lurie Children's & AALB Conference — Committee Planning",
+  metadataBase: new URL("https://conference.aalb.org"),
+  title: {
+    default: "2026 Lurie Children's and AALB Conference",
+    template: "%s | 2026 Lurie Children's and AALB Conference",
+  },
   description:
-    "Committee planning portal for the 2026 Lurie Children's & AALB Conference. True Language Access: Yesterday, Today, and Tomorrow.",
+    "The 2nd Annual Joint Conference of Ann & Robert H. Lurie Children's Hospital of Chicago and Americans Against Language Barriers. True Language Access: Yesterday, Today, and Tomorrow. August 15 and 16, 2026, Chicago.",
+  openGraph: {
+    title: "2026 Lurie Children's and AALB Conference",
+    description:
+      "True Language Access: Yesterday, Today, and Tomorrow. August 15 and 16, 2026, Chicago.",
+    type: "website",
+    locale: "en_US",
+    siteName: "Lurie Children's and AALB Conference",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "2026 Lurie Children's and AALB Conference",
+    description:
+      "True Language Access: Yesterday, Today, and Tomorrow. August 15 and 16, 2026, Chicago.",
+  },
 };
 
 export default function RootLayout({

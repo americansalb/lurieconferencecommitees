@@ -156,7 +156,7 @@ function LoginForm() {
 
           <p className="mt-6 text-center text-sm text-slate-500">
             New to the team?{" "}
-            <Link href="/register" className="font-semibold text-blue-600 hover:text-blue-700 transition-colors">
+            <Link href="/join" className="font-semibold text-blue-600 hover:text-blue-700 transition-colors">
               Create an account
             </Link>
           </p>
