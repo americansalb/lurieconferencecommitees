@@ -10,7 +10,7 @@
 //     thin underlines under section eyebrows, subtle borders on pills)
 
 export const TOKENS = {
-  // AALB dark teal — warm, always reads as teal, never as black.
+  // AALB dark teal. Warm, always reads as teal, never as black.
   // tealDark is the working dark surface; tealDeep is reserved for the
   // footer floor and is intentionally lifted so it stays warmly teal.
   teal: "#0E5566",
