@@ -9,8 +9,20 @@ const QUICK_LINKS = [
 
 export default function Footer() {
   return (
-    <footer style={{ background: TOKENS.tealDeep }} className="text-white">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
+    <footer
+      className="text-white relative overflow-hidden"
+      style={{
+        background: `linear-gradient(180deg, ${TOKENS.tealDark} 0%, ${TOKENS.tealDeep} 100%)`,
+      }}
+    >
+      <div
+        aria-hidden
+        className="absolute inset-0"
+        style={{
+          background: `radial-gradient(ellipse 60% 80% at 50% 0%, rgba(201,161,75,0.10) 0%, transparent 60%)`,
+        }}
+      />
+      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
         <div className="grid grid-cols-1 md:grid-cols-[1.5fr_1fr_1fr] gap-12">
           <div>
             <div className="font-serif-display text-2xl font-bold leading-tight">
