@@ -2,8 +2,6 @@ import { Check, Monitor, MapPin, ArrowRight } from "lucide-react";
 import { TOKENS } from "./tokens";
 import Countdown from "./Countdown";
 
-// Pricing schedule mirrors the Webflow page. Each tier ends at 23:59:59
-// Central Time on its date.
 const SCHEDULE = [
   { id: "early",    label: "Early Bird", end: "2026-04-15T23:59:59-05:00" },
   { id: "standard", label: "Standard",   end: "2026-06-15T23:59:59-05:00" },
@@ -44,21 +42,28 @@ export default function Pricing() {
   const tierLive = PRICES[tier.id];
 
   return (
-    <section id="pricing" className="py-28 sm:py-36 bg-white">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
-        <div className="max-w-3xl mx-auto text-center mb-16">
-          <div className="inline-flex items-center gap-2 mb-5">
-            <span className="w-6 h-px" style={{ background: TOKENS.gold }} />
-            <span className="text-[10px] font-bold tracking-[0.3em] uppercase" style={{ color: TOKENS.gold }}>
-              Registration
-            </span>
-            <span className="w-6 h-px" style={{ background: TOKENS.gold }} />
-          </div>
+    <section
+      id="pricing"
+      className="relative py-28 sm:py-36 overflow-hidden"
+      style={{ background: "white" }}
+    >
+      <div
+        aria-hidden
+        className="absolute inset-x-0 top-0 h-[420px] pointer-events-none"
+        style={{
+          background: `radial-gradient(ellipse 60% 100% at 50% 0%, rgba(201,161,75,0.10) 0%, transparent 70%)`,
+        }}
+      />
+
+      <div className="relative max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="max-w-3xl mx-auto text-center mb-14">
+          <Eyebrow>Registration</Eyebrow>
           <h2
-            className="font-serif-display text-4xl sm:text-5xl md:text-6xl font-bold leading-[1.05] tracking-tight"
+            className="font-serif-display mt-6 text-4xl sm:text-5xl md:text-[58px] font-bold leading-[1.05] tracking-tight"
             style={{ color: TOKENS.ink }}
           >
-            Choose your experience.
+            Choose your{" "}
+            <span className="italic font-medium" style={{ color: TOKENS.teal }}>experience.</span>
           </h2>
           <p
             className="mt-7 text-base sm:text-lg leading-relaxed max-w-2xl mx-auto"
@@ -70,10 +75,17 @@ export default function Pricing() {
 
         {/* Countdown */}
         <div className="max-w-md mx-auto mb-14">
-          <div className="text-center mb-5">
-            <div className="text-[10px] font-bold tracking-[0.25em] uppercase" style={{ color: TOKENS.teal }}>
+          <div className="text-center mb-4">
+            <span
+              className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold tracking-[0.25em] uppercase"
+              style={{ background: TOKENS.goldSoft, color: TOKENS.gold }}
+            >
+              <span
+                className="w-1.5 h-1.5 rounded-full"
+                style={{ background: TOKENS.gold, boxShadow: `0 0 6px ${TOKENS.gold}` }}
+              />
               {tier.label} pricing ends in
-            </div>
+            </span>
           </div>
           <Countdown targetIso={tier.end} accent={TOKENS.teal} />
         </div>
@@ -104,18 +116,24 @@ export default function Pricing() {
         </div>
 
         {/* Schedule */}
-        <div className="mt-16 max-w-3xl mx-auto">
-          <div className="text-center mb-4 text-[10px] font-bold tracking-[0.25em] uppercase" style={{ color: TOKENS.teal }}>
+        <div className="mt-14 max-w-3xl mx-auto">
+          <div className="text-center mb-4 text-[10px] font-bold tracking-[0.3em] uppercase" style={{ color: TOKENS.gold }}>
             Pricing schedule
           </div>
-          <div className="rounded-2xl border overflow-hidden bg-white" style={{ borderColor: TOKENS.hairline }}>
+          <div
+            className="rounded-2xl bg-white overflow-hidden"
+            style={{
+              border: `1px solid ${TOKENS.hairline}`,
+              boxShadow: "0 6px 18px -10px rgba(11,31,37,0.08)",
+            }}
+          >
             <table className="w-full text-sm">
               <thead>
-                <tr style={{ borderBottom: `1px solid ${TOKENS.hairline}` }}>
-                  <th className="text-left px-5 sm:px-6 py-4 font-bold text-[10px] uppercase tracking-[0.2em]" style={{ color: TOKENS.muted }}>Window</th>
-                  <th className="text-right px-5 sm:px-6 py-4 font-bold text-[10px] uppercase tracking-[0.2em]" style={{ color: TOKENS.muted }}>Virtual</th>
-                  <th className="text-right px-5 sm:px-6 py-4 font-bold text-[10px] uppercase tracking-[0.2em]" style={{ color: TOKENS.muted }}>In-Person</th>
-                  <th className="text-right px-5 sm:px-6 py-4 font-bold text-[10px] uppercase tracking-[0.2em]" style={{ color: TOKENS.muted }}>Through</th>
+                <tr style={{ background: TOKENS.paper, borderBottom: `1px solid ${TOKENS.hairline}` }}>
+                  <th className="text-left px-5 sm:px-6 py-4 font-bold text-[10px] uppercase tracking-[0.22em]" style={{ color: TOKENS.muted }}>Window</th>
+                  <th className="text-right px-5 sm:px-6 py-4 font-bold text-[10px] uppercase tracking-[0.22em]" style={{ color: TOKENS.muted }}>Virtual</th>
+                  <th className="text-right px-5 sm:px-6 py-4 font-bold text-[10px] uppercase tracking-[0.22em]" style={{ color: TOKENS.muted }}>In-Person</th>
+                  <th className="text-right px-5 sm:px-6 py-4 font-bold text-[10px] uppercase tracking-[0.22em]" style={{ color: TOKENS.muted }}>Through</th>
                 </tr>
               </thead>
               <tbody>
@@ -126,22 +144,22 @@ export default function Pricing() {
                       key={s.id}
                       style={{
                         borderTop: i > 0 ? `1px solid ${TOKENS.hairline}` : undefined,
-                        background: isActive ? TOKENS.tealSoft : undefined,
+                        background: isActive ? `linear-gradient(90deg, ${TOKENS.goldSoft} 0%, ${TOKENS.tealSoft} 100%)` : undefined,
                       }}
                     >
                       <td className="px-5 sm:px-6 py-4 font-semibold" style={{ color: TOKENS.ink }}>
                         {s.label}
                         {isActive && (
                           <span
-                            className="ml-2 text-[9px] font-bold px-1.5 py-0.5 rounded text-white align-middle tracking-wider uppercase"
+                            className="ml-2 text-[9px] font-bold px-2 py-0.5 rounded-full text-white align-middle tracking-widest uppercase"
                             style={{ background: TOKENS.teal }}
                           >
                             Now
                           </span>
                         )}
                       </td>
-                      <td className="px-5 sm:px-6 py-4 text-right tabular-nums" style={{ color: TOKENS.inkSoft }}>${PRICES[s.id].virtual}</td>
-                      <td className="px-5 sm:px-6 py-4 text-right tabular-nums" style={{ color: TOKENS.inkSoft }}>${PRICES[s.id].inPerson}</td>
+                      <td className="px-5 sm:px-6 py-4 text-right tabular-nums font-semibold" style={{ color: TOKENS.inkSoft }}>${PRICES[s.id].virtual}</td>
+                      <td className="px-5 sm:px-6 py-4 text-right tabular-nums font-semibold" style={{ color: TOKENS.inkSoft }}>${PRICES[s.id].inPerson}</td>
                       <td className="px-5 sm:px-6 py-4 text-right text-xs" style={{ color: TOKENS.muted }}>
                         {new Date(s.end).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                       </td>
@@ -154,6 +172,18 @@ export default function Pricing() {
         </div>
       </div>
     </section>
+  );
+}
+
+function Eyebrow({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="inline-flex items-center gap-2.5">
+      <span className="w-8 h-px" style={{ background: TOKENS.gold }} />
+      <span className="text-[10px] font-bold tracking-[0.32em] uppercase" style={{ color: TOKENS.gold }}>
+        {children}
+      </span>
+      <span className="w-8 h-px" style={{ background: TOKENS.gold }} />
+    </div>
   );
 }
 
@@ -172,18 +202,20 @@ function PriceCard({
 }) {
   return (
     <div
-      className="relative rounded-2xl overflow-hidden bg-white border flex flex-col"
+      className="relative rounded-2xl overflow-hidden bg-white flex flex-col transition-all hover:-translate-y-0.5"
       style={{
-        borderColor: featured ? accent : TOKENS.hairline,
-        borderWidth: featured ? 1.5 : 1,
+        border: `${featured ? 1.5 : 1}px solid ${featured ? accent : TOKENS.hairline}`,
+        boxShadow: featured
+          ? `0 24px 50px -22px ${accent}66, 0 6px 18px -10px rgba(11,31,37,0.08)`
+          : "0 12px 32px -16px rgba(11,31,37,0.14), 0 2px 6px -3px rgba(11,31,37,0.06)",
       }}
     >
-      <div className="h-1" style={{ background: accent }} />
+      <div className="h-1.5" style={{ background: accent }} />
       <div className="p-8 sm:p-10 flex-1 flex flex-col">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <div
-              className="w-10 h-10 rounded-lg flex items-center justify-center"
+              className="w-12 h-12 rounded-2xl flex items-center justify-center"
               style={{ background: accentSoft, color: accent }}
             >
               <Icon className="w-5 h-5" />
@@ -197,8 +229,8 @@ function PriceCard({
           </div>
           {featured && (
             <span
-              className="text-[9px] font-bold tracking-widest uppercase px-2 py-1 rounded"
-              style={{ background: accentSoft, color: accent }}
+              className="text-[9px] font-bold tracking-widest uppercase px-2.5 py-1 rounded-full"
+              style={{ background: accent, color: "white" }}
             >
               Most Chosen
             </span>
@@ -221,7 +253,7 @@ function PriceCard({
           {features.map((f) => (
             <li key={f} className="flex items-start gap-3">
               <span
-                className="mt-0.5 w-4 h-4 rounded-full flex items-center justify-center shrink-0"
+                className="mt-0.5 w-5 h-5 rounded-full flex items-center justify-center shrink-0"
                 style={{ background: accentSoft, color: accent }}
               >
                 <Check className="w-3 h-3" strokeWidth={3} />
@@ -233,8 +265,11 @@ function PriceCard({
 
         <a
           href="/register"
-          className="mt-8 w-full inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-lg font-bold text-white transition-colors"
-          style={{ background: accent }}
+          className="mt-8 w-full inline-flex items-center justify-center gap-2 px-5 py-4 rounded-full font-bold text-white transition-all"
+          style={{
+            background: `linear-gradient(135deg, ${accent} 0%, ${accent}dd 100%)`,
+            boxShadow: `0 12px 28px -12px ${accent}80`,
+          }}
         >
           Register Now <ArrowRight className="w-4 h-4" />
         </a>

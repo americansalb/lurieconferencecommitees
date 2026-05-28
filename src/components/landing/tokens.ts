@@ -10,12 +10,12 @@
 //     thin underlines under section eyebrows, subtle borders on pills)
 
 export const TOKENS = {
-  // AALB dark teal — warm, never near-black.
-  // tealDark is the working dark surface; tealDeep is reserved for footer
-  // and only goes slightly deeper, so the family stays cohesive.
+  // AALB dark teal — warm, always reads as teal, never as black.
+  // tealDark is the working dark surface; tealDeep is reserved for the
+  // footer floor and is intentionally lifted so it stays warmly teal.
   teal: "#0E5566",
-  tealDark: "#0A3F4D",
-  tealDeep: "#083543",
+  tealDark: "#0E4456",
+  tealDeep: "#0C3B4B",
   tealSoft: "#E6EEF0",
 
   // Lurie Children's light blue

@@ -42,52 +42,64 @@ const FAQS: { q: string; a: string }[] = [
 
 export default function FAQ() {
   return (
-    <section id="faq" className="py-28 sm:py-36" style={{ background: TOKENS.paper }}>
-      <div className="max-w-4xl mx-auto px-4 sm:px-6">
+    <section
+      id="faq"
+      className="relative py-28 sm:py-36 overflow-hidden"
+      style={{ background: "white" }}
+    >
+      <div
+        aria-hidden
+        className="absolute inset-x-0 top-0 h-[420px] pointer-events-none"
+        style={{
+          background: `radial-gradient(ellipse 60% 100% at 50% 0%, ${TOKENS.tealSoft} 0%, transparent 70%)`,
+        }}
+      />
+
+      <div className="relative max-w-4xl mx-auto px-4 sm:px-6">
         <div className="text-center mb-16">
-          <div className="inline-flex items-center gap-2 mb-5">
-            <span className="w-6 h-px" style={{ background: TOKENS.gold }} />
-            <span className="text-[10px] font-bold tracking-[0.3em] uppercase" style={{ color: TOKENS.gold }}>
-              FAQ
-            </span>
-            <span className="w-6 h-px" style={{ background: TOKENS.gold }} />
-          </div>
+          <Eyebrow>FAQ</Eyebrow>
           <h2
-            className="font-serif-display text-4xl sm:text-5xl md:text-6xl font-bold leading-[1.05] tracking-tight"
+            className="font-serif-display mt-6 text-4xl sm:text-5xl md:text-[58px] font-bold leading-[1.05] tracking-tight"
             style={{ color: TOKENS.ink }}
           >
-            Frequently asked.
+            Frequently{" "}
+            <span className="italic font-medium" style={{ color: TOKENS.teal }}>asked.</span>
           </h2>
         </div>
 
-        <div className="rounded-2xl bg-white border overflow-hidden" style={{ borderColor: TOKENS.hairline }}>
+        <div className="space-y-3">
           {FAQS.map((f, i) => (
             <details
               key={i}
-              className="group"
-              style={{ borderTop: i > 0 ? `1px solid ${TOKENS.hairline}` : undefined }}
+              className="group bg-white rounded-2xl border overflow-hidden transition-all"
+              style={{
+                borderColor: TOKENS.hairline,
+                boxShadow: "0 6px 18px -10px rgba(11,31,37,0.08)",
+              }}
             >
-              <summary className="cursor-pointer list-none flex items-start gap-5 p-6 sm:p-7">
+              <summary className="cursor-pointer list-none flex items-start gap-5 p-6 sm:p-7 group-hover:bg-slate-50/40 transition-colors">
                 <span
-                  className="font-serif-display text-sm font-bold tabular-nums mt-0.5 shrink-0"
+                  className="font-serif-display text-sm font-bold tabular-nums mt-1 italic shrink-0"
                   style={{ color: TOKENS.gold }}
                 >
                   {String(i + 1).padStart(2, "0")}
                 </span>
                 <span
-                  className="flex-1 text-base sm:text-lg font-semibold leading-snug"
+                  className="flex-1 text-base sm:text-lg font-bold leading-snug"
                   style={{ color: TOKENS.ink }}
                 >
                   {f.q}
                 </span>
-                <Plus
-                  className="w-4 h-4 flex-shrink-0 mt-1 transition-transform group-open:rotate-45"
-                  style={{ color: TOKENS.teal }}
-                />
+                <span
+                  className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-all group-open:rotate-45"
+                  style={{ background: TOKENS.tealSoft, color: TOKENS.teal }}
+                >
+                  <Plus className="w-3.5 h-3.5" strokeWidth={2.5} />
+                </span>
               </summary>
               <div
                 className="px-6 sm:px-7 pb-7 pt-0 text-[15px] leading-relaxed"
-                style={{ color: TOKENS.muted, paddingLeft: "calc(2.5rem + 20px)" }}
+                style={{ color: TOKENS.muted, paddingLeft: "calc(1.5rem + 22px)" }}
               >
                 {f.a}
               </div>
@@ -96,5 +108,17 @@ export default function FAQ() {
         </div>
       </div>
     </section>
+  );
+}
+
+function Eyebrow({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="inline-flex items-center gap-2.5">
+      <span className="w-8 h-px" style={{ background: TOKENS.gold }} />
+      <span className="text-[10px] font-bold tracking-[0.32em] uppercase" style={{ color: TOKENS.gold }}>
+        {children}
+      </span>
+      <span className="w-8 h-px" style={{ background: TOKENS.gold }} />
+    </div>
   );
 }
