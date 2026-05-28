@@ -181,15 +181,10 @@ export default function AttendeeFunnel({
                 Welcome, {data.firstName}.
               </h2>
               <p className="text-sm sm:text-base text-slate-700 leading-relaxed">
-                Two days of practice, research, and conversation among the
-                interpreters, language access coordinators, clinicians, and
-                educators shaping equitable care across spoken and signed
-                languages.
-              </p>
-              <p className="text-sm sm:text-base text-slate-700 leading-relaxed mt-3">
-                Sessions are accredited for CEUs, and the program is built so
-                working professionals leave with material they can use the
-                following Monday.
+                Two days dedicated to language access in healthcare. The program
+                is organized around three movements: the foundations the field
+                was built on, the practice and standards of today, and where it
+                is going as technology and evidence reshape the work.
               </p>
 
               {data.inviteMessage && (
@@ -201,9 +196,9 @@ export default function AttendeeFunnel({
 
               <ul className="mt-6 space-y-2.5 text-sm text-slate-700">
                 {[
-                  "10+ hours of accredited CEUs",
-                  "Tracks for spoken-language and signed-language practice",
-                  "Peer roundtables and meet-the-author sessions",
+                  "10+ hours of CEUs, submitted through CCHI, NBCMI, RID, and ATA",
+                  "Tracks for spoken-language medical interpretation and sign language interpretation in clinical settings",
+                  "Hosted at Ann & Robert H. Lurie Children's Hospital of Chicago",
                   "Virtual attendance available for those who can't travel",
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-2">

@@ -198,8 +198,11 @@ export function attendeeInviteEmail({
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
       I&rsquo;m writing to invite you to the 2026 Lurie Children&rsquo;s and AALB Conference on August 15 and 16, 2026, at Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago.
     </p>
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
+      Two days dedicated to language access in healthcare. The program is organized around three movements: the foundations the field was built on, the practice and standards of today, and where it is going as technology and evidence reshape the work.
+    </p>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 18px 0;">
-      Two days of practice, research, and conversation among the interpreters, language access coordinators, clinicians, and educators shaping equitable care across spoken and signed languages. Sessions are accredited for CEUs, and the program is built for working professionals to leave with material they can use the following Monday.
+      Sessions are submitted for continuing education credit through CCHI, NBCMI, RID, and ATA, with tracks for spoken-language medical interpretation and sign language interpretation in clinical settings.
     </p>
     ${extra}
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 10px 0;">
