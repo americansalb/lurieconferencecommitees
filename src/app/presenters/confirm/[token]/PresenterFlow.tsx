@@ -259,7 +259,6 @@ export default function PresenterFlow({
               headshotPreview={headshotPreview}
               onShowPolicy={() => setShowPolicy(true)}
               onSubmit={() => persist("submit")}
-              onTentative={() => persist("tentative")}
               onBack={() => goTo(2, { save: false })}
               saving={saving}
               error={error}
@@ -460,7 +459,7 @@ function HeroScreen({
   const headline = (() => {
     const which = initial.sessionFormat || initial.role;
     if (which) return which;
-    if (hasAssignment) return "A speaker — details to come";
+    if (hasAssignment) return "A speaker, details to come";
     return "Details being finalised";
   })();
 
@@ -480,7 +479,7 @@ function HeroScreen({
           Hello, {firstName}.
         </h1>
         <p className="mt-4 text-base sm:text-lg text-slate-500 leading-relaxed max-w-xl">
-          The 2026 Lurie Children&rsquo;s and AALB Conference — <em>True Language Access: Yesterday, Today, and Tomorrow</em> — on August 15 and 16, 2026, at Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago.
+          The 2026 Lurie Children&rsquo;s and AALB Conference, <em>True Language Access: Yesterday, Today, and Tomorrow</em>, on August 15 and 16, 2026, at Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago.
         </p>
 
         <div
@@ -857,7 +856,7 @@ function AboutYouPage({
 
           <SectionCard
             title="Your photo"
-            subtitle="A recent, clear shot of your face. A phone selfie is perfectly fine — we can swap in something better later if needed."
+            subtitle="A recent, clear shot of your face. A phone selfie is perfectly fine; we can swap in something better later if needed."
           >
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
               <div
@@ -999,7 +998,7 @@ function TheDayPage({
         <div className="text-[10px] font-semibold tracking-[0.22em] uppercase text-[#0E5566] mb-3">Step 2 of 3</div>
         <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight leading-tight">The day</h1>
         <p className="mt-3 text-base text-slate-500 leading-relaxed max-w-lg">
-          Logistics for August 15 and 16. All of this is optional — skip whatever does not apply.
+          Logistics for August 15 and 16. All of this is optional; skip whatever does not apply.
         </p>
 
         <div className="mt-8 space-y-5">
@@ -1018,7 +1017,7 @@ function TheDayPage({
 
           <SectionCard
             title="Accessibility"
-            subtitle="ASL, captioning, mobility, seating, lighting — anything that helps you do your best work."
+            subtitle="ASL, captioning, mobility, seating, lighting, or anything else that helps you do your best work."
             optional
           >
             <SectionTextarea
@@ -1074,13 +1073,7 @@ function TheDayPage({
                 </>
               )}
             </div>
-            <div className="mt-5 grid sm:grid-cols-2 gap-3">
-              <BigToggle
-                checked={!!fields.needsHotel}
-                label="Help with hotel booking"
-                desc="We can suggest a partner hotel near the venue."
-                onToggle={() => set("needsHotel", !fields.needsHotel)}
-              />
+            <div className="mt-5">
               <BigToggle
                 checked={!!fields.needsParking}
                 label="Parking pass for the venue"
@@ -1164,7 +1157,7 @@ function BigToggle({
 }
 
 function ConfirmScreen({
-  initial, fields, set, firstName, headshotPreview, onShowPolicy, onSubmit, onTentative, onBack, saving, error,
+  initial, fields, set, firstName, headshotPreview, onShowPolicy, onSubmit, onBack, saving, error,
 }: {
   initial: Initial;
   fields: Fields;
@@ -1173,15 +1166,22 @@ function ConfirmScreen({
   headshotPreview: string | null;
   onShowPolicy: () => void;
   onSubmit: () => Promise<boolean>;
-  onTentative: () => Promise<boolean>;
   onBack: () => void;
   saving: boolean;
   error: string | null;
 }) {
-  const canSubmit = !!fields.agreedToTerms && !!headshotPreview;
+  const canSubmit =
+    !!fields.agreedToTerms &&
+    !!headshotPreview &&
+    !!fields.agreedToRecord &&
+    !!fields.agreedToPhoto &&
+    !!fields.agreedToCe;
   const missing: string[] = [];
   if (!headshotPreview) missing.push("a photo");
   if (!fields.agreedToTerms) missing.push("the participation confirmation");
+  if (!fields.agreedToRecord || !fields.agreedToPhoto || !fields.agreedToCe) {
+    missing.push("the presenter permissions");
+  }
 
   return (
     <ScreenShell
@@ -1204,19 +1204,9 @@ function ConfirmScreen({
           )}
           <div className="flex items-center justify-between gap-4">
             <GhostButton onClick={onBack} icon={ChevronLeft}>Back</GhostButton>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={onTentative}
-                disabled={!canSubmit || saving}
-                className="px-5 py-3 rounded-xl text-sm font-semibold text-[#0E5566] bg-white border border-[#0E5566] hover:bg-[#0E5566]/5 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                Confirm tentatively
-              </button>
-              <PrimaryButton onClick={onSubmit} disabled={!canSubmit || saving}>
-                {saving ? "Submitting…" : "Confirm participation"} <ArrowRight className="w-4 h-4" />
-              </PrimaryButton>
-            </div>
+            <PrimaryButton onClick={onSubmit} disabled={!canSubmit || saving}>
+              {saving ? "Submitting…" : "Confirm participation"} <ArrowRight className="w-4 h-4" />
+            </PrimaryButton>
           </div>
         </div>
       }
@@ -1256,8 +1246,8 @@ function ConfirmScreen({
         </label>
 
         <div className="space-y-3">
-          <div className="text-sm font-semibold text-slate-900">Permissions you can grant</div>
-          <p className="text-xs text-slate-500 -mt-2">All optional. Toggle anything you are comfortable with.</p>
+          <div className="text-sm font-semibold text-slate-900">Presenter permissions</div>
+          <p className="text-xs text-slate-500 -mt-2">Please confirm each of the following. All three are required to present at the conference.</p>
           <SoftToggle
             checked={!!fields.agreedToRecord}
             label="My session may be recorded and shared with registered attendees"
@@ -1283,7 +1273,6 @@ function ConfirmScreen({
             placeholder="Any final questions or notes for the program team? (optional)"
             className="w-full px-4 py-3 text-base bg-slate-50/60 border border-transparent rounded-xl focus:bg-white focus:border-[#0066B3] focus:ring-2 focus:ring-[#0066B3]/15 outline-none transition-all placeholder:text-slate-400 leading-relaxed"
           />
-          <p className="mt-2 text-[11px] text-slate-400">If you have open questions, choose Confirm tentatively below instead.</p>
         </div>
 
         <div className="text-xs text-slate-400">
