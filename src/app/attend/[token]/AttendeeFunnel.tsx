@@ -213,11 +213,18 @@ export default function AttendeeFunnel({
                 ))}
               </ul>
 
-              <div className="mt-6 p-3 rounded-lg text-sm text-slate-600 leading-relaxed"
-                style={{ background: "#f8fafc", border: `1px solid #e2e8f0` }}>
-                As a thank you for your work in the field, your in-person
-                registration is held at <strong>{dollars(pricing.inPersonFinalCents)}</strong>
-                {" "}(regularly {dollarsNoCents(pricing.inPersonBaseCents)}).
+              <div className="mt-6 rounded-lg p-4 bg-white"
+                style={{ border: `1px solid #e2e8f0`, borderLeftWidth: 3, borderLeftColor: TEAL }}>
+                <div className="text-[10px] font-bold tracking-widest uppercase" style={{ color: TEAL }}>
+                  {data.discountPercent}% off &middot; in-person registration
+                </div>
+                <div className="mt-1.5 flex items-baseline gap-2">
+                  <span className="text-2xl font-bold text-slate-900">{dollars(pricing.inPersonFinalCents)}</span>
+                  <span className="text-sm text-slate-400 line-through">{dollarsNoCents(pricing.inPersonBaseCents)}</span>
+                </div>
+                <div className="text-xs text-slate-500 mt-1.5">
+                  Your invitation rate, applied automatically at checkout. Virtual attendance is also available at the standard {dollarsNoCents(pricing.virtualBaseCents)}.
+                </div>
               </div>
 
               <div className="mt-6 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-end">

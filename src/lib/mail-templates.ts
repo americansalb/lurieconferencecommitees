@@ -202,16 +202,29 @@ export function attendeeInviteEmail({
       Two days of practice, research, and conversation among the interpreters, language access coordinators, clinicians, and educators shaping equitable care across spoken and signed languages. Sessions are accredited for CEUs, and the program is built for working professionals to leave with material they can use the following Monday.
     </p>
     ${extra}
-    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 6px 0;">
-      As a thank you for your work in the field, your registration is held at <strong>${discountedDollars}</strong> for in-person attendance (regularly ${originalDollars}, a ${discountPercent}% reduction). Virtual attendance is available as well.
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 10px 0;">
+      In appreciation of your work in the field, your registration is held at a personal rate:
     </p>
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px 0;border-collapse:separate;">
+      <tr><td style="border:1px solid #e2e8f0;border-left:3px solid ${TEAL};padding:16px 20px;border-radius:8px;background:#ffffff;">
+        <div style="font-size:11px;letter-spacing:0.15em;text-transform:uppercase;font-weight:600;color:${TEAL};">
+          ${discountPercent}% off &middot; in-person registration
+        </div>
+        <div style="font-size:24px;font-weight:700;color:${TEXT};margin-top:6px;line-height:1.1;">
+          ${discountedDollars} <span style="font-size:14px;font-weight:500;color:${MUTED};margin-left:6px;text-decoration:line-through;">${originalDollars}</span>
+        </div>
+        <div style="font-size:13px;color:${MUTED};margin-top:6px;">
+          Virtual attendance is also available at the standard $105.
+        </div>
+      </td></tr>
+    </table>
     ${button(url, "Reserve my spot")}
     <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:8px 0 0 0;">
       Or paste this into your browser:<br/>
       <a href="${url}" style="color:${BLUE};word-break:break-all;">${url}</a>
     </p>
     <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;">
-      The link is personal to you. If a colleague should also be invited, please reply and let me know.
+      The link and rate are personal to you. If a colleague should also be invited, please reply and let me know.
     </p>
   `);
 }
