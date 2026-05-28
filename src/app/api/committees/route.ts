@@ -4,6 +4,9 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
 export async function GET() {
+  const session = await getServerSession(authOptions);
+  const userId = (session?.user as { id?: string } | undefined)?.id;
+
   const committees = await prisma.committee.findMany({
     include: {
       members: { include: { user: { select: { id: true, name: true, email: true } } } },
@@ -20,7 +23,30 @@ export async function GET() {
     orderBy: { name: "asc" },
   });
 
+  // Layer in unread counts per discussion for the current user
+  if (userId) {
+    const unreadByDisc = await fetchUnreadCounts(userId);
+    for (const c of committees) {
+      for (const d of c.discussions) {
+        (d as unknown as { unreadCount: number }).unreadCount = unreadByDisc.get(d.id) || 0;
+      }
+    }
+  }
+
   return NextResponse.json(committees);
+}
+
+async function fetchUnreadCounts(userId: string): Promise<Map<string, number>> {
+  const rows = await prisma.$queryRaw<{ discussionId: string; count: bigint }[]>`
+    SELECT p."discussionId", COUNT(*)::bigint AS count
+    FROM lcc.lcc_posts p
+    LEFT JOIN lcc.lcc_discussion_reads r
+      ON r."discussionId" = p."discussionId" AND r."userId" = ${userId}
+    WHERE p."authorId" <> ${userId}
+      AND p."createdAt" > COALESCE(r."lastReadAt", to_timestamp(0))
+    GROUP BY p."discussionId"
+  `;
+  return new Map(rows.map((r) => [r.discussionId, Number(r.count)]));
 }
 
 export async function POST(req: Request) {

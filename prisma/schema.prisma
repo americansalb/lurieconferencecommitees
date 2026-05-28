@@ -16,6 +16,7 @@ model User {
   name                String
   role                String                  @default("member")
   timezone            String                  @default("America/Chicago")
+  icalToken           String?                 @unique
   createdAt           DateTime                @default(now())
   committees          CommitteeMember[]
   discussions         Discussion[]
@@ -27,6 +28,8 @@ model User {
   notificationPrefs   NotificationPreference?
   notificationLog     NotificationLog[]
   scheduledNotifs     ScheduledNotification[]
+  discussionReads     DiscussionRead[]
+  mentions            Mention[]
 
   @@map("lcc_users")
   @@schema("lcc")
@@ -81,15 +84,16 @@ model Event {
 }
 
 model Discussion {
-  id          String     @id @default(cuid())
+  id          String           @id @default(cuid())
   committeeId String?
   title       String
   authorId    String
-  isPinned    Boolean    @default(false)
-  createdAt   DateTime   @default(now())
-  committee   Committee? @relation(fields: [committeeId], references: [id], onDelete: Cascade)
-  author      User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  isPinned    Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+  committee   Committee?       @relation(fields: [committeeId], references: [id], onDelete: Cascade)
+  author      User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
   posts       Post[]
+  reads       DiscussionRead[]
 
   @@map("lcc_discussions")
   @@schema("lcc")
@@ -142,8 +146,39 @@ model Post {
   updatedAt    DateTime?
   discussion   Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
   author       User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  mentions     Mention[]
 
   @@map("lcc_posts")
+  @@schema("lcc")
+}
+
+model DiscussionRead {
+  id           String     @id @default(cuid())
+  userId       String
+  discussionId String
+  lastReadAt   DateTime   @default(now())
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  discussion   Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, discussionId])
+  @@index([discussionId])
+  @@map("lcc_discussion_reads")
+  @@schema("lcc")
+}
+
+model Mention {
+  id           String    @id @default(cuid())
+  userId       String
+  postId       String
+  discussionId String
+  createdAt    DateTime  @default(now())
+  readAt       DateTime?
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post         Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@index([postId])
+  @@map("lcc_mentions")
   @@schema("lcc")
 }
 

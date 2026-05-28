@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession, signOut } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
 import {
@@ -47,6 +47,7 @@ interface Discussion {
   createdAt: string;
   posts?: { id: string; body: string; author: { id: string; name: string }; createdAt: string }[];
   _count?: { posts: number };
+  unreadCount?: number;
 }
 
 interface Event {
@@ -195,6 +196,7 @@ function MiniCalendar({ events, accent, light }: { events: Event[]; accent: stri
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [committees, setCommittees] = useState<Committee[]>([]);
   const [selectedSlug, setSelectedSlug] = useState<string>("");
   const [activeTab, setActiveTab] = useState<Tab>("overview");
@@ -265,6 +267,19 @@ export default function DashboardPage() {
     if (session) fetchCommittees();
   }, [session, fetchCommittees]);
 
+  // Deep-link support: /dashboard?committee=<slug>[&tab=tasks][&discussion=<id>]
+  useEffect(() => {
+    const slug = searchParams.get("committee");
+    const tab = searchParams.get("tab") as Tab | null;
+    const discussion = searchParams.get("discussion");
+    if (slug && committees.find((c) => c.slug === slug)) {
+      setSelectedSlug(slug);
+      if (tab) setActiveTab(tab);
+      else if (discussion) setActiveTab("discussion");
+      if (discussion) setExpandedDisc(discussion);
+    }
+  }, [searchParams, committees]);
+
   const committee = committees.find(c => c.slug === selectedSlug);
   const col = committee ? SLUG_COLORS[committee.slug] || SLUG_COLORS["logistics-venue"] : SLUG_COLORS["logistics-venue"];
   const IconComponent = committee ? SLUG_ICONS[committee.icon] || Users : Users;
@@ -311,6 +326,20 @@ export default function DashboardPage() {
       const data = await res.json();
       setDiscPosts(prev => ({ ...prev, [discId]: data.posts }));
     }
+  }
+
+  async function markDiscussionRead(discId: string) {
+    try {
+      await fetch(`/api/discussions/${discId}/read`, { method: "POST" });
+    } catch { /* ignore */ }
+    setCommittees((prev) =>
+      prev.map((c) => ({
+        ...c,
+        discussions: c.discussions.map((d) =>
+          d.id === discId ? { ...d, unreadCount: 0 } : d
+        ),
+      }))
+    );
   }
 
   async function handleReply(discId: string) {
@@ -1258,6 +1287,7 @@ export default function DashboardPage() {
                             } else {
                               setExpandedDisc(d.id);
                               if (!discPosts[d.id]) loadDiscussionPosts(d.id);
+                              if (d.unreadCount) markDiscussionRead(d.id);
                             }
                           }}
                           className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-slate-50 transition-colors"
@@ -1267,6 +1297,15 @@ export default function DashboardPage() {
                             <div className="text-sm font-bold text-slate-900 truncate flex items-center gap-1.5">
                               {d.isPinned && <Pin className="w-3 h-3 shrink-0" style={{ color: col.accent }} />}
                               {d.title}
+                              {!!d.unreadCount && (
+                                <span
+                                  className="text-[10px] font-bold text-white rounded-full min-w-[18px] h-[18px] px-1.5 flex items-center justify-center shrink-0"
+                                  style={{ background: col.accent }}
+                                  title={`${d.unreadCount} new`}
+                                >
+                                  {d.unreadCount > 99 ? "99+" : d.unreadCount}
+                                </span>
+                              )}
                             </div>
                             <div className="text-xs text-slate-500 mt-0.5">
                               {d.author.name} &middot; {new Date(d.createdAt).toLocaleDateString()}

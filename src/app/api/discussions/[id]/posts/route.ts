@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { dispatchToUsers } from "@/lib/push";
 import { parseSettings, discussionScopeFor } from "@/lib/notification-prefs";
+import { resolveMentions } from "@/lib/mentions";
 
 export async function POST(
   req: Request,
@@ -31,11 +32,14 @@ export async function POST(
 
     const userId = (session.user as { id: string }).id;
 
-    const membership = await prisma.committeeMember.findUnique({
-      where: { userId_committeeId: { userId, committeeId: discussion.committeeId } },
-    });
-    if (!membership) {
-      return NextResponse.json({ error: "Must be a committee member to reply" }, { status: 403 });
+    // Global discussions (committeeId null) are open to all authenticated users.
+    if (discussion.committeeId) {
+      const membership = await prisma.committeeMember.findUnique({
+        where: { userId_committeeId: { userId, committeeId: discussion.committeeId } },
+      });
+      if (!membership) {
+        return NextResponse.json({ error: "Must be a committee member to reply" }, { status: 403 });
+      }
     }
 
     const post = await prisma.post.create({
@@ -43,8 +47,34 @@ export async function POST(
       include: { author: { select: { id: true, name: true } } },
     });
 
-    notifyDiscussionPost(discussion.committeeId, discussion.id, discussion.title, post.author.name, userId)
-      .catch((e) => console.error("[posts] push notify error", e));
+    // Resolve mentions against committee membership (or all users if global)
+    const candidates = discussion.committeeId
+      ? await prisma.committeeMember.findMany({
+          where: { committeeId: discussion.committeeId },
+          select: { user: { select: { id: true, name: true } } },
+        }).then((rows) => rows.map((r) => r.user))
+      : await prisma.user.findMany({ select: { id: true, name: true } });
+
+    const mentionedIds = resolveMentions(body, candidates).filter((id) => id !== userId);
+    if (mentionedIds.length) {
+      await prisma.mention.createMany({
+        data: mentionedIds.map((uid) => ({
+          userId: uid,
+          postId: post.id,
+          discussionId: discussion.id,
+        })),
+        skipDuplicates: true,
+      });
+    }
+
+    notifyDiscussionPost(
+      discussion.committeeId,
+      discussion.id,
+      discussion.title,
+      post.author.name,
+      userId,
+      mentionedIds
+    ).catch((e) => console.error("[posts] push notify error", e));
 
     return NextResponse.json(post, { status: 201 });
   } catch {
@@ -58,7 +88,20 @@ async function notifyDiscussionPost(
   discussionTitle: string,
   authorName: string,
   authorId: string,
+  mentionedIds: string[],
 ) {
+  // Mention notifications go out regardless of committee discussion scope,
+  // gated only by the per-user mentions toggle.
+  if (mentionedIds.length) {
+    await dispatchToUsers(mentionedIds, {
+      channel: "mentions",
+      title: `${authorName} mentioned you`,
+      body: discussionTitle,
+      threadId: discussionId,
+      data: { kind: "mention", discussionId, ...(committeeId ? { committeeId } : {}) },
+    });
+  }
+
   if (!committeeId) return;
   const members = await prisma.committeeMember.findMany({
     where: { committeeId },
@@ -69,8 +112,9 @@ async function notifyDiscussionPost(
       },
     },
   });
+  const mentioned = new Set(mentionedIds);
   const recipients = members
-    .filter((m) => m.userId !== authorId)
+    .filter((m) => m.userId !== authorId && !mentioned.has(m.userId))
     .filter((m) => {
       const settings = parseSettings(m.user.notificationPrefs?.settings);
       const scope = discussionScopeFor(settings, committeeId);

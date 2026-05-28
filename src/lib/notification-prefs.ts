@@ -18,6 +18,9 @@ export type NotificationSettings = {
     scope: DiscussionScope;
     committeeOverrides: Record<string, DiscussionScope>;
   };
+  mentions: {
+    enabled: boolean;
+  };
   broadcast: {
     enabled: boolean;
   };
@@ -46,6 +49,9 @@ export const DEFAULT_SETTINGS: NotificationSettings = {
     enabled: true,
     scope: "subscribed",
     committeeOverrides: {},
+  },
+  mentions: {
+    enabled: true,
   },
   broadcast: {
     enabled: true,
@@ -76,6 +82,7 @@ function mergeSettings(
     events: { ...base.events, ...(override.events || {}) },
     tasks: { ...base.tasks, ...(override.tasks || {}) },
     discussions: { ...base.discussions, ...(override.discussions || {}) },
+    mentions: { ...base.mentions, ...(override.mentions || {}) },
     broadcast: { ...base.broadcast, ...(override.broadcast || {}) },
     quietHours: { ...base.quietHours, ...(override.quietHours || {}) },
     mutedDays: override.mutedDays ?? base.mutedDays,
@@ -120,7 +127,7 @@ export function isMutedToday(
 
 export function shouldDeliver(
   settings: NotificationSettings,
-  channel: "events" | "tasks" | "discussions" | "broadcast",
+  channel: "events" | "tasks" | "discussions" | "mentions" | "broadcast",
   now: Date,
   timezone: string
 ): boolean {

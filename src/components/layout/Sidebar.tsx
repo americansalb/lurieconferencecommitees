@@ -3,13 +3,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { LayoutDashboard, CalendarDays, MessageSquare, UserCircle, LogOut, Shield, Mic, Bell } from "lucide-react";
+import { useEffect, useState } from "react";
+import { LayoutDashboard, CalendarDays, MessageSquare, UserCircle, LogOut, Shield, Mic, Bell, AtSign, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, iconBg: "bg-blue-500/20", iconColor: "text-blue-400" },
   { href: "/calendar", label: "Calendar", icon: CalendarDays, iconBg: "bg-emerald-500/20", iconColor: "text-emerald-400" },
   { href: "/discussions", label: "Discussions", icon: MessageSquare, iconBg: "bg-amber-500/20", iconColor: "text-amber-400" },
+  { href: "/mentions", label: "Mentions", icon: AtSign, iconBg: "bg-indigo-500/20", iconColor: "text-indigo-400", badgeKey: "mentions" as const },
   { href: "/presenters", label: "Presenters", icon: Mic, iconBg: "bg-pink-500/20", iconColor: "text-pink-400" },
   { href: "/notifications", label: "Notifications", icon: Bell, iconBg: "bg-sky-500/20", iconColor: "text-sky-400" },
   { href: "/profile", label: "Profile", icon: UserCircle, iconBg: "bg-purple-500/20", iconColor: "text-purple-400" },
@@ -18,7 +20,25 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+  const [mentionCount, setMentionCount] = useState(0);
+
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    let cancelled = false;
+    async function load() {
+      try {
+        const res = await fetch("/api/mentions?unread=1");
+        if (res.ok && !cancelled) {
+          const data = await res.json();
+          setMentionCount(data.unreadCount || 0);
+        }
+      } catch { /* ignore */ }
+    }
+    load();
+    const interval = setInterval(load, 60_000);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, [status, pathname]);
 
   return (
     <aside className="hidden lg:flex flex-col w-56 shrink-0 bg-slate-900 border-r border-slate-800">
@@ -34,6 +54,20 @@ export default function Sidebar() {
         </div>
       </div>
 
+      <div className="px-3 pb-3">
+        <button
+          onClick={() => {
+            const ev = new KeyboardEvent("keydown", { key: "k", metaKey: true, bubbles: true });
+            window.dispatchEvent(ev);
+          }}
+          className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] text-slate-400 transition-colors"
+        >
+          <Search className="w-3.5 h-3.5" />
+          <span className="text-[12px]">Search…</span>
+          <kbd className="ml-auto text-[10px] font-mono bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded">⌘K</kbd>
+        </button>
+      </div>
+
       <div className="px-2.5 flex-1">
         <div className="space-y-0.5">
           {navItems
@@ -47,6 +81,7 @@ export default function Sidebar() {
             .map((item) => {
             const isActive = pathname === item.href || (item.href !== "/" && pathname?.startsWith(item.href + "/"));
             const Icon = item.icon;
+            const badge = (item as { badgeKey?: "mentions" }).badgeKey === "mentions" ? mentionCount : 0;
             return (
               <Link
                 key={item.href}
@@ -62,6 +97,11 @@ export default function Sidebar() {
                 <span className={cn("text-[13px]", isActive ? "font-bold text-slate-100" : "font-medium text-slate-400")}>
                   {item.label}
                 </span>
+                {badge > 0 && (
+                  <span className="ml-auto text-[10px] font-bold bg-blue-500 text-white rounded-full min-w-[18px] h-[18px] px-1.5 flex items-center justify-center">
+                    {badge > 99 ? "99+" : badge}
+                  </span>
+                )}
               </Link>
             );
           })}

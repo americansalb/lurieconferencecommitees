@@ -285,6 +285,17 @@ export default function NotificationsPage() {
               )}
             </Section>
 
+            <Section title="@Mentions" subtitle="When someone @mentions you in a discussion">
+              <Toggle
+                label="Notify me when I'm @mentioned"
+                checked={settings.mentions.enabled}
+                onChange={(v) => setSettings({ ...settings, mentions: { enabled: v } })}
+              />
+              <p className="text-xs text-slate-400 mt-2">
+                Mentions are delivered even if you have discussion notifications scoped to mentions-only or off.
+              </p>
+            </Section>
+
             <Section title="Admin broadcasts" subtitle="Critical announcements from chairs and admins">
               <Toggle
                 label="Receive admin broadcasts (recommended)"

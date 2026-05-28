@@ -3,7 +3,7 @@ import { sendApns } from "./apns";
 import { sendFcm } from "./fcm";
 import { parseSettings, shouldDeliver, NotificationSettings } from "./notification-prefs";
 
-export type PushChannel = "events" | "tasks" | "discussions" | "broadcast";
+export type PushChannel = "events" | "tasks" | "discussions" | "mentions" | "broadcast";
 
 export type PushPayload = {
   channel: PushChannel;
