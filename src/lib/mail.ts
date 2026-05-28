@@ -5,6 +5,7 @@ type SendArgs = {
   text?: string;
   replyTo?: string;
   bcc?: string;
+  from?: string;
 };
 
 export function isMailConfigured() {
@@ -22,16 +23,17 @@ export function mailConfigDetail() {
   };
 }
 
-export async function sendMail({ to, subject, html, text, replyTo, bcc }: SendArgs) {
+export async function sendMail({ to, subject, html, text, replyTo, bcc, from }: SendArgs) {
   const apiKey = process.env.RESEND_API_KEY?.trim();
-  const from = process.env.MAIL_FROM?.trim();
-  if (!apiKey || !from) {
+  const defaultFrom = process.env.MAIL_FROM?.trim();
+  const fromHeader = (from || defaultFrom || "").trim();
+  if (!apiKey || !fromHeader) {
     console.warn("[mail] RESEND_API_KEY or MAIL_FROM not set; skipping send", { to, subject });
     return { skipped: true };
   }
 
   const body: Record<string, unknown> = {
-    from,
+    from: fromHeader,
     to: [to],
     subject,
     html,

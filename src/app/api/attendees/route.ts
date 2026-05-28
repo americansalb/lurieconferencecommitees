@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { newAttendeeToken, parseAttendeeCsv, attendeeFunnelUrl, PRICING } from "@/lib/attendees";
+import { newAttendeeToken, parseAttendeeCsv, attendeeFunnelUrl, PRICING, attendeeFromHeader, attendeeReplyTo } from "@/lib/attendees";
 import { attendeeInviteEmail } from "@/lib/mail-templates";
 import { getPolicy, planSendTimes } from "@/lib/email-queue";
 import { sendMail } from "@/lib/mail";
@@ -98,7 +98,13 @@ export async function POST(req: Request) {
     const subject = `${firstName}, your invite to the 2026 Lurie Children's & AALB Conference`;
 
     try {
-      await sendMail({ to: email, subject, html });
+      await sendMail({
+        to: email,
+        subject,
+        html,
+        from: attendeeFromHeader(),
+        replyTo: attendeeReplyTo(),
+      });
       await prisma.attendee.update({
         where: { id: attendee.id },
         data: { status: "invited", invitedAt: new Date(), lastSentAt: new Date() },

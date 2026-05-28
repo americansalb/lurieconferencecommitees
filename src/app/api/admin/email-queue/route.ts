@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { isPaused, setPaused, getPolicy } from "@/lib/email-queue";
 import { sendMail } from "@/lib/mail";
+import { attendeeFromHeader, attendeeReplyTo } from "@/lib/attendees";
 
 function isAdmin(role?: string) {
   return role === "admin" || role === "developer";
@@ -86,11 +87,14 @@ export async function POST(req: Request) {
     if (claim.count === 0) continue;
 
     try {
+      const isAttendee = item.recipientType === "attendee";
       const result = await sendMail({
         to: item.to,
         subject: item.subject,
         html: item.html,
         text: item.textBody || undefined,
+        from: isAttendee ? attendeeFromHeader() : undefined,
+        replyTo: isAttendee ? attendeeReplyTo() : undefined,
       });
       const resendId = (result as { id?: string })?.id || null;
       await prisma.emailQueue.update({

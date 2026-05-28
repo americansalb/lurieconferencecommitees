@@ -1,6 +1,36 @@
 import { randomBytes } from "crypto";
 import { appUrl } from "./presenters";
 
+// "Personalized" envelope for attendee invitations. The display name appears
+// in the recipient's inbox; the actual sending address stays on the
+// Resend-verified domain so deliverability isn't affected. Replies route to
+// ATTENDEE_REPLY_TO (default: Iris's address derived from ATTENDEE_REPLY_TO
+// env, or whatever MAIL_REPLY_TO is set to).
+export const ATTENDEE_FROM_NAME_DEFAULT = "Iris Lafitte, AALB Operations Manager";
+
+function extractAddress(s: string): string {
+  const angle = s.match(/<([^>]+)>/);
+  if (angle) return angle[1].trim();
+  return s.trim();
+}
+
+export function attendeeFromHeader(): string {
+  const baseFrom = process.env.MAIL_FROM?.trim() || "";
+  const baseAddr = extractAddress(baseFrom);
+  const displayName = (process.env.ATTENDEE_FROM_NAME || ATTENDEE_FROM_NAME_DEFAULT).replace(/"/g, '\\"');
+  const fromAddr = process.env.ATTENDEE_FROM_EMAIL?.trim() || baseAddr;
+  if (!fromAddr) return baseFrom;
+  return `"${displayName}" <${fromAddr}>`;
+}
+
+export function attendeeReplyTo(): string | undefined {
+  return (
+    process.env.ATTENDEE_REPLY_TO?.trim() ||
+    process.env.MAIL_REPLY_TO?.trim() ||
+    undefined
+  );
+}
+
 export function newAttendeeToken() {
   return randomBytes(24).toString("base64url");
 }

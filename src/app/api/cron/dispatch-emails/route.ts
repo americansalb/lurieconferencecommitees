@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
 import { isPaused } from "@/lib/email-queue";
+import { attendeeFromHeader, attendeeReplyTo } from "@/lib/attendees";
 
 function authorized(req: Request): boolean {
   const secret = process.env.CRON_SECRET;
@@ -44,11 +45,14 @@ async function handle() {
     if (claim.count === 0) continue;
 
     try {
+      const isAttendee = item.recipientType === "attendee";
       const result = await sendMail({
         to: item.to,
         subject: item.subject,
         html: item.html,
         text: item.textBody || undefined,
+        from: isAttendee ? attendeeFromHeader() : undefined,
+        replyTo: isAttendee ? attendeeReplyTo() : undefined,
       });
       const resendId = (result as { id?: string })?.id || null;
       await prisma.emailQueue.update({

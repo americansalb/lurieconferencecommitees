@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { verifyWebhookSignature } from "@/lib/stripe";
 import { sendMail } from "@/lib/mail";
 import { attendeeConfirmedEmail } from "@/lib/mail-templates";
-import { attendeeFunnelUrl } from "@/lib/attendees";
+import { attendeeFunnelUrl, attendeeFromHeader, attendeeReplyTo } from "@/lib/attendees";
 
 // Stripe webhook for checkout.session.completed.
 // Configure in Stripe dashboard: endpoint URL = https://conference.aalb.org/api/attendees/webhook
@@ -64,6 +64,8 @@ export async function POST(req: Request) {
           attendanceMode: attendee.attendanceMode || "in-person",
           finalPriceCents: attendee.finalPriceCents,
         }),
+        from: attendeeFromHeader(),
+        replyTo: attendeeReplyTo(),
       }).catch((e) => console.error("[attendee webhook] mail send error", e));
     }
   }
