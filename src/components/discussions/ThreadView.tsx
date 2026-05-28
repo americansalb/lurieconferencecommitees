@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { MessageSquare, Send, Loader2, ChevronDown, ChevronUp, Pin } from "lucide-react";
+import MentionInput from "./MentionInput";
 
 interface Post {
   id: string;
@@ -133,13 +134,16 @@ export default function ThreadView({
 
           {/* Reply form */}
           <form onSubmit={handleReply} className="flex gap-2 mt-2 pl-7">
-            <input
-              type="text"
-              value={reply}
-              onChange={(e) => setReply(e.target.value)}
-              placeholder="Write a reply..."
-              className="flex-1 px-3 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            <div className="flex-1">
+              <MentionInput
+                value={reply}
+                onChange={setReply}
+                onSubmit={() => { void handleReply({ preventDefault: () => {} } as React.FormEvent); }}
+                discussionId={discussion.id}
+                placeholder="Write a reply... type @ to mention someone"
+                className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
             <button
               type="submit"
               disabled={loading || !reply.trim()}

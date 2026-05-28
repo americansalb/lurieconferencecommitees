@@ -10,6 +10,7 @@ import {
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
 import MobileNav from "@/components/layout/MobileNav";
+import MentionInput from "@/components/discussions/MentionInput";
 
 const SLUG_COLORS: Record<string, string> = {
   "logistics-venue": "#3b82f6",
@@ -342,12 +343,13 @@ export default function DiscussionsPage() {
                                         </div>
                                         {isEditing ? (
                                           <div className="mt-1 flex gap-2">
-                                            <input
+                                            <MentionInput
                                               value={editText}
-                                              onChange={e => setEditText(e.target.value)}
-                                              onKeyDown={e => e.key === "Enter" && handleEditPost(disc.id, post.id)}
-                                              className="flex-1 px-2 py-1 text-sm border border-slate-200 rounded outline-none focus:border-blue-400"
+                                              onChange={setEditText}
+                                              onSubmit={() => handleEditPost(disc.id, post.id)}
+                                              discussionId={disc.id}
                                               autoFocus
+                                              className="w-full px-2 py-1 text-sm border border-slate-200 rounded outline-none focus:border-blue-400"
                                             />
                                             <button onClick={() => handleEditPost(disc.id, post.id)} className="p-1 rounded hover:bg-emerald-50">
                                               <Check className="w-4 h-4 text-emerald-500" />
@@ -370,13 +372,16 @@ export default function DiscussionsPage() {
                           {/* Reply input */}
                           <div className="px-4 py-3 bg-slate-50/50 border-t border-slate-100">
                             <div className="flex gap-2">
-                              <input
-                                value={replyText}
-                                onChange={e => setReplyText(e.target.value)}
-                                onKeyDown={e => e.key === "Enter" && handleReply(disc.id)}
-                                placeholder="Write a reply..."
-                                className="flex-1 px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/10 bg-white"
-                              />
+                              <div className="flex-1">
+                                <MentionInput
+                                  value={replyText}
+                                  onChange={setReplyText}
+                                  onSubmit={() => handleReply(disc.id)}
+                                  discussionId={disc.id}
+                                  placeholder="Write a reply... type @ to mention someone"
+                                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/10 bg-white"
+                                />
+                              </div>
                               <button
                                 onClick={() => handleReply(disc.id)}
                                 disabled={!replyText.trim()}
