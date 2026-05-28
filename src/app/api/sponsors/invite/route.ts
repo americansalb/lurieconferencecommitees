@@ -12,8 +12,10 @@ function isEmail(s: string): boolean {
 }
 
 // Invite a target sponsor: creates a Sponsor record with status="invited",
-// emails a personalized invitation with a link to the pre-filled landing page.
-// Any authenticated team member can send.
+// emails a personalized invitation with a link to a landing page where they
+// pick their own sponsorship level. Any authenticated team member can send.
+// If a suggested tier is included it's stored as a hint; the invitee always
+// has the final say on the landing page.
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
@@ -29,15 +31,17 @@ export async function POST(req: Request) {
     tier, inviteMessage,
   } = body;
 
-  if (!companyName?.trim() || !contactName?.trim() || !isEmail(contactEmail || "") || !tier) {
+  if (!companyName?.trim() || !contactName?.trim() || !isEmail(contactEmail || "")) {
     return NextResponse.json(
-      { error: "Company, contact name, valid email, and a tier are required." },
+      { error: "Company, contact name, and a valid email are required." },
       { status: 400 }
     );
   }
 
-  const t = tierById(tier);
-  if (!t) return NextResponse.json({ error: "Unknown tier." }, { status: 400 });
+  // tier is now optional. "undecided" means the invitee will pick on the landing page.
+  const suggested = tier ? tierById(tier) : null;
+  const tierId = suggested ? suggested.id : "undecided";
+  const amountCents = suggested ? suggested.amountCents : 0;
 
   const email = contactEmail.trim().toLowerCase();
   const existing = await prisma.sponsor.findFirst({
@@ -59,8 +63,8 @@ export async function POST(req: Request) {
       contactPhone: contactPhone?.trim() || null,
       contactRole: contactRole?.trim() || null,
       website: website?.trim() || null,
-      tier: t.id,
-      amountCents: t.amountCents,
+      tier: tierId,
+      amountCents,
       inviteMessage: inviteMessage?.trim() || null,
       invitedById,
       invitedAt: new Date(),
@@ -70,14 +74,14 @@ export async function POST(req: Request) {
     },
   });
   await prisma.sponsorEvent.create({
-    data: { sponsorId: sponsor.id, type: "invite_sent", actorEmail, meta: t.id },
+    data: { sponsorId: sponsor.id, type: "invite_sent", actorEmail, meta: tierId },
   });
 
   const landingUrl = `${appUrl()}/sponsor/invited/${token}`;
   const html = sponsorInviteEmail({
     contactFirstName: sponsor.contactName.split(" ")[0],
     companyName: sponsor.companyName,
-    tier: t,
+    suggestedTier: suggested ?? null,
     inviteMessage: sponsor.inviteMessage,
     senderName: actorName,
     landingUrl,

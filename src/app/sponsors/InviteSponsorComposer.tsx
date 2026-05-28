@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { X, Loader2, Send, AlertCircle, Check, Sparkles } from "lucide-react";
-import { TIERS } from "@/lib/sponsors";
 
 export default function InviteSponsorComposer({
   onClose, onSent,
@@ -10,7 +9,6 @@ export default function InviteSponsorComposer({
   onClose: () => void;
   onSent: () => void;
 }) {
-  const [tierId, setTierId] = useState<string>("gold");
   const [companyName, setCompanyName] = useState("");
   const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
@@ -20,8 +18,6 @@ export default function InviteSponsorComposer({
   const [inviteMessage, setInviteMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
-
-  const tier = TIERS.find((t) => t.id === tierId);
 
   async function send() {
     if (!companyName.trim() || !contactName.trim() || !contactEmail.trim()) {
@@ -36,7 +32,6 @@ export default function InviteSponsorComposer({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           companyName, contactName, contactEmail, contactRole, contactPhone, website,
-          tier: tierId,
           inviteMessage,
         }),
       });
@@ -63,7 +58,7 @@ export default function InviteSponsorComposer({
           </div>
           <div className="flex-1">
             <div className="text-sm font-extrabold text-slate-900">Invite a sponsor</div>
-            <div className="text-xs text-slate-500">Send a personalized invitation with a tokenized landing page.</div>
+            <div className="text-xs text-slate-500">They&rsquo;ll choose their own sponsorship level on the invitation page.</div>
           </div>
           <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-700">
             <X className="w-4 h-4" />
@@ -71,35 +66,6 @@ export default function InviteSponsorComposer({
         </div>
 
         <div className="p-5 space-y-4">
-          <div>
-            <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Sponsorship level</label>
-            <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {TIERS.map((t) => (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => setTierId(t.id)}
-                  className={`text-left rounded-lg border p-2.5 transition-all ${
-                    tierId === t.id
-                      ? "ring-2 shadow-sm"
-                      : "border-slate-200 hover:border-slate-300"
-                  }`}
-                  style={tierId === t.id
-                    ? { borderColor: t.accent, boxShadow: `0 0 0 3px ${t.accent}20` }
-                    : {}}
-                >
-                  <div className="text-[10px] font-bold tracking-widest uppercase" style={{ color: t.accent }}>
-                    {t.name.replace(" Sponsor", "")}
-                  </div>
-                  <div className="text-sm font-extrabold text-slate-900 mt-0.5">{t.amountLabel}</div>
-                </button>
-              ))}
-            </div>
-            {tier && (
-              <div className="mt-2 text-[11px] text-slate-500">{tier.tagline}</div>
-            )}
-          </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="Company / organization" value={companyName} onChange={setCompanyName} required className="sm:col-span-2" />
             <Field label="Contact name" value={contactName} onChange={setContactName} required />
@@ -118,7 +84,9 @@ export default function InviteSponsorComposer({
                 placeholder={`Hi ${contactName.split(" ")[0] || "[name]"}, I wanted to personally reach out about sponsoring our conference because…`}
                 className="mt-1 w-full px-3 py-2.5 text-sm border border-slate-200 rounded-lg outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10"
               />
-              <span className="text-[10px] text-slate-400 mt-1 block">Appears at the top of the invitation page in a highlighted callout.</span>
+              <span className="text-[10px] text-slate-400 mt-1 block">
+                Appears at the top of the invitation page in a highlighted callout. Use this to suggest a tier or speak to a specific opportunity if you&rsquo;d like.
+              </span>
             </label>
           </div>
 

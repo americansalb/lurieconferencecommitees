@@ -217,10 +217,14 @@ export default function SponsorsAdminPage() {
                           </div>
                           <div className="text-right shrink-0 hidden sm:block">
                             <div className="text-xs font-bold text-slate-900">
-                              {tier?.name || s.tier}
+                              {tier?.name || (s.tier === "undecided" ? "Tier not yet chosen" : s.tier)}
                             </div>
                             <div className="text-[11px] text-slate-500">
-                              {s.donateFoodInstead ? "Food in kind" : (tier?.amountLabel || `$${(s.amountCents / 100).toFixed(0)}`)}
+                              {s.tier === "undecided"
+                                ? "Invitee will pick a level"
+                                : s.donateFoodInstead
+                                  ? "Food in kind"
+                                  : (tier?.amountLabel || `$${(s.amountCents / 100).toFixed(0)}`)}
                             </div>
                           </div>
                           <span className={`text-[10px] font-bold px-2 py-1 rounded-full border ${sl.color}`}>{sl.label}</span>

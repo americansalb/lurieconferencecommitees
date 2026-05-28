@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Calendar, MapPin, CreditCard, Check, FileText } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { tierById, SPONSOR_STATUS_LABELS } from "@/lib/sponsors";
@@ -12,6 +12,12 @@ export default async function SponsorStatusPage({ params }: { params: { token: s
     where: { applicationToken: params.token },
   });
   if (!sponsor) notFound();
+
+  // Invitees who haven't picked a tier yet belong on the invitation page,
+  // not the status page (which assumes a chosen level).
+  if (sponsor.tier === "undecided" && !sponsor.paid) {
+    redirect(`/sponsor/invited/${params.token}`);
+  }
 
   const tier = tierById(sponsor.tier);
   const TEAL = "#0E5566";
