@@ -170,6 +170,94 @@ export function passwordResetEmail({
   `);
 }
 
+type AttendeeInviteArgs = {
+  firstName: string;
+  url: string;
+  inviteMessage?: string | null;
+  discountPercent: number;
+  inPersonOriginalCents: number;
+  inPersonDiscountedCents: number;
+};
+
+export function attendeeInviteEmail({
+  firstName,
+  url,
+  inviteMessage,
+  discountPercent,
+  inPersonOriginalCents,
+  inPersonDiscountedCents,
+}: AttendeeInviteArgs) {
+  const first = firstName || "there";
+  const originalDollars = `$${(inPersonOriginalCents / 100).toFixed(0)}`;
+  const discountedDollars = `$${(inPersonDiscountedCents / 100).toFixed(2)}`;
+  const extra = inviteMessage
+    ? `<p style="font-size:15px;line-height:1.65;color:${TEXT};margin:14px 0;background:#f8fafc;border-left:3px solid ${BLUE};padding:14px 16px;border-radius:6px;">${escapeHtml(inviteMessage)}</p>`
+    : "";
+  return shell(`
+    <h1 style="font-size:24px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">Hi ${escapeHtml(first)},</h1>
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
+      We&rsquo;d love to have you with us at the 2026 Lurie Children&rsquo;s and AALB Conference, August 15 &amp; 16, 2026, at Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago.
+    </p>
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 18px 0;">
+      Two days of practitioners, researchers, and community working on what real language access looks like &mdash; yesterday, today, and tomorrow.
+    </p>
+    ${extra}
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 18px 0;border-collapse:separate;border-spacing:0;">
+      <tr>
+        <td style="background:linear-gradient(135deg, ${TEAL}, ${BLUE});color:#fff;padding:18px 22px;border-radius:12px;">
+          <div style="font-size:11px;letter-spacing:0.2em;font-weight:600;text-transform:uppercase;opacity:0.85;">Your personal invite</div>
+          <div style="font-size:30px;font-weight:800;margin-top:6px;line-height:1;">${discountedDollars}</div>
+          <div style="font-size:13px;margin-top:8px;opacity:0.92;">
+            <span style="text-decoration:line-through;opacity:0.7;">${originalDollars}</span>
+            <span style="margin-left:8px;background:#ffffff22;padding:2px 8px;border-radius:999px;font-weight:600;">${discountPercent}% off in-person</span>
+          </div>
+        </td>
+      </tr>
+    </table>
+    ${button(url, "Reserve my spot →")}
+    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:8px 0 0 0;">
+      Or paste this into your browser:<br/>
+      <a href="${url}" style="color:${BLUE};word-break:break-all;">${url}</a>
+    </p>
+    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;">
+      The link is unique to you and your discount. Virtual attendance is also available.
+    </p>
+  `);
+}
+
+export function attendeeConfirmedEmail({
+  firstName,
+  url,
+  attendanceMode,
+  finalPriceCents,
+}: {
+  firstName: string;
+  url: string;
+  attendanceMode: string;
+  finalPriceCents: number | null;
+}) {
+  const first = firstName || "there";
+  const modeLabel = attendanceMode === "in-person" ? "In-person attendance" : "Virtual attendance";
+  const amount = finalPriceCents != null ? `$${(finalPriceCents / 100).toFixed(2)}` : null;
+  return shell(`
+    <h1 style="font-size:24px;font-weight:700;margin:0 0 12px 0;letter-spacing:-0.01em;">You&rsquo;re in, ${escapeHtml(first)}.</h1>
+    <p style="font-size:15px;line-height:1.65;color:${TEXT};margin:0 0 14px 0;">
+      Thank you for confirming. Your spot at the 2026 Lurie Children&rsquo;s and AALB Conference is reserved.
+    </p>
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:14px 0;border-collapse:separate;">
+      <tr><td style="background:#f8fafc;border-left:3px solid ${TEAL};padding:14px 18px;border-radius:6px;">
+        <div style="font-size:13px;color:${MUTED};">${escapeHtml(modeLabel)}</div>
+        ${amount ? `<div style="font-size:20px;font-weight:700;color:${TEXT};margin-top:4px;">${amount} paid</div>` : ""}
+        <div style="font-size:13px;color:${MUTED};margin-top:6px;">August 15 &amp; 16, 2026 &middot; Chicago</div>
+      </td></tr>
+    </table>
+    ${button(url, "View my registration")}
+    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;">
+      We&rsquo;ll be in touch closer to the date with the full agenda and arrival details.
+    </p>
+  `);
+}
+
 function escapeHtml(s: string) {
   return s
     .replace(/&/g, "&amp;")

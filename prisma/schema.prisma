@@ -364,3 +364,97 @@ model PresenterEvent {
   @@map("lcc_presenter_events")
   @@schema("lcc")
 }
+
+model Attendee {
+  id                   String          @id @default(cuid())
+  email                String          @unique
+  firstName            String
+  lastName             String
+  phone                String?
+  affiliation          String?
+  primaryLanguages     String?
+
+  attendanceMode       String?
+  needsParking         Boolean?
+  accessibilityNotes   String?
+  dietary              String?
+  notes                String?
+
+  discountPercent      Int             @default(25)
+  basePriceCents       Int?
+  finalPriceCents      Int?
+  paid                 Boolean         @default(false)
+  paidAt               DateTime?
+  stripeSessionId      String?
+  stripePaymentIntentId String?
+
+  status               String          @default("queued")
+  declineReason        String?
+
+  inviteToken          String          @unique
+  inviteMessage        String?
+  invitedById          String?
+  invitedAt            DateTime?
+  lastSentAt           DateTime?
+  viewedAt             DateTime?
+  confirmedAt          DateTime?
+  declinedAt           DateTime?
+
+  adminNotes           String?
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime?       @updatedAt
+
+  events               AttendeeEvent[]
+
+  @@index([status])
+  @@map("lcc_attendees")
+  @@schema("lcc")
+}
+
+model AttendeeEvent {
+  id         String   @id @default(cuid())
+  attendeeId String
+  type       String
+  meta       String?
+  actorEmail String?
+  createdAt  DateTime @default(now())
+  attendee   Attendee @relation(fields: [attendeeId], references: [id], onDelete: Cascade)
+
+  @@index([attendeeId])
+  @@map("lcc_attendee_events")
+  @@schema("lcc")
+}
+
+model EmailQueue {
+  id            String    @id @default(cuid())
+  batchId       String?
+  recipientType String    @default("attendee")
+  recipientId   String?
+  to            String
+  subject       String
+  html          String
+  textBody      String?
+  scheduledFor  DateTime
+  status        String    @default("pending")
+  attempts      Int       @default(0)
+  sentAt        DateTime?
+  lastError     String?
+  resendId      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime? @updatedAt
+
+  @@index([status, scheduledFor])
+  @@index([batchId])
+  @@index([recipientType, recipientId])
+  @@map("lcc_email_queue")
+  @@schema("lcc")
+}
+
+model SystemSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("lcc_system_settings")
+  @@schema("lcc")
+}
