@@ -270,22 +270,20 @@ type SponsorInviteArgs = {
   companyName: string;
   suggestedTier: { name: string; amountLabel: string; ticketsIncluded: number; tagline: string } | null;
   inviteMessage: string | null;
-  senderName: string | null;
   landingUrl: string;
 };
 
 export function sponsorInviteEmail({
-  contactFirstName, companyName, suggestedTier, inviteMessage, senderName, landingUrl,
+  contactFirstName, companyName, suggestedTier, inviteMessage, landingUrl,
 }: SponsorInviteArgs) {
   const first = contactFirstName || "there";
-  const senderLine = senderName ? `${escapeHtml(senderName)} (AALB / Lurie Children&rsquo;s)` : "Our team";
   const tierLine = suggestedTier
     ? `We thought the <strong>${escapeHtml(suggestedTier.name)}</strong> level (${escapeHtml(suggestedTier.amountLabel)}, ${suggestedTier.ticketsIncluded} ticket${suggestedTier.ticketsIncluded === 1 ? "" : "s"} included) might be a natural fit, but please pick whichever level works best for ${escapeHtml(companyName)} on the invitation page.`
     : `On the invitation page you&rsquo;ll find every sponsorship level we offer, from Exhibitor Tables to Diamond, and you can pick whichever one is the right fit for ${escapeHtml(companyName)}.`;
   return shell(`
     <h1 style="font-size:22px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">Hi ${escapeHtml(first)},</h1>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
-      ${senderLine} would love for <strong>${escapeHtml(companyName)}</strong> to partner with us on the 2nd Annual Joint Conference of Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers, August 15 and 16, 2026, in Chicago.
+      We would love for <strong>${escapeHtml(companyName)}</strong> to partner with us on the 2nd Annual Joint Conference of Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers, August 15 and 16, 2026, in Chicago.
     </p>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 16px 0;">
       ${tierLine}

@@ -23,7 +23,6 @@ export async function POST(req: Request) {
   }
   const invitedById = (session.user as { id?: string }).id || null;
   const actorEmail = session.user.email || null;
-  const actorName = session.user.name || null;
 
   const body = await req.json();
   const {
@@ -83,14 +82,13 @@ export async function POST(req: Request) {
     companyName: sponsor.companyName,
     suggestedTier: suggested ?? null,
     inviteMessage: sponsor.inviteMessage,
-    senderName: actorName,
     landingUrl,
   });
 
   try {
     await sendMail({
       to: sponsor.contactEmail,
-      subject: `${sponsor.companyName}: invitation to sponsor the 2026 Lurie Children's and AALB Conference`,
+      subject: `Invitation to Sponsor the 2026 Lurie Children's and AALB Conference`,
       html,
       from: sponsorFromHeader(),
       replyTo: sponsorReplyTo(),
