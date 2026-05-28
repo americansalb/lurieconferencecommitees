@@ -28,7 +28,7 @@ export async function POST(req: Request) {
   const session = await createCheckoutSession({
     amountCents: sponsor.amountCents,
     customerEmail: sponsor.contactEmail,
-    productName: `Conference 2026 — ${t.name}`,
+    productName: `Conference 2026: ${t.name}`,
     productDescription: `Sponsorship of the 2026 Lurie Children's & AALB Conference at the ${t.name} level. Tax-deductible under IRS code 501(c)(3). ${t.ticketsIncluded} conference ticket${t.ticketsIncluded === 1 ? "" : "s"} included.`,
     successUrl: `${appUrl()}/sponsor/success/${token}?cs={CHECKOUT_SESSION_ID}`,
     cancelUrl: `${appUrl()}/sponsor/status/${token}`,
