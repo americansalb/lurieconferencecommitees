@@ -1,4 +1,3 @@
-import { Mail, Globe } from "lucide-react";
 import { TOKENS, CONFERENCE } from "./tokens";
 
 const QUICK_LINKS = [
@@ -10,39 +9,29 @@ const QUICK_LINKS = [
 
 export default function Footer() {
   return (
-    <footer style={{ background: TOKENS.tealDark }} className="text-white">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-14 sm:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-[1.5fr_1fr_1fr] gap-10">
+    <footer style={{ background: TOKENS.tealDeep }} className="text-white">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
+        <div className="grid grid-cols-1 md:grid-cols-[1.5fr_1fr_1fr] gap-12">
           <div>
-            <div className="flex items-center gap-2.5 mb-4">
-              <span
-                className="w-8 h-8 rounded-lg flex items-center justify-center font-extrabold text-white text-xs shadow-sm"
-                style={{ background: `linear-gradient(135deg, ${TOKENS.blue} 0%, ${TOKENS.teal} 100%)` }}
-              >
-                L
-              </span>
-              <span className="flex flex-col leading-tight">
-                <span className="text-[10px] font-bold tracking-widest uppercase text-white/60">
-                  Lurie Children&rsquo;s &amp; AALB
-                </span>
-                <span className="text-sm font-extrabold tracking-tight">
-                  Conference 2026
-                </span>
-              </span>
+            <div className="font-serif-display text-2xl font-bold leading-tight">
+              2026 Lurie Children&rsquo;s{" "}
+              <span className="italic font-medium" style={{ color: TOKENS.gold }}>&amp;</span>{" "}
+              AALB Conference
             </div>
-            <p className="text-sm text-white/70 leading-relaxed max-w-sm">
-              {CONFERENCE.theme}. {CONFERENCE.prettyDates}, {CONFERENCE.city}.
+            <p className="mt-4 text-sm leading-relaxed max-w-sm" style={{ color: "rgba(255,255,255,0.65)" }}>
+              {CONFERENCE.theme}.<br />
+              {CONFERENCE.prettyDates}, {CONFERENCE.city}.
             </p>
           </div>
 
           <div>
-            <div className="text-[10px] font-bold tracking-widest uppercase text-white/50 mb-3">
+            <div className="text-[10px] font-bold tracking-[0.3em] uppercase mb-4" style={{ color: TOKENS.gold }}>
               Quick links
             </div>
-            <ul className="space-y-2">
+            <ul className="space-y-2.5">
               {QUICK_LINKS.map((l) => (
                 <li key={l.href}>
-                  <a href={l.href} className="text-sm text-white/85 hover:text-white">
+                  <a href={l.href} className="text-sm hover:text-white" style={{ color: "rgba(255,255,255,0.78)" }}>
                     {l.label}
                   </a>
                 </li>
@@ -51,30 +40,36 @@ export default function Footer() {
           </div>
 
           <div>
-            <div className="text-[10px] font-bold tracking-widest uppercase text-white/50 mb-3">
+            <div className="text-[10px] font-bold tracking-[0.3em] uppercase mb-4" style={{ color: TOKENS.gold }}>
               Contact
             </div>
             <ul className="space-y-2.5">
               <li>
-                <a href={`mailto:${CONFERENCE.contactEmail}`} className="text-sm text-white/85 hover:text-white inline-flex items-center gap-2">
-                  <Mail className="w-3.5 h-3.5" /> {CONFERENCE.contactEmail}
+                <a href={`mailto:${CONFERENCE.contactEmail}`} className="text-sm hover:text-white" style={{ color: "rgba(255,255,255,0.78)" }}>
+                  {CONFERENCE.contactEmail}
                 </a>
               </li>
               <li>
-                <a href="https://www.aalb.org" target="_blank" rel="noopener noreferrer" className="text-sm text-white/85 hover:text-white inline-flex items-center gap-2">
-                  <Globe className="w-3.5 h-3.5" /> aalb.org
+                <a href="https://www.aalb.org" target="_blank" rel="noopener noreferrer" className="text-sm hover:text-white" style={{ color: "rgba(255,255,255,0.78)" }}>
+                  aalb.org
                 </a>
               </li>
             </ul>
           </div>
         </div>
 
-        <div className="mt-12 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-white/50">
+        <div
+          className="mt-14 pt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs"
+          style={{
+            borderTop: `1px solid rgba(255,255,255,0.08)`,
+            color: "rgba(255,255,255,0.45)",
+          }}
+        >
           <div>
             &copy; 2026 Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago &amp; Americans Against Language Barriers
           </div>
           <div>
-            Tax-deductible under IRS code 501(c)(3). EINs: {CONFERENCE.eins}.
+            501(c)(3) &middot; EINs {CONFERENCE.eins}
           </div>
         </div>
       </div>

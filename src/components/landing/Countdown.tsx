@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { TOKENS } from "./tokens";
 
 type Cell = { label: string; value: string };
 
@@ -29,20 +30,20 @@ export default function Countdown({ targetIso, accent }: { targetIso: string; ac
   }, [targetIso]);
 
   if (!cells) {
-    return <div className="h-[88px]" />;
+    return <div className="h-[80px]" />;
   }
 
   return (
-    <div className="grid grid-cols-4 gap-2 sm:gap-3 max-w-md mx-auto">
+    <div className="flex items-stretch divide-x rounded-xl border" style={{ borderColor: TOKENS.hairline, background: "white" }}>
       {cells.map((c) => (
-        <div
-          key={c.label}
-          className="rounded-xl bg-white/90 backdrop-blur shadow-sm border border-white/40 px-2 sm:px-4 py-3 text-center"
-        >
-          <div className="font-serif-display text-3xl sm:text-4xl font-bold leading-none tabular-nums" style={{ color: accent }}>
+        <div key={c.label} className="flex-1 px-2 py-4 text-center" style={{ borderColor: TOKENS.hairline }}>
+          <div
+            className="font-serif-display text-3xl sm:text-4xl font-bold leading-none tabular-nums"
+            style={{ color: accent }}
+          >
             {c.value}
           </div>
-          <div className="mt-1 text-[9px] sm:text-[10px] font-bold tracking-widest uppercase text-slate-500">
+          <div className="mt-1.5 text-[9px] sm:text-[10px] font-bold tracking-[0.2em] uppercase" style={{ color: TOKENS.muted }}>
             {c.label}
           </div>
         </div>

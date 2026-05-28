@@ -1,9 +1,6 @@
-import { ChevronDown } from "lucide-react";
+import { Plus } from "lucide-react";
 import { TOKENS } from "./tokens";
 
-// Mirrors the 7+ Q&As on the existing Webflow page. Copy is preserved
-// in tone and intent; treat this as a working baseline that the program
-// team can edit in place.
 const FAQS: { q: string; a: string }[] = [
   {
     q: "What is the conference about?",
@@ -11,7 +8,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "Can I attend virtually?",
-    a: "Yes. The conference is offered as a hybrid event. The Virtual ticket gives you a live stream of both days, on-demand recordings afterward, digital materials, a CEU certificate of attendance, and access to a virtual networking lounge. You can attend from anywhere in the world.",
+    a: "Yes. The conference is offered as a hybrid event. The Virtual ticket gives you a live stream of both days, on-demand recordings afterward, digital materials, and a CEU certificate of attendance. You can attend from anywhere in the world.",
   },
   {
     q: "Is the conference CEU accredited?",
@@ -27,7 +24,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "What about parking and hotels?",
-    a: "Multiple Streeterville parking garages are within two blocks of the hospital. We will share a list of partner hotels with conference rates closer to the event. If you need assistance with hotel booking, please reach out to our team.",
+    a: "Multiple Streeterville parking garages are within two blocks of the hospital. We will share a list of partner hotels with conference rates closer to the event.",
   },
   {
     q: "Is there a dress code?",
@@ -39,45 +36,59 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "Can I request accessibility accommodations?",
-    a: "Absolutely. ASL interpretation is provided throughout the conference. Accessible seating is available, and lactation and quiet rooms are available on request. The registration form includes a field for additional accommodations, or you can email us directly at contact@aalb.org.",
+    a: "Absolutely. ASL interpretation is provided throughout the conference, and the registration form includes a field for additional accommodations. You can also email us directly at contact@aalb.org.",
   },
 ];
 
 export default function FAQ() {
   return (
-    <section id="faq" className="py-24 sm:py-32 bg-white">
+    <section id="faq" className="py-28 sm:py-36" style={{ background: TOKENS.paper }}>
       <div className="max-w-4xl mx-auto px-4 sm:px-6">
-        <div className="text-center mb-12">
-          <div className="inline-block text-[10px] font-bold tracking-[0.25em] uppercase mb-4" style={{ color: TOKENS.teal }}>
-            FAQ
+        <div className="text-center mb-16">
+          <div className="inline-flex items-center gap-2 mb-5">
+            <span className="w-6 h-px" style={{ background: TOKENS.gold }} />
+            <span className="text-[10px] font-bold tracking-[0.3em] uppercase" style={{ color: TOKENS.gold }}>
+              FAQ
+            </span>
+            <span className="w-6 h-px" style={{ background: TOKENS.gold }} />
           </div>
-          <h2 className="font-serif-display text-4xl sm:text-5xl md:text-6xl font-bold leading-[1.05] tracking-tight" style={{ color: TOKENS.ink }}>
-            Frequently asked questions.
+          <h2
+            className="font-serif-display text-4xl sm:text-5xl md:text-6xl font-bold leading-[1.05] tracking-tight"
+            style={{ color: TOKENS.ink }}
+          >
+            Frequently asked.
           </h2>
         </div>
 
-        <div className="space-y-3">
+        <div className="rounded-2xl bg-white border overflow-hidden" style={{ borderColor: TOKENS.hairline }}>
           {FAQS.map((f, i) => (
             <details
               key={i}
-              className="group bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow open:shadow-md"
+              className="group"
+              style={{ borderTop: i > 0 ? `1px solid ${TOKENS.hairline}` : undefined }}
             >
-              <summary className="cursor-pointer list-none flex items-center gap-4 p-5 sm:p-6">
+              <summary className="cursor-pointer list-none flex items-start gap-5 p-6 sm:p-7">
                 <span
-                  className="flex-shrink-0 font-serif-display text-base font-bold tabular-nums px-2.5 py-0.5 rounded-md"
-                  style={{ background: TOKENS.tealSoft, color: TOKENS.teal }}
+                  className="font-serif-display text-sm font-bold tabular-nums mt-0.5 shrink-0"
+                  style={{ color: TOKENS.gold }}
                 >
                   {String(i + 1).padStart(2, "0")}
                 </span>
-                <span className="flex-1 text-base sm:text-lg font-bold leading-snug" style={{ color: TOKENS.ink }}>
+                <span
+                  className="flex-1 text-base sm:text-lg font-semibold leading-snug"
+                  style={{ color: TOKENS.ink }}
+                >
                   {f.q}
                 </span>
-                <ChevronDown
-                  className="w-5 h-5 flex-shrink-0 transition-transform group-open:rotate-180"
+                <Plus
+                  className="w-4 h-4 flex-shrink-0 mt-1 transition-transform group-open:rotate-45"
                   style={{ color: TOKENS.teal }}
                 />
               </summary>
-              <div className="px-5 sm:px-6 pb-6 pt-0 pl-[3.5rem] sm:pl-[3.75rem] text-sm sm:text-base leading-relaxed" style={{ color: TOKENS.inkSoft }}>
+              <div
+                className="px-6 sm:px-7 pb-7 pt-0 text-[15px] leading-relaxed"
+                style={{ color: TOKENS.muted, paddingLeft: "calc(2.5rem + 20px)" }}
+              >
                 {f.a}
               </div>
             </details>

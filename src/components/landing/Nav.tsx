@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Menu, X, LayoutDashboard } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { TOKENS } from "./tokens";
 
@@ -69,28 +69,24 @@ export default function Nav() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-2">
-          {isAuthed && (
-            <a
-              href="/dashboard"
-              className={`hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                scrolled
-                  ? "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-                  : "text-white/85 hover:text-white hover:bg-white/10"
-              }`}
-              title="Planning portal"
-            >
-              <LayoutDashboard className="w-3.5 h-3.5" /> Dashboard
-            </a>
-          )}
+        <div className="flex items-center gap-3">
+          <a
+            href={isAuthed ? "/dashboard" : "/login"}
+            className={`hidden md:inline-flex items-center text-[11px] font-semibold tracking-wider uppercase transition-colors ${
+              scrolled ? "text-slate-500 hover:text-slate-800" : "text-white/55 hover:text-white"
+            }`}
+            title={isAuthed ? "Planning portal" : "Sign in to the planning portal"}
+          >
+            Volunteer Login
+          </a>
           <a
             href="/register"
-            className={`hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-all ${
+            className={`hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold transition-colors ${
               scrolled
-                ? "text-white hover:shadow"
+                ? "text-white"
                 : "bg-white text-slate-900 hover:bg-white/95"
             }`}
-            style={scrolled ? { background: `linear-gradient(135deg, ${TOKENS.teal} 0%, ${TOKENS.blue} 100%)` } : undefined}
+            style={scrolled ? { background: TOKENS.teal } : undefined}
           >
             Register Now
           </a>
@@ -117,21 +113,19 @@ export default function Nav() {
                 {l.label}
               </a>
             ))}
-            {isAuthed && (
-              <a
-                href="/dashboard"
-                onClick={() => setOpen(false)}
-                className="px-3 py-2.5 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-100 inline-flex items-center gap-2"
-              >
-                <LayoutDashboard className="w-4 h-4" /> Dashboard
-              </a>
-            )}
             <a
               href="/register"
-              className="mt-1 px-3 py-2.5 rounded-lg text-sm font-bold text-white text-center shadow-sm"
-              style={{ background: `linear-gradient(135deg, ${TOKENS.teal} 0%, ${TOKENS.blue} 100%)` }}
+              className="mt-1 px-3 py-2.5 rounded-lg text-sm font-bold text-white text-center"
+              style={{ background: TOKENS.teal }}
             >
               Register Now
+            </a>
+            <a
+              href={isAuthed ? "/dashboard" : "/login"}
+              onClick={() => setOpen(false)}
+              className="mt-1 text-center text-[11px] font-semibold tracking-wider uppercase text-slate-400 hover:text-slate-700"
+            >
+              Volunteer Login
             </a>
           </div>
         </div>
