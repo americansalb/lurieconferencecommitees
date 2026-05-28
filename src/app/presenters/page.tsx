@@ -195,7 +195,7 @@ export default function PresentersPage() {
         <MobileNav />
       </div>
 
-      {showInvite && isAdmin && (
+      {showInvite && (
         <InviteComposer
           onClose={() => setShowInvite(false)}
           onCreated={() => { setShowInvite(false); load(); }}
