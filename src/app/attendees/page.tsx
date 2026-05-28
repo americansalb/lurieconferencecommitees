@@ -160,7 +160,7 @@ export default function AttendeesPage() {
   }
 
   async function flushQueueNow() {
-    if (!confirm("Send all currently-queued invites right now, ignoring the paced schedule?\n\nUse this only for small batches — large bursts hurt domain reputation.")) return;
+    if (!confirm("Send all currently-queued invites right now, ignoring the paced schedule?\n\nUse this only for small batches. Large bursts hurt domain reputation.")) return;
     setFlushing(true);
     setFlushResult(null);
     try {
@@ -357,13 +357,13 @@ export default function AttendeesPage() {
                   </div>
                   <label className="block">
                     <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
-                      Personal message (optional) — shown in email + funnel
+                      Personal message (optional, shown in email and funnel)
                     </span>
                     <textarea
                       value={inviteMessage}
                       onChange={(e) => setInviteMessage(e.target.value)}
                       rows={2}
-                      placeholder="Loved your work on X — would mean a lot to have you join us."
+                      placeholder="Loved your work on X. Would mean a lot to have you join us."
                       className="mt-1 w-full px-3 py-2.5 text-sm border border-slate-200 rounded-lg outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10"
                     />
                   </label>
@@ -376,7 +376,7 @@ export default function AttendeesPage() {
                       <h2 className="text-base font-extrabold text-slate-900">Invite one person</h2>
                     </div>
                     <p className="text-xs text-slate-500 mb-5">
-                      Email goes out the moment you hit send — no queue, no waiting.
+                      Email goes out the moment you hit send. No queue, no waiting.
                     </p>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
@@ -528,7 +528,7 @@ export default function AttendeesPage() {
 
                 {filtered.length === 0 ? (
                   <div className="p-10 text-center text-sm text-slate-400">
-                    {attendees.length === 0 ? "No attendees yet — head to the Invite tab." : "No matches."}
+                    {attendees.length === 0 ? "No attendees yet. Head to the Invite tab." : "No matches."}
                   </div>
                 ) : (
                   <ul className="divide-y divide-slate-100">

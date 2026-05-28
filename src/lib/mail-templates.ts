@@ -165,7 +165,7 @@ export function passwordResetEmail({
       <a href="${url}" style="color:${BLUE};word-break:break-all;">${url}</a>
     </p>
     <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;">
-      This link will expire in 24 hours. If you did not request this, you can safely ignore this email &mdash; your password will not change.
+      This link will expire in 24 hours. If you did not request this, you can safely ignore this email. Your password will not change.
     </p>
   `);
 }
@@ -196,31 +196,22 @@ export function attendeeInviteEmail({
   return shell(`
     <h1 style="font-size:24px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">Hi ${escapeHtml(first)},</h1>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
-      We&rsquo;d love to have you with us at the 2026 Lurie Children&rsquo;s and AALB Conference, August 15 &amp; 16, 2026, at Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago.
+      I&rsquo;m writing to invite you to the 2026 Lurie Children&rsquo;s and AALB Conference on August 15 and 16, 2026, at Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago.
     </p>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 18px 0;">
-      Two days of practitioners, researchers, and community working on what real language access looks like &mdash; yesterday, today, and tomorrow.
+      Two days of practice, research, and conversation among the interpreters, language access coordinators, clinicians, and educators shaping equitable care across spoken and signed languages. Sessions are accredited for CEUs, and the program is built for working professionals to leave with material they can use the following Monday.
     </p>
     ${extra}
-    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 18px 0;border-collapse:separate;border-spacing:0;">
-      <tr>
-        <td style="background:linear-gradient(135deg, ${TEAL}, ${BLUE});color:#fff;padding:18px 22px;border-radius:12px;">
-          <div style="font-size:11px;letter-spacing:0.2em;font-weight:600;text-transform:uppercase;opacity:0.85;">Your personal invite</div>
-          <div style="font-size:30px;font-weight:800;margin-top:6px;line-height:1;">${discountedDollars}</div>
-          <div style="font-size:13px;margin-top:8px;opacity:0.92;">
-            <span style="text-decoration:line-through;opacity:0.7;">${originalDollars}</span>
-            <span style="margin-left:8px;background:#ffffff22;padding:2px 8px;border-radius:999px;font-weight:600;">${discountPercent}% off in-person</span>
-          </div>
-        </td>
-      </tr>
-    </table>
-    ${button(url, "Reserve my spot →")}
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 6px 0;">
+      As a thank you for your work in the field, your registration is held at <strong>${discountedDollars}</strong> for in-person attendance (regularly ${originalDollars}, a ${discountPercent}% reduction). Virtual attendance is available as well.
+    </p>
+    ${button(url, "Reserve my spot")}
     <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:8px 0 0 0;">
       Or paste this into your browser:<br/>
       <a href="${url}" style="color:${BLUE};word-break:break-all;">${url}</a>
     </p>
     <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;">
-      The link is unique to you and your discount. Virtual attendance is also available.
+      The link is personal to you. If a colleague should also be invited, please reply and let me know.
     </p>
   `);
 }

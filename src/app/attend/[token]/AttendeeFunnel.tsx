@@ -174,51 +174,37 @@ export default function AttendeeFunnel({
         <div className="bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden">
           <div className="h-1.5" style={{ background: `linear-gradient(to right, ${TEAL} 0%, ${TEAL} 50%, ${BLUE} 50%, ${BLUE} 100%)` }} />
 
-          {/* Step 0 — Welcome */}
+          {/* Step 0: Welcome */}
           {step === 0 && (
             <div className="p-6 sm:p-8">
-              <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 mb-2">
-                Hi {data.firstName} 👋
+              <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 mb-3">
+                Welcome, {data.firstName}.
               </h2>
-              <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
-                You&rsquo;ve been personally invited to join us for two days of
-                practitioners, researchers, and community shaping what real
-                language access looks like.
+              <p className="text-sm sm:text-base text-slate-700 leading-relaxed">
+                Two days of practice, research, and conversation among the
+                interpreters, language access coordinators, clinicians, and
+                educators shaping equitable care across spoken and signed
+                languages.
+              </p>
+              <p className="text-sm sm:text-base text-slate-700 leading-relaxed mt-3">
+                Sessions are accredited for CEUs, and the program is built so
+                working professionals leave with material they can use the
+                following Monday.
               </p>
 
               {data.inviteMessage && (
-                <div className="mt-4 px-4 py-3 rounded-lg border-l-4 text-sm text-slate-700 leading-relaxed"
+                <div className="mt-5 px-4 py-3 rounded-lg border-l-4 text-sm text-slate-700 leading-relaxed"
                   style={{ background: "#f8fafc", borderColor: BLUE }}>
                   {data.inviteMessage}
                 </div>
               )}
 
-              {/* Personal discount card */}
-              <div className="mt-5 p-5 rounded-xl text-white relative overflow-hidden"
-                style={{ background: `linear-gradient(135deg, ${TEAL_DARK}, ${TEAL} 60%, ${BLUE})` }}>
-                <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full opacity-20"
-                  style={{ background: GOLD }} />
-                <div className="relative">
-                  <div className="text-[10px] font-bold tracking-widest uppercase opacity-80">
-                    Your personal invite
-                  </div>
-                  <div className="flex items-baseline gap-3 mt-1">
-                    <span className="text-3xl sm:text-4xl font-extrabold">{dollars(pricing.inPersonFinalCents)}</span>
-                    <span className="text-base line-through opacity-70">{dollarsNoCents(pricing.inPersonBaseCents)}</span>
-                  </div>
-                  <div className="text-xs mt-2 inline-block px-2.5 py-1 rounded-full font-semibold"
-                    style={{ background: "rgba(255,255,255,0.18)" }}>
-                    {data.discountPercent}% off in-person
-                  </div>
-                </div>
-              </div>
-
-              <ul className="mt-5 space-y-2.5 text-sm text-slate-700">
+              <ul className="mt-6 space-y-2.5 text-sm text-slate-700">
                 {[
                   "10+ hours of accredited CEUs",
-                  "Network face-to-face with speakers and exhibitors",
-                  "Coffee, snacks, and light lunch both days",
-                  "Virtual attendance also available",
+                  "Tracks for spoken-language and signed-language practice",
+                  "Peer roundtables and meet-the-author sessions",
+                  "Virtual attendance available for those who can't travel",
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-2">
                     <Check className="w-4 h-4 mt-0.5 shrink-0" style={{ color: TEAL }} />
@@ -227,24 +213,31 @@ export default function AttendeeFunnel({
                 ))}
               </ul>
 
-              <div className="mt-7 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-end">
+              <div className="mt-6 p-3 rounded-lg text-sm text-slate-600 leading-relaxed"
+                style={{ background: "#f8fafc", border: `1px solid #e2e8f0` }}>
+                As a thank you for your work in the field, your in-person
+                registration is held at <strong>{dollars(pricing.inPersonFinalCents)}</strong>
+                {" "}(regularly {dollarsNoCents(pricing.inPersonBaseCents)}).
+              </div>
+
+              <div className="mt-6 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-end">
                 <button
                   onClick={() => setStep(1)}
-                  className="w-full sm:w-auto px-6 py-3 rounded-xl font-bold text-white shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5"
+                  className="w-full sm:w-auto px-6 py-3 rounded-xl font-bold text-white shadow-md transition-all hover:shadow-lg"
                   style={{ background: TEAL }}
                 >
-                  Let&rsquo;s do it
+                  Continue
                   <ChevronRight className="w-4 h-4 inline ml-1 -mt-0.5" />
                 </button>
               </div>
             </div>
           )}
 
-          {/* Step 1 — Contact + attendance mode */}
+          {/* Step 1: Contact + attendance mode */}
           {step === 1 && (
             <div className="p-6 sm:p-8">
-              <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 mb-1">A few details</h2>
-              <p className="text-sm text-slate-500 mb-5">We&rsquo;ve pre-filled what we have — make any changes you need.</p>
+              <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 mb-1">Your details</h2>
+              <p className="text-sm text-slate-500 mb-5">We&rsquo;ve pre-filled what we have. Please correct anything that&rsquo;s wrong.</p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Field label="First name" value={data.firstName} onChange={(v) => update("firstName", v)} required />
@@ -252,7 +245,7 @@ export default function AttendeeFunnel({
                 <Field label="Email" value={data.email} disabled className="sm:col-span-2" />
                 <Field label="Phone" value={data.phone} onChange={(v) => update("phone", v)} placeholder="(555) 555-1212" />
                 <Field label="Organization" value={data.affiliation} onChange={(v) => update("affiliation", v)} placeholder="Optional" />
-                <Field label="Primary language(s)" value={data.primaryLanguages} onChange={(v) => update("primaryLanguages", v)} placeholder="English, ASL, …" className="sm:col-span-2" />
+                <Field label="Working language(s)" value={data.primaryLanguages} onChange={(v) => update("primaryLanguages", v)} placeholder="e.g. English, Spanish, ASL" className="sm:col-span-2" />
               </div>
 
               <div className="mt-7">
@@ -262,10 +255,10 @@ export default function AttendeeFunnel({
                     selected={data.attendanceMode === "in-person"}
                     onClick={() => update("attendanceMode", "in-person")}
                     icon={MapPin}
-                    title="In-Person"
-                    subtitle="The full conference experience"
-                    badge={`${dollars(pricing.inPersonFinalCents)} (${data.discountPercent}% off)`}
-                    badgeOriginal={dollarsNoCents(pricing.inPersonBaseCents)}
+                    title="In-person"
+                    subtitle="On site at Lurie Children's, Chicago"
+                    badge={dollars(pricing.inPersonFinalCents)}
+                    badgeOriginal={data.discountPercent > 0 ? dollarsNoCents(pricing.inPersonBaseCents) : undefined}
                   />
                   <ModeCard
                     selected={data.attendanceMode === "virtual"}
@@ -283,7 +276,7 @@ export default function AttendeeFunnel({
             </div>
           )}
 
-          {/* Step 2 — Logistics */}
+          {/* Step 2: Logistics */}
           {step === 2 && (
             <div className="p-6 sm:p-8">
               <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 mb-1">Almost there</h2>
@@ -309,7 +302,7 @@ export default function AttendeeFunnel({
                 <textarea
                   value={data.accessibilityNotes}
                   onChange={(e) => update("accessibilityNotes", e.target.value)}
-                  placeholder="ASL interpreter, CART, wheelchair access, sensory-friendly space — let us know."
+                  placeholder="ASL interpreter, CART, DeafBlind support, wheelchair access, sensory-friendly space, anything else we should know."
                   rows={3}
                   className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-lg outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10"
                 />
@@ -335,7 +328,7 @@ export default function AttendeeFunnel({
             </div>
           )}
 
-          {/* Step 3 — Review + pay */}
+          {/* Step 3: Review + pay */}
           {step === 3 && (
             <div className="p-6 sm:p-8">
               {data.paid ? (
@@ -357,7 +350,7 @@ export default function AttendeeFunnel({
                     <SummaryRow label="Email" value={data.email} />
                     <SummaryRow
                       label="Attendance"
-                      value={data.attendanceMode === "in-person" ? "In-Person" : data.attendanceMode === "virtual" ? "Virtual" : "—"}
+                      value={data.attendanceMode === "in-person" ? "In-person" : data.attendanceMode === "virtual" ? "Virtual" : "Not yet selected"}
                     />
                     {data.attendanceMode === "in-person" && (
                       <SummaryRow label="Parking" value={
@@ -417,7 +410,7 @@ export default function AttendeeFunnel({
         </div>
 
         <p className="text-center text-[11px] text-slate-400 mt-6">
-          Questions? Reply to the email that brought you here — we&rsquo;ll get back to you personally.
+          Questions? Reply to the email that brought you here and we&rsquo;ll get back to you personally.
         </p>
       </div>
     </div>
