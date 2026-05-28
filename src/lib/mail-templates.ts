@@ -199,10 +199,10 @@ export function attendeeInviteEmail({
       I&rsquo;m writing to invite you to the 2026 Lurie Children&rsquo;s and AALB Conference on August 15 and 16, 2026, at Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago.
     </p>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
-      The conference convenes medical interpreters, sign language interpreters, translators, and language services administrators working in healthcare. Sessions address current practice and the changes ahead in standards, technology, and policy that shape the work.
+      The conference is dedicated to language access in healthcare: two days of sessions on current practice and what is shifting in standards, technology, and policy.
     </p>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 18px 0;">
-      Continuing education credit is submitted through CCHI, NBCMI, RID, and ATA. Programming covers spoken-language medical interpretation and sign language interpretation in clinical settings.
+      Continuing education credit is submitted through CCHI, NBCMI, RID, and ATA.
     </p>
     ${extra}
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 10px 0;">

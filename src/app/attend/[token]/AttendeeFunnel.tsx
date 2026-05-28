@@ -181,11 +181,9 @@ export default function AttendeeFunnel({
                 Welcome, {data.firstName}.
               </h2>
               <p className="text-sm sm:text-base text-slate-700 leading-relaxed">
-                The conference convenes medical interpreters, sign language
-                interpreters, translators, and language services administrators
-                working in healthcare. Sessions address current practice and
-                the changes ahead in standards, technology, and policy that
-                shape the work.
+                The conference is dedicated to language access in healthcare:
+                two days of sessions on current practice and what is shifting
+                in standards, technology, and policy.
               </p>
 
               {data.inviteMessage && (
@@ -198,7 +196,6 @@ export default function AttendeeFunnel({
               <ul className="mt-6 space-y-2.5 text-sm text-slate-700">
                 {[
                   "10+ hours of continuing education credit, submitted through CCHI, NBCMI, RID, and ATA",
-                  "Programming for spoken-language medical interpretation and sign language interpretation in clinical settings",
                   "Hosted at Ann & Robert H. Lurie Children's Hospital of Chicago",
                   "Virtual attendance available",
                 ].map((item) => (
