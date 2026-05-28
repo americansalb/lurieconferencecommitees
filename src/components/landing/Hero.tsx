@@ -5,7 +5,7 @@ export default function Hero() {
   return (
     <section
       id="top"
-      className="relative pt-36 pb-36 sm:pt-48 sm:pb-44 overflow-hidden"
+      className="relative pt-40 pb-44 sm:pt-56 sm:pb-52 overflow-hidden"
       style={{ background: TOKENS.tealDark }}
     >
       {/* Atmospheric light. Three crisp gradient layers, no blur.

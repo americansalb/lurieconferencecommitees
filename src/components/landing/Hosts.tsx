@@ -69,18 +69,19 @@ export default function Hosts() {
                 boxShadow: "0 12px 32px -16px rgba(11,31,37,0.16), 0 2px 6px -3px rgba(11,31,37,0.06)",
               }}
             >
-              <div className="flex items-start justify-between mb-6">
+              <div className="flex items-start justify-between mb-7">
                 <div
-                  className="w-16 h-16 rounded-2xl flex items-center justify-center font-serif-display text-3xl font-bold"
+                  className="w-24 h-24 rounded-2xl flex items-center justify-center font-serif-display text-[56px] font-bold leading-none"
                   style={{
                     background: h.accentSoft,
                     color: h.accentDeep,
+                    boxShadow: `inset 0 -2px 0 ${h.accent}1a`,
                   }}
                 >
                   {h.monogram}
                 </div>
                 <span
-                  className="w-9 h-9 rounded-full flex items-center justify-center transition-all group-hover:scale-110"
+                  className="w-10 h-10 rounded-full flex items-center justify-center transition-all group-hover:scale-110"
                   style={{ background: TOKENS.paper, color: h.accent }}
                 >
                   <ArrowUpRight className="w-4 h-4" />
