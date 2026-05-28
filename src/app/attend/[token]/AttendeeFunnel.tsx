@@ -183,7 +183,9 @@ export default function AttendeeFunnel({
               <p className="text-sm sm:text-base text-slate-700 leading-relaxed">
                 The conference is dedicated to language access in healthcare:
                 two days of sessions on current practice and what is shifting
-                in standards, technology, and policy.
+                in standards, technology, and policy. Held in person at Ann
+                &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago,
+                with full virtual attendance also available.
               </p>
 
               {data.inviteMessage && (
@@ -196,8 +198,7 @@ export default function AttendeeFunnel({
               <ul className="mt-6 space-y-2.5 text-sm text-slate-700">
                 {[
                   "10+ hours of continuing education credit, submitted through CCHI, NBCMI, RID, and ATA",
-                  "Hosted at Ann & Robert H. Lurie Children's Hospital of Chicago",
-                  "Virtual attendance available",
+                  "Attend in person in Chicago or fully online from anywhere",
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-2">
                     <Check className="w-4 h-4 mt-0.5 shrink-0" style={{ color: TEAL }} />

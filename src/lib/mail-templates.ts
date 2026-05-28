@@ -196,10 +196,10 @@ export function attendeeInviteEmail({
   return shell(`
     <h1 style="font-size:24px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">Hi ${escapeHtml(first)},</h1>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
-      I&rsquo;m writing to invite you to the 2026 Lurie Children&rsquo;s and AALB Conference on August 15 and 16, 2026, at Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago.
+      I&rsquo;m writing to invite you to the 2026 Lurie Children&rsquo;s and AALB Conference, August 15 and 16, 2026. The conference is held in person at Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago, with full virtual attendance also available.
     </p>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
-      The conference is dedicated to language access in healthcare: two days of sessions on current practice and what is shifting in standards, technology, and policy.
+      Two days of sessions on language access in healthcare: current practice and what is shifting in standards, technology, and policy.
     </p>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 18px 0;">
       Continuing education credit is submitted through CCHI, NBCMI, RID, and ATA.
