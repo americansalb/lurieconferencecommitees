@@ -6,10 +6,6 @@ import { newPresenterToken, confirmationUrl, appUrl } from "@/lib/presenters";
 import { sendMail, isMailConfigured } from "@/lib/mail";
 import { presenterInviteEmail } from "@/lib/mail-templates";
 
-function isAdmin(role?: string) {
-  return role === "admin" || role === "developer";
-}
-
 function errorMessage(e: unknown): string {
   if (e instanceof Error) {
     if (e.message.includes("does not exist") || e.message.includes("relation")) {
@@ -68,11 +64,6 @@ export async function POST(req: Request) {
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const userRole = (session.user as { role?: string }).role;
-    if (!isAdmin(userRole)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
     const body = await req.json();
     const { email, name, customMessage, sendNow = true } = body || {};
 

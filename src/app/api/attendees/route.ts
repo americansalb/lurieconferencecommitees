@@ -17,8 +17,8 @@ function isEmail(s: string): boolean {
 
 export async function GET() {
   const session = await getServerSession(authOptions);
-  if (!isAdmin((session?.user as { role?: string })?.role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const attendees = await prisma.attendee.findMany({
@@ -40,8 +40,8 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
-  if (!isAdmin((session?.user as { role?: string })?.role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const invitedById = (session?.user as { id?: string })?.id;
   const adminEmail = session?.user?.email || null;

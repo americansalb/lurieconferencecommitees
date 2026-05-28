@@ -82,15 +82,15 @@ export default function AttendeesPage() {
 
   useEffect(() => {
     if (status === "unauthenticated") router.replace("/login");
-    if (status === "authenticated" && !isAdmin) router.replace("/dashboard");
-  }, [status, isAdmin, router]);
+  }, [status, router]);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const [a, q] = await Promise.all([
         fetch("/api/attendees").then((r) => (r.ok ? r.json() : { attendees: [] })),
-        fetch("/api/admin/email-queue").then((r) => (r.ok ? r.json() : null)),
+        // Queue status is admin-gated server-side; non-admins just get null and the panel stays hidden.
+        fetch("/api/admin/email-queue").then((r) => (r.ok ? r.json() : null)).catch(() => null),
       ]);
       setAttendees(a.attendees || []);
       setQueueStatus(q);
@@ -100,8 +100,8 @@ export default function AttendeesPage() {
   }, []);
 
   useEffect(() => {
-    if (status === "authenticated" && isAdmin) load();
-  }, [status, isAdmin, load]);
+    if (status === "authenticated") load();
+  }, [status, load]);
 
   async function sendQuick() {
     if (!single.firstName.trim() || !single.lastName.trim() || !single.email.trim()) {
@@ -203,7 +203,7 @@ export default function AttendeesPage() {
     try { await navigator.clipboard.writeText(url); } catch { /* ignore */ }
   }
 
-  if (status !== "authenticated" || !isAdmin) {
+  if (status !== "authenticated") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="animate-pulse text-sm text-slate-400">Loading...</div>
@@ -576,13 +576,15 @@ export default function AttendeesPage() {
                             >
                               {resendingId === a.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
                             </button>
-                            <button
-                              onClick={() => deleteAttendee(a.id)}
-                              className="p-1.5 rounded hover:bg-rose-50 text-slate-300 hover:text-rose-500"
-                              title="Delete"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                            {isAdmin && (
+                              <button
+                                onClick={() => deleteAttendee(a.id)}
+                                className="p-1.5 rounded hover:bg-rose-50 text-slate-300 hover:text-rose-500"
+                                title="Delete (admin only)"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
                           </div>
                         </li>
                       );

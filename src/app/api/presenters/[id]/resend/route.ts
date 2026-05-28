@@ -6,21 +6,12 @@ import { sendMail, isMailConfigured } from "@/lib/mail";
 import { presenterInviteEmail } from "@/lib/mail-templates";
 import { confirmationUrl } from "@/lib/presenters";
 
-function isAdmin(role?: string) {
-  return role === "admin" || role === "developer";
-}
-
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const userRole = (session.user as { role?: string }).role;
-    if (!isAdmin(userRole)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
     const presenter = await prisma.presenter.findUnique({ where: { id: params.id } });
     if (!presenter) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });

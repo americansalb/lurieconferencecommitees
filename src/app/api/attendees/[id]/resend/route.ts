@@ -6,14 +6,10 @@ import { attendeeFunnelUrl, PRICING, attendeeFromHeader, attendeeReplyTo } from 
 import { attendeeInviteEmail } from "@/lib/mail-templates";
 import { sendMail } from "@/lib/mail";
 
-function isAdmin(role?: string) {
-  return role === "admin" || role === "developer";
-}
-
 export async function POST(_req: Request, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
-  if (!isAdmin((session?.user as { role?: string })?.role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const adminEmail = session?.user?.email || null;
 

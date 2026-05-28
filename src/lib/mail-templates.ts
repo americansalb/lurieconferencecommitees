@@ -265,6 +265,36 @@ export function attendeeConfirmedEmail({
   `);
 }
 
+type SponsorInviteArgs = {
+  contactFirstName: string;
+  companyName: string;
+  tier: { name: string; amountLabel: string; ticketsIncluded: number; tagline: string };
+  inviteMessage: string | null;
+  senderName: string | null;
+  landingUrl: string;
+};
+
+export function sponsorInviteEmail({
+  contactFirstName, companyName, tier, inviteMessage, senderName, landingUrl,
+}: SponsorInviteArgs) {
+  const first = contactFirstName || "there";
+  const senderLine = senderName ? `${escapeHtml(senderName)} (AALB / Lurie Children&rsquo;s)` : "Our team";
+  return shell(`
+    <h1 style="font-size:22px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">Hi ${escapeHtml(first)},</h1>
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
+      ${senderLine} would love for <strong>${escapeHtml(companyName)}</strong> to partner with us on the 2nd Annual Joint Conference of Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers, August 15 and 16, 2026, in Chicago.
+    </p>
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 16px 0;">
+      We&rsquo;d like to invite ${escapeHtml(companyName)} to sponsor at the <strong>${escapeHtml(tier.name)}</strong> level (${escapeHtml(tier.amountLabel)}), which includes ${tier.ticketsIncluded} conference ticket${tier.ticketsIncluded === 1 ? "" : "s"}. ${escapeHtml(tier.tagline)}
+    </p>
+    ${inviteMessage ? `<div style="font-size:14px;line-height:1.6;color:${TEXT};background:#f8fafc;border-left:3px solid ${BLUE};padding:14px 16px;border-radius:6px;margin:0 0 18px 0;">${escapeHtml(inviteMessage).replace(/\n/g, "<br>")}</div>` : ""}
+    ${button(landingUrl, "Review the invitation")}
+    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;">
+      All sponsorships are tax-deductible to the fullest extent allowed by law under IRS code 501(c)(3). EINs: 83-3016421 and 36-2170833. If this is the wrong contact at ${escapeHtml(companyName)}, please forward this along or simply reply.
+    </p>
+  `);
+}
+
 type SponsorApplicationArgs = {
   firstName: string;
   companyName: string;

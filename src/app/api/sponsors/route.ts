@@ -6,18 +6,14 @@ import { sendMail } from "@/lib/mail";
 import { newSponsorToken, tierById, sponsorFromHeader, sponsorReplyTo, sponsorStatusUrl } from "@/lib/sponsors";
 import { sponsorApplicationReceivedEmail, sponsorAdminNotificationEmail } from "@/lib/mail-templates";
 
-function isAdmin(role?: string) {
-  return role === "admin" || role === "developer";
-}
-
 function isEmail(s: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((s || "").trim());
 }
 
 export async function GET() {
   const session = await getServerSession(authOptions);
-  if (!isAdmin((session?.user as { role?: string })?.role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const sponsors = await prisma.sponsor.findMany({
     orderBy: { createdAt: "desc" },

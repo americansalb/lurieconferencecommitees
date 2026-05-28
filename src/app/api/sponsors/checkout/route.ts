@@ -44,7 +44,7 @@ export async function POST(req: Request) {
     where: { id: sponsor.id },
     data: {
       stripeSessionId: session.id,
-      status: sponsor.status === "submitted" ? "awaiting_payment" : sponsor.status,
+      status: (sponsor.status === "submitted" || sponsor.status === "invited") ? "awaiting_payment" : sponsor.status,
     },
   });
   await prisma.sponsorEvent.create({

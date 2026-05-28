@@ -131,15 +131,13 @@ export default function PresentersPage() {
                   Track invitations and confirmations for the 2026 Lurie Children&rsquo;s and AALB Conference.
                 </p>
               </div>
-              {isAdmin && (
-                <button
-                  type="button"
-                  onClick={() => setShowInvite(true)}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-[#0E5566] to-[#0066B3] hover:from-[#0A3F4D] hover:to-[#004F8C] shadow-sm"
-                >
-                  <Plus className="w-4 h-4" /> Invite presenter
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => setShowInvite(true)}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-[#0E5566] to-[#0066B3] hover:from-[#0A3F4D] hover:to-[#004F8C] shadow-sm"
+              >
+                <Plus className="w-4 h-4" /> Invite presenter
+              </button>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
@@ -298,7 +296,7 @@ function PresenterRowItem({
         <span className={"inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold border " + status.color}>
           {status.label}
         </span>
-        {isAdmin && row.status !== "confirmed" && (
+        {row.status !== "confirmed" && (
           <button
             type="button"
             onClick={resend}

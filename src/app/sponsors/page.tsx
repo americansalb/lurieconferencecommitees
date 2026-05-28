@@ -4,12 +4,13 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import {
-  Award, Trash2, RefreshCw, Search, Filter, ExternalLink, Mail, Building2, Copy,
+  Award, Trash2, RefreshCw, Search, Filter, ExternalLink, Mail, Building2, Copy, Plus,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
 import MobileNav from "@/components/layout/MobileNav";
 import { SPONSOR_STATUS_LABELS, TIERS } from "@/lib/sponsors";
+import InviteSponsorComposer from "./InviteSponsorComposer";
 
 type Sponsor = {
   id: string;
@@ -37,14 +38,14 @@ export default function SponsorsAdminPage() {
   const [filter, setFilter] = useState<string>("all");
   const [tierFilter, setTierFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
+  const [showInvite, setShowInvite] = useState(false);
 
   const role = (session?.user as { role?: string })?.role;
   const isAdmin = role === "admin" || role === "developer";
 
   useEffect(() => {
     if (status === "unauthenticated") router.replace("/login");
-    if (status === "authenticated" && !isAdmin) router.replace("/dashboard");
-  }, [status, isAdmin, router]);
+  }, [status, router]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -60,8 +61,8 @@ export default function SponsorsAdminPage() {
   }, []);
 
   useEffect(() => {
-    if (status === "authenticated" && isAdmin) load();
-  }, [status, isAdmin, load]);
+    if (status === "authenticated") load();
+  }, [status, load]);
 
   async function updateStatus(id: string, newStatus: string) {
     await fetch(`/api/sponsors/${id}`, {
@@ -83,7 +84,7 @@ export default function SponsorsAdminPage() {
     try { await navigator.clipboard.writeText(url); } catch { /* ignore */ }
   }
 
-  if (status !== "authenticated" || !isAdmin) {
+  if (status !== "authenticated") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="animate-pulse text-sm text-slate-400">Loading...</div>
@@ -128,10 +129,23 @@ export default function SponsorsAdminPage() {
               >
                 <ExternalLink className="w-3.5 h-3.5" /> Public page
               </a>
+              <button
+                onClick={() => setShowInvite(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white bg-gradient-to-r from-[#0E5566] to-[#0066B3] hover:from-[#0A3F4D] hover:to-[#004F8C] shadow-sm"
+              >
+                <Plus className="w-3.5 h-3.5" /> Invite sponsor
+              </button>
               <button onClick={load} className="p-2 rounded-lg hover:bg-white text-slate-400 hover:text-slate-700" title="Refresh">
                 <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
               </button>
             </div>
+
+            {showInvite && (
+              <InviteSponsorComposer
+                onClose={() => setShowInvite(false)}
+                onSent={() => { setShowInvite(false); load(); }}
+              />
+            )}
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-5">
               <Stat label="Applications" value={sponsors.length.toString()} />
@@ -225,13 +239,15 @@ export default function SponsorsAdminPage() {
                             >
                               <Mail className="w-3.5 h-3.5" />
                             </a>
-                            <button
-                              onClick={() => remove(s.id)}
-                              className="p-1.5 rounded hover:bg-rose-50 text-slate-300 hover:text-rose-500"
-                              title="Delete"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                            {isAdmin && (
+                              <button
+                                onClick={() => remove(s.id)}
+                                className="p-1.5 rounded hover:bg-rose-50 text-slate-300 hover:text-rose-500"
+                                title="Delete (admin only)"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
                           </div>
                         </div>
                         {s.message && (
@@ -239,22 +255,24 @@ export default function SponsorsAdminPage() {
                             {s.message}
                           </div>
                         )}
-                        <div className="mt-2 ml-12 flex items-center gap-1 text-[11px]">
-                          {Object.entries(SPONSOR_STATUS_LABELS).map(([k, v]) => (
-                            <button
-                              key={k}
-                              onClick={() => updateStatus(s.id, k)}
-                              disabled={s.status === k}
-                              className={`px-2 py-0.5 rounded font-semibold transition-colors ${
-                                s.status === k
-                                  ? `border ${v.color}`
-                                  : "text-slate-400 hover:text-slate-700 hover:bg-slate-100"
-                              }`}
-                            >
-                              {v.label}
-                            </button>
-                          ))}
-                        </div>
+                        {isAdmin && (
+                          <div className="mt-2 ml-12 flex items-center gap-1 text-[11px] flex-wrap">
+                            {Object.entries(SPONSOR_STATUS_LABELS).map(([k, v]) => (
+                              <button
+                                key={k}
+                                onClick={() => updateStatus(s.id, k)}
+                                disabled={s.status === k}
+                                className={`px-2 py-0.5 rounded font-semibold transition-colors ${
+                                  s.status === k
+                                    ? `border ${v.color}`
+                                    : "text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                                }`}
+                              >
+                                {v.label}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </li>
                     );
                   })}

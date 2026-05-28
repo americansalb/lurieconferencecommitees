@@ -9,8 +9,8 @@ function isAdmin(role?: string) {
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
-  if (!isAdmin((session?.user as { role?: string })?.role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const sponsor = await prisma.sponsor.findUnique({
     where: { id: params.id },
