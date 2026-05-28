@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { isPaused, setPaused, getPolicy } from "@/lib/email-queue";
+import { sendMail } from "@/lib/mail";
 
 function isAdmin(role?: string) {
   return role === "admin" || role === "developer";
@@ -51,4 +52,80 @@ export async function PATCH(req: Request) {
     await setPaused(paused);
   }
   return NextResponse.json({ ok: true });
+}
+
+// Admin-triggered queue flush. With { force: true } it ignores scheduledFor
+// (sends everything pending right now) — useful when no cron is wired up yet
+// or you just want the batch out the door.
+export async function POST(req: Request) {
+  const session = await getServerSession(authOptions);
+  if (!isAdmin((session?.user as { role?: string })?.role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  const body = await req.json().catch(() => ({}));
+  const force = body?.force === true;
+  const limit = Math.min(200, Math.max(1, parseInt(body?.limit, 10) || 100));
+
+  const where = force
+    ? { status: "pending" }
+    : { status: "pending", scheduledFor: { lte: new Date() } };
+
+  const due = await prisma.emailQueue.findMany({
+    where,
+    orderBy: { scheduledFor: "asc" },
+    take: limit,
+  });
+
+  let sent = 0;
+  let failed = 0;
+  for (const item of due) {
+    const claim = await prisma.emailQueue.updateMany({
+      where: { id: item.id, status: "pending" },
+      data: { status: "sending", attempts: { increment: 1 } },
+    });
+    if (claim.count === 0) continue;
+
+    try {
+      const result = await sendMail({
+        to: item.to,
+        subject: item.subject,
+        html: item.html,
+        text: item.textBody || undefined,
+      });
+      const resendId = (result as { id?: string })?.id || null;
+      await prisma.emailQueue.update({
+        where: { id: item.id },
+        data: { status: "sent", sentAt: new Date(), resendId },
+      });
+      if (item.recipientType === "attendee" && item.recipientId) {
+        await prisma.attendee.updateMany({
+          where: { id: item.recipientId, status: { in: ["queued"] } },
+          data: { status: "invited", invitedAt: new Date(), lastSentAt: new Date() },
+        });
+        await prisma.attendee.updateMany({
+          where: { id: item.recipientId, status: { notIn: ["queued"] } },
+          data: { lastSentAt: new Date() },
+        });
+        await prisma.attendeeEvent.create({
+          data: { attendeeId: item.recipientId, type: "invite_sent" },
+        }).catch(() => {});
+      }
+      sent++;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      const status = (e as { status?: number }).status;
+      const giveUp = item.attempts >= 4 || (status && status >= 400 && status < 500);
+      await prisma.emailQueue.update({
+        where: { id: item.id },
+        data: {
+          status: giveUp ? "failed" : "pending",
+          lastError: msg.slice(0, 500),
+          scheduledFor: giveUp ? item.scheduledFor : new Date(Date.now() + 10 * 60 * 1000),
+        },
+      });
+      failed++;
+    }
+  }
+
+  return NextResponse.json({ processed: due.length, sent, failed, forced: force });
 }

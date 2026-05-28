@@ -5,9 +5,14 @@ import { prisma } from "@/lib/db";
 import { newAttendeeToken, parseAttendeeCsv, attendeeFunnelUrl, PRICING } from "@/lib/attendees";
 import { attendeeInviteEmail } from "@/lib/mail-templates";
 import { getPolicy, planSendTimes } from "@/lib/email-queue";
+import { sendMail } from "@/lib/mail";
 
 function isAdmin(role?: string) {
   return role === "admin" || role === "developer";
+}
+
+function isEmail(s: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((s || "").trim());
 }
 
 export async function GET() {
@@ -41,14 +46,85 @@ export async function POST(req: Request) {
   const invitedById = (session?.user as { id?: string })?.id;
   const adminEmail = session?.user?.email || null;
 
-  const { csv, inviteMessage, discountPercent, sendNow } = await req.json();
+  const payload = await req.json();
+  const { single, csv, inviteMessage, discountPercent } = payload;
+  const pct = Math.max(0, Math.min(100, Number.isFinite(discountPercent) ? discountPercent : 25));
+
+  // Single-recipient mode: send immediately, bypass the queue.
+  if (single && typeof single === "object") {
+    const firstName = String(single.firstName || "").trim();
+    const lastName = String(single.lastName || "").trim();
+    const email = String(single.email || "").trim().toLowerCase();
+    const affiliation = single.affiliation ? String(single.affiliation).trim() : null;
+    const notes = single.notes ? String(single.notes).trim() : null;
+    if (!firstName || !lastName || !isEmail(email)) {
+      return NextResponse.json({ error: "First name, last name, and a valid email are required" }, { status: 400 });
+    }
+    const existing = await prisma.attendee.findUnique({ where: { email } });
+    if (existing) {
+      return NextResponse.json({ error: `${email} is already on the list` }, { status: 409 });
+    }
+
+    const token = newAttendeeToken();
+    const attendee = await prisma.attendee.create({
+      data: {
+        email,
+        firstName,
+        lastName,
+        affiliation,
+        notes,
+        discountPercent: pct,
+        inviteToken: token,
+        inviteMessage: inviteMessage?.trim() || null,
+        invitedById: invitedById || null,
+        status: "queued",
+      },
+    });
+    await prisma.attendeeEvent.create({
+      data: { attendeeId: attendee.id, type: "added_to_queue", actorEmail: adminEmail },
+    });
+
+    const url = attendeeFunnelUrl(token);
+    const baseCents = PRICING.inPerson.standardCents;
+    const finalCents = Math.round(baseCents * (100 - pct) / 100);
+    const html = attendeeInviteEmail({
+      firstName,
+      url,
+      inviteMessage: inviteMessage?.trim() || null,
+      discountPercent: pct,
+      inPersonOriginalCents: baseCents,
+      inPersonDiscountedCents: finalCents,
+    });
+    const subject = `${firstName}, your invite to the 2026 Lurie Children's & AALB Conference`;
+
+    try {
+      await sendMail({ to: email, subject, html });
+      await prisma.attendee.update({
+        where: { id: attendee.id },
+        data: { status: "invited", invitedAt: new Date(), lastSentAt: new Date() },
+      });
+      await prisma.attendeeEvent.create({
+        data: { attendeeId: attendee.id, type: "invite_sent_immediate", actorEmail: adminEmail },
+      });
+      return NextResponse.json({ ok: true, mode: "immediate", attendeeId: attendee.id, sent: true });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      await prisma.attendeeEvent.create({
+        data: { attendeeId: attendee.id, type: "invite_send_failed", meta: msg.slice(0, 300), actorEmail: adminEmail },
+      });
+      return NextResponse.json(
+        { ok: false, mode: "immediate", attendeeId: attendee.id, sent: false, error: msg },
+        { status: 502 }
+      );
+    }
+  }
+
+  // Bulk paste-CSV mode: queue with pacing.
   if (!csv || typeof csv !== "string") {
-    return NextResponse.json({ error: "csv string required" }, { status: 400 });
+    return NextResponse.json({ error: "Pass `single` for a one-off invite or `csv` for a bulk list." }, { status: 400 });
   }
 
   const { rows, errors } = parseAttendeeCsv(csv);
-  const pct = Math.max(0, Math.min(100, Number.isFinite(discountPercent) ? discountPercent : 25));
-
   const created: { id: string; email: string; token: string }[] = [];
   const skipped: { email: string; reason: string }[] = [];
 
@@ -79,8 +155,7 @@ export async function POST(req: Request) {
     created.push({ id: a.id, email: a.email, token });
   }
 
-  // Schedule the invite emails with jittered, business-hours pacing.
-  if (created.length && sendNow !== false) {
+  if (created.length) {
     const policy = await getPolicy();
     const times = await planSendTimes(created.length, policy);
     const batchId = `attendee-invite-${Date.now()}`;
@@ -116,8 +191,10 @@ export async function POST(req: Request) {
   }
 
   return NextResponse.json({
+    mode: "bulk",
     created: created.length,
     skipped,
     parseErrors: errors,
   });
 }
+
