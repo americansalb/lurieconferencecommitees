@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LayoutDashboard } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { TOKENS } from "./tokens";
 
 const links = [
@@ -16,6 +17,8 @@ const links = [
 export default function Nav() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const { data: session } = useSession();
+  const isAuthed = !!session?.user;
 
   useEffect(() => {
     function onScroll() { setScrolled(window.scrollY > 24); }
@@ -67,6 +70,19 @@ export default function Nav() {
         </nav>
 
         <div className="flex items-center gap-2">
+          {isAuthed && (
+            <a
+              href="/dashboard"
+              className={`hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                scrolled
+                  ? "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                  : "text-white/85 hover:text-white hover:bg-white/10"
+              }`}
+              title="Planning portal"
+            >
+              <LayoutDashboard className="w-3.5 h-3.5" /> Dashboard
+            </a>
+          )}
           <a
             href="/register"
             className={`hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-all ${
@@ -101,6 +117,15 @@ export default function Nav() {
                 {l.label}
               </a>
             ))}
+            {isAuthed && (
+              <a
+                href="/dashboard"
+                onClick={() => setOpen(false)}
+                className="px-3 py-2.5 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-100 inline-flex items-center gap-2"
+              >
+                <LayoutDashboard className="w-4 h-4" /> Dashboard
+              </a>
+            )}
             <a
               href="/register"
               className="mt-1 px-3 py-2.5 rounded-lg text-sm font-bold text-white text-center shadow-sm"
