@@ -36,25 +36,24 @@ export default function Nav() {
       }`}
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between gap-4">
-        <a href="#top" className="flex items-center gap-3 group min-w-0">
-          {/* Co-branded lockup: Lurie logo + AALB logo with a hairline divider
-              between. Real logos drop into /public/logos. Until then a clean
-              text fallback keeps the nav looking intentional. */}
+        <a href="#top" className="flex items-center gap-3 sm:gap-4 group min-w-0">
+          {/* Co-branded lockup: Lurie wordmark on the left, vertical hairline
+              divider, AALB wordmark on the right. On the dark hero a soft white
+              filter overlay preserves contrast; once scrolled past the hero the
+              logos appear as-is on the white nav. */}
           <LogoMark
             scrolled={scrolled}
             src="/logos/lurie.png"
             alt="Ann & Robert H. Lurie Children's Hospital of Chicago"
-            fallback={{ line1: "Ann & Robert H. Lurie", line2: "Children's Hospital of Chicago", accent: scrolled ? TOKENS.blue : "white" }}
           />
           <span
-            className="h-7 w-px"
+            className="h-9 w-px shrink-0"
             style={{ background: scrolled ? "#cbd5e1" : "rgba(255,255,255,0.25)" }}
           />
           <LogoMark
             scrolled={scrolled}
             src="/logos/aalb.png"
             alt="Americans Against Language Barriers"
-            fallback={{ line1: "Americans Against", line2: "Language Barriers", accent: scrolled ? TOKENS.teal : "white" }}
           />
         </a>
 
@@ -147,31 +146,24 @@ export default function Nav() {
 }
 
 function LogoMark({
-  scrolled, alt, fallback,
+  scrolled, src, alt,
 }: {
   scrolled: boolean;
   src: string;
   alt: string;
-  fallback: { line1: string; line2: string; accent: string };
 }) {
-  // Renders a typographic wordmark in the brand's accent colour. When the
-  // PNG logos drop into /public/logos this can be swapped for an <img>; the
-  // structure (height, vertical divider) stays the same so nothing shifts.
-  const accent = scrolled ? fallback.accent : "white";
+  // On the dark hero we lighten the logo slightly to keep it legible;
+  // once scrolled the nav goes white and the logo renders as-is.
   return (
-    <span className="inline-flex flex-col leading-tight" title={alt}>
-      <span
-        className="text-[10px] sm:text-[11px] font-extrabold tracking-tight whitespace-nowrap"
-        style={{ color: accent }}
-      >
-        {fallback.line1}
-      </span>
-      <span
-        className="text-[10px] sm:text-[11px] font-semibold tracking-tight whitespace-nowrap"
-        style={{ color: accent, opacity: 0.78 }}
-      >
-        {fallback.line2}
-      </span>
-    </span>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt={alt}
+      className="h-7 sm:h-9 w-auto shrink-0"
+      style={{
+        filter: scrolled ? "none" : "brightness(0) invert(1)",
+        opacity: scrolled ? 1 : 0.95,
+      }}
+    />
   );
 }

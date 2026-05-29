@@ -44,8 +44,16 @@ export default function Hosts() {
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6">
         <div className="text-center mb-16">
           <Eyebrow>Brought to you by</Eyebrow>
+          {/* Joint AALB + Lurie hand-icon lockup. Literally embodies the
+              "two organizations, one mission" line beneath it. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logos/hands.png"
+            alt="AALB and Lurie Children's joint mark"
+            className="mx-auto mt-7 mb-6 h-20 sm:h-24 w-auto"
+          />
           <h2
-            className="font-serif-display mt-6 text-4xl sm:text-5xl md:text-[58px] font-bold leading-[1.05] tracking-tight"
+            className="font-serif-display mt-3 text-4xl sm:text-5xl md:text-[58px] font-bold leading-[1.05] tracking-tight"
             style={{ color: TOKENS.ink }}
           >
             Two organizations,
