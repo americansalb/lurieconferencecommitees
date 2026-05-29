@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Menu, X } from "lucide-react";
-import { useSession } from "next-auth/react";
 import { TOKENS } from "./tokens";
 
 const links = [
@@ -15,33 +14,15 @@ const links = [
 ];
 
 export default function Nav() {
-  const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
-  const { data: session } = useSession();
-  const isAuthed = !!session?.user;
-
-  useEffect(() => {
-    function onScroll() { setScrolled(window.scrollY > 24); }
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
   return (
     <header
-      className={`fixed top-0 inset-x-0 z-40 transition-all duration-300 ${
-        scrolled
-          ? "bg-white/95 backdrop-blur-md border-b border-slate-200/60 shadow-sm"
-          : "bg-transparent"
-      }`}
+      className="fixed top-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-b shadow-sm"
+      style={{ borderColor: TOKENS.hairline }}
     >
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between gap-4">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between gap-4">
         <a href="#top" className="flex items-center gap-3 sm:gap-4 group min-w-0">
-          {/* Icon-only host marks. Wordmarks are too small to read in a nav
-              bar, so we use the round hand-icon lockups (with their own circle
-              backgrounds) which are readable at compact sizes. Same identity
-              in every state, no swap. The full wordmarks live in the Hosts
-              section and the footer where they have room to breathe. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/logos/lurie-icon.png"
@@ -61,11 +42,7 @@ export default function Nav() {
             <a
               key={l.href}
               href={l.href}
-              className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
-                scrolled
-                  ? "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-                  : "text-white/85 hover:text-white hover:bg-white/10"
-              }`}
+              className="px-3 py-1.5 rounded-lg text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
             >
               {l.label}
             </a>
@@ -74,27 +51,18 @@ export default function Nav() {
 
         <div className="flex items-center gap-3">
           <a
-            href={isAuthed ? "/dashboard" : "/login"}
-            className={`hidden md:inline-flex items-center text-[10px] font-semibold tracking-[0.18em] uppercase transition-colors ${
-              scrolled ? "text-slate-500 hover:text-slate-800" : "text-white/55 hover:text-white"
-            }`}
-            title={isAuthed ? "Planning portal" : "Sign in to the planning portal"}
-          >
-            Volunteer Login
-          </a>
-          <a
             href="/register"
             className="hidden sm:inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full text-sm font-bold transition-all"
             style={{
               background: `linear-gradient(135deg, #E8C56F 0%, ${TOKENS.gold} 100%)`,
               color: "#3C2E10",
-              boxShadow: "0 10px 26px -10px rgba(201,161,75,0.55)",
+              boxShadow: "0 10px 26px -10px rgba(201,161,75,0.45)",
             }}
           >
             Register Now
           </a>
           <button
-            className={`lg:hidden p-2 rounded-lg ${scrolled ? "text-slate-700 hover:bg-slate-100" : "text-white hover:bg-white/10"}`}
+            className="lg:hidden p-2 rounded-lg text-slate-700 hover:bg-slate-100"
             onClick={() => setOpen((v) => !v)}
             aria-label="Menu"
           >
@@ -126,17 +94,9 @@ export default function Nav() {
             >
               Register Now
             </a>
-            <a
-              href={isAuthed ? "/dashboard" : "/login"}
-              onClick={() => setOpen(false)}
-              className="mt-1 text-center text-[10px] font-semibold tracking-[0.18em] uppercase text-slate-400 hover:text-slate-700"
-            >
-              Volunteer Login
-            </a>
           </div>
         </div>
       )}
     </header>
   );
 }
-

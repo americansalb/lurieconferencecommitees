@@ -23,33 +23,24 @@ export default function Footer() {
         }}
       />
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
-        {/* Joint wordmarks on a clean white card so the brand colors,
-            including each org's signature hand circle, stay fully legible
-            against the dark teal floor. Matches the white-pill identity
-            from the rest of the page. */}
-        <div className="mb-14 pb-12 flex justify-center" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-          <div
-            className="bg-white rounded-2xl px-6 sm:px-8 py-5 sm:py-6 flex flex-col sm:flex-row items-center gap-5 sm:gap-8"
-            style={{ boxShadow: "0 16px 40px -16px rgba(0,0,0,0.30)" }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/logos/lurie.png"
-              alt="Ann & Robert H. Lurie Children's Hospital of Chicago"
-              className="h-10 sm:h-12 w-auto"
-            />
-            <span className="hidden sm:block h-10 w-px" style={{ background: "#cbd5e1" }} />
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/logos/aalb.png"
-              alt="Americans Against Language Barriers"
-              className="h-10 sm:h-12 w-auto"
-            />
-          </div>
-        </div>
-
         <div className="grid grid-cols-1 md:grid-cols-[1.5fr_1fr_1fr] gap-12">
           <div>
+            <div className="flex items-center gap-3 mb-5">
+              {/* Small icon marks in their natural colours, sized to sit
+                  comfortably alongside the conference wordmark. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/logos/lurie-icon.png"
+                alt="Ann & Robert H. Lurie Children's Hospital of Chicago"
+                className="h-9 w-auto shrink-0"
+              />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/logos/aalb-icon.png"
+                alt="Americans Against Language Barriers"
+                className="h-9 w-auto shrink-0"
+              />
+            </div>
             <div className="font-serif-display text-2xl font-bold leading-tight">
               2026 Lurie Children&rsquo;s{" "}
               <span className="italic font-medium" style={{ color: TOKENS.gold }}>&amp;</span>{" "}
@@ -89,6 +80,15 @@ export default function Footer() {
               <li>
                 <a href="https://www.aalb.org" target="_blank" rel="noopener noreferrer" className="text-sm hover:text-white" style={{ color: "rgba(255,255,255,0.78)" }}>
                   aalb.org
+                </a>
+              </li>
+              <li className="pt-3">
+                <a
+                  href="/login"
+                  className="text-[10px] font-bold tracking-[0.22em] uppercase hover:text-white"
+                  style={{ color: "rgba(255,255,255,0.45)" }}
+                >
+                  Volunteer Login
                 </a>
               </li>
             </ul>

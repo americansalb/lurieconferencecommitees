@@ -1,25 +1,7 @@
 import { Check, Monitor, MapPin, ArrowRight } from "lucide-react";
 import { TOKENS } from "./tokens";
+import { SCHEDULE, PRICES, activeTier } from "./pricing-data";
 import Countdown from "./Countdown";
-
-const SCHEDULE = [
-  { id: "early",    label: "Early Bird", end: "2026-04-15T23:59:59-05:00" },
-  { id: "standard", label: "Standard",   end: "2026-06-15T23:59:59-05:00" },
-  { id: "late",     label: "Late",       end: "2026-08-15T23:59:59-05:00" },
-] as const;
-
-const PRICES: Record<typeof SCHEDULE[number]["id"], { virtual: number; inPerson: number }> = {
-  early:    { virtual:  95, inPerson: 195 },
-  standard: { virtual: 105, inPerson: 210 },
-  late:     { virtual: 115, inPerson: 225 },
-};
-
-function activeTier(now: Date) {
-  for (const t of SCHEDULE) {
-    if (now.getTime() <= new Date(t.end).getTime()) return t;
-  }
-  return SCHEDULE[SCHEDULE.length - 1];
-}
 
 const VIRTUAL_FEATURES = [
   "Live stream of both days",

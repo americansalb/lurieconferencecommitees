@@ -1,11 +1,15 @@
 import { Calendar, MapPin, Ticket, Award, ArrowRight, Sparkles } from "lucide-react";
 import { TOKENS, CONFERENCE } from "./tokens";
+import { activeTier, PRICES } from "./pricing-data";
 
 export default function Hero() {
+  const tier = activeTier(new Date());
+  const live = PRICES[tier.id];
+
   return (
     <section
       id="top"
-      className="relative pt-40 pb-32 sm:pt-48 sm:pb-32 overflow-hidden"
+      className="relative pt-28 pb-32 sm:pt-36 sm:pb-32 overflow-hidden"
       style={{ background: TOKENS.tealDark }}
     >
       {/* Base vertical gradient. */}
@@ -16,7 +20,7 @@ export default function Hero() {
           background: `linear-gradient(180deg, ${TOKENS.teal} 0%, ${TOKENS.tealDark} 60%, ${TOKENS.tealDeep} 100%)`,
         }}
       />
-      {/* Centered warm gold halo behind the wordmark. */}
+      {/* Centered warm gold halo. */}
       <div
         aria-hidden
         className="absolute inset-0"
@@ -24,7 +28,7 @@ export default function Hero() {
           background: `radial-gradient(ellipse 70% 60% at 30% 40%, rgba(201,161,75,0.18) 0%, rgba(201,161,75,0.05) 40%, transparent 70%)`,
         }}
       />
-      {/* Tiny crisp dots on the right, the 'feels unique' detail. */}
+      {/* Crisp dot details. */}
       <div aria-hidden className="absolute inset-0">
         <Dot top="14%" left="86%" size={6} color="rgba(255,255,255,0.18)" />
         <Dot top="22%" left="92%" size={3} color="rgba(201,161,75,0.55)" />
@@ -50,9 +54,9 @@ export default function Hero() {
             2nd Annual Joint Conference
           </div>
 
-          {/* Headline. Heavy modern sans, left-aligned. */}
+          {/* Headline. */}
           <h1
-            className="text-white text-[44px] sm:text-[72px] md:text-[88px] leading-[1.02] tracking-tight mb-8"
+            className="text-white text-[44px] sm:text-[72px] md:text-[88px] leading-[1.02] tracking-tight mb-10"
             style={{ fontWeight: 900, letterSpacing: "-0.025em" }}
           >
             2026 Lurie Children&rsquo;s
@@ -69,7 +73,7 @@ export default function Hero() {
           </h1>
 
           {/* Inline 2026 theme. */}
-          <div className="mb-9">
+          <div className="mb-10">
             <span
               className="inline-block px-3 py-1 rounded-full text-[10px] font-bold tracking-[0.22em] uppercase mb-3"
               style={{
@@ -80,9 +84,11 @@ export default function Hero() {
             >
               2026 Theme
             </span>
-            <div className="text-xl sm:text-2xl leading-tight font-semibold" style={{ color: "white" }}>
+            <div className="font-serif-display text-2xl sm:text-3xl leading-snug">
               <span className="italic" style={{ color: TOKENS.gold }}>True Language Access:</span>{" "}
-              Yesterday, Today, and Tomorrow.
+              <span style={{ color: "white" }}>
+                Yesterday, Today, and Tomorrow.
+              </span>
             </div>
           </div>
 
@@ -91,34 +97,28 @@ export default function Hero() {
             <InfoCard
               icon={Calendar}
               label="Date & Time"
-              lines={[
-                "Aug 15 (9:30am, 6:00pm)",
-                "Aug 16 (9:30am, 4:00pm)",
-              ]}
+              primary="August 15 + 16"
+              secondary="9:30am, 6:00pm CDT"
             />
             <InfoCard
               icon={MapPin}
               label="Location"
-              lines={[
-                "225 E Chicago Ave",
-                `Chicago, IL (${CONFERENCE.venueShort})`,
-              ]}
+              primary={CONFERENCE.venueShort}
+              secondary="225 E Chicago Ave"
             />
             <InfoCard
               icon={Ticket}
               label="Registration"
-              lines={[
-                "$195 In-Person / $95 Virtual",
-              ]}
-              badge={{ text: "Standard Active", icon: Sparkles }}
+              primary={`$${live.inPerson} / $${live.virtual}`}
+              secondary="In-Person / Virtual"
+              badge={`${tier.label} Active`}
+              accent
             />
             <InfoCard
               icon={Award}
               label="Credits"
-              lines={[
-                "CEU certificates",
-                "for both days",
-              ]}
+              primary="CEU"
+              secondary="for both days"
             />
           </div>
 
@@ -177,49 +177,53 @@ function Dot({ top, left, size, color }: { top: string; left: string; size: numb
 }
 
 function InfoCard({
-  icon: Icon, label, lines, badge,
+  icon: Icon, label, primary, secondary, badge, accent,
 }: {
   icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   label: string;
-  lines: string[];
-  badge?: { text: string; icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }> };
+  primary: string;
+  secondary: string;
+  badge?: string;
+  accent?: boolean;
 }) {
-  const BadgeIcon = badge?.icon;
   return (
     <div
-      className="rounded-2xl px-4 py-3.5"
+      className="rounded-2xl px-4 py-4 flex flex-col"
       style={{
-        background: "rgba(255,255,255,0.06)",
-        border: "1px solid rgba(255,255,255,0.10)",
-        backdropFilter: "blur(2px)",
+        background: accent ? "rgba(201,161,75,0.10)" : "rgba(255,255,255,0.05)",
+        border: accent
+          ? "1px solid rgba(201,161,75,0.35)"
+          : "1px solid rgba(255,255,255,0.10)",
+        boxShadow: accent ? "0 8px 24px -12px rgba(201,161,75,0.40)" : undefined,
       }}
     >
-      <div className="flex items-center gap-2.5 mb-1.5">
+      <div className="flex items-center gap-2 mb-3">
         <span
-          className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+          className="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
           style={{
-            background: "rgba(201,161,75,0.16)",
+            background: "rgba(201,161,75,0.18)",
             color: TOKENS.gold,
           }}
         >
-          <Icon className="w-4 h-4" />
+          <Icon className="w-3.5 h-3.5" />
         </span>
         <span className="text-[10px] font-bold tracking-[0.22em] uppercase" style={{ color: "rgba(255,255,255,0.55)" }}>
           {label}
         </span>
       </div>
-      <div className="text-[13px] leading-snug" style={{ color: "white" }}>
-        {lines.map((line, i) => (
-          <div key={i}>{line}</div>
-        ))}
+      <div className="text-[18px] sm:text-[19px] font-extrabold leading-none mb-1" style={{ color: "white" }}>
+        {primary}
       </div>
-      {badge && BadgeIcon && (
+      <div className="text-[12px] leading-snug" style={{ color: "rgba(255,255,255,0.62)" }}>
+        {secondary}
+      </div>
+      {badge && (
         <div
-          className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-full text-[9px] font-bold tracking-widest uppercase"
-          style={{ background: "rgba(201,161,75,0.18)", color: TOKENS.gold }}
+          className="inline-flex items-center gap-1 mt-3 px-2 py-0.5 rounded-full text-[9px] font-bold tracking-widest uppercase self-start"
+          style={{ background: "rgba(201,161,75,0.22)", color: TOKENS.gold }}
         >
-          <BadgeIcon className="w-2.5 h-2.5" />
-          {badge.text}
+          <Sparkles className="w-2.5 h-2.5" />
+          {badge}
         </div>
       )}
     </div>
