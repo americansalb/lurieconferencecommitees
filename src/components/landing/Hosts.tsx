@@ -115,7 +115,7 @@ export default function Hosts() {
           className="mt-16 text-center text-sm max-w-2xl mx-auto italic font-serif-display"
           style={{ color: TOKENS.muted }}
         >
-          Presented jointly in service of patients, families, and the professionals who keep their care in their own language.
+          Dedicated to improving the quality of life for those facing language barriers by expanding their access to essential services.
         </p>
       </div>
     </section>
