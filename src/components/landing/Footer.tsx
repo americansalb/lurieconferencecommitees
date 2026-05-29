@@ -26,20 +26,25 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-[1.5fr_1fr_1fr] gap-12">
           <div>
             <div className="flex items-center gap-3 mb-5">
-              {/* Small icon marks in their natural colours, sized to sit
-                  comfortably alongside the conference wordmark. */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/logos/lurie-icon.png"
-                alt="Ann & Robert H. Lurie Children's Hospital of Chicago"
-                className="h-9 w-auto shrink-0"
-              />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/logos/aalb-icon.png"
-                alt="Americans Against Language Barriers"
-                className="h-9 w-auto shrink-0"
-              />
+              {/* Each icon mark sits on its own clean white circle so the
+                  teal AALB ring and blue Lurie ring read crisply against
+                  the dark teal footer floor. */}
+              <span className="w-12 h-12 rounded-full bg-white flex items-center justify-center shrink-0" style={{ boxShadow: "0 4px 12px -4px rgba(0,0,0,0.20)" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/logos/lurie-icon.png"
+                  alt="Ann & Robert H. Lurie Children's Hospital of Chicago"
+                  className="h-10 w-10"
+                />
+              </span>
+              <span className="w-12 h-12 rounded-full bg-white flex items-center justify-center shrink-0" style={{ boxShadow: "0 4px 12px -4px rgba(0,0,0,0.20)" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/logos/aalb-icon.png"
+                  alt="Americans Against Language Barriers"
+                  className="h-10 w-10"
+                />
+              </span>
             </div>
             <div className="font-serif-display text-2xl font-bold leading-tight">
               2026 Lurie Children&rsquo;s{" "}
