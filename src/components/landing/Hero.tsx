@@ -184,41 +184,78 @@ function InfoCard({
 }) {
   return (
     <div
-      className="rounded-2xl px-4 py-4 flex flex-col text-left"
+      className="relative rounded-2xl p-6 flex flex-col text-left overflow-hidden transition-transform hover:-translate-y-0.5"
       style={{
-        background: accent ? "rgba(201,161,75,0.10)" : "rgba(255,255,255,0.05)",
+        background: accent
+          ? "linear-gradient(160deg, rgba(201,161,75,0.18) 0%, rgba(201,161,75,0.06) 100%)"
+          : "linear-gradient(160deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.02) 100%)",
         border: accent
-          ? "1px solid rgba(201,161,75,0.35)"
-          : "1px solid rgba(255,255,255,0.10)",
-        boxShadow: accent ? "0 8px 24px -12px rgba(201,161,75,0.40)" : undefined,
+          ? "1px solid rgba(201,161,75,0.50)"
+          : "1px solid rgba(255,255,255,0.12)",
+        boxShadow: accent
+          ? "0 16px 40px -16px rgba(201,161,75,0.45), inset 0 1px 0 rgba(255,255,255,0.10)"
+          : "inset 0 1px 0 rgba(255,255,255,0.06)",
       }}
     >
-      <div className="flex items-center gap-2 mb-3">
+      {/* Subtle radial highlight in the top-left corner of each card. */}
+      <div
+        aria-hidden
+        className="absolute -top-12 -left-12 w-32 h-32 rounded-full pointer-events-none"
+        style={{
+          background: accent
+            ? "radial-gradient(circle, rgba(201,161,75,0.25) 0%, transparent 70%)"
+            : "radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%)",
+        }}
+      />
+
+      {/* Label row with bigger icon tile */}
+      <div className="relative flex items-center justify-between mb-5">
         <span
-          className="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
+          className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
           style={{
-            background: "rgba(201,161,75,0.18)",
+            background: accent ? "rgba(201,161,75,0.25)" : "rgba(255,255,255,0.10)",
             color: TOKENS.gold,
+            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.10)",
           }}
         >
-          <Icon className="w-3.5 h-3.5" />
+          <Icon className="w-5 h-5" />
         </span>
-        <span className="text-[10px] font-bold tracking-[0.22em] uppercase" style={{ color: "rgba(255,255,255,0.55)" }}>
+        <span
+          className="text-[9px] font-bold tracking-[0.28em] uppercase"
+          style={{ color: accent ? "rgba(244,233,205,0.85)" : "rgba(255,255,255,0.45)" }}
+        >
           {label}
         </span>
       </div>
-      <div className="text-[18px] font-extrabold leading-none mb-1" style={{ color: "white" }}>
+
+      {/* Big primary value */}
+      <div
+        className="relative font-serif-display text-[26px] sm:text-[28px] font-bold leading-[1.05] mb-2 tracking-tight"
+        style={{
+          color: "white",
+          textShadow: accent ? "0 0 24px rgba(201,161,75,0.30)" : undefined,
+        }}
+      >
         {primary}
       </div>
-      <div className="text-[12px] leading-snug" style={{ color: "rgba(255,255,255,0.62)" }}>
+
+      <div className="relative text-[13px] leading-snug" style={{ color: "rgba(255,255,255,0.68)" }}>
         {secondary}
       </div>
+
       {badge && (
         <div
-          className="inline-flex items-center gap-1 mt-3 px-2 py-0.5 rounded-full text-[9px] font-bold tracking-widest uppercase self-start"
-          style={{ background: "rgba(201,161,75,0.22)", color: TOKENS.gold }}
+          className="relative inline-flex items-center gap-1.5 mt-4 px-2.5 py-1 rounded-full text-[9px] font-bold tracking-[0.18em] uppercase self-start"
+          style={{
+            background: "rgba(201,161,75,0.30)",
+            color: "#FBEFCE",
+            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.12), 0 0 12px rgba(201,161,75,0.20)",
+          }}
         >
-          <Sparkles className="w-2.5 h-2.5" />
+          <span
+            className="w-1 h-1 rounded-full"
+            style={{ background: TOKENS.gold, boxShadow: `0 0 6px ${TOKENS.gold}` }}
+          />
           {badge}
         </div>
       )}
