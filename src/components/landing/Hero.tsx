@@ -1,5 +1,5 @@
-import { Calendar, MapPin, Ticket, Award, ArrowRight, Sparkles } from "lucide-react";
-import { TOKENS, CONFERENCE } from "./tokens";
+import { Calendar, Globe, Ticket, Award, ArrowRight, Sparkles } from "lucide-react";
+import { TOKENS } from "./tokens";
 import { activeTier, PRICES } from "./pricing-data";
 
 export default function Hero() {
@@ -93,29 +93,29 @@ export default function Hero() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-12 max-w-4xl mx-auto">
           <InfoCard
             icon={Calendar}
-            label="Date & Time"
-            primary="August 15 + 16"
-            secondary="9:30am, 6:00pm CDT"
+            label="When"
+            primary="Aug 15 and 16"
+            secondary="Two days, Saturday and Sunday"
           />
           <InfoCard
-            icon={MapPin}
-            label="Location"
-            primary={CONFERENCE.venueShort}
-            secondary="225 E Chicago Ave"
+            icon={Globe}
+            label="Format"
+            primary="Hybrid"
+            secondary="Chicago and live virtual"
           />
           <InfoCard
             icon={Ticket}
-            label="Registration"
+            label="Tickets"
             primary={`$${live.inPerson} / $${live.virtual}`}
-            secondary="In-Person / Virtual"
-            badge={`${tier.label} Active`}
+            secondary="In-person / Virtual"
+            badge={`${tier.label} pricing`}
             accent
           />
           <InfoCard
             icon={Award}
-            label="Credits"
-            primary="CEU"
-            secondary="for both days"
+            label="Accreditation"
+            primary="CEU certificate"
+            secondary="For both days, all attendees"
           />
         </div>
 
