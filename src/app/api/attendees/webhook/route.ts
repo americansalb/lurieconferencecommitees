@@ -4,6 +4,7 @@ import { verifyWebhookSignature } from "@/lib/stripe";
 import { sendMail } from "@/lib/mail";
 import { attendeeConfirmedEmail } from "@/lib/mail-templates";
 import { attendeeFunnelUrl, attendeeFromHeader, attendeeReplyTo } from "@/lib/attendees";
+import { appUrl } from "@/lib/presenters";
 
 // Stripe webhook for checkout.session.completed.
 // Configure in Stripe dashboard: endpoint URL = https://conference.aalb.org/api/attendees/webhook
@@ -54,13 +55,17 @@ export async function POST(req: Request) {
           meta: JSON.stringify({ sessionId: obj.id, amount: obj.amount_total }),
         },
       });
-      // Confirmation email goes direct, not through the queue — high-value transactional.
+      // Confirmation email. Public registrations link to the receipt
+      // page; invited attendees go back to the funnel page they came from.
+      const url = attendee.invitedById
+        ? attendeeFunnelUrl(attendee.inviteToken)
+        : `${appUrl()}/register/success/${attendee.inviteToken}`;
       sendMail({
         to: attendee.email,
-        subject: "You're in — 2026 Lurie Children's & AALB Conference",
+        subject: "You're in: 2026 Lurie Children's and AALB Conference",
         html: attendeeConfirmedEmail({
           firstName: attendee.firstName,
-          url: attendeeFunnelUrl(attendee.inviteToken),
+          url,
           attendanceMode: attendee.attendanceMode || "in-person",
           finalPriceCents: attendee.finalPriceCents,
         }),

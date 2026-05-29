@@ -22,3 +22,11 @@ export function activeTier(now: Date) {
   }
   return SCHEDULE[SCHEDULE.length - 1];
 }
+
+// Active price in cents for a given attendance mode, based on today's tier.
+// Single source used by the public register endpoint and the Hero card.
+export function activePriceCents(mode: "virtual" | "in-person", now = new Date()): number {
+  const tier = activeTier(now);
+  const price = PRICES[tier.id];
+  return mode === "in-person" ? price.inPerson * 100 : price.virtual * 100;
+}
