@@ -36,34 +36,24 @@ export default function Nav() {
       }`}
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between gap-4">
-        <a href="#top" className="flex items-center group min-w-0">
-          {/* One shared white pill around both wordmarks. Identical treatment
-              whether the nav is transparent over the dark hero or solid white
-              after scroll, so the brand identity never flips on the user.
-              Subtle shadow on the dark hero, hairline border once scrolled. */}
-          <div
-            className="flex items-center gap-3 sm:gap-4 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-white transition-all"
-            style={{
-              boxShadow: scrolled
-                ? "0 1px 0 rgba(15,23,42,0.04)"
-                : "0 12px 28px -12px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.04)",
-              border: scrolled ? "1px solid #e2e8f0" : "1px solid transparent",
-            }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/logos/lurie.png"
-              alt="Ann & Robert H. Lurie Children's Hospital of Chicago"
-              className="h-6 sm:h-8 w-auto shrink-0"
-            />
-            <span className="h-6 sm:h-8 w-px shrink-0" style={{ background: "#cbd5e1" }} />
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/logos/aalb.png"
-              alt="Americans Against Language Barriers"
-              className="h-6 sm:h-8 w-auto shrink-0"
-            />
-          </div>
+        <a href="#top" className="flex items-center gap-3 sm:gap-4 group min-w-0">
+          {/* Icon-only host marks. Wordmarks are too small to read in a nav
+              bar, so we use the round hand-icon lockups (with their own circle
+              backgrounds) which are readable at compact sizes. Same identity
+              in every state, no swap. The full wordmarks live in the Hosts
+              section and the footer where they have room to breathe. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logos/lurie-icon.png"
+            alt="Ann & Robert H. Lurie Children's Hospital of Chicago"
+            className="h-9 sm:h-11 w-auto shrink-0"
+          />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logos/aalb-icon.png"
+            alt="Americans Against Language Barriers"
+            className="h-9 sm:h-11 w-auto shrink-0"
+          />
         </a>
 
         <nav className="hidden lg:flex items-center gap-1">

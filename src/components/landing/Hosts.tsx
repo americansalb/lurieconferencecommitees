@@ -6,9 +6,8 @@ const HOSTS = [
     name: "Ann & Robert H. Lurie Children's Hospital of Chicago",
     short: "Lurie Children's",
     body: "One of the nation's top pediatric hospitals, ranked among the best in the country for children's care. Lurie Children's serves families from every linguistic and cultural community in the Chicago region and beyond.",
-    monogram: "L",
+    logo: "/logos/lurie.png",
     accent: TOKENS.blue,
-    accentDeep: TOKENS.blueDeep,
     accentSoft: TOKENS.blueSoft,
     href: "https://www.luriechildrens.org",
   },
@@ -16,9 +15,8 @@ const HOSTS = [
     name: "Americans Against Language Barriers",
     short: "AALB",
     body: "A 501(c)(3) nonprofit dedicated to closing the gap in language access for healthcare, education, and public services. AALB convenes interpreters, advocates, clinicians, and patients around a single mission: no one should go without care because of the language they speak.",
-    monogram: "A",
+    logo: "/logos/aalb.png",
     accent: TOKENS.teal,
-    accentDeep: TOKENS.tealDark,
     accentSoft: TOKENS.tealSoft,
     href: "https://www.aalb.org",
   },
@@ -77,19 +75,15 @@ export default function Hosts() {
                 boxShadow: "0 12px 32px -16px rgba(11,31,37,0.16), 0 2px 6px -3px rgba(11,31,37,0.06)",
               }}
             >
-              <div className="flex items-start justify-between mb-7">
-                <div
-                  className="w-24 h-24 rounded-2xl flex items-center justify-center font-serif-display text-[56px] font-bold leading-none"
-                  style={{
-                    background: h.accentSoft,
-                    color: h.accentDeep,
-                    boxShadow: `inset 0 -2px 0 ${h.accent}1a`,
-                  }}
-                >
-                  {h.monogram}
-                </div>
+              <div className="flex items-start justify-between gap-4 mb-7">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={h.logo}
+                  alt={h.name}
+                  className="h-16 sm:h-20 w-auto max-w-[75%]"
+                />
                 <span
-                  className="w-10 h-10 rounded-full flex items-center justify-center transition-all group-hover:scale-110"
+                  className="w-10 h-10 rounded-full flex items-center justify-center transition-all group-hover:scale-110 shrink-0"
                   style={{ background: TOKENS.paper, color: h.accent }}
                 >
                   <ArrowUpRight className="w-4 h-4" />

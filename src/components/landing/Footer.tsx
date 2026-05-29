@@ -23,25 +23,29 @@ export default function Footer() {
         }}
       />
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
-        {/* Joint wordmarks at the top of the footer, gently lit on the dark
-            teal background via a subtle brightness/contrast lift so the brand
-            colors stay legible without the logos feeling pasted on. */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-10 mb-14 pb-12" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/logos/lurie.png"
-            alt="Ann & Robert H. Lurie Children's Hospital of Chicago"
-            className="h-10 sm:h-12 w-auto"
-            style={{ filter: "brightness(0) invert(1)", opacity: 0.85 }}
-          />
-          <span className="hidden sm:block h-10 w-px" style={{ background: "rgba(255,255,255,0.15)" }} />
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/logos/aalb.png"
-            alt="Americans Against Language Barriers"
-            className="h-10 sm:h-12 w-auto"
-            style={{ filter: "brightness(0) invert(1)", opacity: 0.85 }}
-          />
+        {/* Joint wordmarks on a clean white card so the brand colors,
+            including each org's signature hand circle, stay fully legible
+            against the dark teal floor. Matches the white-pill identity
+            from the rest of the page. */}
+        <div className="mb-14 pb-12 flex justify-center" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+          <div
+            className="bg-white rounded-2xl px-6 sm:px-8 py-5 sm:py-6 flex flex-col sm:flex-row items-center gap-5 sm:gap-8"
+            style={{ boxShadow: "0 16px 40px -16px rgba(0,0,0,0.30)" }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logos/lurie.png"
+              alt="Ann & Robert H. Lurie Children's Hospital of Chicago"
+              className="h-10 sm:h-12 w-auto"
+            />
+            <span className="hidden sm:block h-10 w-px" style={{ background: "#cbd5e1" }} />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logos/aalb.png"
+              alt="Americans Against Language Barriers"
+              className="h-10 sm:h-12 w-auto"
+            />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-[1.5fr_1fr_1fr] gap-12">
