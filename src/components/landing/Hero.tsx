@@ -108,7 +108,6 @@ export default function Hero() {
             label="Tickets"
             primary={`$${live.inPerson} / $${live.virtual}`}
             secondary="In-person / Virtual"
-            badge={`${tier.label} pricing`}
             accent
           />
           <InfoCard
