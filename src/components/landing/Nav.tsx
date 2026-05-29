@@ -37,13 +37,14 @@ export default function Nav() {
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between gap-4">
         <a href="#top" className="flex items-center gap-3 sm:gap-4 group min-w-0">
-          {/* Co-branded lockup: Lurie wordmark on the left, vertical hairline
-              divider, AALB wordmark on the right. On the dark hero a soft white
-              filter overlay preserves contrast; once scrolled past the hero the
-              logos appear as-is on the white nav. */}
+          {/* Co-branded lockup. Over the dark hero we show just the round
+              hand-icon marks so the nav reads compact and punchy. Once the
+              page scrolls and the nav goes white, the full wordmarks reveal
+              themselves so the host orgs get full visual credit. */}
           <LogoMark
             scrolled={scrolled}
-            src="/logos/lurie.png"
+            iconSrc="/logos/lurie-icon.png"
+            wordSrc="/logos/lurie.png"
             alt="Ann & Robert H. Lurie Children's Hospital of Chicago"
           />
           <span
@@ -52,7 +53,8 @@ export default function Nav() {
           />
           <LogoMark
             scrolled={scrolled}
-            src="/logos/aalb.png"
+            iconSrc="/logos/aalb-icon.png"
+            wordSrc="/logos/aalb.png"
             alt="Americans Against Language Barriers"
           />
         </a>
@@ -146,24 +148,22 @@ export default function Nav() {
 }
 
 function LogoMark({
-  scrolled, src, alt,
+  scrolled, iconSrc, wordSrc, alt,
 }: {
   scrolled: boolean;
-  src: string;
+  iconSrc: string;
+  wordSrc: string;
   alt: string;
 }) {
-  // On the dark hero we lighten the logo slightly to keep it legible;
-  // once scrolled the nav goes white and the logo renders as-is.
+  // Top of page = small icon-only mark in the brand's actual color.
+  // Scrolled = full wordmark, also in brand color, against the white nav.
+  const src = scrolled ? wordSrc : iconSrc;
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={src}
       alt={alt}
-      className="h-7 sm:h-9 w-auto shrink-0"
-      style={{
-        filter: scrolled ? "none" : "brightness(0) invert(1)",
-        opacity: scrolled ? 1 : 0.95,
-      }}
+      className={`w-auto shrink-0 transition-all ${scrolled ? "h-7 sm:h-8" : "h-9 sm:h-10"}`}
     />
   );
 }

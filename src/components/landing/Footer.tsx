@@ -23,6 +23,27 @@ export default function Footer() {
         }}
       />
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
+        {/* Joint wordmarks at the top of the footer, gently lit on the dark
+            teal background via a subtle brightness/contrast lift so the brand
+            colors stay legible without the logos feeling pasted on. */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-10 mb-14 pb-12" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logos/lurie.png"
+            alt="Ann & Robert H. Lurie Children's Hospital of Chicago"
+            className="h-10 sm:h-12 w-auto"
+            style={{ filter: "brightness(0) invert(1)", opacity: 0.85 }}
+          />
+          <span className="hidden sm:block h-10 w-px" style={{ background: "rgba(255,255,255,0.15)" }} />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logos/aalb.png"
+            alt="Americans Against Language Barriers"
+            className="h-10 sm:h-12 w-auto"
+            style={{ filter: "brightness(0) invert(1)", opacity: 0.85 }}
+          />
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-[1.5fr_1fr_1fr] gap-12">
           <div>
             <div className="font-serif-display text-2xl font-bold leading-tight">
