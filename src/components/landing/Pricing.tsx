@@ -56,7 +56,7 @@ export default function Pricing() {
         </div>
 
         {/* Countdown */}
-        <div className="max-w-md mx-auto mb-14">
+        <div className="max-w-md mx-auto mb-8">
           <div className="text-center mb-4">
             <span
               className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold tracking-[0.25em] uppercase"
@@ -71,6 +71,11 @@ export default function Pricing() {
           </div>
           <Countdown targetIso={tier.end} accent={TOKENS.teal} />
         </div>
+
+        {/* Savings comparison: a soft prompt sitting between the countdown
+            and the cards, only shown when there is a more expensive tier
+            coming. */}
+        <SavingsNote tier={tier} tierLive={tierLive} />
 
         {/* Two pricing cards */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 max-w-4xl mx-auto">
@@ -257,5 +262,27 @@ function PriceCard({
         </a>
       </div>
     </div>
+  );
+}
+
+function SavingsNote({
+  tier, tierLive,
+}: {
+  tier: { id: string; label: string; end: string };
+  tierLive: { virtual: number; inPerson: number };
+}) {
+  const idx = SCHEDULE.findIndex((s) => s.id === tier.id);
+  if (idx < 0 || idx >= SCHEDULE.length - 1) return null;
+  const next = SCHEDULE[idx + 1];
+  const nextPrice = PRICES[next.id];
+  const save = nextPrice.inPerson - tierLive.inPerson;
+  if (save <= 0) return null;
+  return (
+    <p className="text-center text-sm mb-14 max-w-md mx-auto" style={{ color: TOKENS.muted }}>
+      Save{" "}
+      <span style={{ color: TOKENS.gold, fontWeight: 700 }}>${save}</span>{" "}
+      per in-person ticket by registering before{" "}
+      {new Date(tier.end).toLocaleDateString("en-US", { month: "long", day: "numeric" })}.
+    </p>
   );
 }
