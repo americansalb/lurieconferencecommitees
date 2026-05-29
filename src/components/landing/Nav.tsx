@@ -36,27 +36,34 @@ export default function Nav() {
       }`}
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between gap-4">
-        <a href="#top" className="flex items-center gap-3 sm:gap-4 group min-w-0">
-          {/* Co-branded lockup. Over the dark hero we show just the round
-              hand-icon marks so the nav reads compact and punchy. Once the
-              page scrolls and the nav goes white, the full wordmarks reveal
-              themselves so the host orgs get full visual credit. */}
-          <LogoMark
-            scrolled={scrolled}
-            iconSrc="/logos/lurie-icon.png"
-            wordSrc="/logos/lurie.png"
-            alt="Ann & Robert H. Lurie Children's Hospital of Chicago"
-          />
-          <span
-            className="h-9 w-px shrink-0"
-            style={{ background: scrolled ? "#cbd5e1" : "rgba(255,255,255,0.25)" }}
-          />
-          <LogoMark
-            scrolled={scrolled}
-            iconSrc="/logos/aalb-icon.png"
-            wordSrc="/logos/aalb.png"
-            alt="Americans Against Language Barriers"
-          />
+        <a href="#top" className="flex items-center group min-w-0">
+          {/* One shared white pill around both wordmarks. Identical treatment
+              whether the nav is transparent over the dark hero or solid white
+              after scroll, so the brand identity never flips on the user.
+              Subtle shadow on the dark hero, hairline border once scrolled. */}
+          <div
+            className="flex items-center gap-3 sm:gap-4 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-white transition-all"
+            style={{
+              boxShadow: scrolled
+                ? "0 1px 0 rgba(15,23,42,0.04)"
+                : "0 12px 28px -12px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.04)",
+              border: scrolled ? "1px solid #e2e8f0" : "1px solid transparent",
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logos/lurie.png"
+              alt="Ann & Robert H. Lurie Children's Hospital of Chicago"
+              className="h-6 sm:h-8 w-auto shrink-0"
+            />
+            <span className="h-6 sm:h-8 w-px shrink-0" style={{ background: "#cbd5e1" }} />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logos/aalb.png"
+              alt="Americans Against Language Barriers"
+              className="h-6 sm:h-8 w-auto shrink-0"
+            />
+          </div>
         </a>
 
         <nav className="hidden lg:flex items-center gap-1">
@@ -89,13 +96,9 @@ export default function Nav() {
             href="/register"
             className="hidden sm:inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full text-sm font-bold transition-all"
             style={{
-              background: scrolled
-                ? TOKENS.tealDark
-                : `linear-gradient(135deg, #E8C56F 0%, ${TOKENS.gold} 100%)`,
-              color: scrolled ? "white" : "#3C2E10",
-              boxShadow: scrolled
-                ? `0 8px 22px -10px ${TOKENS.tealDark}`
-                : "0 10px 26px -10px rgba(201,161,75,0.55)",
+              background: `linear-gradient(135deg, #E8C56F 0%, ${TOKENS.gold} 100%)`,
+              color: "#3C2E10",
+              boxShadow: "0 10px 26px -10px rgba(201,161,75,0.55)",
             }}
           >
             Register Now
@@ -147,23 +150,3 @@ export default function Nav() {
   );
 }
 
-function LogoMark({
-  scrolled, iconSrc, wordSrc, alt,
-}: {
-  scrolled: boolean;
-  iconSrc: string;
-  wordSrc: string;
-  alt: string;
-}) {
-  // Top of page = small icon-only mark in the brand's actual color.
-  // Scrolled = full wordmark, also in brand color, against the white nav.
-  const src = scrolled ? wordSrc : iconSrc;
-  return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={src}
-      alt={alt}
-      className={`w-auto shrink-0 transition-all ${scrolled ? "h-7 sm:h-8" : "h-9 sm:h-10"}`}
-    />
-  );
-}
