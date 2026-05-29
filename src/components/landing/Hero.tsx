@@ -100,15 +100,15 @@ export default function Hero() {
           <InfoCard
             icon={Globe}
             label="Format"
-            primary="In-Person and Live Virtual"
-            secondary="Attend from Chicago or anywhere"
+            primary="Hybrid Conference"
+            secondary="In-Person and Virtual"
+            accent
           />
           <InfoCard
             icon={Ticket}
             label="Tickets"
             primary={`$${live.inPerson} / $${live.virtual}`}
             secondary="In-person / Virtual"
-            accent
           />
           <InfoCard
             icon={Award}
