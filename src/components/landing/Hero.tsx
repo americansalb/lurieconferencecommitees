@@ -95,13 +95,13 @@ export default function Hero() {
             icon={Calendar}
             label="When"
             primary="Aug 15 and 16"
-            secondary="Two days, Saturday and Sunday"
+            secondary="9:30am to 6:00pm CDT, both days"
           />
           <InfoCard
             icon={Globe}
             label="Format"
-            primary="Hybrid"
-            secondary="Chicago and live virtual"
+            primary="In-Person and Live Virtual"
+            secondary="Attend from Chicago or anywhere"
           />
           <InfoCard
             icon={Ticket}
@@ -114,8 +114,8 @@ export default function Hero() {
           <InfoCard
             icon={Award}
             label="Accreditation"
-            primary="CEU certificate"
-            secondary="For both days, all attendees"
+            primary="10+ hours of CEUs"
+            secondary="Certificate for both days"
           />
         </div>
 
