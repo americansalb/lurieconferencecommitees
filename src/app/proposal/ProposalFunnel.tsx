@@ -1,99 +1,102 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ArrowRight, Loader2 } from "lucide-react";
-
-import { useProposalForm, type Form } from "./useProposalForm";
-import { SpeakerCard, EXEMPLAR } from "./SpeakerCard";
-import { InputColumn } from "./InputColumn";
+import {
+  User, FileText, Settings2, Mic, ArrowRight, Check, Loader2,
+  AlertCircle, ChevronLeft, Upload, X, Image as ImageIcon, Sparkles,
+} from "lucide-react";
 
 const TEAL = "#0E4456";
-const TEAL_DARK = "#0A3F4D";
 const TEAL_DEEP = "#0C3B4B";
+const BLUE = "#2A8FCC";
 const GOLD = "#C9A14B";
-const GOLD_SOFT = "#F4E9CD";
+const PAPER = "#FAFBFC";
+const INK = "#0B1F25";
 const MUTED = "#5A6E76";
+const HAIRLINE = "#E6EBEE";
 
-const SESSION_STORAGE_KEY = "proposal:lastCard";
+type Form = {
+  name: string;
+  email: string;
+  phone: string;
+  affiliation: string;
+  jobTitle: string;
+  pronouns: string;
+  bio: string;
+  talkTitle: string;
+  talkAbstract: string;
+  learningObjectives: string;
+  sessionFormat: string;
+  sessionLength: string;
+  sessionTrack: string;
+  preferredDay: string;
+  presenterMessage: string;
+  headshotDataUrl: string;
+  headshotName: string;
+};
+
+const EMPTY: Form = {
+  name: "", email: "", phone: "", affiliation: "", jobTitle: "", pronouns: "",
+  bio: "", talkTitle: "", talkAbstract: "", learningObjectives: "",
+  sessionFormat: "", sessionLength: "", sessionTrack: "", preferredDay: "",
+  presenterMessage: "",
+  headshotDataUrl: "", headshotName: "",
+};
+
+const FORMATS = ["Talk", "Panel", "Workshop", "Fireside chat", "Lightning"];
+const LENGTHS = ["20 min", "30 min", "45 min", "60 min", "90 min"];
+const TRACKS = [
+  "Clinical practice", "Interpreter training", "Policy and access",
+  "Technology", "Patient and family voice", "Research and outcomes",
+];
+const DAYS = ["August 15", "August 16", "Either day"];
 
 export default function ProposalFunnel() {
-  const api = useProposalForm();
+  const [form, setForm] = useState<Form>(EMPTY);
   const [submitting, setSubmitting] = useState(false);
-  const [printing, setPrinting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [shake, setShake] = useState(false);
-  const [showMobileCard, setShowMobileCard] = useState(false);
-  const [pulseMobile, setPulseMobile] = useState(false);
-  // Surface field-level error styling only after the user has tried to send.
-  // Pre-submit, everything reads as "in progress".
-  const [revealErrors, setRevealErrors] = useState(false);
   const router = useRouter();
+  const fileRef = useRef<HTMLInputElement | null>(null);
 
-  // While nothing real has been entered, render the exemplar in the preview.
-  const displayedForm = useMemo<Form>(() => {
-    const empty =
-      !api.form.name && !api.form.talkTitle && !api.form.talkAbstract && !api.form.headshotDataUrl;
-    return empty ? EXEMPLAR : api.form;
-  }, [api.form]);
+  function update<K extends keyof Form>(k: K, v: Form[K]) {
+    setForm((f) => ({ ...f, [k]: v }));
+  }
 
-  const isExemplar = displayedForm === EXEMPLAR;
-
-  // Pulse the mobile peek bar whenever the form changes meaningfully.
-  useEffect(() => {
-    if (isExemplar) return;
-    setPulseMobile(true);
-    const t = setTimeout(() => setPulseMobile(false), 600);
-    return () => clearTimeout(t);
-  }, [
-    api.form.name, api.form.talkTitle, api.form.talkAbstract, api.form.headshotDataUrl,
-    api.form.sessionFormat, api.form.sessionLength, api.form.sessionTrack, api.form.preferredDay,
-    api.form.bio, api.form.affiliation, api.form.jobTitle, api.form.pronouns, api.form.learningObjectives,
-    isExemplar,
-  ]);
+  async function pickHeadshot(file: File) {
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { setError("Please choose a photo under 5 MB."); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === "string" ? reader.result : "";
+      update("headshotDataUrl", result);
+      update("headshotName", file.name);
+    };
+    reader.readAsDataURL(file);
+  }
 
   async function submit() {
     setError(null);
-    const missing = api.validate();
-    if (missing.length > 0) {
-      setRevealErrors(true);
-      setShake(true);
-      setTimeout(() => setShake(false), 400);
-      // Surface the first missing field to the user in plain words.
-      const labels: Record<string, string> = {
-        name: "your name",
-        email: "a valid email",
-        talkTitle: "a working title",
-        talkAbstract: "an abstract",
-      };
-      setError("Almost there. We still need " + labels[missing[0]] + ".");
-      const el = document.querySelector<HTMLInputElement>(`[data-scene] input, [data-scene] textarea`);
-      if (el) el.focus();
-      return;
-    }
+    if (!form.name.trim()) return setError("Please share your name.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return setError("Please share a valid email so we can reach you.");
+    if (!form.talkTitle.trim()) return setError("Give your proposal a working title.");
+    if (!form.talkAbstract.trim()) return setError("An abstract helps us review.");
 
     setSubmitting(true);
     try {
       const res = await fetch("/api/presenters/public", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(api.form),
+        body: JSON.stringify(form),
       });
       const json = await res.json();
       if (!res.ok || !json.ok) {
-        setError(json.error || "Could not send. Please try again.");
+        setError(json.error || "Could not submit. Please try again.");
         setSubmitting(false);
         return;
       }
-      // Snapshot the card so the success page can render it as its hero.
-      try {
-        sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(api.form));
-      } catch { /* private mode, ignore */ }
-      // Play the print transition, then route.
-      setPrinting(true);
-      setTimeout(() => router.push(`/proposal/success/${json.token}`), 1100);
+      router.push(`/proposal/success/${json.token}`);
     } catch {
       setError("Network error. Please try again.");
       setSubmitting(false);
@@ -101,336 +104,311 @@ export default function ProposalFunnel() {
   }
 
   return (
-    <div
-      className="relative min-h-screen"
-      style={{ background: TEAL_DARK }}
-    >
-      {/* Background layers */}
+    <div className="min-h-screen" style={{ background: PAPER }}>
+      {/* Hero band */}
       <div
-        aria-hidden
-        className="absolute inset-0"
-        style={{ background: `linear-gradient(180deg, ${TEAL} 0%, ${TEAL_DARK} 55%, ${TEAL_DEEP} 100%)` }}
-      />
-      <div
-        aria-hidden
-        className="absolute inset-0"
-        style={{
-          background: `radial-gradient(ellipse 70% 50% at 70% 25%, rgba(201,161,75,0.18) 0%, rgba(201,161,75,0.04) 40%, transparent 70%)`,
-        }}
-      />
-
-      {/* Sticky top strip */}
-      <div className="sticky top-0 z-30">
+        className="relative overflow-hidden text-white"
+        style={{ background: `linear-gradient(180deg, ${TEAL} 0%, ${TEAL_DEEP} 100%)` }}
+      >
         <div
-          className="backdrop-blur-md"
+          aria-hidden
+          className="absolute inset-0"
           style={{
-            background: "rgba(10,63,77,0.82)",
-            borderBottom: "1px solid rgba(255,255,255,0.06)",
+            background: `radial-gradient(ellipse 70% 60% at 50% 0%, rgba(201,161,75,0.18) 0%, transparent 70%)`,
           }}
-        >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
-            <Link href="/" className="inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-[0.18em] uppercase text-white/70 hover:text-white">
-              <ChevronLeft className="w-3 h-3" />
-              Conference
-            </Link>
-            <CompletenessMeter value={api.completeness} />
-            <span className="font-mono text-[10px] tracking-widest uppercase text-white/55 tabular-nums">
-              {String(api.completeness).padStart(2, "0")}% READY
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 pt-10 pb-32 lg:pb-20">
-        {/* Page intro */}
-        <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-14">
-          <div
-            className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold tracking-[0.24em] uppercase mb-5 border"
+        />
+        <div className="relative max-w-2xl mx-auto px-4 sm:px-6 pt-12 sm:pt-16 pb-10 text-center">
+          <Link href="/" className="inline-flex items-center gap-2 text-xs font-semibold text-white/70 hover:text-white mb-6">
+            <ChevronLeft className="w-3 h-3" /> Back to the conference
+          </Link>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold tracking-[0.22em] uppercase mb-5 border"
             style={{
               color: "#F4E9CD",
               borderColor: "rgba(201,161,75,0.45)",
               background: "rgba(201,161,75,0.08)",
-            }}
-          >
-            Call for proposals
+            }}>
+            <Sparkles className="w-3 h-3" style={{ color: GOLD }} />
+            Call for Proposals
           </div>
-          <h1
-            className="font-serif-display text-white text-[40px] sm:text-[56px] leading-[1.02] tracking-tight font-bold"
-          >
-            Make the page.
+          <h1 className="font-serif-display text-4xl sm:text-5xl font-bold tracking-tight">
+            Share your voice.
           </h1>
-          <p className="mt-3 text-white/75 text-sm sm:text-base">
-            Type on the left. The card on the right becomes your speaker page if the program team books you.
+          <p className="mt-3 text-white/75 text-sm sm:text-base max-w-xl mx-auto">
+            Tell us about the work you want to present. We review on a rolling basis and reply within two weeks.
           </p>
         </div>
-
-        {/* Split */}
-        <AnimatePresence>
-          {!printing && (
-            <motion.div
-              key="split"
-              initial={false}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 24 }}
-              transition={{ duration: 0.35 }}
-              className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-8 lg:gap-12 items-start"
-            >
-              {/* Left: inputs */}
-              <div className="relative">
-                <InputColumn
-                  api={api}
-                  missingSet={revealErrors ? new Set(api.missing) : new Set()}
-                  onPhotoError={setError}
-                />
-              </div>
-
-              {/* Right: card */}
-              <div className="hidden lg:block sticky top-24">
-                <CardWithPrint isPrinting={printing}>
-                  <SpeakerCard
-                    form={displayedForm}
-                    isExemplar={isExemplar}
-                    shake={shake}
-                  />
-                </CardWithPrint>
-
-                {/* Submit pill anchored to the card */}
-                <div className="flex justify-center mt-6">
-                  <SubmitButton
-                    onClick={submit}
-                    disabled={submitting}
-                    isValid={api.isValid}
-                  />
-                </div>
-
-                {error && (
-                  <div className="mt-4 text-center text-[12px] font-semibold" style={{ color: "#fecaca" }}>
-                    {error}
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Print transition stage */}
-        <AnimatePresence>
-          {printing && (
-            <motion.div
-              key="print"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-40 flex items-center justify-center px-6"
-              style={{ background: `linear-gradient(180deg, ${TEAL} 0%, ${TEAL_DEEP} 100%)` }}
-            >
-              <motion.div
-                initial={{ scale: 0.95 }}
-                animate={{ scale: 1.0 }}
-                transition={{ duration: 0.4 }}
-                className="relative"
-              >
-                <SpeakerCard form={api.form} isExemplar={false} />
-                {/* Print sweep */}
-                <motion.div
-                  aria-hidden
-                  className="absolute inset-0 pointer-events-none rounded-[20px] overflow-hidden"
-                  initial={{ opacity: 1 }}
-                >
-                  <motion.div
-                    initial={{ y: "-100%" }}
-                    animate={{ y: "120%" }}
-                    transition={{ duration: 0.9, ease: "easeInOut" }}
-                    className="absolute inset-x-0 h-24"
-                    style={{
-                      background: `linear-gradient(180deg, rgba(201,161,75,0) 0%, rgba(201,161,75,0.40) 50%, rgba(201,161,75,0) 100%)`,
-                    }}
-                  />
-                </motion.div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
 
-      {/* Mobile peek + sheet */}
-      {!printing && (
-        <MobilePeek
-          show={!showMobileCard}
-          pulse={pulseMobile}
-          form={displayedForm}
-          onTap={() => setShowMobileCard(true)}
-        />
-      )}
-      <AnimatePresence>
-        {showMobileCard && !printing && (
-          <MobileSheet
-            form={displayedForm}
-            isExemplar={isExemplar}
-            onClose={() => setShowMobileCard(false)}
-            onSubmit={submit}
-            isValid={api.isValid}
-            submitting={submitting}
-            error={error}
-          />
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 -mt-6 pb-20">
+        <div
+          className="bg-white rounded-2xl border overflow-hidden"
+          style={{ borderColor: HAIRLINE, boxShadow: "0 24px 60px -28px rgba(11,31,37,0.20)" }}
+        >
+          <Section number="1" title="About you" icon={User}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Field label="Full name" required value={form.name} onChange={(v) => update("name", v)} className="sm:col-span-2" />
+              <Field label="Email" required type="email" value={form.email} onChange={(v) => update("email", v)} />
+              <Field label="Phone" type="tel" value={form.phone} onChange={(v) => update("phone", v)} />
+              <Field label="Affiliation" placeholder="Hospital, university, company, or independent" value={form.affiliation} onChange={(v) => update("affiliation", v)} className="sm:col-span-2" />
+              <Field label="Role or title" value={form.jobTitle} onChange={(v) => update("jobTitle", v)} />
+              <Field label="Pronouns" placeholder="she/her, he/him, they/them" value={form.pronouns} onChange={(v) => update("pronouns", v)} />
+            </div>
 
-function CompletenessMeter({ value }: { value: number }) {
-  return (
-    <div className="flex-1 max-w-[200px] mx-3 hidden sm:block">
-      <div
-        className="relative h-1.5 rounded-full overflow-hidden"
-        style={{ background: "rgba(255,255,255,0.08)" }}
-      >
-        <motion.span
-          className="absolute inset-y-0 left-0"
-          animate={{ width: `${value}%` }}
-          transition={{ type: "spring", stiffness: 120, damping: 24 }}
-          style={{
-            background: `linear-gradient(90deg, ${GOLD} 0%, #2A8FCC 100%)`,
-            boxShadow: `0 0 12px ${GOLD}55`,
-          }}
-        />
+            <div className="mt-4">
+              <Headshot
+                dataUrl={form.headshotDataUrl}
+                fileName={form.headshotName}
+                onPick={() => fileRef.current?.click()}
+                onClear={() => { update("headshotDataUrl", ""); update("headshotName", ""); }}
+              />
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) void pickHeadshot(f); }}
+              />
+            </div>
+
+            <div className="mt-4">
+              <TextArea
+                label="Short bio (optional)"
+                placeholder="A sentence or two. Who you are, what you focus on."
+                value={form.bio}
+                onChange={(v) => update("bio", v)}
+                rows={2}
+              />
+            </div>
+          </Section>
+
+          <Section number="2" title="Your proposal" icon={FileText}>
+            <Field label="Working title" required placeholder="What would you call this session?" value={form.talkTitle} onChange={(v) => update("talkTitle", v)} />
+            <div className="mt-4">
+              <TextArea
+                label="Abstract"
+                required
+                placeholder="What is the session about, who is it for, why now."
+                value={form.talkAbstract}
+                onChange={(v) => update("talkAbstract", v)}
+                rows={6}
+              />
+            </div>
+            <div className="mt-4">
+              <TextArea
+                label="Three things attendees will leave with (optional)"
+                placeholder="One per line."
+                value={form.learningObjectives}
+                onChange={(v) => update("learningObjectives", v)}
+                rows={3}
+              />
+            </div>
+          </Section>
+
+          <Section number="3" title="Format" icon={Settings2}>
+            <Pills label="Session format" value={form.sessionFormat} options={FORMATS} onChange={(v) => update("sessionFormat", v)} />
+            <Pills label="Length"         value={form.sessionLength} options={LENGTHS}  onChange={(v) => update("sessionLength", v)} />
+            <Pills label="Best fit track" value={form.sessionTrack}  options={TRACKS}   onChange={(v) => update("sessionTrack", v)} />
+            <Pills label="Preferred day"  value={form.preferredDay}  options={DAYS}     onChange={(v) => update("preferredDay", v)} />
+          </Section>
+
+          <Section number="4" title="Anything else?" icon={Mic}>
+            <TextArea
+              label="Note to the program team (optional)"
+              placeholder="Anything that does not fit above."
+              value={form.presenterMessage}
+              onChange={(v) => update("presenterMessage", v)}
+              rows={3}
+            />
+
+            {error && (
+              <div className="mt-5 px-3 py-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-sm inline-flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <button
+              onClick={submit}
+              disabled={submitting}
+              className="mt-6 w-full inline-flex items-center justify-center gap-2 px-6 py-4 rounded-full font-bold text-base text-white shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ background: `linear-gradient(135deg, ${TEAL} 0%, ${BLUE} 100%)` }}
+            >
+              {submitting
+                ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting</>
+                : <>Submit proposal <ArrowRight className="w-4 h-4" /></>}
+            </button>
+
+            <p className="mt-3 text-center text-[11px]" style={{ color: MUTED }}>
+              We will send you a confirmation as soon as this lands.
+            </p>
+          </Section>
+        </div>
+
+        <p className="mt-6 text-center text-xs" style={{ color: MUTED }}>
+          Questions? Email{" "}
+          <a className="font-semibold" style={{ color: TEAL }} href="mailto:contact@aalb.org">contact@aalb.org</a>.
+        </p>
       </div>
     </div>
   );
 }
 
-function CardWithPrint({ children }: { isPrinting: boolean; children: React.ReactNode }) {
-  return <div className="relative">{children}</div>;
-}
-
-function SubmitButton({
-  onClick, disabled, isValid,
+function Section({
+  number, title, icon: Icon, children,
 }: {
-  onClick: () => void;
-  disabled: boolean;
-  isValid: boolean;
+  number: string;
+  title: string;
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
+  children: React.ReactNode;
 }) {
   return (
-    <motion.button
-      onClick={onClick}
-      disabled={disabled}
-      animate={isValid ? { boxShadow: [
-        "0 14px 34px -12px rgba(201,161,75,0.55)",
-        "0 14px 34px -12px rgba(201,161,75,0.90)",
-        "0 14px 34px -12px rgba(201,161,75,0.55)",
-      ] } : undefined}
-      transition={isValid ? { duration: 1.6, repeat: 2 } : {}}
-      className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full font-bold text-[15px] transition-all disabled:opacity-60"
-      style={{
-        background: `linear-gradient(135deg, #E8C56F 0%, ${GOLD} 100%)`,
-        color: "#3C2E10",
-        opacity: isValid ? 1 : 0.85,
-      }}
-    >
-      {disabled
-        ? <><Loader2 className="w-4 h-4 animate-spin" /> Sending&hellip;</>
-        : <>Send your speaker card <ArrowRight className="w-4 h-4" /></>}
-    </motion.button>
+    <div className="p-6 sm:p-8" style={{ borderBottom: `1px solid ${HAIRLINE}` }}>
+      <div className="flex items-center gap-3 mb-5">
+        <span
+          className="w-7 h-7 rounded-full flex items-center justify-center font-serif-display text-sm font-bold tabular-nums shrink-0"
+          style={{ background: GOLD + "22", color: GOLD }}
+        >
+          {number}
+        </span>
+        <h2 className="font-serif-display text-xl font-bold flex items-center gap-2" style={{ color: INK }}>
+          <Icon className="w-4 h-4" style={{ color: TEAL }} />
+          {title}
+        </h2>
+      </div>
+      {children}
+    </div>
   );
 }
 
-function MobilePeek({
-  show, pulse, form, onTap,
+function Field({
+  label, value, onChange, placeholder, required, type, className,
 }: {
-  show: boolean;
-  pulse: boolean;
-  form: Form;
-  onTap: () => void;
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  required?: boolean;
+  type?: string;
+  className?: string;
 }) {
-  if (!show) return null;
-  const title = form.talkTitle || "Your working title";
+  return (
+    <label className={`block ${className || ""}`}>
+      <span className="text-[11px] font-semibold tracking-wide uppercase" style={{ color: MUTED }}>
+        {label}{required && <span style={{ color: "#dc2626" }}> *</span>}
+      </span>
+      <input
+        type={type || "text"}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="mt-1 w-full px-3 py-2.5 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-teal-500/15 focus:border-teal-600"
+        style={{ borderColor: HAIRLINE }}
+      />
+    </label>
+  );
+}
+
+function TextArea({
+  label, value, onChange, placeholder, required, rows,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  required?: boolean;
+  rows?: number;
+}) {
+  return (
+    <label className="block">
+      <span className="text-[11px] font-semibold tracking-wide uppercase" style={{ color: MUTED }}>
+        {label}{required && <span style={{ color: "#dc2626" }}> *</span>}
+      </span>
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        rows={rows ?? 3}
+        className="mt-1 w-full px-3 py-2.5 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-teal-500/15 focus:border-teal-600 resize-y"
+        style={{ borderColor: HAIRLINE }}
+      />
+    </label>
+  );
+}
+
+function Pills({
+  label, value, options, onChange,
+}: {
+  label: string;
+  value: string;
+  options: string[];
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="mb-4">
+      <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-2">{label}</div>
+      <div className="flex flex-wrap gap-2">
+        {options.map((opt) => {
+          const selected = value === opt;
+          return (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => onChange(selected ? "" : opt)}
+              className="px-3.5 py-2 rounded-full text-xs font-semibold transition-all"
+              style={{
+                background: selected ? TEAL : "white",
+                color: selected ? "white" : INK,
+                border: `1px solid ${selected ? TEAL : HAIRLINE}`,
+                boxShadow: selected ? `0 6px 16px -8px ${TEAL}99` : undefined,
+              }}
+            >
+              {opt}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function Headshot({
+  dataUrl, fileName, onPick, onClear,
+}: {
+  dataUrl: string;
+  fileName: string;
+  onPick: () => void;
+  onClear: () => void;
+}) {
+  if (dataUrl) {
+    return (
+      <div className="flex items-center gap-3 p-3 rounded-xl" style={{ border: `1px solid ${HAIRLINE}`, background: PAPER }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={dataUrl} alt="" className="w-12 h-12 rounded-full object-cover" />
+        <div className="flex-1 min-w-0">
+          <div className="text-xs font-semibold truncate" style={{ color: INK }}>{fileName || "Selected"}</div>
+          <div className="text-[11px]" style={{ color: MUTED }}>Looking good.</div>
+        </div>
+        <button type="button" onClick={onClear} className="p-1.5 rounded-md hover:bg-slate-100 text-slate-400 hover:text-slate-700" aria-label="Remove photo">
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+    );
+  }
   return (
     <button
       type="button"
-      onClick={onTap}
-      className="lg:hidden fixed bottom-3 inset-x-3 z-20 flex items-center gap-3 p-3 rounded-2xl"
-      style={{
-        background: "rgba(10,40,52,0.96)",
-        border: "1px solid rgba(201,161,75,0.20)",
-        boxShadow: "0 20px 50px -20px rgba(0,0,0,0.55)",
-      }}
+      onClick={onPick}
+      className="w-full flex items-center gap-3 p-3.5 rounded-xl border-2 border-dashed transition-colors hover:border-teal-500 hover:bg-teal-50/30"
+      style={{ borderColor: HAIRLINE }}
     >
-      <div
-        className="w-12 h-12 rounded-full overflow-hidden shrink-0"
-        style={{ background: "#F4E9CD20", border: `1px solid ${GOLD}` }}
-      >
-        {form.headshotDataUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={form.headshotDataUrl} alt="" className="w-full h-full object-cover" />
-        ) : null}
-      </div>
-      <div className="flex-1 min-w-0 text-left">
-        <div className="text-[9px] font-bold tracking-[0.24em] uppercase" style={{ color: GOLD }}>
-          Your speaker card
-        </div>
-        <div className="text-[13px] font-bold text-white truncate font-serif-display">
-          {title}
-        </div>
-      </div>
-      <motion.span
-        animate={pulse ? { opacity: [0.3, 1, 0.3] } : { opacity: 0.6 }}
-        transition={pulse ? { duration: 0.7 } : {}}
-        className="absolute top-0 inset-x-3 h-px"
-        style={{ background: GOLD, boxShadow: `0 0 6px ${GOLD}` }}
-      />
-      <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.55)" }}>
-        Preview
+      <span className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: TEAL + "15", color: TEAL }}>
+        <ImageIcon className="w-4 h-4" />
       </span>
+      <span className="flex-1 text-left">
+        <span className="block text-[13px] font-semibold" style={{ color: INK }}>Add a headshot (optional)</span>
+        <span className="block text-[11px]" style={{ color: MUTED }}>JPG, PNG, or WebP. Under 5 MB.</span>
+      </span>
+      <Upload className="w-4 h-4" style={{ color: MUTED }} />
     </button>
-  );
-}
-
-function MobileSheet({
-  form, isExemplar, onClose, onSubmit, isValid, submitting, error,
-}: {
-  form: Form;
-  isExemplar: boolean;
-  onClose: () => void;
-  onSubmit: () => void;
-  isValid: boolean;
-  submitting: boolean;
-  error: string | null;
-}) {
-  return (
-    <motion.div
-      key="sheet"
-      initial={{ y: "100%" }}
-      animate={{ y: 0 }}
-      exit={{ y: "100%" }}
-      transition={{ type: "spring", stiffness: 180, damping: 24 }}
-      className="lg:hidden fixed inset-0 z-50 flex flex-col"
-      style={{ background: `linear-gradient(180deg, ${TEAL} 0%, ${TEAL_DEEP} 100%)` }}
-    >
-      <div className="flex items-center justify-between px-4 h-12">
-        <button
-          type="button"
-          onClick={onClose}
-          className="text-[11px] font-semibold tracking-[0.2em] uppercase text-white/70"
-        >
-          Keep editing
-        </button>
-        <span className="text-[10px] tracking-[0.24em] uppercase" style={{ color: GOLD_SOFT }}>
-          Your card
-        </span>
-        <span className="w-12" />
-      </div>
-      <div className="flex-1 overflow-y-auto px-4 pb-32 pt-2">
-        <SpeakerCard form={form} isExemplar={isExemplar} />
-      </div>
-      <div className="absolute inset-x-0 bottom-0 p-4" style={{ background: `linear-gradient(180deg, transparent 0%, ${TEAL_DEEP} 60%)` }}>
-        <SubmitButton onClick={onSubmit} disabled={submitting} isValid={isValid} />
-        {error && (
-          <div className="mt-2 text-center text-[12px] font-semibold" style={{ color: "#fecaca" }}>
-            {error}
-          </div>
-        )}
-      </div>
-    </motion.div>
   );
 }
