@@ -223,13 +223,15 @@ export function TextArea({
 }) {
   return (
     <label className="block">
-      <div className="flex items-baseline justify-between">
-        <span className="ml-0.5 text-[13px] font-semibold" style={{ color: C.inkSoft }}>
-          {label}
-          {required && <span style={{ color: C.gold }}> *</span>}
-        </span>
-        {hint && <span className="text-[11px]" style={{ color: C.mutedSoft }}>{hint}</span>}
-      </div>
+      {(label || hint) && (
+        <div className="flex items-baseline justify-between">
+          <span className="ml-0.5 text-[13px] font-semibold" style={{ color: C.inkSoft }}>
+            {label}
+            {required && <span style={{ color: C.gold }}> *</span>}
+          </span>
+          {hint && <span className="text-[11px]" style={{ color: C.mutedSoft }}>{hint}</span>}
+        </div>
+      )}
       <textarea
         // eslint-disable-next-line jsx-a11y/no-autofocus
         autoFocus={autoFocus}
@@ -237,8 +239,8 @@ export function TextArea({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         rows={rows}
-        className="mt-2 w-full px-4 py-3.5 text-[15px] leading-relaxed rounded-xl border bg-white outline-none transition-all resize-y
-          focus:ring-4 focus:ring-[#0E4456]/10 focus:border-[#0E4456]"
+        className={`${label || hint ? "mt-2 " : ""}w-full px-4 py-3.5 text-[15px] leading-relaxed rounded-xl border bg-white outline-none transition-all resize-y
+          focus:ring-4 focus:ring-[#0E4456]/10 focus:border-[#0E4456]`}
         style={{ borderColor: C.hairline, color: C.ink }}
       />
     </label>
