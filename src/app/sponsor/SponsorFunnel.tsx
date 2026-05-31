@@ -1,18 +1,23 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
-  Check, ChevronLeft, FileText, Loader2, CreditCard, AlertCircle, Award,
-  Sparkles, Calendar, MapPin, Building2, Users, Heart, ArrowRight,
+  Check, FileText, CreditCard, Calendar, MapPin, Award,
+  Heart, Users, Building2, Pencil, ArrowRight, Plus,
 } from "lucide-react";
+import {
+  C, WizardShell, StepFrame, Question, TextInput, TextArea, ToggleRow,
+  PrimaryButton, InlineError, Hint, useEnterKey,
+} from "@/components/funnel/Wizard";
 import { TIERS, fullBenefits, SponsorTier } from "@/lib/sponsors";
 
-const TEAL = "#0E5566";
-const TEAL_DARK = "#0A3F4D";
-const BLUE = "#0066B3";
-const CREAM = "#F7F3EA";
-
+// Flow: browse (compare every tier, full width) → details (one tier) →
+// apply (company + contact) → review ("look good?") → done (pay / next
+// steps). Browse stays wide because choosing a sponsorship level is a
+// comparison decision; the rest are focused, one-thing-per-screen steps.
 type Step = "browse" | "details" | "apply" | "review" | "done";
+const FLOW: Step[] = ["browse", "details", "apply", "review"];
 
 type FormState = {
   companyName: string;
@@ -36,34 +41,67 @@ const EMPTY: FormState = {
   donateFoodInstead: false,
 };
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function SponsorFunnel() {
+  const router = useRouter();
   const [step, setStep] = useState<Step>("browse");
   const [selected, setSelected] = useState<SponsorTier | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY);
+  const [showMore, setShowMore] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submittedToken, setSubmittedToken] = useState<string | null>(null);
   const [submittedRequiresPayment, setSubmittedRequiresPayment] = useState(false);
   const [redirectingToCheckout, setRedirectingToCheckout] = useState(false);
 
-  function pick(tier: SponsorTier) {
-    setSelected(tier);
-    setStep("details");
+  const setF = <K extends keyof FormState>(k: K, v: FormState[K]) =>
+    setForm((f) => ({ ...f, [k]: v }));
+
+  function toTop() {
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function backToBrowse() {
-    setSelected(null);
-    setStep("browse");
+  function pick(tier: SponsorTier) {
+    setSelected(tier);
+    setShowMore(false);
     setError(null);
+    setStep("details");
+    toTop();
   }
+
+  function goBack() {
+    setError(null);
+    if (step === "browse") { router.push("/"); return; }
+    if (step === "details") { setSelected(null); setStep("browse"); }
+    else if (step === "apply") setStep("details");
+    else if (step === "review") setStep("apply");
+    toTop();
+  }
+
+  // Apply step is the only one with required text fields. Phone is required
+  // alongside company/name/email — the program team always needs a number to
+  // coordinate logistics, signage, and on-site details with a sponsor.
+  function validateApply(): string | null {
+    if (!form.companyName.trim()) return "Tell us which organization you're with.";
+    if (!form.contactName.trim()) return "We need a contact name.";
+    if (!EMAIL_RE.test(form.contactEmail.trim())) return "Please share a valid email so we can reach you.";
+    if (!form.contactPhone.trim()) return "A phone number lets us coordinate the details with you.";
+    return null;
+  }
+
+  function fromApply() {
+    const err = validateApply();
+    if (err) { setError(err); return; }
+    setError(null);
+    setStep("review");
+    toTop();
+  }
+
+  useEnterKey(() => { if (step === "apply") fromApply(); }, step === "apply");
 
   async function submit() {
     if (!selected) return;
-    if (!form.companyName.trim() || !form.contactName.trim() || !form.contactEmail.trim()) {
-      setError("Company, contact name, and email are required.");
-      return;
-    }
     setSubmitting(true);
     setError(null);
     try {
@@ -84,7 +122,7 @@ export default function SponsorFunnel() {
       setSubmittedToken(json.token);
       setSubmittedRequiresPayment(Boolean(json.requiresPayment));
       setStep("done");
-      if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+      toTop();
     } catch {
       setError("Could not reach the server. Please try again.");
     } finally {
@@ -115,41 +153,170 @@ export default function SponsorFunnel() {
     }
   }
 
+  // Done is terminal — its own calm confirmation screen, no rail or counter.
+  if (step === "done" && selected) {
+    return (
+      <Done
+        tier={selected}
+        companyName={form.companyName}
+        donatesFoodInstead={form.donateFoodInstead && selected.id === "food"}
+        requiresPayment={submittedRequiresPayment}
+        redirectingToCheckout={redirectingToCheckout}
+        error={error}
+        onCheckout={goToCheckout}
+      />
+    );
+  }
+
+  const current = Math.max(0, FLOW.indexOf(step));
+
   return (
-    <div className="min-h-screen"
-      style={{ background: `linear-gradient(135deg, ${CREAM} 0%, #ffffff 50%, #f0f6f7 100%)` }}>
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
-        {step === "browse" && <Browse onPick={pick} />}
-        {step === "details" && selected && (
-          <Details
-            tier={selected}
-            onBack={backToBrowse}
-            onApply={() => setStep("apply")}
+    <WizardShell
+      eyebrow="Sponsorship"
+      current={current}
+      total={FLOW.length}
+      onBack={goBack}
+      wide={step === "browse"}
+    >
+      {step === "browse" && (
+        <StepFrame stepKey="browse">
+          <Browse onPick={pick} />
+        </StepFrame>
+      )}
+
+      {step === "details" && selected && (
+        <StepFrame stepKey={`details-${selected.id}`}>
+          <Details tier={selected} onApply={() => { setStep("apply"); toTop(); }} />
+        </StepFrame>
+      )}
+
+      {step === "apply" && selected && (
+        <StepFrame stepKey="apply">
+          <Question
+            title={<>Tell us about your organization.</>}
+            sub={<><AccentChip tier={selected} /> <span className="ml-1">{selected.amountLabel}</span></>}
           />
-        )}
-        {step === "apply" && selected && (
-          <Apply
-            tier={selected}
-            form={form}
-            setForm={setForm}
-            error={error}
-            submitting={submitting}
-            onBack={() => setStep("details")}
-            onSubmit={submit}
+          <div className="space-y-3">
+            <TextInput label="Company / organization" value={form.companyName} onChange={(v) => setF("companyName", v)} required autoFocus />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <TextInput label="Your name" value={form.contactName} onChange={(v) => setF("contactName", v)} required />
+              <TextInput label="Email" value={form.contactEmail} onChange={(v) => setF("contactEmail", v)} required type="email" inputMode="email" />
+            </div>
+            <TextInput label="Phone" value={form.contactPhone} onChange={(v) => setF("contactPhone", v)} required type="tel" inputMode="tel" placeholder="So we can coordinate the details" />
+
+            {selected.acceptsAlternativePayment && (
+              <ToggleRow
+                checked={form.donateFoodInstead}
+                onToggle={() => setF("donateFoodInstead", !form.donateFoodInstead)}
+                title={selected.acceptsAlternativePayment.label}
+                desc={`${selected.acceptsAlternativePayment.note} We'll coordinate directly instead of charging the ${selected.amountLabel} fee.`}
+                icon={Heart}
+              />
+            )}
+
+            {showMore ? (
+              <div className="space-y-3">
+                <TextInput label="Your role" value={form.contactRole} onChange={(v) => setF("contactRole", v)} placeholder="e.g. Marketing Director" />
+                <TextInput label="Website" value={form.website} onChange={(v) => setF("website", v)} placeholder="https://" inputMode="url" />
+                <TextArea label="Anything you'd like to add" value={form.message} onChange={(v) => setF("message", v)} rows={3} placeholder="A session you'd like to sponsor, materials to distribute, scheduling notes…" hint="optional" />
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowMore(true)}
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-[13px] font-semibold transition-colors hover:bg-black/[0.02]"
+                style={{ color: C.muted, border: `1.5px dashed ${C.hairline}` }}
+              >
+                <Plus className="w-4 h-4" /> Add role, website, or a note
+              </button>
+            )}
+          </div>
+
+          <InlineError message={error} />
+
+          <div className="mt-7">
+            <PrimaryButton onClick={fromApply}>Continue to review</PrimaryButton>
+          </div>
+          <Hint>Required: organization, name, email, and phone. Everything else is optional.</Hint>
+        </StepFrame>
+      )}
+
+      {step === "review" && selected && (
+        <StepFrame stepKey="review">
+          <Question
+            title={<>Look good?</>}
+            sub={
+              selected.id === "food" && form.donateFoodInstead
+                ? "One step from confirming. We'll coordinate your food donation directly — nothing to pay."
+                : "One step from confirming your sponsorship. You can pay by card next, or arrange an invoice or check."
+            }
           />
-        )}
-        {step === "done" && selected && (
-          <Done
-            tier={selected}
-            companyName={form.companyName}
-            donatesFoodInstead={form.donateFoodInstead && selected.id === "food"}
-            requiresPayment={submittedRequiresPayment}
-            redirectingToCheckout={redirectingToCheckout}
-            error={error}
-            onCheckout={goToCheckout}
-          />
-        )}
+
+          <div className="rounded-2xl border bg-white overflow-hidden" style={{ borderColor: C.hairline }}>
+            <div className="p-5 flex items-start justify-between gap-3" style={{ borderBottom: `1px solid ${C.hairline}` }}>
+              <div className="min-w-0">
+                <AccentChip tier={selected} />
+                <div className="font-serif-display text-[26px] font-bold mt-2 tabular-nums" style={{ color: C.ink }}>
+                  {selected.amountLabel}
+                </div>
+                <div className="text-[13px]" style={{ color: C.muted }}>
+                  includes {selected.ticketsIncluded} conference ticket{selected.ticketsIncluded === 1 ? "" : "s"}
+                </div>
+              </div>
+              <button onClick={() => { setStep("details"); toTop(); }} className="inline-flex items-center gap-1 text-[12px] font-semibold shrink-0" style={{ color: C.teal }}>
+                <Pencil className="w-3 h-3" /> Change
+              </button>
+            </div>
+
+            <div className="p-5 space-y-1 divide-y" style={{ borderColor: C.hairline }}>
+              <SummaryRow label="Organization" value={form.companyName || "—"} onEdit={editApply} />
+              <SummaryRow label="Contact" value={[form.contactName, form.contactRole].filter(Boolean).join(" · ") || "—"} onEdit={editApply} />
+              <SummaryRow label="Email" value={form.contactEmail || "—"} onEdit={editApply} />
+              <SummaryRow label="Phone" value={form.contactPhone || "—"} onEdit={editApply} />
+              {form.website && <SummaryRow label="Website" value={form.website} onEdit={editApply} />}
+              {form.message && <SummaryRow label="Note" value={form.message} onEdit={editApply} />}
+              {form.donateFoodInstead && selected.id === "food" && (
+                <SummaryRow label="In kind" value="Donating food instead of the fee" onEdit={editApply} />
+              )}
+            </div>
+          </div>
+
+          <InlineError message={error} />
+
+          <div className="mt-7">
+            <PrimaryButton onClick={submit} loading={submitting}>Submit application</PrimaryButton>
+          </div>
+          <Hint>Tax-deductible under IRS code 501(c)(3). EINs 83-3016421 and 36-2170833.</Hint>
+        </StepFrame>
+      )}
+    </WizardShell>
+  );
+
+  function editApply() { setStep("apply"); toTop(); }
+}
+
+function AccentChip({ tier }: { tier: SponsorTier }) {
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase align-middle"
+      style={{ background: tier.accentSoft, color: tier.accent }}
+    >
+      <span className="w-1.5 h-1.5 rounded-full" style={{ background: tier.accent }} />
+      {tier.name}
+    </span>
+  );
+}
+
+function SummaryRow({ label, value, onEdit }: { label: string; value: string; onEdit: () => void }) {
+  return (
+    <div className="flex items-start justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
+      <div className="min-w-0">
+        <div className="text-[11px] font-bold tracking-widest uppercase" style={{ color: C.gold }}>{label}</div>
+        <div className="text-[14px] mt-0.5 break-words" style={{ color: C.ink }}>{value}</div>
       </div>
+      <button onClick={onEdit} className="inline-flex items-center gap-1 text-[12px] font-semibold shrink-0" style={{ color: C.teal }}>
+        <Pencil className="w-3 h-3" /> Edit
+      </button>
     </div>
   );
 }
@@ -161,65 +328,61 @@ function Browse({ onPick }: { onPick: (t: SponsorTier) => void }) {
 
   return (
     <>
-      {/* Hero */}
+      {/* Hero (the gold eyebrow above is rendered by the shell) */}
       <div className="text-center mb-10">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase mb-4"
-          style={{ background: TEAL + "12", color: TEAL }}>
-          <Sparkles className="w-3 h-3" /> Sponsorship &amp; Exhibitor Prospectus
-        </div>
-        <h1 className="text-3xl sm:text-5xl font-extrabold text-slate-900 leading-tight tracking-tight">
+        <h1 className="font-serif-display font-bold tracking-tight leading-[1.05] text-[34px] sm:text-[48px]" style={{ color: C.ink }}>
           Invest in linguistic equity.
         </h1>
-        <p className="mt-4 text-base sm:text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
+        <p className="mt-4 text-[15px] sm:text-[17px] leading-relaxed max-w-2xl mx-auto" style={{ color: C.muted }}>
           Partner with the 2nd Annual Joint Conference of Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers on language access in healthcare.
         </p>
-        <div className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-slate-500">
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[12px]" style={{ color: C.mutedSoft }}>
           <span className="inline-flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" />August 15 and 16, 2026</span>
           <span className="inline-flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5" />Lurie Children&rsquo;s, Chicago</span>
           <span className="inline-flex items-center gap-1.5"><Award className="w-3.5 h-3.5" />Tax-deductible under IRC 501(c)(3)</span>
         </div>
-
-        <div className="mt-6 inline-flex items-center gap-3">
+        <div className="mt-6">
           <a href="/2026-sponsorship-prospectus.pdf" target="_blank" rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-sm">
+            className="inline-flex items-center gap-1.5 text-[13px] font-semibold px-4 py-2.5 rounded-full bg-white shadow-sm transition-all hover:-translate-y-0.5"
+            style={{ color: C.inkSoft, border: `1.5px solid ${C.hairline}` }}>
             <FileText className="w-4 h-4" />
             Download the full prospectus (PDF)
           </a>
         </div>
       </div>
 
-      {/* Main tiers */}
-      <div className="mb-6">
-        <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 mb-1">Sponsorship levels</h2>
-        <p className="text-sm text-slate-500 mb-5">All sponsorships are tax-deductible under IRS code 501(c)(3).</p>
+      <TierGroup
+        title="Sponsorship levels"
+        sub="All sponsorships are tax-deductible under IRS code 501(c)(3)."
+      >
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {mainTiers.map((tier, i) => (
             <TierCard key={tier.id} tier={tier} onPick={onPick} featured={i === 2} />
           ))}
         </div>
-      </div>
+      </TierGroup>
 
-      {/* Specialty tiers */}
-      <div className="mb-6">
-        <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 mb-1">Underwrite a piece of the conference</h2>
-        <p className="text-sm text-slate-500 mb-5">Direct support for meals or ASL interpretation, with recognition on signage and program.</p>
+      <TierGroup
+        title="Underwrite a piece of the conference"
+        sub="Direct support for meals or ASL interpretation, with recognition on signage and program."
+      >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {specialty.map((tier) => (
             <TierCard key={tier.id} tier={tier} onPick={onPick} />
           ))}
         </div>
-      </div>
+      </TierGroup>
 
-      {/* Exhibitor */}
-      <div className="mb-10">
-        <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 mb-1">Exhibit at the conference</h2>
-        <p className="text-sm text-slate-500 mb-5">For language service providers, nonprofits, regulatory bodies, and technology companies.</p>
+      <TierGroup
+        title="Exhibit at the conference"
+        sub="For language service providers, nonprofits, regulatory bodies, and technology companies."
+      >
         <TierCard tier={exhibitor} onPick={onPick} compact />
-      </div>
+      </TierGroup>
 
       {/* Why partner */}
-      <div className="mt-12 bg-white border border-slate-100 rounded-2xl shadow-sm p-6 sm:p-8">
-        <h2 className="text-xl font-extrabold text-slate-900 mb-5">Why partner with us?</h2>
+      <div className="mt-12 bg-white rounded-2xl p-6 sm:p-8" style={{ border: `1px solid ${C.hairline}`, boxShadow: "0 6px 18px -14px rgba(11,31,37,0.25)" }}>
+        <h2 className="font-serif-display text-[22px] font-bold mb-5" style={{ color: C.ink }}>Why partner with us?</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <Reason icon={Heart} title="Meaningful impact" body="Support initiatives that directly improve patient outcomes in healthcare settings where language barriers create real risk." />
           <Reason icon={Users} title="Professional audience" body="Connect with interpreters, translators, healthcare administrators, language service providers, regulators, and policy leaders." />
@@ -228,10 +391,20 @@ function Browse({ onPick }: { onPick: (t: SponsorTier) => void }) {
         </div>
       </div>
 
-      <p className="text-center text-xs text-slate-400 mt-8">
-        Questions? Email <a className="font-semibold text-slate-600" href="mailto:contact@aalb.org">contact@aalb.org</a>.
+      <p className="text-center text-[12px] mt-8" style={{ color: C.mutedSoft }}>
+        Questions? Email <a className="font-semibold" style={{ color: C.muted }} href="mailto:contact@aalb.org">contact@aalb.org</a>.
       </p>
     </>
+  );
+}
+
+function TierGroup({ title, sub, children }: { title: string; sub: string; children: React.ReactNode }) {
+  return (
+    <div className="mb-8">
+      <h2 className="font-serif-display text-[20px] sm:text-[22px] font-bold" style={{ color: C.ink }}>{title}</h2>
+      <p className="text-[13px] mt-1 mb-5" style={{ color: C.muted }}>{sub}</p>
+      {children}
+    </div>
   );
 }
 
@@ -246,12 +419,12 @@ function TierCard({
   const benefits = fullBenefits(tier.id).slice(0, compact ? 3 : 5);
   return (
     <div
-      className={`rounded-2xl border bg-white shadow-sm overflow-hidden flex flex-col transition-all hover:shadow-md ${
-        featured ? "ring-2" : ""
-      }`}
+      className="rounded-2xl bg-white overflow-hidden flex flex-col transition-all hover:-translate-y-0.5"
       style={{
-        borderColor: featured ? tier.accent : "#e2e8f0",
-        boxShadow: featured ? `0 12px 30px -10px ${tier.accent}30` : undefined,
+        border: featured ? `2px solid ${tier.accent}` : `1.5px solid ${C.hairline}`,
+        boxShadow: featured
+          ? `0 18px 40px -20px ${tier.accent}77`
+          : "0 6px 18px -14px rgba(11,31,37,0.25)",
       }}
     >
       <div className="h-1.5" style={{ background: tier.accent }} />
@@ -261,24 +434,24 @@ function TierCard({
             <div className="text-[10px] font-bold tracking-widest uppercase" style={{ color: tier.accent }}>
               {tier.name}
             </div>
-            <div className="mt-1.5 text-3xl font-extrabold text-slate-900 tracking-tight">
+            <div className="mt-1.5 font-serif-display text-[30px] font-bold tabular-nums leading-none" style={{ color: C.ink }}>
               {tier.amountLabel}
             </div>
             {tier.acceptsAlternativePayment && (
-              <div className="text-xs text-slate-500 mt-0.5">or {tier.acceptsAlternativePayment.label.toLowerCase()}</div>
+              <div className="text-[12px] mt-1" style={{ color: C.muted }}>or {tier.acceptsAlternativePayment.label.toLowerCase()}</div>
             )}
           </div>
           {tier.ticketsIncluded > 0 && (
             <span className="text-[10px] font-bold px-2 py-1 rounded-full whitespace-nowrap"
               style={{ background: tier.accentSoft, color: tier.accent }}>
-              {tier.ticketsIncluded} ticket{tier.ticketsIncluded === 1 ? "" : "s"} included
+              {tier.ticketsIncluded} ticket{tier.ticketsIncluded === 1 ? "" : "s"}
             </span>
           )}
         </div>
 
-        <p className="text-sm text-slate-600 mb-4">{tier.tagline}</p>
+        <p className="text-[13px] mb-4" style={{ color: C.muted }}>{tier.tagline}</p>
 
-        <ul className="space-y-2 mb-5 text-sm text-slate-700 flex-1">
+        <ul className="space-y-2 mb-5 text-[13px] flex-1" style={{ color: C.inkSoft }}>
           {tier.inheritsFrom && (
             <li className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: tier.accent }}>
               Everything in {TIERS.find((x) => x.id === tier.inheritsFrom)?.name.replace(" Sponsor", "")}, plus:
@@ -286,7 +459,7 @@ function TierCard({
           )}
           {(tier.inheritsFrom ? tier.benefits : benefits).map((b) => (
             <li key={b} className="flex items-start gap-2">
-              <Check className="w-4 h-4 mt-0.5 shrink-0" style={{ color: tier.accent }} />
+              <Check className="w-4 h-4 mt-0.5 shrink-0" style={{ color: tier.accent }} strokeWidth={3} />
               <span>{b}</span>
             </li>
           ))}
@@ -294,11 +467,11 @@ function TierCard({
 
         <button
           onClick={() => onPick(tier)}
-          className="w-full px-4 py-2.5 rounded-xl font-bold text-white shadow-sm transition-all hover:shadow"
-          style={{ background: tier.accent }}
+          className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-3 rounded-full font-bold text-[14px] text-white transition-all hover:shadow-lg"
+          style={{ background: tier.accent, boxShadow: `0 12px 26px -14px ${tier.accent}` }}
         >
-          Select {tier.name.replace(" Sponsor", "")}
-          <ArrowRight className="w-4 h-4 inline -mt-0.5 ml-1" />
+          Choose {tier.name.replace(" Sponsor", "")}
+          <ArrowRight className="w-4 h-4" />
         </button>
       </div>
     </div>
@@ -308,164 +481,65 @@ function TierCard({
 function Reason({ icon: Icon, title, body }: { icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>; title: string; body: string }) {
   return (
     <div className="flex gap-3">
-      <div className="w-9 h-9 rounded-lg shrink-0 flex items-center justify-center" style={{ background: TEAL + "15" }}>
-        <Icon className="w-4 h-4" style={{ color: TEAL }} />
+      <div className="w-9 h-9 rounded-lg shrink-0 flex items-center justify-center" style={{ background: C.teal + "14" }}>
+        <Icon className="w-4 h-4" style={{ color: C.teal }} />
       </div>
       <div>
-        <div className="font-bold text-slate-900">{title}</div>
-        <div className="text-sm text-slate-600 mt-0.5 leading-relaxed">{body}</div>
+        <div className="font-bold" style={{ color: C.ink }}>{title}</div>
+        <div className="text-[13px] mt-0.5 leading-relaxed" style={{ color: C.muted }}>{body}</div>
       </div>
     </div>
   );
 }
 
-function Details({ tier, onBack, onApply }: { tier: SponsorTier; onBack: () => void; onApply: () => void }) {
+function Details({ tier, onApply }: { tier: SponsorTier; onApply: () => void }) {
   const benefits = fullBenefits(tier.id);
   return (
-    <div className="max-w-2xl mx-auto">
-      <button onClick={onBack} className="text-xs font-semibold text-slate-500 hover:text-slate-700 inline-flex items-center gap-1 mb-4">
-        <ChevronLeft className="w-3 h-3" /> Back to all levels
-      </button>
-      <div className="bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden">
-        <div className="h-2" style={{ background: tier.accent }} />
-        <div className="p-6 sm:p-8">
-          <div className="text-[10px] font-bold tracking-widest uppercase" style={{ color: tier.accent }}>
-            {tier.name}
-          </div>
-          <div className="mt-1 flex items-baseline gap-3 flex-wrap">
-            <span className="text-4xl font-extrabold text-slate-900 tracking-tight">{tier.amountLabel}</span>
-            <span className="text-sm text-slate-500">includes {tier.ticketsIncluded} conference ticket{tier.ticketsIncluded === 1 ? "" : "s"}</span>
-          </div>
-          <p className="mt-2 text-slate-600">{tier.tagline}</p>
+    <>
+      <Question
+        title={<>The {tier.name.replace(" Sponsor", "")} level.</>}
+        sub={tier.tagline}
+      />
 
-          <h3 className="mt-6 text-sm font-bold text-slate-900 uppercase tracking-wide">What&rsquo;s included</h3>
-          <ul className="mt-3 space-y-2 text-sm text-slate-700">
+      <div className="rounded-2xl border bg-white overflow-hidden" style={{ borderColor: C.hairline }}>
+        <div className="h-1.5" style={{ background: tier.accent }} />
+        <div className="p-5 sm:p-6">
+          <div className="flex items-baseline gap-3 flex-wrap">
+            <span className="font-serif-display text-[36px] font-bold tabular-nums leading-none" style={{ color: C.ink }}>{tier.amountLabel}</span>
+            <span className="text-[13px]" style={{ color: C.muted }}>includes {tier.ticketsIncluded} conference ticket{tier.ticketsIncluded === 1 ? "" : "s"}</span>
+          </div>
+
+          <div className="text-[11px] font-bold tracking-widest uppercase mt-6 mb-3" style={{ color: C.gold }}>What&rsquo;s included</div>
+          <ul className="space-y-2 text-[14px]" style={{ color: C.inkSoft }}>
             {benefits.map((b) => (
               <li key={b} className="flex items-start gap-2">
-                <Check className="w-4 h-4 mt-0.5 shrink-0" style={{ color: tier.accent }} />
+                <Check className="w-4 h-4 mt-0.5 shrink-0" style={{ color: tier.accent }} strokeWidth={3} />
                 <span>{b}</span>
               </li>
             ))}
           </ul>
 
           {tier.acceptsAlternativePayment && (
-            <div className="mt-5 rounded-lg p-4 border" style={{ background: tier.accentSoft, borderColor: tier.accent + "33" }}>
-              <div className="text-[11px] font-bold tracking-widest uppercase" style={{ color: tier.accent }}>
-                Alternative
-              </div>
-              <div className="text-sm text-slate-700 mt-1">
+            <div className="mt-5 rounded-xl p-4" style={{ background: tier.accentSoft, border: `1px solid ${tier.accent}33` }}>
+              <div className="text-[11px] font-bold tracking-widest uppercase" style={{ color: tier.accent }}>Alternative</div>
+              <div className="text-[13px] mt-1" style={{ color: C.inkSoft }}>
                 <strong>{tier.acceptsAlternativePayment.label}.</strong> {tier.acceptsAlternativePayment.note}
               </div>
             </div>
           )}
-
-          <div className="mt-6 text-[11px] text-slate-400">
-            Tax-deductible to the fullest extent allowed by law under IRS code 501(c)(3). EINs: 83-3016421 and 36-2170833.
-          </div>
-
-          <div className="mt-6 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-end">
-            <a href="/2026-sponsorship-prospectus.pdf" target="_blank" rel="noopener noreferrer"
-              className="text-sm font-semibold text-slate-600 hover:text-slate-900 inline-flex items-center gap-1.5">
-              <FileText className="w-4 h-4" /> Download full prospectus
-            </a>
-            <button onClick={onApply}
-              className="px-6 py-3 rounded-xl font-bold text-white shadow-md transition-all hover:shadow-lg"
-              style={{ background: tier.accent }}>
-              Apply for {tier.name}
-              <ArrowRight className="w-4 h-4 inline -mt-0.5 ml-1" />
-            </button>
-          </div>
         </div>
       </div>
-    </div>
-  );
-}
 
-function Apply({
-  tier, form, setForm, error, submitting, onBack, onSubmit,
-}: {
-  tier: SponsorTier;
-  form: FormState;
-  setForm: (f: FormState) => void;
-  error: string | null;
-  submitting: boolean;
-  onBack: () => void;
-  onSubmit: () => void;
-}) {
-  return (
-    <div className="max-w-2xl mx-auto">
-      <button onClick={onBack} className="text-xs font-semibold text-slate-500 hover:text-slate-700 inline-flex items-center gap-1 mb-4">
-        <ChevronLeft className="w-3 h-3" /> Back
-      </button>
-      <div className="bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden">
-        <div className="h-2" style={{ background: tier.accent }} />
-        <div className="p-6 sm:p-8">
-          <div className="text-[10px] font-bold tracking-widest uppercase" style={{ color: tier.accent }}>
-            Sponsorship application
-          </div>
-          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight mt-1">
-            {tier.name}, {tier.amountLabel}
-          </h2>
-          <p className="text-sm text-slate-500 mt-1">Tell us about your organization and we&rsquo;ll take it from there.</p>
-
-          <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Field label="Company / organization" value={form.companyName} onChange={(v) => setForm({ ...form, companyName: v })} required className="sm:col-span-2" />
-            <Field label="Your name" value={form.contactName} onChange={(v) => setForm({ ...form, contactName: v })} required />
-            <Field label="Your role" value={form.contactRole} onChange={(v) => setForm({ ...form, contactRole: v })} placeholder="e.g. Marketing Director" />
-            <Field label="Email" value={form.contactEmail} onChange={(v) => setForm({ ...form, contactEmail: v })} required type="email" />
-            <Field label="Phone" value={form.contactPhone} onChange={(v) => setForm({ ...form, contactPhone: v })} />
-            <Field label="Website" value={form.website} onChange={(v) => setForm({ ...form, website: v })} placeholder="https://" className="sm:col-span-2" />
-            <label className="block sm:col-span-2">
-              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Anything you&rsquo;d like to add (optional)</span>
-              <textarea
-                value={form.message}
-                onChange={(e) => setForm({ ...form, message: e.target.value })}
-                rows={3}
-                placeholder="Specific session you'd like to sponsor, materials you want to distribute, scheduling notes, etc."
-                className="mt-1 w-full px-3 py-2.5 text-sm border border-slate-200 rounded-lg outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10"
-              />
-            </label>
-          </div>
-
-          {tier.acceptsAlternativePayment && (
-            <label className="mt-5 flex items-start gap-3 p-3 rounded-lg cursor-pointer border"
-              style={{ background: form.donateFoodInstead ? tier.accentSoft : "#fff", borderColor: form.donateFoodInstead ? tier.accent : "#e2e8f0" }}>
-              <input
-                type="checkbox"
-                checked={form.donateFoodInstead}
-                onChange={(e) => setForm({ ...form, donateFoodInstead: e.target.checked })}
-                className="mt-0.5"
-              />
-              <div className="flex-1">
-                <div className="text-sm font-bold text-slate-900">{tier.acceptsAlternativePayment.label}</div>
-                <div className="text-xs text-slate-600 mt-0.5">{tier.acceptsAlternativePayment.note}</div>
-                <div className="text-xs text-slate-500 mt-1">If checked, we&rsquo;ll coordinate directly instead of charging the {tier.amountLabel} sponsorship fee.</div>
-              </div>
-            </label>
-          )}
-
-          {error && (
-            <div className="mt-4 px-3 py-2 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-sm inline-flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" /> {error}
-            </div>
-          )}
-
-          <div className="mt-6 flex items-center justify-between">
-            <button onClick={onBack} className="text-sm font-semibold text-slate-500 hover:text-slate-700 inline-flex items-center gap-1">
-              <ChevronLeft className="w-4 h-4" /> Back
-            </button>
-            <button
-              onClick={onSubmit}
-              disabled={submitting}
-              className="px-6 py-3 rounded-xl font-bold text-white shadow-md transition-all hover:shadow-lg disabled:opacity-50 inline-flex items-center gap-2"
-              style={{ background: tier.accent }}
-            >
-              {submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting…</> : <>Submit application <ArrowRight className="w-4 h-4" /></>}
-            </button>
-          </div>
-        </div>
+      <div className="mt-7">
+        <PrimaryButton onClick={onApply}>Apply for {tier.name.replace(" Sponsor", "")}</PrimaryButton>
       </div>
-    </div>
+
+      <p className="mt-4 text-center text-[12px]" style={{ color: C.mutedSoft }}>
+        <a href="/2026-sponsorship-prospectus.pdf" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 font-semibold" style={{ color: C.muted }}>
+          <FileText className="w-3.5 h-3.5" /> Download the full prospectus
+        </a>
+      </p>
+    </>
   );
 }
 
@@ -481,91 +555,68 @@ function Done({
   onCheckout: () => void;
 }) {
   return (
-    <div className="max-w-xl mx-auto">
-      <div className="bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden">
-        <div className="h-2" style={{ background: tier.accent }} />
-        <div className="p-8 text-center">
-          <div className="w-14 h-14 mx-auto rounded-full flex items-center justify-center mb-4"
-            style={{ background: tier.accentSoft }}>
-            <Check className="w-7 h-7" style={{ color: tier.accent }} />
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Application received.
-          </h1>
-          <p className="mt-3 text-sm text-slate-600 leading-relaxed">
-            Thank you for submitting <strong>{companyName}</strong> as a {tier.name} for the 2026 Lurie Children&rsquo;s and AALB Conference. A confirmation has been sent to the email you provided.
-          </p>
+    <div
+      className="min-h-screen"
+      style={{
+        background: `
+          radial-gradient(120% 75% at 50% -8%, rgba(201,161,75,0.10), transparent 60%),
+          radial-gradient(110% 60% at 50% 112%, rgba(42,143,204,0.09), transparent 60%),
+          ${C.paper}`,
+      }}
+    >
+      <div className="max-w-md mx-auto px-5 sm:px-6 pt-16 pb-24">
+        <div className="flex items-center justify-center gap-2.5 mb-8 opacity-90">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logos/lurie-icon.png" alt="Lurie Children's" className="h-6 w-auto" />
+          <span className="w-px h-4" style={{ background: C.hairline }} />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logos/aalb-icon.png" alt="AALB" className="h-6 w-auto" />
+        </div>
 
-          {donatesFoodInstead ? (
-            <div className="mt-6 rounded-xl p-4 text-left" style={{ background: tier.accentSoft, border: `1px solid ${tier.accent}33` }}>
-              <div className="text-[11px] font-bold tracking-widest uppercase" style={{ color: tier.accent }}>
-                Next step
-              </div>
-              <p className="mt-1 text-sm text-slate-700">
-                We&rsquo;ll be in touch shortly to coordinate menu, quantities, delivery, and logistics for your food donation.
-              </p>
+        <div className="rounded-2xl border bg-white overflow-hidden text-center" style={{ borderColor: C.hairline }}>
+          <div className="h-1.5" style={{ background: tier.accent }} />
+          <div className="p-7">
+            <div className="w-14 h-14 mx-auto rounded-full flex items-center justify-center mb-4" style={{ background: tier.accentSoft }}>
+              <Check className="w-7 h-7" style={{ color: tier.accent }} strokeWidth={3} />
             </div>
-          ) : requiresPayment ? (
-            <div className="mt-6">
-              <div className="rounded-xl p-4 text-left mb-4" style={{ background: tier.accentSoft, border: `1px solid ${tier.accent}33` }}>
-                <div className="text-[11px] font-bold tracking-widest uppercase" style={{ color: tier.accent }}>
-                  Complete your sponsorship
-                </div>
-                <p className="mt-1 text-sm text-slate-700">
-                  Pay {tier.amountLabel} now with a card via Stripe to confirm your spot, or reply to the confirmation email to arrange invoice or check.
+            <h1 className="font-serif-display text-[28px] font-bold tracking-tight" style={{ color: C.ink }}>
+              Application received.
+            </h1>
+            <p className="mt-3 text-[14px] leading-relaxed" style={{ color: C.muted }}>
+              Thank you for submitting <strong style={{ color: C.inkSoft }}>{companyName}</strong> as a {tier.name} for the 2026 Lurie Children&rsquo;s and AALB Conference. A confirmation is on its way to your inbox.
+            </p>
+
+            {donatesFoodInstead ? (
+              <div className="mt-6 rounded-xl p-4 text-left" style={{ background: tier.accentSoft, border: `1px solid ${tier.accent}33` }}>
+                <div className="text-[11px] font-bold tracking-widest uppercase" style={{ color: tier.accent }}>Next step</div>
+                <p className="mt-1 text-[13px]" style={{ color: C.inkSoft }}>
+                  We&rsquo;ll be in touch shortly to coordinate menu, quantities, delivery, and logistics for your food donation.
                 </p>
               </div>
-              <button
-                onClick={onCheckout}
-                disabled={redirectingToCheckout}
-                className="w-full px-6 py-4 rounded-xl font-bold text-white shadow-lg disabled:opacity-50 inline-flex items-center justify-center gap-2"
-                style={{ background: tier.accent }}
-              >
-                {redirectingToCheckout ? <><Loader2 className="w-4 h-4 animate-spin" /> Redirecting to checkout…</> : <><CreditCard className="w-4 h-4" /> Pay {tier.amountLabel} now</>}
-              </button>
-              <p className="text-[11px] text-slate-400 mt-3">
-                Payment processed by Stripe. Tax-deductible under IRS code 501(c)(3).
-              </p>
-              {error && (
-                <div className="mt-3 px-3 py-2 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-sm inline-flex items-start gap-2 text-left">
-                  <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" /> {error}
+            ) : requiresPayment ? (
+              <div className="mt-6 text-left">
+                <div className="rounded-xl p-4 mb-4" style={{ background: tier.accentSoft, border: `1px solid ${tier.accent}33` }}>
+                  <div className="text-[11px] font-bold tracking-widest uppercase" style={{ color: tier.accent }}>Complete your sponsorship</div>
+                  <p className="mt-1 text-[13px]" style={{ color: C.inkSoft }}>
+                    Pay {tier.amountLabel} now by card to confirm your spot, or reply to the confirmation email to arrange an invoice or check.
+                  </p>
                 </div>
-              )}
-            </div>
-          ) : (
-            <p className="mt-4 text-sm text-slate-500">
-              Our team will follow up directly to finalize the details.
-            </p>
-          )}
+                <PrimaryButton onClick={onCheckout} loading={redirectingToCheckout} icon={CreditCard}>
+                  Pay {tier.amountLabel} now
+                </PrimaryButton>
+                <p className="text-[11px] text-center mt-3" style={{ color: C.mutedSoft }}>
+                  Payment processed by Stripe. Tax-deductible under IRS code 501(c)(3).
+                </p>
+                <InlineError message={error} />
+              </div>
+            ) : (
+              <p className="mt-4 text-[13px]" style={{ color: C.muted }}>
+                Our team will follow up directly to finalize the details.
+              </p>
+            )}
+          </div>
         </div>
       </div>
     </div>
-  );
-}
-
-function Field({
-  label, value, onChange, placeholder, required, type, className,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-  required?: boolean;
-  type?: string;
-  className?: string;
-}) {
-  return (
-    <label className={`block ${className || ""}`}>
-      <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
-        {label}{required && <span className="text-rose-500"> *</span>}
-      </span>
-      <input
-        type={type || "text"}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="mt-1 w-full px-3 py-2.5 text-sm border border-slate-200 rounded-lg outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10"
-      />
-    </label>
   );
 }

@@ -48,12 +48,17 @@ export function WizardShell({
   current,
   total,
   onBack,
+  wide,
   children,
 }: {
   eyebrow: string;
   current: number; // 0-based
   total: number;
   onBack: () => void;
+  // Comparison steps (e.g. choosing a sponsorship tier) need the tiers
+  // side by side, so they opt into a wider content column while keeping
+  // the same rail, header, and eyebrow as every other step.
+  wide?: boolean;
   children: React.ReactNode;
 }) {
   const pct = Math.round(((current + 1) / total) * 100);
@@ -80,7 +85,7 @@ export function WizardShell({
         />
       </div>
 
-      <div className="max-w-xl mx-auto px-5 sm:px-6">
+      <div className={`${wide ? "max-w-5xl" : "max-w-xl"} mx-auto px-5 sm:px-6`}>
         {/* Header: back + brand + step counter */}
         <div className="flex items-center justify-between pt-7 pb-2">
           <button

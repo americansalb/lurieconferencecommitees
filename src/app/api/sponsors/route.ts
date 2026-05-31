@@ -29,9 +29,9 @@ export async function POST(req: Request) {
     tier, donateFoodInstead, message,
   } = body;
 
-  if (!companyName?.trim() || !contactName?.trim() || !isEmail(contactEmail || "") || !tier) {
+  if (!companyName?.trim() || !contactName?.trim() || !isEmail(contactEmail || "") || !contactPhone?.trim() || !tier) {
     return NextResponse.json(
-      { error: "Company name, contact name, valid email, and a tier are required." },
+      { error: "Company name, contact name, valid email, phone, and a tier are required." },
       { status: 400 }
     );
   }
