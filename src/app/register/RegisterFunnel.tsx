@@ -1,20 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import {
-  Calendar, MapPin, Monitor, ArrowRight, Check, AlertCircle,
-  Loader2, CreditCard, Sparkles, ChevronLeft,
+  MapPin, Monitor, User, Mail, Sparkles, Calendar, CreditCard,
+  Car, UtensilsCrossed, Accessibility, Languages, Pencil, Check,
 } from "lucide-react";
-
-const TEAL = "#0E4456";
-const TEAL_DEEP = "#0C3B4B";
-const BLUE = "#2A8FCC";
-const GOLD = "#C9A14B";
-const PAPER = "#FAFBFC";
-const INK = "#0B1F25";
-const MUTED = "#5A6E76";
-const HAIRLINE = "#E6EBEE";
+import {
+  C, WizardShell, StepFrame, Question, TextInput, TextArea, ChoiceCard,
+  ToggleRow, PrimaryButton, InlineError, Hint, useEnterKey,
+} from "@/components/funnel/Wizard";
 
 type Mode = "in-person" | "virtual";
 
@@ -31,16 +26,13 @@ type Form = {
 };
 
 const EMPTY: Form = {
-  firstName: "",
-  lastName: "",
-  email: "",
-  phone: "",
-  primaryLanguages: "",
-  attendanceMode: "",
-  needsParking: false,
-  accessibilityNotes: "",
-  dietary: "",
+  firstName: "", lastName: "", email: "", phone: "",
+  primaryLanguages: "", attendanceMode: "",
+  needsParking: false, accessibilityNotes: "", dietary: "",
 };
+
+const STEPS = ["Attendance", "Your name", "Contact", "Personalize", "Review"];
+const emailOk = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
 
 export default function RegisterFunnel({
   tierLabel, tierEnd, inPersonPrice, virtualPrice,
@@ -50,35 +42,56 @@ export default function RegisterFunnel({
   inPersonPrice: number;
   virtualPrice: number;
 }) {
+  const router = useRouter();
+  const [step, setStep] = useState(0);
   const [form, setForm] = useState<Form>(EMPTY);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const livePrice = form.attendanceMode === "in-person"
-    ? inPersonPrice
-    : form.attendanceMode === "virtual"
-      ? virtualPrice
-      : null;
+  const price = form.attendanceMode === "in-person" ? inPersonPrice
+    : form.attendanceMode === "virtual" ? virtualPrice : null;
+  const isInPerson = form.attendanceMode === "in-person";
 
-  function update<K extends keyof Form>(k: K, v: Form[K]) {
+  function set<K extends keyof Form>(k: K, v: Form[K]) {
     setForm((f) => ({ ...f, [k]: v }));
   }
 
+  function goBack() {
+    setError(null);
+    if (step === 0) { router.push("/"); return; }
+    setStep((s) => s - 1);
+  }
+
+  // Picking a mode auto-advances after a beat so the selection registers.
+  function pickMode(m: Mode) {
+    set("attendanceMode", m);
+    setError(null);
+    setTimeout(() => setStep(1), 360);
+  }
+
+  const next = useCallback(() => {
+    setError(null);
+    if (step === 1) {
+      if (!form.firstName.trim() || !form.lastName.trim()) {
+        setError("Please share your first and last name.");
+        return;
+      }
+    }
+    if (step === 2) {
+      if (!emailOk(form.email)) {
+        setError("That email doesn't look right — we'll send your ticket there.");
+        return;
+      }
+    }
+    setStep((s) => Math.min(s + 1, STEPS.length - 1));
+  }, [step, form]);
+
   async function submit() {
     setError(null);
-    if (!form.attendanceMode) {
-      setError("Please choose in-person or virtual.");
+    if (!form.attendanceMode || !form.firstName.trim() || !form.lastName.trim() || !emailOk(form.email)) {
+      setError("Something's missing above. Use Edit to fix it.");
       return;
     }
-    if (!form.firstName.trim() || !form.lastName.trim()) {
-      setError("First and last name are required.");
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-      setError("Please enter a valid email address.");
-      return;
-    }
-
     setSubmitting(true);
     try {
       const res = await fetch("/api/attendees/public", {
@@ -94,351 +107,207 @@ export default function RegisterFunnel({
       }
       window.location.href = json.url;
     } catch {
-      setError("Network error. Please try again.");
+      setError("Network hiccup. Please try again.");
       setSubmitting(false);
     }
   }
 
+  // Enter advances on the simple input steps.
+  useEnterKey(next, step === 1 || step === 2);
+
   const tierEndDate = new Date(tierEnd).toLocaleDateString("en-US", { month: "long", day: "numeric" });
 
   return (
-    <div className="min-h-screen" style={{ background: PAPER }}>
-      {/* Hero band */}
-      <div
-        className="relative overflow-hidden text-white"
-        style={{
-          background: `linear-gradient(180deg, ${TEAL} 0%, ${TEAL_DEEP} 100%)`,
-        }}
-      >
-        <div
-          aria-hidden
-          className="absolute inset-0"
-          style={{
-            background: `radial-gradient(ellipse 70% 60% at 50% 0%, rgba(201,161,75,0.18) 0%, transparent 70%)`,
-          }}
-        />
-        <div className="relative max-w-3xl mx-auto px-4 sm:px-6 pt-12 sm:pt-16 pb-10 text-center">
-          <Link href="/" className="inline-flex items-center gap-2 text-xs font-semibold text-white/70 hover:text-white mb-6">
-            <ChevronLeft className="w-3 h-3" /> Back to the conference
-          </Link>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold tracking-[0.22em] uppercase mb-5 border"
-            style={{
-              color: "#F4E9CD",
-              borderColor: "rgba(201,161,75,0.45)",
-              background: "rgba(201,161,75,0.08)",
-            }}>
-            <Sparkles className="w-3 h-3" style={{ color: GOLD }} />
-            Registration
+    <WizardShell eyebrow="Register" current={step} total={STEPS.length} onBack={goBack}>
+      {/* STEP 0 — attendance mode */}
+      {step === 0 && (
+        <StepFrame stepKey={0}>
+          <Question
+            title={<>Reserve your seat.</>}
+            sub={<>August 15 &amp; 16, 2026 · Lurie Children&rsquo;s, Chicago. {tierLabel} pricing through {tierEndDate}.</>}
+          />
+          <div className="grid grid-cols-1 gap-3 wiz-stagger">
+            <ChoiceCard
+              selected={isInPerson}
+              accent={C.teal}
+              icon={MapPin}
+              title="In person"
+              tagline="Join us in Chicago"
+              price={`$${inPersonPrice}`}
+              features={["Lunch + materials", "CEU certificate", "Session recordings after"]}
+              onClick={() => pickMode("in-person")}
+            />
+            <ChoiceCard
+              selected={form.attendanceMode === "virtual"}
+              accent={C.blue}
+              icon={Monitor}
+              title="Virtual"
+              tagline="Attend from anywhere"
+              price={`$${virtualPrice}`}
+              features={["Live stream", "CEU certificate", "On-demand replays"]}
+              onClick={() => pickMode("virtual")}
+            />
           </div>
-          <h1 className="font-serif-display text-4xl sm:text-5xl font-bold tracking-tight">
-            Reserve your seat.
-          </h1>
-          <p className="mt-3 text-white/75 text-sm sm:text-base max-w-xl mx-auto">
-            August 15 and 16, 2026 &middot; Lurie Children&rsquo;s, Chicago. {tierLabel} pricing through {tierEndDate}.
-          </p>
-        </div>
-      </div>
+          <Hint>Tap a card to continue. You can change this later.</Hint>
+        </StepFrame>
+      )}
 
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 -mt-6 pb-20">
-        <div
-          className="bg-white rounded-2xl border overflow-hidden"
-          style={{ borderColor: HAIRLINE, boxShadow: "0 24px 60px -28px rgba(11,31,37,0.20)" }}
-        >
-          {/* Step 1: choose mode */}
-          <Section number="1" title="How will you attend?">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <ModeChoice
-                selected={form.attendanceMode === "in-person"}
-                accent={TEAL}
-                icon={MapPin}
-                title="In-Person"
-                tagline="Join us in Chicago"
-                price={inPersonPrice}
-                features={["Lunch + materials", "CEU certificate", "Recordings after"]}
-                onClick={() => update("attendanceMode", "in-person")}
-              />
-              <ModeChoice
-                selected={form.attendanceMode === "virtual"}
-                accent={BLUE}
-                icon={Monitor}
-                title="Virtual"
-                tagline="Attend from anywhere"
-                price={virtualPrice}
-                features={["Live stream", "CEU certificate", "On-demand replays"]}
-                onClick={() => update("attendanceMode", "virtual")}
-              />
-            </div>
-          </Section>
+      {/* STEP 1 — name */}
+      {step === 1 && (
+        <StepFrame stepKey={1}>
+          <Question title={<>What&rsquo;s your name?</>} sub="The name that goes on your badge and CEU certificate." />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <TextInput label="First name" required value={form.firstName} onChange={(v) => set("firstName", v)} autoFocus />
+            <TextInput label="Last name" required value={form.lastName} onChange={(v) => set("lastName", v)} />
+          </div>
+          <InlineError message={error} />
+          <div className="mt-7">
+            <PrimaryButton onClick={next}>Continue</PrimaryButton>
+          </div>
+          <Hint>Press Enter ↵ to continue</Hint>
+        </StepFrame>
+      )}
 
-          {/* Step 2: details */}
-          <Section number="2" title="About you" disabled={!form.attendanceMode}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Field label="First name" required value={form.firstName} onChange={(v) => update("firstName", v)} />
-              <Field label="Last name"  required value={form.lastName}  onChange={(v) => update("lastName", v)} />
-              <Field label="Email"      required value={form.email}     onChange={(v) => update("email", v)} type="email" className="sm:col-span-2" />
-              <Field label="Phone"      value={form.phone} onChange={(v) => update("phone", v)} type="tel" />
-              <Field
-                label="Primary languages"
-                placeholder="e.g. English, Spanish, ASL"
-                value={form.primaryLanguages}
-                onChange={(v) => update("primaryLanguages", v)}
-              />
-            </div>
-          </Section>
+      {/* STEP 2 — contact */}
+      {step === 2 && (
+        <StepFrame stepKey={2}>
+          <Question title={<>Where can we reach you?</>} sub="Your ticket, receipt, and join link all go to your email." />
+          <div className="space-y-3">
+            <TextInput label="Email" required type="email" inputMode="email" value={form.email} onChange={(v) => set("email", v)} autoFocus placeholder="you@example.org" />
+            <TextInput label="Phone (optional)" type="tel" inputMode="tel" value={form.phone} onChange={(v) => set("phone", v)} placeholder="For day-of updates only" />
+          </div>
+          <InlineError message={error} />
+          <div className="mt-7">
+            <PrimaryButton onClick={next}>Continue</PrimaryButton>
+          </div>
+          <Hint>Press Enter ↵ to continue</Hint>
+        </StepFrame>
+      )}
 
-          {/* Step 3: extras */}
-          <Section number="3" title="Anything else?" disabled={!form.attendanceMode}>
-            <div className="space-y-4">
-              {form.attendanceMode === "in-person" && (
-                <BigToggle
-                  checked={form.needsParking}
-                  onToggle={() => update("needsParking", !form.needsParking)}
-                  title="Parking pass at the venue"
-                  desc="We'll reserve a spot at the Streeterville garage."
-                />
-              )}
-              <TextArea
-                label="Accessibility accommodations (optional)"
-                placeholder="ASL, captioning, mobility, lighting, seating, or anything else that helps."
-                value={form.accessibilityNotes}
-                onChange={(v) => update("accessibilityNotes", v)}
+      {/* STEP 3 — personalize (all optional) */}
+      {step === 3 && (
+        <StepFrame stepKey={3}>
+          <Question
+            title={<>Make it yours.</>}
+            sub="All optional — share anything that helps us host you well."
+          />
+          <div className="space-y-3 wiz-stagger">
+            {isInPerson && (
+              <ToggleRow
+                checked={form.needsParking}
+                onToggle={() => set("needsParking", !form.needsParking)}
+                title="Reserve a parking pass"
+                desc="We'll hold a spot at the Streeterville garage."
+                icon={Car}
               />
-              {form.attendanceMode === "in-person" && (
-                <TextArea
-                  label="Dietary needs (optional)"
-                  placeholder="Vegetarian, vegan, halal, kosher, allergies, etc."
-                  value={form.dietary}
-                  onChange={(v) => update("dietary", v)}
-                />
-              )}
-            </div>
-          </Section>
-
-          {/* Step 4: review + pay */}
-          <Section number="4" title="Review and pay" disabled={!form.attendanceMode}>
-            <div className="rounded-xl p-5" style={{ background: PAPER, border: `1px solid ${HAIRLINE}` }}>
-              <div className="flex items-baseline justify-between">
-                <div>
-                  <div className="text-[10px] font-bold tracking-[0.22em] uppercase" style={{ color: MUTED }}>
-                    Total due today
-                  </div>
-                  <div className="text-xs mt-1" style={{ color: MUTED }}>
-                    {form.attendanceMode === "in-person" ? "In-Person" : form.attendanceMode === "virtual" ? "Virtual" : "Pick attendance above"} &middot; {tierLabel} pricing
-                  </div>
-                </div>
-                <div className="font-serif-display text-4xl font-bold tabular-nums" style={{ color: INK }}>
-                  {livePrice !== null ? `$${livePrice}` : "..."}
-                </div>
+            )}
+            <div className="rounded-xl p-4 bg-white" style={{ border: `1.5px solid ${C.hairline}` }}>
+              <div className="flex items-center gap-2 mb-2.5">
+                <Languages className="w-4 h-4" style={{ color: C.teal }} />
+                <span className="text-[13px] font-semibold" style={{ color: C.inkSoft }}>Languages you work in</span>
               </div>
+              <TextInput label="" value={form.primaryLanguages} onChange={(v) => set("primaryLanguages", v)} placeholder="e.g. English, Spanish, ASL" />
             </div>
-
-            {error && (
-              <div className="mt-4 px-3 py-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-sm inline-flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-                <span>{error}</span>
+            <div className="rounded-xl p-4 bg-white" style={{ border: `1.5px solid ${C.hairline}` }}>
+              <div className="flex items-center gap-2 mb-2.5">
+                <Accessibility className="w-4 h-4" style={{ color: C.teal }} />
+                <span className="text-[13px] font-semibold" style={{ color: C.inkSoft }}>Accessibility accommodations</span>
+              </div>
+              <TextArea label="" value={form.accessibilityNotes} onChange={(v) => set("accessibilityNotes", v)} rows={2} placeholder="ASL, captioning, mobility, seating, lighting — anything that helps." />
+            </div>
+            {isInPerson && (
+              <div className="rounded-xl p-4 bg-white" style={{ border: `1.5px solid ${C.hairline}` }}>
+                <div className="flex items-center gap-2 mb-2.5">
+                  <UtensilsCrossed className="w-4 h-4" style={{ color: C.teal }} />
+                  <span className="text-[13px] font-semibold" style={{ color: C.inkSoft }}>Dietary needs</span>
+                </div>
+                <TextInput label="" value={form.dietary} onChange={(v) => set("dietary", v)} placeholder="Vegetarian, vegan, halal, kosher, allergies…" />
               </div>
             )}
+          </div>
+          <div className="mt-7">
+            <PrimaryButton onClick={next}>Continue to review</PrimaryButton>
+          </div>
+        </StepFrame>
+      )}
 
-            <button
-              onClick={submit}
-              disabled={submitting || !form.attendanceMode}
-              className="mt-5 w-full inline-flex items-center justify-center gap-2 px-6 py-4 rounded-full font-bold text-base text-white shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ background: `linear-gradient(135deg, ${TEAL} 0%, ${BLUE} 100%)` }}
-            >
-              {submitting
-                ? <><Loader2 className="w-4 h-4 animate-spin" /> Starting checkout…</>
-                : <><CreditCard className="w-4 h-4" /> Continue to secure checkout <ArrowRight className="w-4 h-4" /></>}
-            </button>
+      {/* STEP 4 — review & pay */}
+      {step === 4 && (
+        <StepFrame stepKey={4}>
+          <Question title={<>Look good?</>} sub="One tap to secure checkout. Refundable through July 15." />
 
-            <p className="mt-3 text-center text-[11px]" style={{ color: MUTED }}>
-              Payment processed by Stripe. Your seat is reserved as soon as payment completes. Refundable through July 15.
-            </p>
-          </Section>
-        </div>
+          <div className="rounded-2xl overflow-hidden bg-white" style={{ border: `1.5px solid ${C.hairline}`, boxShadow: "0 18px 44px -28px rgba(11,31,37,0.3)" }}>
+            {/* attendance + price banner */}
+            <div className="p-5 flex items-center gap-3" style={{ background: `linear-gradient(135deg, ${C.teal} 0%, ${C.tealDeep} 100%)` }}>
+              <span className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(255,255,255,0.14)", color: "white" }}>
+                {isInPerson ? <MapPin className="w-5 h-5" /> : <Monitor className="w-5 h-5" />}
+              </span>
+              <div className="flex-1">
+                <div className="text-white font-bold text-[15px]">{isInPerson ? "In-person" : "Virtual"} registration</div>
+                <div className="text-[12px]" style={{ color: "rgba(255,255,255,0.7)" }}>{tierLabel} pricing · Aug 15 &amp; 16, 2026</div>
+              </div>
+              <div className="text-right">
+                <div className="font-serif-display text-[30px] font-bold text-white tabular-nums leading-none">{price !== null ? `$${price}` : "—"}</div>
+              </div>
+            </div>
 
-        <p className="mt-6 text-center text-xs" style={{ color: MUTED }}>
-          Need to pay by check or invoice? Email{" "}
-          <a className="font-semibold" style={{ color: TEAL }} href="mailto:contact@aalb.org">contact@aalb.org</a>.
-        </p>
+            <div className="divide-y" style={{ borderColor: C.hairline }}>
+              <SummaryRow label="Name" value={`${form.firstName} ${form.lastName}`.trim() || "—"} onEdit={() => setStep(1)} />
+              <SummaryRow label="Email" value={form.email || "—"} onEdit={() => setStep(2)} />
+              {form.phone && <SummaryRow label="Phone" value={form.phone} onEdit={() => setStep(2)} />}
+              {(form.primaryLanguages || form.accessibilityNotes || (isInPerson && (form.needsParking || form.dietary))) && (
+                <div className="px-5 py-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-bold tracking-wider uppercase" style={{ color: C.mutedSoft }}>Preferences</span>
+                    <button onClick={() => setStep(3)} className="inline-flex items-center gap-1 text-[12px] font-semibold" style={{ color: C.teal }}>
+                      <Pencil className="w-3 h-3" /> Edit
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {isInPerson && form.needsParking && <Chip icon={Car}>Parking pass</Chip>}
+                    {form.primaryLanguages && <Chip icon={Languages}>{form.primaryLanguages}</Chip>}
+                    {form.accessibilityNotes && <Chip icon={Accessibility}>Accommodations noted</Chip>}
+                    {isInPerson && form.dietary && <Chip icon={UtensilsCrossed}>{form.dietary}</Chip>}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <InlineError message={error} />
+
+          <div className="mt-6">
+            <PrimaryButton onClick={submit} loading={submitting} icon={CreditCard}>Continue to secure checkout</PrimaryButton>
+          </div>
+          <Hint>
+            Payment handled by Stripe. Your seat is reserved the moment payment clears.<br />
+            Pay by check or invoice? Email{" "}
+            <a className="font-semibold" style={{ color: C.teal }} href="mailto:contact@aalb.org">contact@aalb.org</a>.
+          </Hint>
+        </StepFrame>
+      )}
+    </WizardShell>
+  );
+}
+
+function SummaryRow({ label, value, onEdit }: { label: string; value: string; onEdit: () => void }) {
+  return (
+    <div className="px-5 py-4 flex items-center gap-3">
+      <div className="flex-1 min-w-0">
+        <div className="text-[11px] font-bold tracking-wider uppercase" style={{ color: C.mutedSoft }}>{label}</div>
+        <div className="text-[15px] font-semibold truncate" style={{ color: C.ink }}>{value}</div>
       </div>
+      <button onClick={onEdit} className="inline-flex items-center gap-1 text-[12px] font-semibold shrink-0" style={{ color: C.teal }}>
+        <Pencil className="w-3 h-3" /> Edit
+      </button>
     </div>
   );
 }
 
-function Section({
-  number, title, disabled, children,
-}: {
-  number: string;
-  title: string;
-  disabled?: boolean;
-  children: React.ReactNode;
-}) {
+function Chip({ icon: Icon, children }: { icon: React.ComponentType<{ className?: string }>; children: React.ReactNode }) {
   return (
-    <div
-      className="p-6 sm:p-8 transition-opacity"
-      style={{
-        borderBottom: `1px solid ${HAIRLINE}`,
-        opacity: disabled ? 0.5 : 1,
-        pointerEvents: disabled ? "none" : undefined,
-      }}
-    >
-      <div className="flex items-center gap-3 mb-5">
-        <span
-          className="w-7 h-7 rounded-full flex items-center justify-center font-serif-display text-sm font-bold tabular-nums"
-          style={{ background: GOLD + "22", color: GOLD }}
-        >
-          {number}
-        </span>
-        <h2 className="font-serif-display text-xl font-bold" style={{ color: INK }}>{title}</h2>
-      </div>
-      {children}
-    </div>
-  );
-}
-
-function ModeChoice({
-  selected, accent, icon: Icon, title, tagline, price, features, onClick,
-}: {
-  selected: boolean;
-  accent: string;
-  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
-  title: string;
-  tagline: string;
-  price: number;
-  features: string[];
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="text-left rounded-2xl p-5 transition-all"
-      style={{
-        background: selected ? accent + "0F" : "white",
-        border: selected ? `1.5px solid ${accent}` : `1px solid ${HAIRLINE}`,
-        boxShadow: selected ? `0 12px 28px -16px ${accent}55` : undefined,
-      }}
-    >
-      <div className="flex items-center gap-3 mb-3">
-        <span
-          className="w-10 h-10 rounded-xl flex items-center justify-center"
-          style={{ background: accent + "1A", color: accent }}
-        >
-          <Icon className="w-5 h-5" />
-        </span>
-        <div className="flex-1">
-          <div className="font-serif-display text-lg font-bold leading-tight" style={{ color: INK }}>{title}</div>
-          <div className="text-xs" style={{ color: MUTED }}>{tagline}</div>
-        </div>
-        {selected && (
-          <span className="w-6 h-6 rounded-full flex items-center justify-center text-white" style={{ background: accent }}>
-            <Check className="w-3.5 h-3.5" strokeWidth={3} />
-          </span>
-        )}
-      </div>
-      <div className="flex items-baseline gap-1.5 mb-3">
-        <span className="font-serif-display text-3xl font-bold tabular-nums" style={{ color: INK }}>${price}</span>
-        <span className="text-xs" style={{ color: MUTED }}>USD</span>
-      </div>
-      <ul className="space-y-1.5">
-        {features.map((f) => (
-          <li key={f} className="flex items-center gap-2 text-[12px]" style={{ color: MUTED }}>
-            <Check className="w-3 h-3 shrink-0" style={{ color: accent }} strokeWidth={3} />
-            {f}
-          </li>
-        ))}
-      </ul>
-    </button>
-  );
-}
-
-function Field({
-  label, value, onChange, placeholder, required, type, className,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-  required?: boolean;
-  type?: string;
-  className?: string;
-}) {
-  return (
-    <label className={`block ${className || ""}`}>
-      <span className="text-[11px] font-semibold tracking-wide uppercase" style={{ color: MUTED }}>
-        {label}{required && <span style={{ color: "#dc2626" }}> *</span>}
-      </span>
-      <input
-        type={type || "text"}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="mt-1 w-full px-3 py-2.5 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-teal-500/15 focus:border-teal-600"
-        style={{ borderColor: HAIRLINE }}
-      />
-    </label>
-  );
-}
-
-function TextArea({
-  label, value, onChange, placeholder,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-}) {
-  return (
-    <label className="block">
-      <span className="text-[11px] font-semibold tracking-wide uppercase" style={{ color: MUTED }}>
-        {label}
-      </span>
-      <textarea
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        rows={2}
-        className="mt-1 w-full px-3 py-2.5 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-teal-500/15 focus:border-teal-600 resize-y"
-        style={{ borderColor: HAIRLINE }}
-      />
-    </label>
-  );
-}
-
-function BigToggle({
-  checked, onToggle, title, desc,
-}: {
-  checked: boolean;
-  onToggle: () => void;
-  title: string;
-  desc: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onToggle}
-      className="w-full text-left rounded-xl p-4 transition-all"
-      style={{
-        background: checked ? TEAL + "0E" : "white",
-        border: checked ? `1.5px solid ${TEAL}` : `1px solid ${HAIRLINE}`,
-      }}
-    >
-      <div className="flex items-center gap-3">
-        <span
-          className="w-5 h-5 rounded-md flex items-center justify-center shrink-0"
-          style={{
-            background: checked ? TEAL : "white",
-            border: checked ? "none" : `1px solid ${HAIRLINE}`,
-            color: "white",
-          }}
-        >
-          {checked && <Check className="w-3.5 h-3.5" strokeWidth={3} />}
-        </span>
-        <div className="flex-1">
-          <div className="text-sm font-bold" style={{ color: INK }}>{title}</div>
-          <div className="text-xs mt-0.5" style={{ color: MUTED }}>{desc}</div>
-        </div>
-      </div>
-    </button>
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-medium" style={{ background: C.teal + "0E", color: C.inkSoft, border: `1px solid ${C.teal}22` }}>
+      <Icon className="w-3 h-3" /> {children}
+    </span>
   );
 }

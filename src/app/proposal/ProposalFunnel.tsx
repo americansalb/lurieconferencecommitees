@@ -1,88 +1,93 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import {
-  User, FileText, Settings2, Mic, ArrowRight, Check, Loader2,
-  AlertCircle, ChevronLeft, Upload, X, Image as ImageIcon, Sparkles,
+  Lightbulb, FileText, Sparkles, User, Mic, Pencil, Check, X,
+  Image as ImageIcon, Upload, Plus,
 } from "lucide-react";
-
-const TEAL = "#0E4456";
-const TEAL_DEEP = "#0C3B4B";
-const BLUE = "#2A8FCC";
-const GOLD = "#C9A14B";
-const PAPER = "#FAFBFC";
-const INK = "#0B1F25";
-const MUTED = "#5A6E76";
-const HAIRLINE = "#E6EBEE";
+import {
+  C, WizardShell, StepFrame, Question, TextInput, TextArea, Pill,
+  PrimaryButton, InlineError, Hint, useEnterKey,
+} from "@/components/funnel/Wizard";
 
 type Form = {
-  name: string;
-  email: string;
-  phone: string;
-  affiliation: string;
-  jobTitle: string;
-  pronouns: string;
-  bio: string;
-  talkTitle: string;
-  talkAbstract: string;
-  learningObjectives: string;
-  sessionFormat: string;
-  sessionLength: string;
-  sessionTrack: string;
-  preferredDay: string;
-  presenterMessage: string;
-  headshotDataUrl: string;
-  headshotName: string;
+  name: string; email: string; phone: string; affiliation: string;
+  jobTitle: string; pronouns: string; bio: string;
+  talkTitle: string; talkAbstract: string; learningObjectives: string;
+  sessionFormat: string; sessionLength: string; sessionTrack: string; preferredDay: string;
+  presenterMessage: string; headshotDataUrl: string; headshotName: string;
 };
 
 const EMPTY: Form = {
   name: "", email: "", phone: "", affiliation: "", jobTitle: "", pronouns: "",
   bio: "", talkTitle: "", talkAbstract: "", learningObjectives: "",
   sessionFormat: "", sessionLength: "", sessionTrack: "", preferredDay: "",
-  presenterMessage: "",
-  headshotDataUrl: "", headshotName: "",
+  presenterMessage: "", headshotDataUrl: "", headshotName: "",
 };
 
 const FORMATS = ["Talk", "Panel", "Workshop", "Fireside chat", "Lightning"];
 const LENGTHS = ["20 min", "30 min", "45 min", "60 min", "90 min"];
-const TRACKS = [
-  "Clinical practice", "Interpreter training", "Policy and access",
-  "Technology", "Patient and family voice", "Research and outcomes",
-];
+const TRACKS = ["Clinical practice", "Interpreter training", "Policy and access", "Technology", "Patient and family voice", "Research and outcomes"];
 const DAYS = ["August 15", "August 16", "Either day"];
 
+const STEPS = ["Your idea", "The pitch", "Format", "About you", "Review"];
+const emailOk = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
+
 export default function ProposalFunnel() {
+  const router = useRouter();
+  const [step, setStep] = useState(0);
   const [form, setForm] = useState<Form>(EMPTY);
+  const [showMore, setShowMore] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
   const fileRef = useRef<HTMLInputElement | null>(null);
 
-  function update<K extends keyof Form>(k: K, v: Form[K]) {
+  function set<K extends keyof Form>(k: K, v: Form[K]) {
     setForm((f) => ({ ...f, [k]: v }));
   }
 
-  async function pickHeadshot(file: File) {
+  function goBack() {
+    setError(null);
+    if (step === 0) { router.push("/"); return; }
+    setStep((s) => s - 1);
+  }
+
+  function pickHeadshot(file: File) {
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) { setError("Please choose a photo under 5 MB."); return; }
     const reader = new FileReader();
     reader.onload = () => {
       const result = typeof reader.result === "string" ? reader.result : "";
-      update("headshotDataUrl", result);
-      update("headshotName", file.name);
+      set("headshotDataUrl", result);
+      set("headshotName", file.name);
     };
     reader.readAsDataURL(file);
   }
 
+  const next = useCallback(() => {
+    setError(null);
+    if (step === 0 && !form.talkTitle.trim()) {
+      setError("Give your session a working title — you can refine it later.");
+      return;
+    }
+    if (step === 1 && !form.talkAbstract.trim()) {
+      setError("A few sentences about your session helps us review it.");
+      return;
+    }
+    if (step === 3) {
+      if (!form.name.trim()) { setError("Please share your name."); return; }
+      if (!emailOk(form.email)) { setError("Please share a valid email so we can reach you."); return; }
+    }
+    setStep((s) => Math.min(s + 1, STEPS.length - 1));
+  }, [step, form]);
+
   async function submit() {
     setError(null);
-    if (!form.name.trim()) return setError("Please share your name.");
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return setError("Please share a valid email so we can reach you.");
-    if (!form.talkTitle.trim()) return setError("Give your proposal a working title.");
-    if (!form.talkAbstract.trim()) return setError("An abstract helps us review.");
-
+    if (!form.name.trim() || !emailOk(form.email) || !form.talkTitle.trim() || !form.talkAbstract.trim()) {
+      setError("Something required is missing. Use Edit to fix it.");
+      return;
+    }
     setSubmitting(true);
     try {
       const res = await fetch("/api/presenters/public", {
@@ -98,317 +103,243 @@ export default function ProposalFunnel() {
       }
       router.push(`/proposal/success/${json.token}`);
     } catch {
-      setError("Network error. Please try again.");
+      setError("Network hiccup. Please try again.");
       setSubmitting(false);
     }
   }
 
+  useEnterKey(next, step === 0 || step === 3);
+
   return (
-    <div className="min-h-screen" style={{ background: PAPER }}>
-      {/* Hero band */}
-      <div
-        className="relative overflow-hidden text-white"
-        style={{ background: `linear-gradient(180deg, ${TEAL} 0%, ${TEAL_DEEP} 100%)` }}
-      >
-        <div
-          aria-hidden
-          className="absolute inset-0"
-          style={{
-            background: `radial-gradient(ellipse 70% 60% at 50% 0%, rgba(201,161,75,0.18) 0%, transparent 70%)`,
-          }}
-        />
-        <div className="relative max-w-2xl mx-auto px-4 sm:px-6 pt-12 sm:pt-16 pb-10 text-center">
-          <Link href="/" className="inline-flex items-center gap-2 text-xs font-semibold text-white/70 hover:text-white mb-6">
-            <ChevronLeft className="w-3 h-3" /> Back to the conference
-          </Link>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold tracking-[0.22em] uppercase mb-5 border"
-            style={{
-              color: "#F4E9CD",
-              borderColor: "rgba(201,161,75,0.45)",
-              background: "rgba(201,161,75,0.08)",
-            }}>
-            <Sparkles className="w-3 h-3" style={{ color: GOLD }} />
-            Call for Proposals
+    <WizardShell eyebrow="Call for Proposals" current={step} total={STEPS.length} onBack={goBack}>
+      {/* STEP 0 — the idea (title first) */}
+      {step === 0 && (
+        <StepFrame stepKey={0}>
+          <Question
+            title={<>What&rsquo;s your idea?</>}
+            sub="Start with a working title. This is the work you want to bring to the conference — we review every proposal and reply within two weeks."
+          />
+          <TextInput
+            label="Working title"
+            required
+            autoFocus
+            value={form.talkTitle}
+            onChange={(v) => set("talkTitle", v)}
+            placeholder="e.g. Teach-Back That Actually Works Across Languages"
+          />
+          <InlineError message={error} />
+          <div className="mt-7">
+            <PrimaryButton onClick={next}>Continue</PrimaryButton>
           </div>
-          <h1 className="font-serif-display text-4xl sm:text-5xl font-bold tracking-tight">
-            Share your voice.
-          </h1>
-          <p className="mt-3 text-white/75 text-sm sm:text-base max-w-xl mx-auto">
-            Tell us about the work you want to present. We review on a rolling basis and reply within two weeks.
-          </p>
-        </div>
-      </div>
+          <Hint>Press Enter ↵ to continue</Hint>
+        </StepFrame>
+      )}
 
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 -mt-6 pb-20">
-        <div
-          className="bg-white rounded-2xl border overflow-hidden"
-          style={{ borderColor: HAIRLINE, boxShadow: "0 24px 60px -28px rgba(11,31,37,0.20)" }}
-        >
-          <Section number="1" title="About you" icon={User}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Field label="Full name" required value={form.name} onChange={(v) => update("name", v)} className="sm:col-span-2" />
-              <Field label="Email" required type="email" value={form.email} onChange={(v) => update("email", v)} />
-              <Field label="Phone" type="tel" value={form.phone} onChange={(v) => update("phone", v)} />
-              <Field label="Affiliation" placeholder="Hospital, university, company, or independent" value={form.affiliation} onChange={(v) => update("affiliation", v)} className="sm:col-span-2" />
-              <Field label="Role or title" value={form.jobTitle} onChange={(v) => update("jobTitle", v)} />
-              <Field label="Pronouns" placeholder="she/her, he/him, they/them" value={form.pronouns} onChange={(v) => update("pronouns", v)} />
-            </div>
+      {/* STEP 1 — abstract */}
+      {step === 1 && (
+        <StepFrame stepKey={1}>
+          <Question
+            title={<>Tell us about it.</>}
+            sub={<>What is <em style={{ color: C.inkSoft }}>{form.talkTitle || "your session"}</em> about, who is it for, and why now?</>}
+          />
+          <TextArea
+            label="Abstract"
+            required
+            autoFocus
+            rows={6}
+            value={form.talkAbstract}
+            onChange={(v) => set("talkAbstract", v)}
+            placeholder="A few sentences. Paint the picture for our review team."
+          />
+          <div className="mt-4">
+            <TextArea
+              label="Three things attendees will leave with"
+              hint="optional"
+              rows={3}
+              value={form.learningObjectives}
+              onChange={(v) => set("learningObjectives", v)}
+              placeholder="One per line."
+            />
+          </div>
+          <InlineError message={error} />
+          <div className="mt-7">
+            <PrimaryButton onClick={next}>Continue</PrimaryButton>
+          </div>
+        </StepFrame>
+      )}
 
-            <div className="mt-4">
+      {/* STEP 2 — format */}
+      {step === 2 && (
+        <StepFrame stepKey={2}>
+          <Question title={<>Shape your session.</>} sub="Pick what fits best. Nothing here is binding — it just helps us build the schedule." />
+          <div className="space-y-6 wiz-stagger">
+            <PillGroup label="Session format" value={form.sessionFormat} options={FORMATS} onChange={(v) => set("sessionFormat", v)} />
+            <PillGroup label="Length" value={form.sessionLength} options={LENGTHS} onChange={(v) => set("sessionLength", v)} />
+            <PillGroup label="Best-fit track" value={form.sessionTrack} options={TRACKS} onChange={(v) => set("sessionTrack", v)} />
+            <PillGroup label="Preferred day" value={form.preferredDay} options={DAYS} onChange={(v) => set("preferredDay", v)} />
+          </div>
+          <div className="mt-8">
+            <PrimaryButton onClick={next}>Continue</PrimaryButton>
+          </div>
+        </StepFrame>
+      )}
+
+      {/* STEP 3 — about you (required: name + email; rest progressive) */}
+      {step === 3 && (
+        <StepFrame stepKey={3}>
+          <Question title={<>And you are?</>} sub="Just a name and email to start. Add the rest if you'd like — it's all optional." />
+          <div className="space-y-3">
+            <TextInput label="Full name" required autoFocus value={form.name} onChange={(v) => set("name", v)} />
+            <TextInput label="Email" required type="email" inputMode="email" value={form.email} onChange={(v) => set("email", v)} placeholder="you@example.org" />
+          </div>
+
+          {!showMore ? (
+            <button
+              type="button"
+              onClick={() => setShowMore(true)}
+              className="mt-4 w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-[13px] font-semibold transition-colors hover:bg-black/[0.02]"
+              style={{ color: C.teal, border: `1.5px dashed ${C.teal}44` }}
+            >
+              <Plus className="w-4 h-4" /> Add your affiliation, photo, and bio
+            </button>
+          ) : (
+            <div className="mt-4 space-y-3 wiz-step-in">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <TextInput label="Affiliation" value={form.affiliation} onChange={(v) => set("affiliation", v)} placeholder="Hospital, university, or independent" />
+                <TextInput label="Role or title" value={form.jobTitle} onChange={(v) => set("jobTitle", v)} />
+                <TextInput label="Pronouns" value={form.pronouns} onChange={(v) => set("pronouns", v)} placeholder="she/her, he/him, they/them" />
+                <TextInput label="Phone" type="tel" inputMode="tel" value={form.phone} onChange={(v) => set("phone", v)} />
+              </div>
               <Headshot
                 dataUrl={form.headshotDataUrl}
                 fileName={form.headshotName}
                 onPick={() => fileRef.current?.click()}
-                onClear={() => { update("headshotDataUrl", ""); update("headshotName", ""); }}
+                onClear={() => { set("headshotDataUrl", ""); set("headshotName", ""); }}
               />
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                className="hidden"
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) void pickHeadshot(f); }}
-              />
+              <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) pickHeadshot(f); }} />
+              <TextArea label="Short bio" hint="optional" rows={3} value={form.bio} onChange={(v) => set("bio", v)} placeholder="A sentence or two. Who you are, what you focus on." />
             </div>
+          )}
 
-            <div className="mt-4">
-              <TextArea
-                label="Short bio (optional)"
-                placeholder="A sentence or two. Who you are, what you focus on."
-                value={form.bio}
-                onChange={(v) => update("bio", v)}
-                rows={2}
-              />
-            </div>
-          </Section>
+          <InlineError message={error} />
+          <div className="mt-7">
+            <PrimaryButton onClick={next}>Continue to review</PrimaryButton>
+          </div>
+        </StepFrame>
+      )}
 
-          <Section number="2" title="Your proposal" icon={FileText}>
-            <Field label="Working title" required placeholder="What would you call this session?" value={form.talkTitle} onChange={(v) => update("talkTitle", v)} />
-            <div className="mt-4">
-              <TextArea
-                label="Abstract"
-                required
-                placeholder="What is the session about, who is it for, why now."
-                value={form.talkAbstract}
-                onChange={(v) => update("talkAbstract", v)}
-                rows={6}
-              />
-            </div>
-            <div className="mt-4">
-              <TextArea
-                label="Three things attendees will leave with (optional)"
-                placeholder="One per line."
-                value={form.learningObjectives}
-                onChange={(v) => update("learningObjectives", v)}
-                rows={3}
-              />
-            </div>
-          </Section>
+      {/* STEP 4 — review & submit */}
+      {step === 4 && (
+        <StepFrame stepKey={4}>
+          <Question title={<>Ready to send?</>} sub="Here's what lands on our review desk." />
 
-          <Section number="3" title="Format" icon={Settings2}>
-            <Pills label="Session format" value={form.sessionFormat} options={FORMATS} onChange={(v) => update("sessionFormat", v)} />
-            <Pills label="Length"         value={form.sessionLength} options={LENGTHS}  onChange={(v) => update("sessionLength", v)} />
-            <Pills label="Best fit track" value={form.sessionTrack}  options={TRACKS}   onChange={(v) => update("sessionTrack", v)} />
-            <Pills label="Preferred day"  value={form.preferredDay}  options={DAYS}     onChange={(v) => update("preferredDay", v)} />
-          </Section>
-
-          <Section number="4" title="Anything else?" icon={Mic}>
-            <TextArea
-              label="Note to the program team (optional)"
-              placeholder="Anything that does not fit above."
-              value={form.presenterMessage}
-              onChange={(v) => update("presenterMessage", v)}
-              rows={3}
-            />
-
-            {error && (
-              <div className="mt-5 px-3 py-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-sm inline-flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-                <span>{error}</span>
+          <div className="rounded-2xl overflow-hidden bg-white" style={{ border: `1.5px solid ${C.hairline}`, boxShadow: "0 18px 44px -28px rgba(11,31,37,0.3)" }}>
+            <div className="p-5" style={{ borderBottom: `1px solid ${C.hairline}` }}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="text-[11px] font-bold tracking-wider uppercase" style={{ color: C.gold }}>Proposal</div>
+                <button onClick={() => setStep(0)} className="inline-flex items-center gap-1 text-[12px] font-semibold shrink-0" style={{ color: C.teal }}>
+                  <Pencil className="w-3 h-3" /> Edit
+                </button>
               </div>
-            )}
+              <h3 className="font-serif-display text-[21px] font-bold leading-snug mt-1" style={{ color: C.ink }}>
+                {form.talkTitle || "Untitled session"}
+              </h3>
+              {form.talkAbstract && (
+                <p className="mt-2 text-[13px] leading-relaxed line-clamp-3" style={{ color: C.muted }}>{form.talkAbstract}</p>
+              )}
+              {(form.sessionFormat || form.sessionLength || form.sessionTrack || form.preferredDay) && (
+                <div className="flex flex-wrap gap-1.5 mt-3">
+                  {[form.sessionFormat, form.sessionLength, form.sessionTrack, form.preferredDay].filter(Boolean).map((t) => (
+                    <span key={t} className="px-2.5 py-1 rounded-full text-[12px] font-medium" style={{ background: C.teal + "0E", color: C.inkSoft, border: `1px solid ${C.teal}22` }}>{t}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="p-5 flex items-center gap-3">
+              {form.headshotDataUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={form.headshotDataUrl} alt="" className="w-11 h-11 rounded-full object-cover shrink-0" />
+              ) : (
+                <span className="w-11 h-11 rounded-full flex items-center justify-center shrink-0" style={{ background: C.teal + "12", color: C.teal }}>
+                  <User className="w-5 h-5" />
+                </span>
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="text-[15px] font-semibold truncate" style={{ color: C.ink }}>{form.name || "—"}</div>
+                <div className="text-[12px] truncate" style={{ color: C.muted }}>
+                  {[form.jobTitle, form.affiliation].filter(Boolean).join(" · ") || form.email}
+                </div>
+              </div>
+              <button onClick={() => setStep(3)} className="inline-flex items-center gap-1 text-[12px] font-semibold shrink-0" style={{ color: C.teal }}>
+                <Pencil className="w-3 h-3" /> Edit
+              </button>
+            </div>
+          </div>
 
-            <button
-              onClick={submit}
-              disabled={submitting}
-              className="mt-6 w-full inline-flex items-center justify-center gap-2 px-6 py-4 rounded-full font-bold text-base text-white shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ background: `linear-gradient(135deg, ${TEAL} 0%, ${BLUE} 100%)` }}
-            >
-              {submitting
-                ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting</>
-                : <>Submit proposal <ArrowRight className="w-4 h-4" /></>}
-            </button>
+          <div className="mt-4">
+            <TextArea label="Anything else for the program team?" hint="optional" rows={3} value={form.presenterMessage} onChange={(v) => set("presenterMessage", v)} placeholder="Scheduling notes, co-presenters, accessibility needs — anything that doesn't fit above." />
+          </div>
 
-            <p className="mt-3 text-center text-[11px]" style={{ color: MUTED }}>
-              We will send you a confirmation as soon as this lands.
-            </p>
-          </Section>
-        </div>
-
-        <p className="mt-6 text-center text-xs" style={{ color: MUTED }}>
-          Questions? Email{" "}
-          <a className="font-semibold" style={{ color: TEAL }} href="mailto:contact@aalb.org">contact@aalb.org</a>.
-        </p>
-      </div>
-    </div>
+          <InlineError message={error} />
+          <div className="mt-6">
+            <PrimaryButton onClick={submit} loading={submitting} icon={Sparkles}>Submit proposal</PrimaryButton>
+          </div>
+          <Hint>
+            We&rsquo;ll email a confirmation the moment this lands, and reply within two weeks.<br />
+            Questions? <a className="font-semibold" style={{ color: C.teal }} href="mailto:contact@aalb.org">contact@aalb.org</a>.
+          </Hint>
+        </StepFrame>
+      )}
+    </WizardShell>
   );
 }
 
-function Section({
-  number, title, icon: Icon, children,
-}: {
-  number: string;
-  title: string;
-  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
-  children: React.ReactNode;
+function PillGroup({ label, value, options, onChange }: {
+  label: string; value: string; options: string[]; onChange: (v: string) => void;
 }) {
   return (
-    <div className="p-6 sm:p-8" style={{ borderBottom: `1px solid ${HAIRLINE}` }}>
-      <div className="flex items-center gap-3 mb-5">
-        <span
-          className="w-7 h-7 rounded-full flex items-center justify-center font-serif-display text-sm font-bold tabular-nums shrink-0"
-          style={{ background: GOLD + "22", color: GOLD }}
-        >
-          {number}
-        </span>
-        <h2 className="font-serif-display text-xl font-bold flex items-center gap-2" style={{ color: INK }}>
-          <Icon className="w-4 h-4" style={{ color: TEAL }} />
-          {title}
-        </h2>
-      </div>
-      {children}
-    </div>
-  );
-}
-
-function Field({
-  label, value, onChange, placeholder, required, type, className,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-  required?: boolean;
-  type?: string;
-  className?: string;
-}) {
-  return (
-    <label className={`block ${className || ""}`}>
-      <span className="text-[11px] font-semibold tracking-wide uppercase" style={{ color: MUTED }}>
-        {label}{required && <span style={{ color: "#dc2626" }}> *</span>}
-      </span>
-      <input
-        type={type || "text"}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="mt-1 w-full px-3 py-2.5 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-teal-500/15 focus:border-teal-600"
-        style={{ borderColor: HAIRLINE }}
-      />
-    </label>
-  );
-}
-
-function TextArea({
-  label, value, onChange, placeholder, required, rows,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-  required?: boolean;
-  rows?: number;
-}) {
-  return (
-    <label className="block">
-      <span className="text-[11px] font-semibold tracking-wide uppercase" style={{ color: MUTED }}>
-        {label}{required && <span style={{ color: "#dc2626" }}> *</span>}
-      </span>
-      <textarea
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        rows={rows ?? 3}
-        className="mt-1 w-full px-3 py-2.5 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-teal-500/15 focus:border-teal-600 resize-y"
-        style={{ borderColor: HAIRLINE }}
-      />
-    </label>
-  );
-}
-
-function Pills({
-  label, value, options, onChange,
-}: {
-  label: string;
-  value: string;
-  options: string[];
-  onChange: (v: string) => void;
-}) {
-  return (
-    <div className="mb-4">
-      <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-2">{label}</div>
+    <div>
+      <div className="text-[13px] font-semibold mb-2.5 ml-0.5" style={{ color: C.inkSoft }}>{label}</div>
       <div className="flex flex-wrap gap-2">
-        {options.map((opt) => {
-          const selected = value === opt;
-          return (
-            <button
-              key={opt}
-              type="button"
-              onClick={() => onChange(selected ? "" : opt)}
-              className="px-3.5 py-2 rounded-full text-xs font-semibold transition-all"
-              style={{
-                background: selected ? TEAL : "white",
-                color: selected ? "white" : INK,
-                border: `1px solid ${selected ? TEAL : HAIRLINE}`,
-                boxShadow: selected ? `0 6px 16px -8px ${TEAL}99` : undefined,
-              }}
-            >
-              {opt}
-            </button>
-          );
-        })}
+        {options.map((opt) => (
+          <Pill key={opt} selected={value === opt} onClick={() => onChange(value === opt ? "" : opt)}>{opt}</Pill>
+        ))}
       </div>
     </div>
   );
 }
 
-function Headshot({
-  dataUrl, fileName, onPick, onClear,
-}: {
-  dataUrl: string;
-  fileName: string;
-  onPick: () => void;
-  onClear: () => void;
+function Headshot({ dataUrl, fileName, onPick, onClear }: {
+  dataUrl: string; fileName: string; onPick: () => void; onClear: () => void;
 }) {
   if (dataUrl) {
     return (
-      <div className="flex items-center gap-3 p-3 rounded-xl" style={{ border: `1px solid ${HAIRLINE}`, background: PAPER }}>
+      <div className="flex items-center gap-3 p-3 rounded-xl bg-white" style={{ border: `1.5px solid ${C.hairline}` }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={dataUrl} alt="" className="w-12 h-12 rounded-full object-cover" />
         <div className="flex-1 min-w-0">
-          <div className="text-xs font-semibold truncate" style={{ color: INK }}>{fileName || "Selected"}</div>
-          <div className="text-[11px]" style={{ color: MUTED }}>Looking good.</div>
+          <div className="text-[13px] font-semibold truncate" style={{ color: C.ink }}>{fileName || "Selected"}</div>
+          <div className="text-[11px]" style={{ color: C.muted }}>Looking good.</div>
         </div>
-        <button type="button" onClick={onClear} className="p-1.5 rounded-md hover:bg-slate-100 text-slate-400 hover:text-slate-700" aria-label="Remove photo">
+        <button type="button" onClick={onClear} className="p-1.5 rounded-md hover:bg-black/[0.04]" style={{ color: C.mutedSoft }} aria-label="Remove photo">
           <X className="w-4 h-4" />
         </button>
       </div>
     );
   }
   return (
-    <button
-      type="button"
-      onClick={onPick}
-      className="w-full flex items-center gap-3 p-3.5 rounded-xl border-2 border-dashed transition-colors hover:border-teal-500 hover:bg-teal-50/30"
-      style={{ borderColor: HAIRLINE }}
-    >
-      <span className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: TEAL + "15", color: TEAL }}>
+    <button type="button" onClick={onPick}
+      className="w-full flex items-center gap-3 p-3.5 rounded-xl border-2 border-dashed transition-colors hover:bg-black/[0.02]"
+      style={{ borderColor: C.hairline }}>
+      <span className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: C.teal + "14", color: C.teal }}>
         <ImageIcon className="w-4 h-4" />
       </span>
       <span className="flex-1 text-left">
-        <span className="block text-[13px] font-semibold" style={{ color: INK }}>Add a headshot (optional)</span>
-        <span className="block text-[11px]" style={{ color: MUTED }}>JPG, PNG, or WebP. Under 5 MB.</span>
+        <span className="block text-[13px] font-semibold" style={{ color: C.ink }}>Add a headshot</span>
+        <span className="block text-[11px]" style={{ color: C.muted }}>JPG, PNG, or WebP. Under 5 MB.</span>
       </span>
-      <Upload className="w-4 h-4" style={{ color: MUTED }} />
+      <Upload className="w-4 h-4" style={{ color: C.mutedSoft }} />
     </button>
   );
 }
