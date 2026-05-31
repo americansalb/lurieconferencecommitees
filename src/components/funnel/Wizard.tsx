@@ -180,10 +180,12 @@ export function TextInput({
 }) {
   return (
     <label className="block">
-      <span className="ml-0.5 text-[13px] font-semibold" style={{ color: C.inkSoft }}>
-        {label}
-        {required && <span style={{ color: C.gold }}> *</span>}
-      </span>
+      {label && (
+        <span className="ml-0.5 text-[13px] font-semibold" style={{ color: C.inkSoft }}>
+          {label}
+          {required && <span style={{ color: C.gold }}> *</span>}
+        </span>
+      )}
       <input
         // eslint-disable-next-line jsx-a11y/no-autofocus
         autoFocus={autoFocus}
@@ -192,8 +194,8 @@ export function TextInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="mt-2 w-full px-4 py-3.5 text-[15px] rounded-xl border bg-white outline-none transition-all
-          focus:ring-4 focus:ring-[#0E4456]/10 focus:border-[#0E4456]"
+        className={`${label ? "mt-2 " : ""}w-full px-4 py-3.5 text-[15px] rounded-xl border bg-white outline-none transition-all
+          focus:ring-4 focus:ring-[#0E4456]/10 focus:border-[#0E4456]`}
         style={{ borderColor: C.hairline, color: C.ink }}
       />
     </label>
