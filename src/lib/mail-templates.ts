@@ -620,6 +620,106 @@ export function proposalCallEmail({
   `);
 }
 
+// ---- Meeting booking emails --------------------------------------------
+
+function formatMeetingWhen(at: Date, tz: string): string {
+  const date = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz, weekday: "long", month: "long", day: "numeric",
+  }).format(at);
+  const time = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz, hour: "numeric", minute: "2-digit", hour12: true, timeZoneName: "short",
+  }).format(at);
+  return `${date} at ${time}`;
+}
+
+// Sent to a proposal submitter inviting them to book a meeting.
+export function bookingInviteEmail({
+  inviteeName, title, message, durationMin, bookUrl,
+}: {
+  inviteeName: string;
+  title: string | null;
+  message: string | null;
+  durationMin: number;
+  bookUrl: string;
+}) {
+  const first = (inviteeName || "there").split(" ")[0];
+  return shell(`
+    <h1 style="font-size:22px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">Hi ${escapeHtml(first)},</h1>
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
+      Thank you for your proposal for the 2026 Lurie Children&rsquo;s and AALB Conference. We&rsquo;d love to set up a short conversation to learn more about your session before we finalize the program.
+    </p>
+    ${message ? `<div style="font-size:14px;line-height:1.6;color:${TEXT};background:#f8fafc;border-left:3px solid ${BLUE};padding:14px 16px;border-radius:6px;margin:0 0 16px 0;">${escapeHtml(message).replace(/\n/g, "<br>")}</div>` : ""}
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 4px 0;">
+      Pick whatever time works best for you and we&rsquo;ll send a Zoom link. The conversation will take about <strong>${durationMin} minutes</strong>.
+    </p>
+    ${button(bookUrl, "Choose a time")}
+    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;">
+      Or paste this link into your browser:<br/>
+      <a href="${bookUrl}" style="color:${BLUE};word-break:break-all;">${bookUrl}</a>
+    </p>
+  `);
+}
+
+// Sent to the invitee once they've booked.
+export function bookingConfirmedInviteeEmail({
+  inviteeName, hostName, startAt, durationMin, tz, joinUrl, title,
+}: {
+  inviteeName: string;
+  hostName: string;
+  startAt: Date;
+  durationMin: number;
+  tz: string;
+  joinUrl: string | null;
+  title: string | null;
+}) {
+  const first = (inviteeName || "there").split(" ")[0];
+  return shell(`
+    <h1 style="font-size:22px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">You&rsquo;re booked, ${escapeHtml(first)}.</h1>
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
+      Your ${durationMin}-minute conversation${title ? ` &mdash; ${escapeHtml(title)}` : ""} with <strong>${escapeHtml(hostName)}</strong> is confirmed.
+    </p>
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:6px 0 4px 0;"><tr><td style="background:#f8fafc;border-left:3px solid ${TEAL};padding:14px 18px;border-radius:6px;">
+      <div style="font-size:11px;letter-spacing:0.08em;font-weight:700;color:${TEAL};text-transform:uppercase;">When</div>
+      <div style="font-size:16px;font-weight:700;color:${TEXT};margin-top:4px;">${formatMeetingWhen(startAt, tz)}</div>
+    </td></tr></table>
+    ${joinUrl ? button(joinUrl, "Join the Zoom meeting") : `<p style="font-size:14px;color:${MUTED};margin:16px 0 0 0;">We&rsquo;ll follow up with the Zoom link shortly.</p>`}
+    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;">
+      Need to reschedule? Just reply to this email and we&rsquo;ll sort it out.
+    </p>
+  `);
+}
+
+// Sent to the team member who was assigned the booking.
+export function bookingConfirmedHostEmail({
+  hostName, inviteeName, inviteeEmail, startAt, durationMin, tz, joinUrl, startUrl, title,
+}: {
+  hostName: string;
+  inviteeName: string;
+  inviteeEmail: string;
+  startAt: Date;
+  durationMin: number;
+  tz: string;
+  joinUrl: string | null;
+  startUrl: string | null;
+  title: string | null;
+}) {
+  const first = (hostName || "there").split(" ")[0];
+  return shell(`
+    <h1 style="font-size:22px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">New meeting booked, ${escapeHtml(first)}.</h1>
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
+      <strong>${escapeHtml(inviteeName)}</strong> (<a href="mailto:${escapeHtml(inviteeEmail)}" style="color:${BLUE};">${escapeHtml(inviteeEmail)}</a>) booked a ${durationMin}-minute conversation${title ? ` &mdash; ${escapeHtml(title)}` : ""} with you.
+    </p>
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:6px 0 4px 0;"><tr><td style="background:#f8fafc;border-left:3px solid ${TEAL};padding:14px 18px;border-radius:6px;">
+      <div style="font-size:11px;letter-spacing:0.08em;font-weight:700;color:${TEAL};text-transform:uppercase;">When (your time)</div>
+      <div style="font-size:16px;font-weight:700;color:${TEXT};margin-top:4px;">${formatMeetingWhen(startAt, tz)}</div>
+    </td></tr></table>
+    ${startUrl ? button(startUrl, "Start the Zoom meeting") : joinUrl ? button(joinUrl, "Join the Zoom meeting") : `<p style="font-size:14px;color:${MUTED};margin:16px 0 0 0;">Zoom link wasn&rsquo;t created automatically &mdash; set one up and share it with the invitee.</p>`}
+    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;">
+      It&rsquo;s on your meetings list in the planning portal too.
+    </p>
+  `);
+}
+
 function escapeHtml(s: string) {
   return s
     .replace(/&/g, "&amp;")

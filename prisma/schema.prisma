@@ -30,6 +30,9 @@ model User {
   scheduledNotifs     ScheduledNotification[]
   discussionReads     DiscussionRead[]
   mentions            Mention[]
+  availability        MemberAvailability[]
+  availabilityExceptions AvailabilityException[]
+  bookings            Booking[]
 
   @@map("lcc_users")
   @@schema("lcc")
@@ -613,5 +616,106 @@ model DiscountRedemption {
   @@index([codeId])
   @@index([attendeeEmail])
   @@map("lcc_discount_redemptions")
+  @@schema("lcc")
+}
+
+// ---- Meeting booking (Calendly-style) -----------------------------------
+// Team members publish availability; we send proposal submitters a booking
+// link that pools the selected members' free times, and a confirmed booking
+// creates a Zoom meeting on the assigned member's account.
+
+// A recurring weekly availability rule for one team member, e.g. Mondays
+// 09:00–12:00. Times are wall-clock in the member's own timezone (User.timezone).
+model MemberAvailability {
+  id         String   @id @default(cuid())
+  userId     String
+  weekday    Int      // 0 = Sunday … 6 = Saturday
+  startMin   Int      // minutes from midnight, local to the member's tz (e.g. 540 = 09:00)
+  endMin     Int      // minutes from midnight (must be > startMin)
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("lcc_member_availability")
+  @@schema("lcc")
+}
+
+// A one-off exception to the recurring rules for a member: either an extra
+// opening ("add") or a blocked period ("block"), as an absolute UTC range.
+model AvailabilityException {
+  id        String   @id @default(cuid())
+  userId    String
+  kind      String   @default("block") // "add" | "block"
+  startAt   DateTime // absolute UTC
+  endAt     DateTime
+  note      String?
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("lcc_availability_exceptions")
+  @@schema("lcc")
+}
+
+// An invitation to book a meeting. Pools the availability of memberIds and
+// presents free slots to the invitee at /book/[token]. Optionally tied to a
+// Presenter (a "proposed" submitter) but can also target a manual email.
+model BookingInvite {
+  id             String   @id @default(cuid())
+  token          String   @unique
+
+  inviteeName    String
+  inviteeEmail   String
+  presenterId    String?  // set when inviting an existing proposed presenter
+
+  memberIds      String[] // User ids whose availability is pooled
+  durationMin    Int      @default(30)
+  title          String?  // e.g. "Conversation about your proposal"
+  message        String?  // personal note shown on the booking page
+
+  status         String   @default("sent") // "sent" | "booked" | "canceled" | "expired"
+  expiresAt      DateTime?
+
+  invitedById    String?
+  invitedByEmail String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime? @updatedAt
+
+  booking        Booking?
+
+  @@index([status])
+  @@map("lcc_booking_invites")
+  @@schema("lcc")
+}
+
+// A confirmed booking from an invite. assignedUserId is whoever was free for
+// the chosen slot (pooled first-available) and hosts the Zoom meeting.
+model Booking {
+  id             String   @id @default(cuid())
+  inviteId       String   @unique
+  assignedUserId String
+
+  startAt        DateTime // absolute UTC
+  endAt          DateTime
+  inviteeTz      String   // timezone the invitee booked in, for display
+
+  zoomMeetingId  String?
+  zoomJoinUrl    String?
+  zoomStartUrl   String?
+  zoomError      String?  // set if Zoom creation failed (booking still stands)
+
+  status         String   @default("confirmed") // "confirmed" | "canceled"
+  canceledAt     DateTime?
+  createdAt      DateTime @default(now())
+
+  invite         BookingInvite @relation(fields: [inviteId], references: [id], onDelete: Cascade)
+  assignedUser   User          @relation(fields: [assignedUserId], references: [id], onDelete: Cascade)
+
+  @@index([assignedUserId])
+  @@index([startAt])
+  @@map("lcc_bookings")
   @@schema("lcc")
 }
