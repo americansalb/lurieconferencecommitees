@@ -17,6 +17,8 @@ type Form = {
   talkTitle: string; talkAbstract: string; learningObjectives: string;
   sessionFormat: string; sessionLength: string; sessionTrack: string; preferredDay: string;
   presenterMessage: string; headshotDataUrl: string; headshotName: string;
+  websiteUrl: string; linkedinUrl: string; instagramUrl: string;
+  facebookUrl: string; otherSocialUrl: string;
 };
 
 const EMPTY: Form = {
@@ -24,6 +26,8 @@ const EMPTY: Form = {
   bio: "", talkTitle: "", talkAbstract: "", learningObjectives: "",
   sessionFormat: "", sessionLength: "", sessionTrack: "", preferredDay: "",
   presenterMessage: "", headshotDataUrl: "", headshotName: "",
+  websiteUrl: "", linkedinUrl: "", instagramUrl: "",
+  facebookUrl: "", otherSocialUrl: "",
 };
 
 const FORMATS = ["Talk", "Panel", "Workshop", "Fireside chat", "Lightning"];
@@ -200,7 +204,7 @@ export default function ProposalFunnel() {
               className="mt-4 w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-[13px] font-semibold transition-colors hover:bg-black/[0.02]"
               style={{ color: C.teal, border: `1.5px dashed ${C.teal}44` }}
             >
-              <Plus className="w-4 h-4" /> Add your affiliation, photo, and bio
+              <Plus className="w-4 h-4" /> Add your affiliation, photo, bio, and links
             </button>
           ) : (
             <div className="mt-4 space-y-3 wiz-step-in">
@@ -219,6 +223,21 @@ export default function ProposalFunnel() {
               <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) pickHeadshot(f); }} />
               <TextArea label="Short bio" hint="optional" rows={3} value={form.bio} onChange={(v) => set("bio", v)} placeholder="A sentence or two. Who you are, what you focus on." />
+
+              <div className="pt-1">
+                <div className="text-[12px] font-semibold mb-2" style={{ color: C.muted }}>
+                  Links &amp; social <span className="font-normal">— helps us get to know you (all optional)</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <TextInput label="Website" inputMode="url" value={form.websiteUrl} onChange={(v) => set("websiteUrl", v)} placeholder="https://" />
+                  <TextInput label="LinkedIn" inputMode="url" value={form.linkedinUrl} onChange={(v) => set("linkedinUrl", v)} placeholder="linkedin.com/in/…" />
+                  <TextInput label="Instagram" value={form.instagramUrl} onChange={(v) => set("instagramUrl", v)} placeholder="@handle or link" />
+                  <TextInput label="Facebook" inputMode="url" value={form.facebookUrl} onChange={(v) => set("facebookUrl", v)} placeholder="facebook.com/…" />
+                  <div className="sm:col-span-2">
+                    <TextInput label="Other link" inputMode="url" value={form.otherSocialUrl} onChange={(v) => set("otherSocialUrl", v)} placeholder="X, YouTube, personal page…" />
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 

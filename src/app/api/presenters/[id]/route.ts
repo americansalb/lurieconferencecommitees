@@ -23,6 +23,7 @@ const EDITABLE_FIELDS = new Set([
   "sessionLength", "qaLength", "coPresenters", "preferredDay", "learningObjectives",
   "honorariumAmount", "travelReimbursement", "presenterMessage", "requestedChanges",
   "bio", "websiteUrl", "linkedinUrl", "twitterHandle",
+  "instagramUrl", "facebookUrl", "otherSocialUrl",
   "avNotes", "needsMic", "needsProjector", "needsAudio", "needsInternet",
   "needsRecording", "needsClicker",
   "travelMode", "travelOrigin", "needsHotel", "hotelNotes", "needsParking",

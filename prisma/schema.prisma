@@ -310,6 +310,9 @@ model Presenter {
   websiteUrl         String?
   linkedinUrl        String?
   twitterHandle      String?
+  facebookUrl        String?
+  instagramUrl       String?
+  otherSocialUrl     String?
 
   avNotes            String?
   needsMic           Boolean          @default(false)

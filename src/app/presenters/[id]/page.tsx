@@ -40,6 +40,9 @@ interface Presenter {
   websiteUrl: string | null;
   linkedinUrl: string | null;
   twitterHandle: string | null;
+  instagramUrl: string | null;
+  facebookUrl: string | null;
+  otherSocialUrl: string | null;
   avNotes: string | null;
   needsMic: boolean;
   needsProjector: boolean;
@@ -231,9 +234,12 @@ export default function PresenterDetailPage() {
                     <KV label="Bio" value={presenter.bio} multiline />
                     <KV label="Pronouns" value={presenter.pronouns} />
                     <KV label="Phone" value={presenter.phone} />
-                    <KV label="Website" value={presenter.websiteUrl} />
-                    <KV label="LinkedIn" value={presenter.linkedinUrl} />
-                    <KV label="Twitter" value={presenter.twitterHandle} />
+                    <KV label="Website" value={presenter.websiteUrl} link />
+                    <KV label="LinkedIn" value={presenter.linkedinUrl} link />
+                    <KV label="Instagram" value={presenter.instagramUrl} link />
+                    <KV label="Facebook" value={presenter.facebookUrl} link />
+                    <KV label="Twitter / X" value={presenter.twitterHandle} link />
+                    <KV label="Other link" value={presenter.otherSocialUrl} link />
                   </Section>
                   <Section title="Tech & A/V">
                     <KV label="Microphone" value={yesno(presenter.needsMic)} />
@@ -368,12 +374,19 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function KV({ label, value, multiline }: { label: string; value: string | null | undefined; multiline?: boolean }) {
+function KV({ label, value, multiline, link }: { label: string; value: string | null | undefined; multiline?: boolean; link?: boolean }) {
+  const href = link && value ? (/^https?:\/\//i.test(value) ? value : `https://${value.replace(/^@/, "")}`) : null;
   return (
     <div className="py-2.5 grid grid-cols-3 gap-3 text-sm border-b border-slate-100 last:border-0">
       <div className="text-slate-500">{label}</div>
       <div className={"col-span-2 text-slate-900 " + (multiline ? "whitespace-pre-wrap" : "truncate")}>
-        {value || <span className="text-slate-300">—</span>}
+        {value ? (
+          href ? (
+            <a href={href} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline inline-flex items-center gap-1">
+              {value} <ExternalLink className="w-3 h-3 shrink-0" />
+            </a>
+          ) : value
+        ) : <span className="text-slate-300">—</span>}
       </div>
     </div>
   );

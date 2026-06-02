@@ -18,7 +18,7 @@ export async function POST(req: Request) {
   const body = await req.json();
   const {
     name, email, phone, affiliation, jobTitle, pronouns, bio,
-    websiteUrl, linkedinUrl,
+    websiteUrl, linkedinUrl, instagramUrl, facebookUrl, otherSocialUrl,
     talkTitle, talkAbstract, learningObjectives,
     sessionFormat, sessionLength, sessionTrack, preferredDay,
     coPresenters, presenterMessage,
@@ -82,6 +82,9 @@ export async function POST(req: Request) {
       bio: bio?.trim() || null,
       websiteUrl: websiteUrl?.trim() || null,
       linkedinUrl: linkedinUrl?.trim() || null,
+      instagramUrl: instagramUrl?.trim() || null,
+      facebookUrl: facebookUrl?.trim() || null,
+      otherSocialUrl: otherSocialUrl?.trim() || null,
       talkTitle: talkTitle.trim(),
       talkAbstract: talkAbstract.trim(),
       learningObjectives: learningObjectives?.trim() || null,
