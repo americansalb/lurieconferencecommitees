@@ -383,6 +383,14 @@ model Attendee {
   discountPercent      Int             @default(25)
   basePriceCents       Int?
   finalPriceCents      Int?
+
+  // Shared discount code applied at registration (distinct from the
+  // per-person discountPercent used for personal invites). Set when a code
+  // is accepted; the redemption row is the authoritative audit record.
+  discountCodeId       String?
+  discountCode         String?
+  discountCodeCents    Int?            @default(0)
+
   paid                 Boolean         @default(false)
   paidAt               DateTime?
   stripeSessionId      String?
@@ -537,5 +545,73 @@ model ProposalInvite {
   @@unique([email, variant])
   @@index([variant])
   @@map("lcc_proposal_invites")
+  @@schema("lcc")
+}
+
+// A reusable discount code applied during conference registration. Codes are
+// validated and the price is recomputed entirely server-side; the client
+// never asserts a discount amount.
+//
+// The discount magnitude is set per attendance mode, so a single code can be
+// worth, say, $15 off virtual and $30 off in-person. "kind" decides how the
+// per-mode values are read:
+//   kind = "fixed"   → virtualValue / inPersonValue are cents off
+//   kind = "percent" → virtualValue / inPersonValue are percentage points
+// A null value means the code does not apply to that mode; at least one is set.
+model DiscountCode {
+  id             String   @id @default(cuid())
+  code           String   @unique // stored uppercased; matched case-insensitively
+  description    String?  // internal label, e.g. "Partner org — NWU"
+
+  kind           String   @default("fixed") // "fixed" | "percent"
+  virtualValue   Int?     // cents (fixed) or percent points (percent); null = N/A for virtual
+  inPersonValue  Int?     // cents (fixed) or percent points (percent); null = N/A for in-person
+
+  // Optional constraints. Null = no limit.
+  active         Boolean  @default(true)
+  expiresAt      DateTime?
+  maxRedemptions Int?     // null = unlimited
+
+  // Denormalized tally of successful (paid) redemptions, kept in sync with
+  // the redemption log so the dashboard can sort/filter without a join.
+  redeemedCount  Int      @default(0)
+
+  createdById    String?
+  createdByEmail String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime? @updatedAt
+
+  redemptions    DiscountRedemption[]
+
+  @@index([active])
+  @@map("lcc_discount_codes")
+  @@schema("lcc")
+}
+
+// One row per time a code is applied to a registration. Created as "applied"
+// when the code is accepted at checkout, promoted to "redeemed" when payment
+// clears in the webhook. This is the audit trail for tracking usage.
+model DiscountRedemption {
+  id              String   @id @default(cuid())
+  codeId          String
+  code            String   // snapshot of the code text at apply time
+  attendeeId      String?
+  attendeeEmail   String?
+  attendanceMode  String?
+
+  basePriceCents  Int
+  discountCents   Int
+  finalPriceCents Int
+
+  status          String   @default("applied") // "applied" | "redeemed" | "voided"
+  stripeSessionId String?
+  redeemedAt      DateTime?
+  createdAt       DateTime @default(now())
+
+  discount        DiscountCode @relation(fields: [codeId], references: [id], onDelete: Cascade)
+
+  @@index([codeId])
+  @@index([attendeeEmail])
+  @@map("lcc_discount_redemptions")
   @@schema("lcc")
 }

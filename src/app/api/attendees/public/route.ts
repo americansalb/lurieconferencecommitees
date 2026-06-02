@@ -4,6 +4,7 @@ import { newAttendeeToken } from "@/lib/attendees";
 import { createCheckoutSession, isStripeConfigured } from "@/lib/stripe";
 import { appUrl } from "@/lib/presenters";
 import { activePriceCents, activeTier } from "@/components/landing/pricing-data";
+import { validateAndApply, DISCOUNT_ERROR_MESSAGES } from "@/lib/discounts";
 
 function isEmail(s: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((s || "").trim());
@@ -53,6 +54,24 @@ export async function POST(req: Request) {
   const priceCents = activePriceCents(attendanceMode);
   const tier = activeTier(new Date());
 
+  // Optional shared discount code. Validated and priced entirely here; the
+  // client's only input is the code string. An invalid code is rejected so
+  // the user can correct it rather than silently paying full price.
+  let finalCents = priceCents;
+  let discountCodeId: string | null = null;
+  let discountCodeText: string | null = null;
+  let discountCents = 0;
+  if (body.discountCode && String(body.discountCode).trim()) {
+    const outcome = await validateAndApply(String(body.discountCode), priceCents, attendanceMode);
+    if (!outcome.ok) {
+      return NextResponse.json({ error: DISCOUNT_ERROR_MESSAGES[outcome.error] }, { status: 400 });
+    }
+    finalCents = outcome.result.finalCents;
+    discountCents = outcome.result.discountCents;
+    discountCodeId = outcome.result.code.id;
+    discountCodeText = outcome.result.code.code;
+  }
+
   let attendee = existing;
   if (attendee) {
     attendee = await prisma.attendee.update({
@@ -67,7 +86,10 @@ export async function POST(req: Request) {
         accessibilityNotes: accessibilityNotes?.trim() || null,
         dietary: dietary?.trim() || null,
         basePriceCents: priceCents,
-        finalPriceCents: priceCents,
+        finalPriceCents: finalCents,
+        discountCodeId,
+        discountCode: discountCodeText,
+        discountCodeCents: discountCents,
       },
     });
   } else {
@@ -84,7 +106,10 @@ export async function POST(req: Request) {
         dietary: dietary?.trim() || null,
         discountPercent: 0,
         basePriceCents: priceCents,
-        finalPriceCents: priceCents,
+        finalPriceCents: finalCents,
+        discountCodeId,
+        discountCode: discountCodeText,
+        discountCodeCents: discountCents,
         inviteToken: newAttendeeToken(),
         status: "registered",
       },
@@ -94,15 +119,38 @@ export async function POST(req: Request) {
     });
   }
 
+  // Record the pending redemption (promoted to "redeemed" by the webhook on
+  // successful payment). Replace any prior pending row for this attendee so a
+  // resumed/abandoned checkout doesn't leave stale applications.
+  if (discountCodeId) {
+    await prisma.discountRedemption.deleteMany({
+      where: { attendeeId: attendee.id, status: "applied" },
+    });
+    await prisma.discountRedemption.create({
+      data: {
+        codeId: discountCodeId,
+        code: discountCodeText!,
+        attendeeId: attendee.id,
+        attendeeEmail: attendee.email,
+        attendanceMode,
+        basePriceCents: priceCents,
+        discountCents,
+        finalPriceCents: finalCents,
+        status: "applied",
+      },
+    });
+  }
+
+  const codeSuffix = discountCodeText ? ` — code ${discountCodeText}` : "";
   const session = await createCheckoutSession({
-    amountCents: priceCents,
+    amountCents: finalCents,
     customerEmail: attendee.email,
     productName: attendanceMode === "in-person"
       ? `Conference 2026: In-Person Registration (${tier.label})`
       : `Conference 2026: Virtual Registration (${tier.label})`,
-    productDescription: attendanceMode === "in-person"
+    productDescription: (attendanceMode === "in-person"
       ? "Two-day in-person ticket at Lurie Children's, Chicago. August 15 and 16, 2026. Includes lunch, materials, and a CEU certificate for both days."
-      : "Two-day virtual ticket with live streamed sessions, on-demand recordings, and a CEU certificate for both days.",
+      : "Two-day virtual ticket with live streamed sessions, on-demand recordings, and a CEU certificate for both days.") + codeSuffix,
     successUrl: `${appUrl()}/register/success/${attendee.inviteToken}?cs={CHECKOUT_SESSION_ID}`,
     cancelUrl: `${appUrl()}/register?resume=${attendee.inviteToken}`,
     metadata: {
@@ -110,6 +158,7 @@ export async function POST(req: Request) {
       attendeeEmail: attendee.email,
       attendanceMode,
       kind: "public_attendee",
+      ...(discountCodeText ? { discountCode: discountCodeText } : {}),
     },
   });
 
@@ -117,6 +166,12 @@ export async function POST(req: Request) {
     where: { id: attendee.id },
     data: { stripeSessionId: session.id },
   });
+  if (discountCodeId) {
+    await prisma.discountRedemption.updateMany({
+      where: { attendeeId: attendee.id, status: "applied" },
+      data: { stripeSessionId: session.id },
+    });
+  }
   await prisma.attendeeEvent.create({
     data: { attendeeId: attendee.id, type: "checkout_started", meta: session.id },
   });

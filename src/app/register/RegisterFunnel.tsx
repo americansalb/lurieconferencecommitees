@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   MapPin, Monitor, User, Mail, Sparkles, Calendar, CreditCard,
-  Car, UtensilsCrossed, Accessibility, Languages, Pencil, Check,
+  Car, UtensilsCrossed, Accessibility, Languages, Pencil, Check, Tag, X, Loader2,
 } from "lucide-react";
 import {
   C, WizardShell, StepFrame, Question, TextInput, TextArea, ChoiceCard,
@@ -48,9 +48,48 @@ export default function RegisterFunnel({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Discount code: entered on the review step, validated server-side so the
+  // shown total always matches what the server will charge.
+  const [codeInput, setCodeInput] = useState("");
+  const [codeBusy, setCodeBusy] = useState(false);
+  const [codeError, setCodeError] = useState<string | null>(null);
+  const [applied, setApplied] = useState<{ code: string; label: string; finalCents: number; discountCents: number } | null>(null);
+
   const price = form.attendanceMode === "in-person" ? inPersonPrice
     : form.attendanceMode === "virtual" ? virtualPrice : null;
   const isInPerson = form.attendanceMode === "in-person";
+
+  async function applyCode() {
+    const code = codeInput.trim();
+    if (!code) return;
+    setCodeBusy(true);
+    setCodeError(null);
+    try {
+      const res = await fetch("/api/discounts/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, attendanceMode: form.attendanceMode }),
+      });
+      const json = await res.json();
+      if (json.ok) {
+        setApplied({ code: json.code, label: json.label, finalCents: json.finalCents, discountCents: json.discountCents });
+        setCodeError(null);
+      } else {
+        setApplied(null);
+        setCodeError(json.error || "That code isn't valid.");
+      }
+    } catch {
+      setCodeError("Couldn't check that code. Try again.");
+    } finally {
+      setCodeBusy(false);
+    }
+  }
+
+  function clearCode() {
+    setApplied(null);
+    setCodeInput("");
+    setCodeError(null);
+  }
 
   function set<K extends keyof Form>(k: K, v: Form[K]) {
     setForm((f) => ({ ...f, [k]: v }));
@@ -97,7 +136,7 @@ export default function RegisterFunnel({
       const res = await fetch("/api/attendees/public", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, discountCode: applied?.code || undefined }),
       });
       const json = await res.json();
       if (!res.ok || !json.url) {
@@ -247,7 +286,14 @@ export default function RegisterFunnel({
                 <div className="text-[12px]" style={{ color: "rgba(255,255,255,0.7)" }}>{tierLabel} pricing · Aug 15 &amp; 16, 2026</div>
               </div>
               <div className="text-right">
-                <div className="font-serif-display text-[30px] font-bold text-white tabular-nums leading-none">{price !== null ? `$${price}` : "—"}</div>
+                {applied ? (
+                  <>
+                    <div className="text-[13px] line-through tabular-nums leading-none" style={{ color: "rgba(255,255,255,0.55)" }}>{price !== null ? `$${price}` : "—"}</div>
+                    <div className="font-serif-display text-[30px] font-bold text-white tabular-nums leading-none mt-0.5">${(applied.finalCents / 100).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</div>
+                  </>
+                ) : (
+                  <div className="font-serif-display text-[30px] font-bold text-white tabular-nums leading-none">{price !== null ? `$${price}` : "—"}</div>
+                )}
               </div>
             </div>
 
@@ -272,6 +318,55 @@ export default function RegisterFunnel({
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Discount code */}
+          <div className="mt-4">
+            {applied ? (
+              <div className="flex items-center gap-3 rounded-xl px-4 py-3" style={{ background: "rgba(16,133,102,0.08)", border: "1px solid rgba(16,133,102,0.25)" }}>
+                <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: "rgba(16,133,102,0.15)" }}>
+                  <Check className="w-4 h-4" style={{ color: "#0E8566" }} strokeWidth={3} />
+                </span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[13px] font-bold" style={{ color: "#0B5C46" }}>
+                    Code {applied.code} applied · {applied.label}
+                  </div>
+                  <div className="text-[12px]" style={{ color: C.muted }}>
+                    You save ${(applied.discountCents / 100).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}.
+                  </div>
+                </div>
+                <button onClick={clearCode} className="inline-flex items-center gap-1 text-[12px] font-semibold shrink-0" style={{ color: C.muted }}>
+                  <X className="w-3.5 h-3.5" /> Remove
+                </button>
+              </div>
+            ) : (
+              <div>
+                <div className="flex items-stretch gap-2">
+                  <div className="relative flex-1">
+                    <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: C.mutedSoft }} />
+                    <input
+                      value={codeInput}
+                      onChange={(e) => { setCodeInput(e.target.value.toUpperCase()); setCodeError(null); }}
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); applyCode(); } }}
+                      placeholder="Discount code"
+                      autoCapitalize="characters"
+                      className="w-full pl-9 pr-3 py-2.5 rounded-xl text-[14px] font-semibold tracking-wide outline-none"
+                      style={{ border: `1.5px solid ${codeError ? "#E0716A" : C.hairline}`, background: "white", color: C.ink }}
+                    />
+                  </div>
+                  <button
+                    onClick={applyCode}
+                    disabled={codeBusy || !codeInput.trim()}
+                    className="px-4 rounded-xl text-[13px] font-bold shrink-0 inline-flex items-center gap-1.5 disabled:opacity-50"
+                    style={{ border: `1.5px solid ${C.teal}`, color: C.teal }}
+                  >
+                    {codeBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                    Apply
+                  </button>
+                </div>
+                {codeError && <div className="text-[12px] mt-1.5 font-medium" style={{ color: "#C0564F" }}>{codeError}</div>}
+              </div>
+            )}
           </div>
 
           <InlineError message={error} />

@@ -55,6 +55,26 @@ export async function POST(req: Request) {
           meta: JSON.stringify({ sessionId: obj.id, amount: obj.amount_total }),
         },
       });
+
+      // Finalize a discount redemption: promote the pending "applied" row to
+      // "redeemed" and bump the code's tally. Guarded on the still-pending
+      // row so a duplicate webhook delivery can't double-count.
+      if (attendee.discountCodeId) {
+        const pending = await prisma.discountRedemption.findFirst({
+          where: { attendeeId: attendee.id, status: "applied" },
+        });
+        if (pending) {
+          await prisma.discountRedemption.update({
+            where: { id: pending.id },
+            data: { status: "redeemed", redeemedAt: new Date() },
+          });
+          await prisma.discountCode.update({
+            where: { id: attendee.discountCodeId },
+            data: { redeemedCount: { increment: 1 } },
+          });
+        }
+      }
+
       // Confirmation email. Public registrations link to the receipt
       // page; invited attendees go back to the funnel page they came from.
       const url = attendee.invitedById

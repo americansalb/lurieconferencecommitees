@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { useEffect, useState } from "react";
-import { LayoutDashboard, CalendarDays, MessageSquare, UserCircle, LogOut, Shield, Mic, Bell, AtSign, Search, Ticket, Award } from "lucide-react";
+import { LayoutDashboard, CalendarDays, MessageSquare, UserCircle, LogOut, Shield, Mic, Bell, AtSign, Search, Ticket, Award, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -15,6 +15,7 @@ const navItems = [
   { href: "/presenters", label: "Presenters", icon: Mic, iconBg: "bg-pink-500/20", iconColor: "text-pink-400" },
   { href: "/attendees", label: "Attendees", icon: Ticket, iconBg: "bg-teal-500/20", iconColor: "text-teal-400" },
   { href: "/sponsors", label: "Sponsors", icon: Award, iconBg: "bg-amber-500/20", iconColor: "text-amber-400" },
+  { href: "/discounts", label: "Discount codes", icon: Tag, iconBg: "bg-rose-500/20", iconColor: "text-rose-400" },
   { href: "/notifications", label: "Notifications", icon: Bell, iconBg: "bg-sky-500/20", iconColor: "text-sky-400" },
   { href: "/profile", label: "Profile", icon: UserCircle, iconBg: "bg-purple-500/20", iconColor: "text-purple-400" },
   { href: "/admin", label: "Admin", icon: Shield, iconBg: "bg-red-500/20", iconColor: "text-red-400", adminOnly: true },
