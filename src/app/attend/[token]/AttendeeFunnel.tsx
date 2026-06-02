@@ -4,6 +4,7 @@ import { useState } from "react";
 import {
   Check, ChevronRight, ChevronLeft, MapPin, Monitor, Calendar,
   Sparkles, Car, Accessibility, Utensils, Loader2, CreditCard, AlertCircle,
+  Tag, X,
 } from "lucide-react";
 
 type Pricing = {
@@ -45,19 +46,71 @@ export default function AttendeeFunnel({
   token,
   initial,
   pricing,
+  startStep,
 }: {
   token: string;
   initial: Initial;
   pricing: Pricing;
+  // Optional starting step. Used only by the dev preview harness to land on
+  // the review step without a live DB; production always starts at 0 (or 3
+  // if already paid).
+  startStep?: 0 | 1 | 2 | 3;
 }) {
-  const [step, setStep] = useState<0 | 1 | 2 | 3>(initial.paid ? 3 : 0);
+  const [step, setStep] = useState<0 | 1 | 2 | 3>(startStep ?? (initial.paid ? 3 : 0));
   const [data, setData] = useState(initial);
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Optional discount code, validated server-side and stacked on top of the
+  // personal-invite price. Cleared if attendance mode changes so a code that
+  // only applies to one mode can't linger on the wrong total.
+  const [codeInput, setCodeInput] = useState("");
+  const [codeBusy, setCodeBusy] = useState(false);
+  const [codeError, setCodeError] = useState<string | null>(null);
+  const [applied, setApplied] = useState<{ code: string; label: string; finalCents: number; discountCents: number } | null>(null);
+
   function update<K extends keyof Initial>(key: K, value: Initial[K]) {
     setData((prev) => ({ ...prev, [key]: value }));
+    // A code is mode-specific; drop it if the mode changes.
+    if (key === "attendanceMode" && applied) {
+      setApplied(null);
+      setCodeInput("");
+      setCodeError(null);
+    }
+  }
+
+  async function applyCode() {
+    const code = codeInput.trim();
+    if (!code) return;
+    if (!data.attendanceMode) { setCodeError("Pick how you'll attend first."); return; }
+    setCodeBusy(true);
+    setCodeError(null);
+    try {
+      const res = await fetch("/api/discounts/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, attendanceMode: data.attendanceMode, token }),
+      });
+      const json = await res.json();
+      if (json.ok) {
+        setApplied({ code: json.code, label: json.label, finalCents: json.finalCents, discountCents: json.discountCents });
+        setCodeError(null);
+      } else {
+        setApplied(null);
+        setCodeError(json.error || "That code isn't valid.");
+      }
+    } catch {
+      setCodeError("Couldn't check that code. Try again.");
+    } finally {
+      setCodeBusy(false);
+    }
+  }
+
+  function clearCode() {
+    setApplied(null);
+    setCodeInput("");
+    setCodeError(null);
   }
 
   async function persist(): Promise<boolean> {
@@ -104,7 +157,7 @@ export default function AttendeeFunnel({
       const res = await fetch("/api/attendees/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token }),
+        body: JSON.stringify({ token, discountCode: applied?.code || undefined }),
       });
       const json = await res.json();
       if (!res.ok || !json.url) {
@@ -135,6 +188,9 @@ export default function AttendeeFunnel({
     ? pricing.virtualBaseCents
     : 0;
   const savings = baseCents - finalCents;
+  // What the attendee actually pays: personal-invite price, minus a code if
+  // one is applied. The server recomputes this authoritatively at checkout.
+  const payableCents = applied ? applied.finalCents : finalCents;
 
   return (
     <div className="min-h-screen" style={{ background: `linear-gradient(135deg, #f7f3ea 0%, #ffffff 60%, #f0f6f7 100%)` }}>
@@ -361,7 +417,7 @@ export default function AttendeeFunnel({
                     )}
                   </div>
 
-                  <div className="rounded-xl p-4 mb-5" style={{ background: TEAL + "08", border: `1px solid ${TEAL}22` }}>
+                  <div className="rounded-xl p-4 mb-4" style={{ background: TEAL + "08", border: `1px solid ${TEAL}22` }}>
                     <div className="flex items-baseline justify-between">
                       <span className="text-sm text-slate-600">
                         {data.attendanceMode === "in-person" ? "In-person standard" : "Virtual standard"}
@@ -376,10 +432,63 @@ export default function AttendeeFunnel({
                         <span className="text-sm font-semibold" style={{ color: TEAL }}>−{dollars(savings)}</span>
                       </div>
                     )}
+                    {applied && (
+                      <div className="flex items-baseline justify-between mt-1">
+                        <span className="text-sm font-semibold inline-flex items-center gap-1.5" style={{ color: GOLD }}>
+                          <Tag className="w-3.5 h-3.5" /> Code {applied.code} ({applied.label})
+                        </span>
+                        <span className="text-sm font-semibold" style={{ color: GOLD }}>−{dollars(applied.discountCents)}</span>
+                      </div>
+                    )}
                     <div className="mt-3 pt-3 border-t flex items-baseline justify-between" style={{ borderColor: TEAL + "22" }}>
                       <span className="text-sm font-bold text-slate-900">Total today</span>
-                      <span className="text-2xl font-extrabold text-slate-900">{dollars(finalCents)}</span>
+                      <span className="text-2xl font-extrabold text-slate-900">{dollars(payableCents)}</span>
                     </div>
+                  </div>
+
+                  {/* Discount code */}
+                  <div className="mb-5">
+                    {applied ? (
+                      <div className="flex items-center gap-3 rounded-xl px-4 py-3" style={{ background: "#ecfdf5", border: "1px solid #a7f3d0" }}>
+                        <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: "#d1fae5" }}>
+                          <Check className="w-4 h-4" style={{ color: "#059669" }} strokeWidth={3} />
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[13px] font-bold text-emerald-800">Code {applied.code} applied</div>
+                          <div className="text-[12px] text-emerald-700">You save {dollars(applied.discountCents)}.</div>
+                        </div>
+                        <button onClick={clearCode} className="inline-flex items-center gap-1 text-[12px] font-semibold text-slate-500 hover:text-slate-700 shrink-0">
+                          <X className="w-3.5 h-3.5" /> Remove
+                        </button>
+                      </div>
+                    ) : (
+                      <div>
+                        <div className="flex items-stretch gap-2">
+                          <div className="relative flex-1">
+                            <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                            <input
+                              value={codeInput}
+                              onChange={(e) => { setCodeInput(e.target.value.toUpperCase()); setCodeError(null); }}
+                              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); applyCode(); } }}
+                              placeholder="Discount code"
+                              autoCapitalize="characters"
+                              className={`w-full pl-9 pr-3 py-2.5 text-sm font-semibold tracking-wide border rounded-lg outline-none transition-colors ${
+                                codeError ? "border-rose-300 focus:border-rose-400 focus:ring-2 focus:ring-rose-500/10" : "border-slate-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10"
+                              }`}
+                            />
+                          </div>
+                          <button
+                            onClick={applyCode}
+                            disabled={codeBusy || !codeInput.trim()}
+                            className="px-4 rounded-lg text-sm font-bold shrink-0 inline-flex items-center gap-1.5 border-2 transition-colors disabled:opacity-50"
+                            style={{ borderColor: TEAL, color: TEAL }}
+                          >
+                            {codeBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Apply
+                          </button>
+                        </div>
+                        {codeError && <div className="text-[12px] mt-1.5 font-medium text-rose-600">{codeError}</div>}
+                      </div>
+                    )}
                   </div>
 
                   {error && <ErrorBanner msg={error} />}

@@ -5,12 +5,13 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import {
   Tag, Plus, RefreshCw, Search, Trash2, Power, Check, X,
-  ChevronDown, ChevronRight, Loader2, Ticket,
+  ChevronDown, ChevronRight, Loader2, Ticket, Pencil,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
 import MobileNav from "@/components/layout/MobileNav";
 import CreateDiscountModal from "@/components/discounts/CreateDiscountModal";
+import EditDiscountModal from "@/components/discounts/EditDiscountModal";
 import RedemptionList from "@/components/discounts/RedemptionList";
 
 export type DiscountCodeRow = {
@@ -48,6 +49,7 @@ export default function DiscountsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
+  const [editing, setEditing] = useState<DiscountCodeRow | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
@@ -223,6 +225,13 @@ export default function DiscountsPage() {
 
                           <div className="flex items-center gap-1 shrink-0">
                             <button
+                              onClick={() => setEditing(c)}
+                              className="p-2 rounded-lg border border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-slate-600"
+                              title="Edit"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                            <button
                               onClick={() => toggleActive(c)}
                               disabled={busyId === c.id}
                               className={`p-2 rounded-lg border ${c.active ? "border-emerald-200 text-emerald-600 hover:bg-emerald-50" : "border-slate-200 text-slate-400 hover:bg-slate-50"}`}
@@ -261,6 +270,14 @@ export default function DiscountsPage() {
         <CreateDiscountModal
           onClose={() => setShowCreate(false)}
           onCreated={() => { setShowCreate(false); load(); }}
+        />
+      )}
+
+      {editing && (
+        <EditDiscountModal
+          code={editing}
+          onClose={() => setEditing(null)}
+          onSaved={() => { setEditing(null); load(); }}
         />
       )}
     </div>
