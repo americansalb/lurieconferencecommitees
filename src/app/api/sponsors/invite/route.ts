@@ -83,6 +83,7 @@ export async function POST(req: Request) {
     suggestedTier: suggested ?? null,
     inviteMessage: sponsor.inviteMessage,
     landingUrl,
+    assetBase: appUrl(),
   });
 
   try {

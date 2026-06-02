@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Mic, Search, Plus, Download, Send, Check,
-  Clock, XCircle, RefreshCw, AlertCircle, CircleHelp, Trash2,
+  Clock, XCircle, RefreshCw, AlertCircle, CircleHelp, Trash2, Megaphone,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
@@ -14,6 +14,7 @@ import MobileNav from "@/components/layout/MobileNav";
 import { STATUS_LABELS } from "@/lib/presenters";
 import { parseResponse } from "@/lib/api";
 import { InviteComposer } from "@/components/presenters/InviteComposer";
+import ProposalCallComposer from "@/components/presenters/ProposalCallComposer";
 
 interface PresenterRow {
   id: string;
@@ -44,6 +45,7 @@ export default function PresentersPage() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<string>("all");
   const [showInvite, setShowInvite] = useState(false);
+  const [showProposalCall, setShowProposalCall] = useState(false);
 
   const role = (session?.user as { role?: string } | undefined)?.role;
   const isAdmin = role === "admin" || role === "developer";
@@ -131,13 +133,22 @@ export default function PresentersPage() {
                   Track invitations and confirmations for the 2026 Lurie Children&rsquo;s and AALB Conference.
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => setShowInvite(true)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-[#0E5566] to-[#0066B3] hover:from-[#0A3F4D] hover:to-[#004F8C] shadow-sm"
-              >
-                <Plus className="w-4 h-4" /> Invite presenter
-              </button>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setShowProposalCall(true)}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-[#0E5566] bg-white border border-slate-200 hover:bg-slate-50 shadow-sm"
+                >
+                  <Megaphone className="w-4 h-4" /> Send Call for Proposals
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowInvite(true)}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-[#0E5566] to-[#0066B3] hover:from-[#0A3F4D] hover:to-[#004F8C] shadow-sm"
+                >
+                  <Plus className="w-4 h-4" /> Invite presenter
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
@@ -199,6 +210,13 @@ export default function PresentersPage() {
         <InviteComposer
           onClose={() => setShowInvite(false)}
           onCreated={() => { setShowInvite(false); load(); }}
+        />
+      )}
+
+      {showProposalCall && (
+        <ProposalCallComposer
+          onClose={() => setShowProposalCall(false)}
+          onSent={() => setShowProposalCall(false)}
         />
       )}
     </div>

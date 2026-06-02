@@ -34,6 +34,7 @@ export async function GET(
         },
         inviteMessage: null,
         landingUrl: `${base}/sponsor`,
+        assetBase: base,
       });
       break;
     case "cfp-general":
@@ -41,6 +42,7 @@ export async function GET(
         variant: "general",
         submitUrl: `${base}/proposal`,
         recipientFirstName: null,
+        assetBase: base,
       });
       break;
     case "cfp-healthcare":
@@ -48,6 +50,7 @@ export async function GET(
         variant: "healthcare",
         submitUrl: `${base}/proposal`,
         recipientFirstName: null,
+        assetBase: base,
       });
       break;
     default:

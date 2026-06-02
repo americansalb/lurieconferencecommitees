@@ -80,18 +80,62 @@ function bulletList(items: string[]) {
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:4px 0 8px 0;">${lis}</table>`;
 }
 
+// Production origin for absolute asset URLs (logos). Emails render outside
+// our app, so images need fully-qualified URLs. Callers on the server pass
+// appUrl(); previews and clients fall back to production, where the logos
+// are publicly served.
+const ASSET_BASE = "https://conference.aalb.org";
+
+// A branded hero banner that recreates the conference banner from the
+// outreach drafts. Built as bulletproof HTML (solid bgcolor + gradient
+// overlay) so it renders even when a client blocks remote images.
+function heroBanner() {
+  return `
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="${TEAL}" style="background:${TEAL};background:linear-gradient(135deg, #0E5566 0%, #0C3B4B 100%);border-radius:14px;overflow:hidden;margin:0 0 22px 0;">
+    <tr><td align="center" style="padding:30px 26px 26px 26px;">
+      <div style="font-size:11px;letter-spacing:0.18em;font-weight:700;color:${GOLD};text-transform:uppercase;">2nd Annual Joint Conference</div>
+      <div style="font-size:27px;line-height:1.2;font-weight:800;color:#ffffff;margin:10px 0 0 0;letter-spacing:-0.01em;">
+        2026 Lurie Children&rsquo;s<br/>&amp; <span style="color:${GOLD};">AALB</span> Conference
+      </div>
+      <div style="width:46px;height:3px;background:${GOLD};border-radius:2px;margin:14px auto 12px auto;"></div>
+      <div style="font-size:14px;font-style:italic;color:#dbe7ea;line-height:1.5;">True Language Access:<br/>Yesterday, Today, and Tomorrow</div>
+      <div style="font-size:12px;color:#aac4ca;margin-top:12px;letter-spacing:0.02em;">August 15 &amp; 16, 2026 &middot; Chicago, Illinois</div>
+    </td></tr>
+  </table>`;
+}
+
+// The two host logos, side by side on white, used to close the outreach
+// emails the way the source documents did. AALB leads, then Lurie.
+function logoLockup(assetBase: string = ASSET_BASE) {
+  const base = assetBase.replace(/\/$/, "");
+  return `
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:26px 0 4px 0;border-top:1px solid #eef1f4;">
+    <tr><td align="center" style="padding:22px 0 4px 0;">
+      <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+        <td align="center" style="padding:0 16px;">
+          <img src="${base}/logos/aalb.png" alt="Americans Against Language Barriers" height="40" style="height:40px;width:auto;display:block;" />
+        </td>
+        <td style="border-left:1px solid #e2e8f0;width:1px;">&nbsp;</td>
+        <td align="center" style="padding:0 16px;">
+          <img src="${base}/logos/lurie.png" alt="Ann &amp; Robert H. Lurie Children's Hospital of Chicago" height="34" style="height:34px;width:auto;display:block;" />
+        </td>
+      </tr></table>
+    </td></tr>
+  </table>`;
+}
+
 // Shared sign-off block: the conference planning committee with the two
-// named signatories from the outreach templates.
+// named signatories. AALB leads, then Lurie Children's.
 function signOff(closing = "Warm regards,") {
   return `
     <p style="font-size:14.5px;line-height:1.7;color:${TEXT};margin:22px 0 14px 0;">${closing}</p>
     <p style="font-size:14.5px;line-height:1.6;color:${TEXT};margin:0;">
-      <strong>Zachary Paul Romansky</strong><br/>
-      <span style="color:${MUTED};">Lurie Children&rsquo;s Language Services Department</span>
-    </p>
-    <p style="font-size:14.5px;line-height:1.6;color:${TEXT};margin:12px 0 0 0;">
       <strong>Iris Laffitte</strong><br/>
       <span style="color:${MUTED};">Americans Against Language Barriers</span>
+    </p>
+    <p style="font-size:14.5px;line-height:1.6;color:${TEXT};margin:12px 0 0 0;">
+      <strong>Zachary Paul Romansky</strong><br/>
+      <span style="color:${MUTED};">Lurie Children&rsquo;s Language Services Department</span>
     </p>`;
 }
 
@@ -327,16 +371,18 @@ type SponsorInviteArgs = {
   suggestedTier: { name: string; amountLabel: string; ticketsIncluded: number; tagline: string } | null;
   inviteMessage: string | null;
   landingUrl: string;
+  assetBase?: string;
 };
 
 export function sponsorInviteEmail({
-  contactFirstName, companyName, suggestedTier, inviteMessage, landingUrl,
+  contactFirstName, companyName, suggestedTier, inviteMessage, landingUrl, assetBase,
 }: SponsorInviteArgs) {
   const first = contactFirstName || "there";
   const tierLine = suggestedTier
     ? `We thought the <strong>${escapeHtml(suggestedTier.name)}</strong> level (${escapeHtml(suggestedTier.amountLabel)}, ${suggestedTier.ticketsIncluded} ticket${suggestedTier.ticketsIncluded === 1 ? "" : "s"} included) might be a natural fit, but please choose whichever level works best for ${escapeHtml(companyName)}.`
     : `On the invitation page you&rsquo;ll find every sponsorship level we offer, from Exhibitor Tables to Diamond, and you can choose whichever one is the right fit for ${escapeHtml(companyName)}.`;
   return shell(`
+    ${heroBanner()}
     <h1 style="font-size:22px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">Hi ${escapeHtml(first)},</h1>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
       We would love for <strong>${escapeHtml(companyName)}</strong> to become a sponsor or exhibitor at the 2nd Annual Joint Conference of Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers (AALB), taking place August 15 and 16, 2026, in Chicago.
@@ -345,6 +391,8 @@ export function sponsorInviteEmail({
       This year&rsquo;s theme, <em>True Language Access: Yesterday, Today, and Tomorrow</em>, brings together healthcare professionals, medical interpreters, language service providers, advocates, and policymakers from across the country for two days of learning, networking, and dialogue on equitable healthcare communication.
     </p>
     ${inviteMessage ? `<div style="font-size:14px;line-height:1.6;color:${TEXT};background:#f8fafc;border-left:3px solid ${BLUE};padding:14px 16px;border-radius:6px;margin:18px 0 0 0;">${escapeHtml(inviteMessage).replace(/\n/g, "<br>")}</div>` : ""}
+
+    ${button(landingUrl, "Browse levels and apply")}
 
     ${sectionHeading("Conference at a Glance")}
     ${glanceCard(GLANCE_ROWS)}
@@ -375,7 +423,9 @@ export function sponsorInviteEmail({
 
     ${signOff()}
 
-    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:22px 0 0 0;padding-top:14px;border-top:1px solid #eef1f4;">
+    ${logoLockup(assetBase)}
+
+    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;padding-top:14px;border-top:1px solid #eef1f4;">
       All sponsorships are tax-deductible to the fullest extent allowed by law under IRS code 501(c)(3). EINs: 83-3016421 and 36-2170833. If this is the wrong contact at ${escapeHtml(companyName)}, please forward this along or simply reply.
     </p>
   `);
@@ -481,6 +531,7 @@ type ProposalCallArgs = {
   submitUrl: string;
   recipientFirstName?: string | null;
   customMessage?: string | null;
+  assetBase?: string;
 };
 
 const PROPOSAL_COPY: Record<ProposalCallVariant, {
@@ -527,18 +578,21 @@ const PROPOSAL_COPY: Record<ProposalCallVariant, {
 };
 
 export function proposalCallEmail({
-  variant, submitUrl, recipientFirstName, customMessage,
+  variant, submitUrl, recipientFirstName, customMessage, assetBase,
 }: ProposalCallArgs) {
   const c = PROPOSAL_COPY[variant];
   const greeting = recipientFirstName?.trim()
     ? `Dear ${escapeHtml(recipientFirstName.trim())},`
     : "Dear Colleague,";
   return shell(`
+    ${heroBanner()}
     <h1 style="font-size:22px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;line-height:1.25;color:${TEAL};">${c.headline}</h1>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">${greeting}</p>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">${c.intro}</p>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 6px 0;">${c.body}</p>
     ${customMessage ? `<div style="font-size:14px;line-height:1.6;color:${TEXT};background:#f8fafc;border-left:3px solid ${BLUE};padding:14px 16px;border-radius:6px;margin:18px 0 0 0;">${escapeHtml(customMessage).replace(/\n/g, "<br>")}</div>` : ""}
+
+    ${button(submitUrl, "Submit your proposal")}
 
     ${sectionHeading("Topics We&rsquo;re Especially Interested In")}
     ${bulletList(c.topics)}
@@ -561,6 +615,8 @@ export function proposalCallEmail({
     </p>
 
     ${signOff()}
+
+    ${logoLockup(assetBase)}
   `);
 }
 

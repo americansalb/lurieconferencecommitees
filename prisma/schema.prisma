@@ -513,3 +513,29 @@ model SponsorEvent {
   @@map("lcc_sponsor_events")
   @@schema("lcc")
 }
+
+// Outbound Call-for-Proposals recipients. One row per person we email the
+// open CFP to, so the team can see who's been contacted, which variant
+// (general vs. healthcare) went out, the send status, and resend.
+model ProposalInvite {
+  id            String   @id @default(cuid())
+  email         String
+  name          String?
+  variant       String   @default("general") // "general" | "healthcare"
+  customMessage String?
+
+  status        String   @default("sent") // "sent" | "failed"
+  sendError     String?
+  sentCount     Int      @default(0)
+
+  invitedById   String?
+  invitedByEmail String?
+  lastSentAt    DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime? @updatedAt
+
+  @@unique([email, variant])
+  @@index([variant])
+  @@map("lcc_proposal_invites")
+  @@schema("lcc")
+}
