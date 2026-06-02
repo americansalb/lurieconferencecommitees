@@ -62,10 +62,18 @@ export async function createCheckoutSession(args: CheckoutSessionArgs): Promise<
 export async function verifyWebhookSignature(
   payload: string,
   header: string | null,
-  secret: string | undefined,
+  // One secret, or several to try in turn. Stripe issues a distinct signing
+  // secret per endpoint, so a route serving multiple destinations can pass
+  // all of its candidate secrets and accept the event if any one matches.
+  secret: string | undefined | (string | undefined)[],
   toleranceSec = 300
 ): Promise<boolean> {
-  if (!header || !secret) return false;
+  if (!header) return false;
+  const secrets = (Array.isArray(secret) ? secret : [secret]).filter(
+    (s): s is string => typeof s === "string" && s.length > 0
+  );
+  if (secrets.length === 0) return false;
+
   const parts = header.split(",").reduce<Record<string, string>>((acc, p) => {
     const [k, v] = p.split("=");
     if (k && v) acc[k.trim()] = v.trim();
@@ -79,18 +87,21 @@ export async function verifyWebhookSignature(
   if (Math.abs(Date.now() / 1000 - ts) > toleranceSec) return false;
 
   const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    "raw",
-    encoder.encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"]
-  );
-  const sig = await crypto.subtle.sign("HMAC", key, encoder.encode(`${t}.${payload}`));
-  const expected = Array.from(new Uint8Array(sig))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-  return timingSafeEqual(expected, v1);
+  for (const s of secrets) {
+    const key = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(s),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"]
+    );
+    const sig = await crypto.subtle.sign("HMAC", key, encoder.encode(`${t}.${payload}`));
+    const expected = Array.from(new Uint8Array(sig))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+    if (timingSafeEqual(expected, v1)) return true;
+  }
+  return false;
 }
 
 function timingSafeEqual(a: string, b: string): boolean {

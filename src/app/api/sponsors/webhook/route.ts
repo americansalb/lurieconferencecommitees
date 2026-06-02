@@ -8,11 +8,17 @@ import { sponsorFromHeader, sponsorReplyTo, sponsorStatusUrl, tierById } from "@
 // Stripe webhook for sponsor checkout.session.completed events.
 // Configure in Stripe dashboard: endpoint URL = https://conference.aalb.org/api/sponsors/webhook
 // Subscribe to: checkout.session.completed
-// Same STRIPE_WEBHOOK_SECRET as the attendee webhook is fine; one secret per endpoint.
+//
+// Signing secret: if sponsor payments use their own Stripe destination, set
+// STRIPE_SPONSOR_WEBHOOK_SECRET to that endpoint's secret. We also accept the
+// shared STRIPE_WEBHOOK_SECRET, so a single combined destination still works.
 export async function POST(req: Request) {
   const payload = await req.text();
   const sig = req.headers.get("stripe-signature");
-  const ok = await verifyWebhookSignature(payload, sig, process.env.STRIPE_WEBHOOK_SECRET);
+  const ok = await verifyWebhookSignature(payload, sig, [
+    process.env.STRIPE_SPONSOR_WEBHOOK_SECRET,
+    process.env.STRIPE_WEBHOOK_SECRET,
+  ]);
   if (!ok) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
