@@ -8,6 +8,7 @@ type InviteArgs = {
 
 const TEAL = "#0E5566";
 const BLUE = "#0066B3";
+const GOLD = "#C9A14B";
 const SHELL_BG = "#f6f8fa";
 const CARD_BG = "#ffffff";
 const TEXT = "#0f172a";
@@ -47,6 +48,61 @@ function button(href: string, label: string) {
 function roleArticle(role: string) {
   return /^[aeiou]/i.test(role) ? "an" : "a";
 }
+
+// A gold-underlined section heading, matching the "Conference at a Glance" /
+// "Why Sponsor" style of the outreach templates (no emoji — colored labels
+// carry the structure instead).
+function sectionHeading(text: string) {
+  return `<div style="font-size:12px;letter-spacing:0.14em;font-weight:700;color:${GOLD};text-transform:uppercase;margin:28px 0 12px 0;padding-bottom:8px;border-bottom:1px solid #eef1f4;">${text}</div>`;
+}
+
+// "Conference at a Glance" detail rows. Each label is a colored caption above
+// its value, so the block reads cleanly without icons.
+function glanceCard(rows: { label: string; value: string }[]) {
+  const body = rows.map((r) => `
+    <tr>
+      <td style="padding:10px 0;border-bottom:1px solid #eef1f4;vertical-align:top;">
+        <div style="font-size:11px;letter-spacing:0.08em;font-weight:700;color:${TEAL};text-transform:uppercase;">${r.label}</div>
+        <div style="font-size:14px;line-height:1.55;color:${TEXT};margin-top:3px;">${r.value}</div>
+      </td>
+    </tr>`).join("");
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fbfcfd;border:1px solid #eef1f4;border-radius:12px;padding:6px 16px;margin:4px 0 8px 0;">${body}</table>`;
+}
+
+// A checkmark bullet list in the conference gold, used for "Why sponsor" and
+// the CFP topic lists.
+function bulletList(items: string[]) {
+  const lis = items.map((t) => `
+    <tr>
+      <td style="vertical-align:top;padding:5px 10px 5px 0;width:18px;"><span style="color:${GOLD};font-weight:700;font-size:15px;">&#10003;</span></td>
+      <td style="vertical-align:top;padding:5px 0;font-size:14.5px;line-height:1.6;color:${TEXT};">${t}</td>
+    </tr>`).join("");
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:4px 0 8px 0;">${lis}</table>`;
+}
+
+// Shared sign-off block: the conference planning committee with the two
+// named signatories from the outreach templates.
+function signOff(closing = "Warm regards,") {
+  return `
+    <p style="font-size:14.5px;line-height:1.7;color:${TEXT};margin:22px 0 14px 0;">${closing}</p>
+    <p style="font-size:14.5px;line-height:1.6;color:${TEXT};margin:0;">
+      <strong>Zachary Paul Romansky</strong><br/>
+      <span style="color:${MUTED};">Lurie Children&rsquo;s Language Services Department</span>
+    </p>
+    <p style="font-size:14.5px;line-height:1.6;color:${TEXT};margin:12px 0 0 0;">
+      <strong>Iris Laffitte</strong><br/>
+      <span style="color:${MUTED};">Americans Against Language Barriers</span>
+    </p>`;
+}
+
+// Conference-at-a-glance rows shared across outreach emails. Kept here so the
+// dates, venue, CEUs, and format stay consistent with the landing tokens.
+const GLANCE_ROWS = [
+  { label: "Location", value: "Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago, 225 E. Chicago Avenue, Chicago, IL 60611" },
+  { label: "Dates", value: "Saturday, August 15 &middot; 9:30 AM&ndash;6:00 PM<br/>Sunday, August 16 &middot; 9:30 AM&ndash;4:00 PM" },
+  { label: "CEUs", value: "10+ accredited CEUs (CCHI, NBCMI, RID, and ATA accreditation sought)" },
+  { label: "Format", value: "In person, with a virtual option for attendees" },
+];
 
 export function presenterInviteEmail({ name, url, customMessage, role, sessionFormat }: InviteArgs) {
   const first = (name || "").split(" ")[0] || "there";
@@ -278,19 +334,48 @@ export function sponsorInviteEmail({
 }: SponsorInviteArgs) {
   const first = contactFirstName || "there";
   const tierLine = suggestedTier
-    ? `We thought the <strong>${escapeHtml(suggestedTier.name)}</strong> level (${escapeHtml(suggestedTier.amountLabel)}, ${suggestedTier.ticketsIncluded} ticket${suggestedTier.ticketsIncluded === 1 ? "" : "s"} included) might be a natural fit, but please pick whichever level works best for ${escapeHtml(companyName)} on the invitation page.`
-    : `On the invitation page you&rsquo;ll find every sponsorship level we offer, from Exhibitor Tables to Diamond, and you can pick whichever one is the right fit for ${escapeHtml(companyName)}.`;
+    ? `We thought the <strong>${escapeHtml(suggestedTier.name)}</strong> level (${escapeHtml(suggestedTier.amountLabel)}, ${suggestedTier.ticketsIncluded} ticket${suggestedTier.ticketsIncluded === 1 ? "" : "s"} included) might be a natural fit, but please choose whichever level works best for ${escapeHtml(companyName)}.`
+    : `On the invitation page you&rsquo;ll find every sponsorship level we offer, from Exhibitor Tables to Diamond, and you can choose whichever one is the right fit for ${escapeHtml(companyName)}.`;
   return shell(`
     <h1 style="font-size:22px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">Hi ${escapeHtml(first)},</h1>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
-      We would love for <strong>${escapeHtml(companyName)}</strong> to partner with us on the 2nd Annual Joint Conference of Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers, August 15 and 16, 2026, in Chicago.
+      We would love for <strong>${escapeHtml(companyName)}</strong> to become a sponsor or exhibitor at the 2nd Annual Joint Conference of Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers (AALB), taking place August 15 and 16, 2026, in Chicago.
     </p>
-    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 16px 0;">
-      ${tierLine}
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 4px 0;">
+      This year&rsquo;s theme, <em>True Language Access: Yesterday, Today, and Tomorrow</em>, brings together healthcare professionals, medical interpreters, language service providers, advocates, and policymakers from across the country for two days of learning, networking, and dialogue on equitable healthcare communication.
     </p>
-    ${inviteMessage ? `<div style="font-size:14px;line-height:1.6;color:${TEXT};background:#f8fafc;border-left:3px solid ${BLUE};padding:14px 16px;border-radius:6px;margin:0 0 18px 0;">${escapeHtml(inviteMessage).replace(/\n/g, "<br>")}</div>` : ""}
-    ${button(landingUrl, "View the invitation")}
-    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;">
+    ${inviteMessage ? `<div style="font-size:14px;line-height:1.6;color:${TEXT};background:#f8fafc;border-left:3px solid ${BLUE};padding:14px 16px;border-radius:6px;margin:18px 0 0 0;">${escapeHtml(inviteMessage).replace(/\n/g, "<br>")}</div>` : ""}
+
+    ${sectionHeading("Conference at a Glance")}
+    ${glanceCard(GLANCE_ROWS)}
+
+    ${sectionHeading("Why Sponsor?")}
+    <p style="font-size:14.5px;line-height:1.6;color:${TEXT};margin:0 0 6px 0;">Sponsoring the Lurie Children&rsquo;s &amp; AALB Conference is a meaningful opportunity to:</p>
+    ${bulletList([
+      "Gain visibility with a highly engaged audience of healthcare and language access professionals",
+      "Demonstrate your organization&rsquo;s commitment to health equity and language access",
+      "Connect directly with decision-makers, interpreters, educators, and advocates",
+      "Showcase your products, services, or programs as an exhibitor",
+      "Align your brand with two nationally recognized institutions: Lurie Children&rsquo;s and Americans Against Language Barriers",
+    ])}
+
+    ${sectionHeading("About Our Hosts")}
+    <p style="font-size:14.5px;line-height:1.7;color:${TEXT};margin:0 0 12px 0;">
+      <strong>Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago</strong> is one of the nation&rsquo;s top-ranked pediatric healthcare institutions, with a nationally recognized Language Services Department committed to compassionate, inclusive care.
+    </p>
+    <p style="font-size:14.5px;line-height:1.7;color:${TEXT};margin:0 0 4px 0;">
+      <strong>Americans Against Language Barriers (AALB)</strong> is an Illinois-based 501(c)(3) nonprofit dedicated to improving the quality of life and healthcare outcomes of patients with limited English proficiency.
+    </p>
+
+    ${sectionHeading("Get Involved")}
+    <p style="font-size:14.5px;line-height:1.7;color:${TEXT};margin:0 0 4px 0;">
+      ${tierLine} Sponsorship opportunities are limited, so we encourage you to reach out at your earliest convenience.
+    </p>
+    ${button(landingUrl, "Browse levels and apply")}
+
+    ${signOff()}
+
+    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:22px 0 0 0;padding-top:14px;border-top:1px solid #eef1f4;">
       All sponsorships are tax-deductible to the fullest extent allowed by law under IRS code 501(c)(3). EINs: 83-3016421 and 36-2170833. If this is the wrong contact at ${escapeHtml(companyName)}, please forward this along or simply reply.
     </p>
   `);
@@ -382,6 +467,100 @@ export function sponsorAdminNotificationEmail({ sponsor }: SponsorAdminNotifyArg
       ${sponsor.website ? `<tr><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:13px;color:${MUTED};">Website</td><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:14px;color:${BLUE};"><a style="color:${BLUE};" href="${escapeHtml(sponsor.website)}">${escapeHtml(sponsor.website)}</a></td></tr>` : ""}
     </table>
     ${sponsor.message ? `<p style="font-size:14px;line-height:1.6;color:${TEXT};margin:18px 0 0 0;background:#f8fafc;border-left:3px solid ${BLUE};padding:12px 14px;border-radius:6px;">${escapeHtml(sponsor.message)}</p>` : ""}
+  `);
+}
+
+// ---- Call for Proposals -------------------------------------------------
+// One template, two audiences. "general" speaks to the whole field;
+// "healthcare" speaks to clinicians. Both replace the dead "Submit your
+// proposal" button from the source documents with a real link to /proposal.
+type ProposalCallVariant = "general" | "healthcare";
+
+type ProposalCallArgs = {
+  variant: ProposalCallVariant;
+  submitUrl: string;
+  recipientFirstName?: string | null;
+  customMessage?: string | null;
+};
+
+const PROPOSAL_COPY: Record<ProposalCallVariant, {
+  headline: string;
+  intro: string;
+  body: string;
+  topics: string[];
+  why: string;
+}> = {
+  general: {
+    headline: "Call for Proposals: Share Your Perspective on Language Access.",
+    intro:
+      "We are excited to announce the Call for Proposals for the 2nd Joint Lurie Children&rsquo;s &amp; Americans Against Language Barriers (AALB) Conference on Language Access in Healthcare, taking place August 15 and 16, 2026, at Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago.",
+    body:
+      "This year&rsquo;s conference explores the full arc of language access in healthcare: the pioneers who laid the groundwork, the practices and innovations shaping today&rsquo;s landscape, and the technologies and standards that will define tomorrow. We invite practitioners, researchers, educators, advocates, and thought leaders to share their voices and perspectives.",
+    topics: [
+      "History and foundations of language access and medical interpretation",
+      "Current best practices, innovations, and challenges in language services",
+      "Emerging technologies and the future of healthcare communication",
+      "Policy reform and advocacy for patients with limited English proficiency",
+      "Training, certification, and professional development for interpreters",
+      "Case studies and lessons from the field",
+    ],
+    why:
+      "This is a unique opportunity to connect with healthcare professionals, medical interpreters, language service providers, and advocates from across the country. Accepted presenters will contribute to a growing national conversation on equitable healthcare communication.",
+  },
+  healthcare: {
+    headline: "Call for Proposals: Share Your Clinical Perspective on Language Access.",
+    intro:
+      "We are pleased to announce the Call for Proposals for the 2nd Joint Lurie Children&rsquo;s &amp; Americans Against Language Barriers (AALB) Conference, taking place August 15 and 16, 2026, at Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago. As a healthcare professional, you witness firsthand the impacts, as well as the gaps, of language access in clinical care. We want to hear from you.",
+    body:
+      "This conference explores the full arc of language access in healthcare: from the pioneers who fought for equitable communication to the technologies and policies shaping care today and tomorrow. We welcome proposals from physicians, nurses, social workers, care coordinators, and other clinical professionals who have stories, research, or insights to share.",
+    topics: [
+      "The clinical impact of language barriers on patient outcomes and safety",
+      "Best practices for working effectively with medical interpreters",
+      "Case studies illustrating language access successes or challenges",
+      "Innovations in multilingual patient education and informed consent",
+      "Pediatric and family-centered care for patients with limited English proficiency",
+      "Interdisciplinary approaches to improving language services at the bedside",
+    ],
+    why:
+      "Your clinical perspective is essential to advancing this field. We hope you will consider sharing your voice at this important gathering. Accepted presenters will contribute to a growing national conversation on equitable healthcare communication.",
+  },
+};
+
+export function proposalCallEmail({
+  variant, submitUrl, recipientFirstName, customMessage,
+}: ProposalCallArgs) {
+  const c = PROPOSAL_COPY[variant];
+  const greeting = recipientFirstName?.trim()
+    ? `Dear ${escapeHtml(recipientFirstName.trim())},`
+    : "Dear Colleague,";
+  return shell(`
+    <h1 style="font-size:22px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;line-height:1.25;color:${TEAL};">${c.headline}</h1>
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">${greeting}</p>
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">${c.intro}</p>
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 6px 0;">${c.body}</p>
+    ${customMessage ? `<div style="font-size:14px;line-height:1.6;color:${TEXT};background:#f8fafc;border-left:3px solid ${BLUE};padding:14px 16px;border-radius:6px;margin:18px 0 0 0;">${escapeHtml(customMessage).replace(/\n/g, "<br>")}</div>` : ""}
+
+    ${sectionHeading("Topics We&rsquo;re Especially Interested In")}
+    ${bulletList(c.topics)}
+
+    ${sectionHeading("Presentation Details")}
+    ${glanceCard([
+      { label: "Presentation Length", value: "45 minutes or 60 minutes" },
+      { label: "Submission Deadline", value: "June 30, 2026" },
+    ])}
+
+    ${button(submitUrl, "Submit your proposal")}
+
+    ${sectionHeading("Conference at a Glance")}
+    ${glanceCard(GLANCE_ROWS)}
+
+    ${sectionHeading("Why Present?")}
+    <p style="font-size:14.5px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">${c.why}</p>
+    <p style="font-size:14.5px;line-height:1.7;color:${TEXT};margin:0 0 4px 0;">
+      Questions? Please reach out to us at <a href="mailto:contact@aalb.org" style="color:${BLUE};">contact@aalb.org</a>. We look forward to reviewing your proposal and hope to see you in Chicago this August.
+    </p>
+
+    ${signOff()}
   `);
 }
 
