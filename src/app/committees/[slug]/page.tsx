@@ -104,7 +104,7 @@ export default function CommitteeDetailPage() {
     return (
       <div className="flex h-screen overflow-hidden bg-slate-50">
         <Sidebar />
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 flex flex-col overflow-hidden min-w-0">
           <Navbar />
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
@@ -132,7 +132,7 @@ export default function CommitteeDetailPage() {
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">
       <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <Navbar />
         <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
           <div className="max-w-4xl mx-auto px-4 py-4 md:py-6">

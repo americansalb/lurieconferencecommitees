@@ -135,7 +135,7 @@ export default function NotificationsPage() {
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">
       <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <Navbar />
         <div className="flex-1 overflow-y-auto pb-20 md:pb-0">
           <div className="p-4 sm:p-6 max-w-3xl mx-auto">

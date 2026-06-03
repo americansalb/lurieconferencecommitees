@@ -55,7 +55,7 @@ export default function CommitteesPage() {
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">
       <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <Navbar />
         <main className="flex-1 overflow-y-auto pb-20 md:pb-0 p-4 md:p-6">
           <div className="md:hidden mb-4">
