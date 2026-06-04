@@ -72,7 +72,7 @@ export default function ProposalFunnel() {
   const next = useCallback(() => {
     setError(null);
     if (step === 0 && !form.talkTitle.trim()) {
-      setError("Give your session a working title — you can refine it later.");
+      setError("Give your session a working title. You can refine it later.");
       return;
     }
     if (step === 1 && !form.talkAbstract.trim()) {
@@ -116,12 +116,12 @@ export default function ProposalFunnel() {
 
   return (
     <WizardShell eyebrow="Call for Proposals" current={step} total={STEPS.length} onBack={goBack}>
-      {/* STEP 0 — the idea (title first) */}
+      {/* STEP 0: the idea (title first) */}
       {step === 0 && (
         <StepFrame stepKey={0}>
           <Question
             title={<>What&rsquo;s your idea?</>}
-            sub="Start with a working title. This is the work you want to bring to the conference — we review every proposal and reply within two weeks."
+            sub="Start with a working title. This is the work you want to bring to the conference. We review every proposal and reply within two weeks."
           />
           <TextInput
             label="Working title"
@@ -139,7 +139,7 @@ export default function ProposalFunnel() {
         </StepFrame>
       )}
 
-      {/* STEP 1 — abstract */}
+      {/* STEP 1: abstract */}
       {step === 1 && (
         <StepFrame stepKey={1}>
           <Question
@@ -172,10 +172,10 @@ export default function ProposalFunnel() {
         </StepFrame>
       )}
 
-      {/* STEP 2 — format */}
+      {/* STEP 2: format */}
       {step === 2 && (
         <StepFrame stepKey={2}>
-          <Question title={<>Shape your session.</>} sub="Pick what fits best. Nothing here is binding — it just helps us build the schedule." />
+          <Question title={<>Shape your session.</>} sub="Pick what fits best. Nothing here is binding. It just helps us build the schedule." />
           <div className="space-y-6 wiz-stagger">
             <PillGroup label="Session format" value={form.sessionFormat} options={FORMATS} onChange={(v) => set("sessionFormat", v)} />
             <PillGroup label="Length" value={form.sessionLength} options={LENGTHS} onChange={(v) => set("sessionLength", v)} />
@@ -188,10 +188,10 @@ export default function ProposalFunnel() {
         </StepFrame>
       )}
 
-      {/* STEP 3 — about you (required: name + email; rest progressive) */}
+      {/* STEP 3: about you (required: name + email; rest progressive) */}
       {step === 3 && (
         <StepFrame stepKey={3}>
-          <Question title={<>And you are?</>} sub="Just a name and email to start. Add the rest if you'd like — it's all optional." />
+          <Question title={<>And you are?</>} sub="Just a name and email to start. Add the rest if you'd like. It is all optional." />
           <div className="space-y-3">
             <TextInput label="Full name" required autoFocus value={form.name} onChange={(v) => set("name", v)} />
             <TextInput label="Email" required type="email" inputMode="email" value={form.email} onChange={(v) => set("email", v)} placeholder="you@example.org" />
@@ -226,7 +226,7 @@ export default function ProposalFunnel() {
 
               <div className="pt-1">
                 <div className="text-[12px] font-semibold mb-2" style={{ color: C.muted }}>
-                  Links &amp; social <span className="font-normal">— helps us get to know you (all optional)</span>
+                  Links &amp; social <span className="font-normal">. helps us get to know you (all optional)</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <TextInput label="Website" inputMode="url" value={form.websiteUrl} onChange={(v) => set("websiteUrl", v)} placeholder="https://" />
@@ -248,7 +248,7 @@ export default function ProposalFunnel() {
         </StepFrame>
       )}
 
-      {/* STEP 4 — review & submit */}
+      {/* STEP 4: review & submit */}
       {step === 4 && (
         <StepFrame stepKey={4}>
           <Question title={<>Ready to send?</>} sub="Here's what lands on our review desk." />
@@ -261,7 +261,7 @@ export default function ProposalFunnel() {
                   <Pencil className="w-3 h-3" /> Edit
                 </button>
               </div>
-              <h3 className="font-serif-display text-[21px] font-bold leading-snug mt-1" style={{ color: C.ink }}>
+              <h3 className="text-[21px] font-bold leading-snug mt-1" style={{ color: C.ink }}>
                 {form.talkTitle || "Untitled session"}
               </h3>
               {form.talkAbstract && (
@@ -285,7 +285,7 @@ export default function ProposalFunnel() {
                 </span>
               )}
               <div className="flex-1 min-w-0">
-                <div className="text-[15px] font-semibold truncate" style={{ color: C.ink }}>{form.name || "—"}</div>
+                <div className="text-[15px] font-semibold truncate" style={{ color: C.ink }}>{form.name || "..."}</div>
                 <div className="text-[12px] truncate" style={{ color: C.muted }}>
                   {[form.jobTitle, form.affiliation].filter(Boolean).join(" · ") || form.email}
                 </div>
@@ -297,7 +297,7 @@ export default function ProposalFunnel() {
           </div>
 
           <div className="mt-4">
-            <TextArea label="Anything else for the program team?" hint="optional" rows={3} value={form.presenterMessage} onChange={(v) => set("presenterMessage", v)} placeholder="Scheduling notes, co-presenters, accessibility needs — anything that doesn't fit above." />
+            <TextArea label="Anything else for the program team?" hint="optional" rows={3} value={form.presenterMessage} onChange={(v) => set("presenterMessage", v)} placeholder="Scheduling notes, co-presenters, accessibility needs, or anything that doesn't fit above." />
           </div>
 
           <InlineError message={error} />

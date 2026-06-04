@@ -256,7 +256,7 @@ export default function SponsorFunnel() {
             <div className="p-5 flex items-start justify-between gap-3" style={{ borderBottom: `1px solid ${C.hairline}` }}>
               <div className="min-w-0">
                 <AccentChip tier={selected} />
-                <div className="font-serif-display text-[26px] font-bold mt-2 tabular-nums" style={{ color: C.ink }}>
+                <div className="text-[26px] font-bold mt-2 tabular-nums" style={{ color: C.ink }}>
                   {selected.amountLabel}
                 </div>
                 <div className="text-[13px]" style={{ color: C.muted }}>
@@ -330,7 +330,7 @@ function Browse({ onPick }: { onPick: (t: SponsorTier) => void }) {
     <>
       {/* Hero (the gold eyebrow above is rendered by the shell) */}
       <div className="text-center mb-10">
-        <h1 className="font-serif-display font-bold tracking-tight leading-[1.05] text-[34px] sm:text-[48px]" style={{ color: C.ink }}>
+        <h1 className="font-bold tracking-tight leading-[1.05] text-[34px] sm:text-[48px]" style={{ color: C.ink }}>
           Invest in linguistic equity.
         </h1>
         <p className="mt-4 text-[15px] sm:text-[17px] leading-relaxed max-w-2xl mx-auto" style={{ color: C.muted }}>
@@ -382,7 +382,7 @@ function Browse({ onPick }: { onPick: (t: SponsorTier) => void }) {
 
       {/* Why partner */}
       <div className="mt-12 bg-white rounded-2xl p-6 sm:p-8" style={{ border: `1px solid ${C.hairline}`, boxShadow: "0 6px 18px -14px rgba(11,31,37,0.25)" }}>
-        <h2 className="font-serif-display text-[22px] font-bold mb-5" style={{ color: C.ink }}>Why partner with us?</h2>
+        <h2 className="text-[22px] font-bold mb-5" style={{ color: C.ink }}>Why partner with us?</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <Reason icon={Heart} title="Meaningful impact" body="Support initiatives that directly improve patient outcomes in healthcare settings where language barriers create real risk." />
           <Reason icon={Users} title="Professional audience" body="Connect with interpreters, translators, healthcare administrators, language service providers, regulators, and policy leaders." />
@@ -401,7 +401,7 @@ function Browse({ onPick }: { onPick: (t: SponsorTier) => void }) {
 function TierGroup({ title, sub, children }: { title: string; sub: string; children: React.ReactNode }) {
   return (
     <div className="mb-8">
-      <h2 className="font-serif-display text-[20px] sm:text-[22px] font-bold" style={{ color: C.ink }}>{title}</h2>
+      <h2 className="text-[20px] sm:text-[22px] font-bold" style={{ color: C.ink }}>{title}</h2>
       <p className="text-[13px] mt-1 mb-5" style={{ color: C.muted }}>{sub}</p>
       {children}
     </div>
@@ -434,7 +434,7 @@ function TierCard({
             <div className="text-[10px] font-bold tracking-widest uppercase" style={{ color: tier.accent }}>
               {tier.name}
             </div>
-            <div className="mt-1.5 font-serif-display text-[30px] font-bold tabular-nums leading-none" style={{ color: C.ink }}>
+            <div className="mt-1.5 text-[30px] font-bold tabular-nums leading-none" style={{ color: C.ink }}>
               {tier.amountLabel}
             </div>
             {tier.acceptsAlternativePayment && (
@@ -505,7 +505,7 @@ function Details({ tier, onApply }: { tier: SponsorTier; onApply: () => void }) 
         <div className="h-1.5" style={{ background: tier.accent }} />
         <div className="p-5 sm:p-6">
           <div className="flex items-baseline gap-3 flex-wrap">
-            <span className="font-serif-display text-[36px] font-bold tabular-nums leading-none" style={{ color: C.ink }}>{tier.amountLabel}</span>
+            <span className="text-[36px] font-bold tabular-nums leading-none" style={{ color: C.ink }}>{tier.amountLabel}</span>
             <span className="text-[13px]" style={{ color: C.muted }}>includes {tier.ticketsIncluded} conference ticket{tier.ticketsIncluded === 1 ? "" : "s"}</span>
           </div>
 
@@ -579,7 +579,7 @@ function Done({
             <div className="w-14 h-14 mx-auto rounded-full flex items-center justify-center mb-4" style={{ background: tier.accentSoft }}>
               <Check className="w-7 h-7" style={{ color: tier.accent }} strokeWidth={3} />
             </div>
-            <h1 className="font-serif-display text-[28px] font-bold tracking-tight" style={{ color: C.ink }}>
+            <h1 className="text-[28px] font-bold tracking-tight" style={{ color: C.ink }}>
               Application received.
             </h1>
             <p className="mt-3 text-[14px] leading-relaxed" style={{ color: C.muted }}>

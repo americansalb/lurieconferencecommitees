@@ -49,15 +49,15 @@ export async function POST(req: Request) {
 
   const isInPerson = attendee.attendanceMode === "in-person";
   const productName = isInPerson
-    ? "Conference 2026 — In-Person Registration"
-    : "Conference 2026 — Virtual Registration";
+    ? "Conference 2026: In-Person Registration"
+    : "Conference 2026: Virtual Registration";
   const personalNote = isInPerson && attendee.discountPercent > 0
     ? ` ${attendee.discountPercent}% personal-invite discount applied.`
     : "";
   const codeNote = discountCodeText ? ` Code ${discountCodeText} applied.` : "";
   const productDescription = (isInPerson
-    ? "Two-day in-person ticket, Aug 15–16, 2026."
-    : "Two-day virtual ticket with live streamed sessions, Aug 15–16, 2026.") + personalNote + codeNote;
+    ? "Two-day in-person ticket, August 15 and 16, 2026."
+    : "Two-day virtual ticket with live streamed sessions, August 15 and 16, 2026.") + personalNote + codeNote;
 
   const session = await createCheckoutSession({
     amountCents: finalCents,

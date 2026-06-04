@@ -64,12 +64,12 @@ export default function Venue() {
             <Eyebrow>The Venue</Eyebrow>
 
             <h2
-              className="font-serif-display mt-6 text-4xl sm:text-5xl md:text-[58px] font-bold leading-[1.05] tracking-tight"
+              className="mt-6 text-4xl sm:text-5xl md:text-[58px] font-bold leading-[1.05] tracking-tight"
               style={{ color: TOKENS.ink }}
             >
               {CONFERENCE.venueShort}.
             </h2>
-            <p className="mt-3 text-base font-semibold italic font-serif-display" style={{ color: TOKENS.blue }}>
+            <p className="mt-3 text-base font-semibold italic" style={{ color: TOKENS.blue }}>
               {CONFERENCE.venueName}
             </p>
 

@@ -53,7 +53,7 @@ export default function Theme() {
         <div className="max-w-3xl mx-auto text-center mb-20">
           <Eyebrow>2026 Theme</Eyebrow>
           <h2
-            className="font-serif-display mt-6 text-4xl sm:text-5xl md:text-[64px] font-bold leading-[1.05] tracking-tight"
+            className="mt-6 text-4xl sm:text-5xl md:text-[64px] font-bold leading-[1.05] tracking-tight"
             style={{ color: TOKENS.ink }}
           >
             True Language Access:
@@ -89,7 +89,7 @@ export default function Theme() {
                   color: p.accent,
                 }}
               >
-                <span className="font-serif-display text-xl font-bold tabular-nums leading-none italic">
+                <span className="text-xl font-bold tabular-nums leading-none italic">
                   {p.numeral}
                 </span>
               </div>
@@ -100,7 +100,7 @@ export default function Theme() {
                 {p.eyebrow}
               </div>
               <h3
-                className="font-serif-display text-2xl sm:text-[26px] font-bold leading-tight mb-4"
+                className="text-2xl sm:text-[26px] font-bold leading-tight mb-4"
                 style={{ color: TOKENS.ink }}
               >
                 {p.title}
@@ -128,7 +128,7 @@ export default function Theme() {
                 <Mic className="w-5 h-5" />
               </div>
               <h3
-                className="font-serif-display text-2xl sm:text-3xl font-bold leading-tight mb-3"
+                className="text-2xl sm:text-3xl font-bold leading-tight mb-3"
                 style={{ color: TOKENS.ink }}
               >
                 Speaker lineup, coming soon.

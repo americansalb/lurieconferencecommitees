@@ -41,7 +41,7 @@ export default function Pricing() {
         <div className="max-w-3xl mx-auto text-center mb-14">
           <Eyebrow>Registration</Eyebrow>
           <h2
-            className="font-serif-display mt-6 text-4xl sm:text-5xl md:text-[58px] font-bold leading-[1.05] tracking-tight"
+            className="mt-6 text-4xl sm:text-5xl md:text-[58px] font-bold leading-[1.05] tracking-tight"
             style={{ color: TOKENS.ink }}
           >
             Choose your{" "}
@@ -208,7 +208,7 @@ function PriceCard({
               <Icon className="w-5 h-5" />
             </div>
             <div>
-              <div className="font-serif-display text-2xl font-bold leading-none" style={{ color: TOKENS.ink }}>
+              <div className="text-2xl font-bold leading-none" style={{ color: TOKENS.ink }}>
                 {title}
               </div>
               <div className="text-xs mt-1" style={{ color: TOKENS.muted }}>{tagline}</div>
@@ -225,7 +225,7 @@ function PriceCard({
         </div>
 
         <div className="flex items-baseline gap-2">
-          <span className="font-serif-display text-6xl font-bold tracking-tight" style={{ color: TOKENS.ink }}>
+          <span className="text-6xl font-bold tracking-tight" style={{ color: TOKENS.ink }}>
             ${price}
           </span>
           <span className="text-sm" style={{ color: TOKENS.muted }}>USD</span>

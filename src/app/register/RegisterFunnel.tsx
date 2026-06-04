@@ -4,11 +4,11 @@ import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   MapPin, Monitor, User, Mail, Sparkles, Calendar, CreditCard,
-  Car, UtensilsCrossed, Accessibility, Languages, Pencil, Check, Tag, X, Loader2,
+  UtensilsCrossed, Accessibility, Languages, Pencil, Check, Tag, X, Loader2,
 } from "lucide-react";
 import {
   C, WizardShell, StepFrame, Question, TextInput, TextArea, ChoiceCard,
-  ToggleRow, PrimaryButton, InlineError, Hint, useEnterKey,
+  PrimaryButton, InlineError, Hint, useEnterKey,
 } from "@/components/funnel/Wizard";
 
 type Mode = "in-person" | "virtual";
@@ -20,7 +20,6 @@ type Form = {
   phone: string;
   primaryLanguages: string;
   attendanceMode: Mode | "";
-  needsParking: boolean;
   accessibilityNotes: string;
   dietary: string;
 };
@@ -28,7 +27,7 @@ type Form = {
 const EMPTY: Form = {
   firstName: "", lastName: "", email: "", phone: "",
   primaryLanguages: "", attendanceMode: "",
-  needsParking: false, accessibilityNotes: "", dietary: "",
+  accessibilityNotes: "", dietary: "",
 };
 
 const STEPS = ["Attendance", "Your name", "Contact", "Personalize", "Review"];
@@ -118,7 +117,7 @@ export default function RegisterFunnel({
     }
     if (step === 2) {
       if (!emailOk(form.email)) {
-        setError("That email doesn't look right — we'll send your ticket there.");
+        setError("That email doesn't look right, we'll send your ticket there.");
         return;
       }
     }
@@ -158,12 +157,12 @@ export default function RegisterFunnel({
 
   return (
     <WizardShell eyebrow="Register" current={step} total={STEPS.length} onBack={goBack}>
-      {/* STEP 0 — attendance mode */}
+      {/* STEP 0: attendance mode */}
       {step === 0 && (
         <StepFrame stepKey={0}>
           <Question
             title={<>Reserve your seat.</>}
-            sub={<>August 15 &amp; 16, 2026 · Lurie Children&rsquo;s, Chicago. {tierLabel} pricing through {tierEndDate}.</>}
+            sub={<>August 15 and 16, 2026 · Lurie Children&rsquo;s, Chicago. {tierLabel} pricing through {tierEndDate}.</>}
           />
           <div className="grid grid-cols-1 gap-3 wiz-stagger">
             <ChoiceCard
@@ -191,7 +190,7 @@ export default function RegisterFunnel({
         </StepFrame>
       )}
 
-      {/* STEP 1 — name */}
+      {/* STEP 1: name */}
       {step === 1 && (
         <StepFrame stepKey={1}>
           <Question title={<>What&rsquo;s your name?</>} sub="The name that goes on your badge and CEU certificate." />
@@ -207,7 +206,7 @@ export default function RegisterFunnel({
         </StepFrame>
       )}
 
-      {/* STEP 2 — contact */}
+      {/* STEP 2: contact */}
       {step === 2 && (
         <StepFrame stepKey={2}>
           <Question title={<>Where can we reach you?</>} sub="Your ticket, receipt, and join link all go to your email." />
@@ -223,23 +222,14 @@ export default function RegisterFunnel({
         </StepFrame>
       )}
 
-      {/* STEP 3 — personalize (all optional) */}
+      {/* STEP 3: personalize (all optional) */}
       {step === 3 && (
         <StepFrame stepKey={3}>
           <Question
             title={<>Make it yours.</>}
-            sub="All optional — share anything that helps us host you well."
+            sub="All optional. Share anything that helps us host you well."
           />
           <div className="space-y-3 wiz-stagger">
-            {isInPerson && (
-              <ToggleRow
-                checked={form.needsParking}
-                onToggle={() => set("needsParking", !form.needsParking)}
-                title="Reserve a parking pass"
-                desc="We'll hold a spot at the Streeterville garage."
-                icon={Car}
-              />
-            )}
             <div className="rounded-xl p-4 bg-white" style={{ border: `1.5px solid ${C.hairline}` }}>
               <div className="flex items-center gap-2 mb-2.5">
                 <Languages className="w-4 h-4" style={{ color: C.teal }} />
@@ -252,7 +242,7 @@ export default function RegisterFunnel({
                 <Accessibility className="w-4 h-4" style={{ color: C.teal }} />
                 <span className="text-[13px] font-semibold" style={{ color: C.inkSoft }}>Accessibility accommodations</span>
               </div>
-              <TextArea label="" value={form.accessibilityNotes} onChange={(v) => set("accessibilityNotes", v)} rows={2} placeholder="ASL, captioning, mobility, seating, lighting — anything that helps." />
+              <TextArea label="" value={form.accessibilityNotes} onChange={(v) => set("accessibilityNotes", v)} rows={2} placeholder="ASL, captioning, mobility, seating, lighting, or anything that helps." />
             </div>
             {isInPerson && (
               <div className="rounded-xl p-4 bg-white" style={{ border: `1.5px solid ${C.hairline}` }}>
@@ -270,7 +260,7 @@ export default function RegisterFunnel({
         </StepFrame>
       )}
 
-      {/* STEP 4 — review & pay */}
+      {/* STEP 4: review & pay */}
       {step === 4 && (
         <StepFrame stepKey={4}>
           <Question title={<>Look good?</>} sub="One tap to secure checkout. Refundable through July 15." />
@@ -283,25 +273,25 @@ export default function RegisterFunnel({
               </span>
               <div className="flex-1">
                 <div className="text-white font-bold text-[15px]">{isInPerson ? "In-person" : "Virtual"} registration</div>
-                <div className="text-[12px]" style={{ color: "rgba(255,255,255,0.7)" }}>{tierLabel} pricing · Aug 15 &amp; 16, 2026</div>
+                <div className="text-[12px]" style={{ color: "rgba(255,255,255,0.7)" }}>{tierLabel} pricing · August 15 and 16, 2026</div>
               </div>
               <div className="text-right">
                 {applied ? (
                   <>
-                    <div className="text-[13px] line-through tabular-nums leading-none" style={{ color: "rgba(255,255,255,0.55)" }}>{price !== null ? `$${price}` : "—"}</div>
-                    <div className="font-serif-display text-[30px] font-bold text-white tabular-nums leading-none mt-0.5">${(applied.finalCents / 100).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</div>
+                    <div className="text-[13px] line-through tabular-nums leading-none" style={{ color: "rgba(255,255,255,0.55)" }}>{price !== null ? `$${price}` : "..."}</div>
+                    <div className="text-[30px] font-bold text-white tabular-nums leading-none mt-0.5">${(applied.finalCents / 100).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</div>
                   </>
                 ) : (
-                  <div className="font-serif-display text-[30px] font-bold text-white tabular-nums leading-none">{price !== null ? `$${price}` : "—"}</div>
+                  <div className="text-[30px] font-bold text-white tabular-nums leading-none">{price !== null ? `$${price}` : "..."}</div>
                 )}
               </div>
             </div>
 
             <div className="divide-y" style={{ borderColor: C.hairline }}>
-              <SummaryRow label="Name" value={`${form.firstName} ${form.lastName}`.trim() || "—"} onEdit={() => setStep(1)} />
-              <SummaryRow label="Email" value={form.email || "—"} onEdit={() => setStep(2)} />
+              <SummaryRow label="Name" value={`${form.firstName} ${form.lastName}`.trim() || "..."} onEdit={() => setStep(1)} />
+              <SummaryRow label="Email" value={form.email || "..."} onEdit={() => setStep(2)} />
               {form.phone && <SummaryRow label="Phone" value={form.phone} onEdit={() => setStep(2)} />}
-              {(form.primaryLanguages || form.accessibilityNotes || (isInPerson && (form.needsParking || form.dietary))) && (
+              {(form.primaryLanguages || form.accessibilityNotes || (isInPerson && form.dietary)) && (
                 <div className="px-5 py-4">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[11px] font-bold tracking-wider uppercase" style={{ color: C.mutedSoft }}>Preferences</span>
@@ -310,7 +300,6 @@ export default function RegisterFunnel({
                     </button>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
-                    {isInPerson && form.needsParking && <Chip icon={Car}>Parking pass</Chip>}
                     {form.primaryLanguages && <Chip icon={Languages}>{form.primaryLanguages}</Chip>}
                     {form.accessibilityNotes && <Chip icon={Accessibility}>Accommodations noted</Chip>}
                     {isInPerson && form.dietary && <Chip icon={UtensilsCrossed}>{form.dietary}</Chip>}

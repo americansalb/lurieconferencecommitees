@@ -25,7 +25,7 @@ export async function POST(req: Request) {
   const {
     firstName, lastName, email, phone,
     primaryLanguages, attendanceMode,
-    needsParking, accessibilityNotes, dietary,
+    accessibilityNotes, dietary,
   } = body;
 
   // Validation
@@ -82,7 +82,7 @@ export async function POST(req: Request) {
         phone: phone?.trim() || null,
         primaryLanguages: primaryLanguages?.trim() || null,
         attendanceMode,
-        needsParking: attendanceMode === "in-person" ? !!needsParking : null,
+
         accessibilityNotes: accessibilityNotes?.trim() || null,
         dietary: dietary?.trim() || null,
         basePriceCents: priceCents,
@@ -101,7 +101,7 @@ export async function POST(req: Request) {
         phone: phone?.trim() || null,
         primaryLanguages: primaryLanguages?.trim() || null,
         attendanceMode,
-        needsParking: attendanceMode === "in-person" ? !!needsParking : null,
+
         accessibilityNotes: accessibilityNotes?.trim() || null,
         dietary: dietary?.trim() || null,
         discountPercent: 0,

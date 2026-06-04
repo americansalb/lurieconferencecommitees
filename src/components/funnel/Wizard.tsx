@@ -150,7 +150,7 @@ export function Question({
   return (
     <div className="mb-7">
       <h1
-        className="font-serif-display font-bold tracking-tight leading-[1.08] text-[28px] sm:text-[34px]"
+        className="font-bold tracking-tight leading-[1.08] text-[28px] sm:text-[34px]"
         style={{ color: C.ink }}
       >
         {title}
@@ -294,14 +294,14 @@ export function ChoiceCard({
           <Icon className="w-6 h-6" />
         </span>
         <div className="flex-1 min-w-0">
-          <div className="font-serif-display text-[20px] font-bold leading-tight" style={{ color: C.ink }}>
+          <div className="text-[20px] font-bold leading-tight" style={{ color: C.ink }}>
             {title}
           </div>
           <div className="text-[13px]" style={{ color: C.muted }}>{tagline}</div>
         </div>
         {price && (
           <div className="text-right shrink-0">
-            <div className="font-serif-display text-[26px] font-bold tabular-nums leading-none" style={{ color: C.ink }}>
+            <div className="text-[26px] font-bold tabular-nums leading-none" style={{ color: C.ink }}>
               {price}
             </div>
             <div className="text-[10px] font-semibold tracking-wide" style={{ color: C.mutedSoft }}>USD</div>

@@ -46,7 +46,7 @@ export default function Footer() {
                 />
               </span>
             </div>
-            <div className="font-serif-display text-2xl font-bold leading-tight">
+            <div className="text-2xl font-bold leading-tight">
               2026 Lurie Children&rsquo;s{" "}
               <span className="italic font-medium" style={{ color: TOKENS.gold }}>&amp;</span>{" "}
               AALB Conference

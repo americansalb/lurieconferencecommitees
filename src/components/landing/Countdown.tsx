@@ -38,7 +38,7 @@ export default function Countdown({ targetIso, accent }: { targetIso: string; ac
       {cells.map((c) => (
         <div key={c.label} className="flex-1 px-2 py-4 text-center" style={{ borderColor: TOKENS.hairline }}>
           <div
-            className="font-serif-display text-3xl sm:text-4xl font-bold leading-none tabular-nums"
+            className="text-3xl sm:text-4xl font-bold leading-none tabular-nums"
             style={{ color: accent }}
           >
             {c.value}

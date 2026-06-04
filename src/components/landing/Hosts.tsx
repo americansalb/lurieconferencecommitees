@@ -51,7 +51,7 @@ export default function Hosts() {
             className="mx-auto mt-7 mb-6 h-20 sm:h-24 w-auto"
           />
           <h2
-            className="font-serif-display mt-3 text-4xl sm:text-5xl md:text-[58px] font-bold leading-[1.05] tracking-tight"
+            className="mt-3 text-4xl sm:text-5xl md:text-[58px] font-bold leading-[1.05] tracking-tight"
             style={{ color: TOKENS.ink }}
           >
             Two organizations,
@@ -96,7 +96,7 @@ export default function Hosts() {
                 Host
               </div>
               <div
-                className="font-serif-display text-2xl sm:text-[28px] font-bold leading-tight mb-2"
+                className="text-2xl sm:text-[28px] font-bold leading-tight mb-2"
                 style={{ color: h.accent }}
               >
                 {h.short}
@@ -112,7 +112,7 @@ export default function Hosts() {
         </div>
 
         <p
-          className="mt-16 text-center text-sm max-w-2xl mx-auto italic font-serif-display"
+          className="mt-16 text-center text-sm max-w-2xl mx-auto italic"
           style={{ color: TOKENS.muted }}
         >
           Dedicated to improving the quality of life for those facing language barriers by expanding their access to essential services.

@@ -23,8 +23,8 @@ const FAQS: { q: string; a: string }[] = [
     a: "Ann & Robert H. Lurie Children's Hospital of Chicago, located at 225 E Chicago Ave in the Streeterville neighborhood of downtown Chicago. The hospital is a short walk from the CTA Red Line and from Michigan Avenue.",
   },
   {
-    q: "What about parking and hotels?",
-    a: "Multiple Streeterville parking garages are within two blocks of the hospital. We will share a list of partner hotels with conference rates closer to the event.",
+    q: "What about parking?",
+    a: "Multiple Streeterville parking garages are within two blocks of the hospital. Attendees arrange their own parking.",
   },
   {
     q: "Is there a dress code?",
@@ -59,7 +59,7 @@ export default function FAQ() {
         <div className="text-center mb-16">
           <Eyebrow>FAQ</Eyebrow>
           <h2
-            className="font-serif-display mt-6 text-4xl sm:text-5xl md:text-[58px] font-bold leading-[1.05] tracking-tight"
+            className="mt-6 text-4xl sm:text-5xl md:text-[58px] font-bold leading-[1.05] tracking-tight"
             style={{ color: TOKENS.ink }}
           >
             Frequently{" "}
@@ -79,7 +79,7 @@ export default function FAQ() {
             >
               <summary className="cursor-pointer list-none flex items-start gap-5 p-6 sm:p-7 group-hover:bg-slate-50/40 transition-colors">
                 <span
-                  className="font-serif-display text-sm font-bold tabular-nums mt-1 italic shrink-0"
+                  className="text-sm font-bold tabular-nums mt-1 italic shrink-0"
                   style={{ color: TOKENS.gold }}
                 >
                   {String(i + 1).padStart(2, "0")}

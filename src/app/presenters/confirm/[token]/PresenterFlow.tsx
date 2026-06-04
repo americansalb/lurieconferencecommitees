@@ -939,7 +939,7 @@ function AboutYouPage({
               <SectionInput value={(fields.jobTitle as string) || ""} onChange={(v) => set("jobTitle", v)} placeholder="Job title (e.g. Director of language services)" />
               <SectionInput value={(fields.affiliation as string) || ""} onChange={(v) => set("affiliation", v)} placeholder="Affiliation (Lurie Children's, Northwestern, AALB…)" />
               <SectionInput value={(fields.pronouns as string) || ""} onChange={(v) => set("pronouns", v)} placeholder="Pronouns (she/her, they/them)" />
-              <SectionInput value={(fields.phone as string) || ""} onChange={(v) => set("phone", v)} placeholder="Phone (only used Aug 15 & 16)" type="tel" />
+              <SectionInput value={(fields.phone as string) || ""} onChange={(v) => set("phone", v)} placeholder="Phone (only used on August 15 and 16)" type="tel" />
             </div>
 
             <div className="mt-4">

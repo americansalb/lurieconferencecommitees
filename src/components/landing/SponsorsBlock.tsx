@@ -24,7 +24,7 @@ export default function SponsorsBlock() {
         <div className="max-w-3xl mx-auto text-center mb-16">
           <Eyebrow>Partners &amp; Sponsors</Eyebrow>
           <h2
-            className="font-serif-display mt-6 text-4xl sm:text-5xl md:text-[58px] font-bold leading-[1.05] tracking-tight"
+            className="mt-6 text-4xl sm:text-5xl md:text-[58px] font-bold leading-[1.05] tracking-tight"
             style={{ color: TOKENS.ink }}
           >
             Partner{" "}

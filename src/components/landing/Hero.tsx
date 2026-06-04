@@ -81,7 +81,7 @@ export default function Hero() {
           >
             2026 Theme
           </span>
-          <div className="font-serif-display text-xl sm:text-2xl leading-snug max-w-2xl mx-auto">
+          <div className="text-xl sm:text-2xl leading-snug max-w-2xl mx-auto">
             <span className="italic" style={{ color: TOKENS.gold }}>True Language Access:</span>{" "}
             <span style={{ color: "white" }}>
               Yesterday, Today, and Tomorrow.
@@ -94,8 +94,8 @@ export default function Hero() {
           <InfoCard
             icon={Calendar}
             label="When"
-            primary="Aug 15 and 16"
-            secondary="9:30am to 6:00pm CDT, both days"
+            primary="August 15 and 16"
+            secondary="9:30 a.m. to 6:00 p.m. CDT, both days"
           />
           <InfoCard
             icon={Globe}
@@ -229,7 +229,7 @@ function InfoCard({
 
       {/* Big primary value */}
       <div
-        className="relative font-serif-display text-[26px] sm:text-[28px] font-bold leading-[1.05] mb-2 tracking-tight"
+        className="relative text-[26px] sm:text-[28px] font-bold leading-[1.05] mb-2 tracking-tight"
         style={{
           color: "white",
           textShadow: accent ? "0 0 24px rgba(201,161,75,0.30)" : undefined,

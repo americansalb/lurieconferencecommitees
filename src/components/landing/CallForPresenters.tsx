@@ -25,7 +25,7 @@ export default function CallForPresenters() {
                   Call for Presenters
                 </span>
               </div>
-              <h2 className="font-serif-display text-4xl sm:text-5xl md:text-6xl font-bold leading-[1.05] tracking-tight">
+              <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-[1.05] tracking-tight">
                 Share your voice.
               </h2>
               <p className="mt-6 text-base sm:text-lg leading-relaxed max-w-xl" style={{ color: "rgba(255,255,255,0.80)" }}>

@@ -30,7 +30,7 @@ export default async function ProposalSuccessPage({ params }: { params: { token:
             >
               <Check className="w-8 h-8" strokeWidth={2.5} />
             </div>
-            <h1 className="font-serif-display text-3xl sm:text-4xl font-bold tracking-tight" style={{ color: INK }}>
+            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight" style={{ color: INK }}>
               Got it, {presenter.name.split(" ")[0]}.
             </h1>
             <p className="mt-4 text-sm sm:text-base leading-relaxed" style={{ color: MUTED }}>

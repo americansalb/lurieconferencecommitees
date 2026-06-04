@@ -43,7 +43,7 @@ export default async function RegistrationSuccessPage({ params }: { params: { to
                 >
                   <Check className="w-8 h-8" strokeWidth={2.5} />
                 </div>
-                <h1 className="font-serif-display text-3xl sm:text-4xl font-bold tracking-tight" style={{ color: INK }}>
+                <h1 className="text-3xl sm:text-4xl font-bold tracking-tight" style={{ color: INK }}>
                   You&rsquo;re in, {attendee.firstName}.
                 </h1>
                 <p className="mt-4 text-sm sm:text-base leading-relaxed" style={{ color: MUTED }}>
@@ -58,7 +58,7 @@ export default async function RegistrationSuccessPage({ params }: { params: { to
                 >
                   <Sparkles className="w-7 h-7" />
                 </div>
-                <h1 className="font-serif-display text-3xl font-bold tracking-tight" style={{ color: INK }}>
+                <h1 className="text-3xl font-bold tracking-tight" style={{ color: INK }}>
                   Finalizing your seat&hellip;
                 </h1>
                 <p className="mt-4 text-sm leading-relaxed" style={{ color: MUTED }}>
@@ -68,7 +68,7 @@ export default async function RegistrationSuccessPage({ params }: { params: { to
             )}
 
             <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
-              <ReceiptCell label="Dates" value="Aug 15 + 16, 2026" icon={Calendar} />
+              <ReceiptCell label="Dates" value="August 15 and 16, 2026" icon={Calendar} />
               <ReceiptCell label="Attendance" value={modeLabel} icon={ModeIcon} />
               {priceDisplay && <ReceiptCell label="Paid" value={priceDisplay} icon={Check} />}
             </div>
