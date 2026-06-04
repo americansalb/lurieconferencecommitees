@@ -5,6 +5,21 @@ import { Plus, Trash2, Loader2, Check, Clock, CalendarOff, CalendarPlus } from "
 
 const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
+const TIMEZONES: { value: string; label: string }[] = [
+  { value: "America/New_York", label: "Eastern (ET) — America/New_York" },
+  { value: "America/Chicago", label: "Central (CT) — America/Chicago" },
+  { value: "America/Denver", label: "Mountain (MT) — America/Denver" },
+  { value: "America/Los_Angeles", label: "Pacific (PT) — America/Los_Angeles" },
+  { value: "America/Anchorage", label: "Alaska (AKT) — America/Anchorage" },
+  { value: "Pacific/Honolulu", label: "Hawaii (HT) — Pacific/Honolulu" },
+  { value: "UTC", label: "UTC" },
+  { value: "Europe/London", label: "London (GMT/BST)" },
+  { value: "Europe/Paris", label: "Paris (CET/CEST)" },
+  { value: "Asia/Tokyo", label: "Tokyo (JST)" },
+  { value: "Asia/Shanghai", label: "Shanghai (CST)" },
+  { value: "Australia/Sydney", label: "Sydney (AEST/AEDT)" },
+];
+
 type Rule = { id?: string; weekday: number; startMin: number; endMin: number };
 type Exception = { id: string; kind: "add" | "block"; startAt: string; endAt: string; note: string | null };
 
@@ -24,6 +39,10 @@ export default function AvailabilityEditor() {
   const [rules, setRules] = useState<Rule[]>([]);
   const [exceptions, setExceptions] = useState<Exception[]>([]);
   const [tz, setTz] = useState("America/Chicago");
+  const [detectedTz] = useState(() => {
+    try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ""; } catch { return ""; }
+  });
+  const [tzSaving, setTzSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -43,6 +62,25 @@ export default function AvailabilityEditor() {
     }
   };
   useEffect(() => { load(); }, []);
+
+  // Persist the member's own timezone. Availability hours are stored as
+  // wall-clock minutes interpreted in this zone, so it must be correct for
+  // the member — the booking page already uses each booker's own zone.
+  async function saveTimezone(newTz: string) {
+    if (!newTz || newTz === tz) return;
+    setTz(newTz);
+    setTzSaving(true);
+    try {
+      await fetch("/api/user", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ timezone: newTz }),
+      });
+      await load();
+    } finally {
+      setTzSaving(false);
+    }
+  }
 
   function addRule(weekday: number) {
     setRules((r) => [...r, { weekday, startMin: 540, endMin: 720 }]);
@@ -81,7 +119,32 @@ export default function AvailabilityEditor() {
         <div className="flex items-center justify-between mb-3">
           <div>
             <h3 className="text-sm font-bold text-slate-800 flex items-center gap-1.5"><Clock className="w-4 h-4 text-[#0E5566]" /> Weekly hours</h3>
-            <p className="text-xs text-slate-400 mt-0.5">Recurring times you&rsquo;re open, in your timezone ({tz.replace(/_/g, " ")}).</p>
+            <p className="text-xs text-slate-400 mt-0.5">Recurring times you&rsquo;re open, entered in the timezone below.</p>
+            <div className="flex items-center gap-2 mt-2">
+              <select
+                value={tz}
+                onChange={(e) => saveTimezone(e.target.value)}
+                disabled={tzSaving}
+                className="px-2 py-1 text-xs border border-slate-200 rounded-md outline-none focus:border-[#0066B3] bg-white text-slate-700 disabled:opacity-60"
+              >
+                {!TIMEZONES.some((z) => z.value === tz) && (
+                  <option value={tz}>{tz.replace(/_/g, " ")}</option>
+                )}
+                {TIMEZONES.map((z) => (
+                  <option key={z.value} value={z.value}>{z.label}</option>
+                ))}
+              </select>
+              {tzSaving && <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-400" />}
+            </div>
+            {detectedTz && detectedTz !== tz && (
+              <button
+                type="button"
+                onClick={() => saveTimezone(detectedTz)}
+                className="text-[11px] text-amber-600 hover:text-amber-700 mt-1.5 inline-flex items-center gap-1"
+              >
+                This device is set to {detectedTz.replace(/_/g, " ")} — tap to switch your availability to it.
+              </button>
+            )}
           </div>
           <button onClick={saveRules} disabled={saving}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-gradient-to-r from-[#0E5566] to-[#0066B3] shadow-sm disabled:opacity-60">
