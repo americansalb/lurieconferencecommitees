@@ -20,7 +20,12 @@ export async function POST(req: Request) {
       );
     }
 
-    const existing = await prisma.user.findUnique({ where: { email } });
+    // Normalize to lowercase so future lookups are exact and we can't
+    // accidentally store two accounts that differ only in casing.
+    const emailLower = email.toLowerCase();
+    const existing = await prisma.user.findFirst({
+      where: { email: { equals: emailLower, mode: "insensitive" } },
+    });
     if (existing) {
       return NextResponse.json(
         { error: "Email already registered" },
@@ -30,7 +35,6 @@ export async function POST(req: Request) {
 
     const passwordHash = await bcrypt.hash(password, 12);
 
-    const emailLower = email.toLowerCase();
     const devEmail = process.env.DEVELOPER_EMAIL;
     const adminEmail = process.env.ADMIN_EMAIL;
     let role = "member";
@@ -41,7 +45,7 @@ export async function POST(req: Request) {
     }
 
     const user = await prisma.user.create({
-      data: { email, passwordHash, name, role, timezone: timezone || "America/Chicago" },
+      data: { email: emailLower, passwordHash, name, role, timezone: timezone || "America/Chicago" },
     });
 
     return NextResponse.json(

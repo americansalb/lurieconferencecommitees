@@ -11,7 +11,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });
     }
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    // Case-insensitive match so users who signed up with a mixed-case
+    // email can still find their account when they type it differently.
+    const user = await prisma.user.findFirst({
+      where: { email: { equals: email, mode: "insensitive" } },
+    });
 
     if (user) {
       const token = newResetToken();
