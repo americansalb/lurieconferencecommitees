@@ -148,22 +148,33 @@ export function computeSlots(opts: {
     freeByUser[userId] = subtract(availByUser[userId], blocksByUser[userId], userId);
   }
 
-  // Step through the window by granularity; a slot is valid if it fits wholly
-  // within at least one member's free interval.
+  // A slot is valid if it fits wholly within at least one member's free
+  // interval. Candidate starts are anchored to the absolute granularity grid
+  // (epoch-aligned), so they land on clean clock times (9:00, 9:30, …) and are
+  // identical across requests. Previously the grid was anchored to `from`/now,
+  // which made every slot inherit the request's sub-minute offset — so a start
+  // time returned by the slots endpoint never matched when posted back to
+  // confirm, and bookings always failed with "that time is no longer available".
   const stepMs = granularity * 60000;
   const durMs = durationMin * 60000;
-  const windowStart = Math.max(from.getTime(), earliest.getTime());
-  // Align the first slot to the granularity grid from `from`.
-  const slots: Slot[] = [];
-  for (let t = ceilTo(windowStart, stepMs, from.getTime()); t + durMs <= to.getTime(); t += stepMs) {
-    const slotStart = t;
-    const slotEnd = t + durMs;
-    const freeUsers: string[] = [];
-    for (const userId of memberIds) {
-      if (freeByUser[userId].some((iv) => iv.start <= slotStart && iv.end >= slotEnd)) {
-        freeUsers.push(userId);
+  const lowerBound = Math.max(from.getTime(), earliest.getTime());
+
+  const candidates = new Set<number>();
+  for (const userId of memberIds) {
+    for (const iv of freeByUser[userId]) {
+      const first = Math.ceil(iv.start / stepMs) * stepMs;
+      for (let t = first; t + durMs <= iv.end; t += stepMs) {
+        if (t >= lowerBound && t + durMs <= to.getTime()) candidates.add(t);
       }
     }
+  }
+
+  const slots: Slot[] = [];
+  for (const slotStart of Array.from(candidates).sort((a, b) => a - b)) {
+    const slotEnd = slotStart + durMs;
+    const freeUsers = memberIds.filter((userId) =>
+      freeByUser[userId].some((iv) => iv.start <= slotStart && iv.end >= slotEnd)
+    );
     if (freeUsers.length > 0) {
       slots.push({ startAt: new Date(slotStart), endAt: new Date(slotEnd), userIds: freeUsers });
     }
@@ -198,11 +209,6 @@ function mergeIntervals(intervals: Interval[]): Interval[] {
     else out.push({ ...sorted[i] });
   }
   return out;
-}
-
-function ceilTo(value: number, step: number, origin: number): number {
-  const delta = value - origin;
-  return origin + Math.ceil(delta / step) * step;
 }
 
 // Group slots by local calendar day in a timezone, for the booking UI.

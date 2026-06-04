@@ -682,7 +682,11 @@ export function bookingConfirmedInviteeEmail({
       <div style="font-size:11px;letter-spacing:0.08em;font-weight:700;color:${TEAL};text-transform:uppercase;">When</div>
       <div style="font-size:16px;font-weight:700;color:${TEXT};margin-top:4px;">${formatMeetingWhen(startAt, tz)}</div>
     </td></tr></table>
-    ${joinUrl ? button(joinUrl, "Join the Zoom meeting") : `<p style="font-size:14px;color:${MUTED};margin:16px 0 0 0;">We&rsquo;ll follow up with the Zoom link shortly.</p>`}
+    ${joinUrl
+      ? button(joinUrl, "Join the Zoom meeting")
+      : `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:16px 0 0 0;"><tr><td style="background:#f8fafc;border-left:3px solid ${BLUE};padding:14px 18px;border-radius:6px;">
+          <div style="font-size:14px;color:${TEXT};line-height:1.6;">We&rsquo;ll be in touch by email with your <strong>Zoom link</strong> ahead of the meeting.</div>
+        </td></tr></table>`}
     <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;">
       Need to reschedule? Just reply to this email and we&rsquo;ll sort it out.
     </p>

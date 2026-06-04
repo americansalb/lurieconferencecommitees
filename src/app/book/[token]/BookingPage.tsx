@@ -119,10 +119,10 @@ export default function BookingPage({ token }: { token: string }) {
                     className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white shadow-md hover:shadow-lg transition-all" style={{ background: TEAL }}>
                     <Video className="w-4 h-4" /> Join the Zoom meeting
                   </a>
-                  <p className="text-xs text-slate-400 mt-3">A calendar invite and this link are on the way to your inbox.</p>
+                  <p className="text-xs text-slate-400 mt-3">This link is also on its way to your inbox.</p>
                 </div>
               ) : (
-                <p className="text-sm text-slate-500 mt-6">A confirmation is on its way to your inbox with the Zoom details.</p>
+                <p className="text-sm text-slate-500 mt-6">A confirmation is on its way to your inbox. We&rsquo;ll email your Zoom link ahead of the meeting.</p>
               )}
             </div>
           ) : loading ? (

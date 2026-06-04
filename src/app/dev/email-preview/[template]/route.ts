@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import {
   sponsorInviteEmail,
   proposalCallEmail,
+  bookingInviteEmail,
+  bookingConfirmedInviteeEmail,
 } from "@/lib/mail-templates";
 
 // Dev-only HTML preview of outreach email templates, so we can eyeball the
@@ -51,6 +53,38 @@ export async function GET(
         submitUrl: `${base}/proposal`,
         recipientFirstName: null,
         assetBase: base,
+      });
+      break;
+    case "booking-invite":
+      html = bookingInviteEmail({
+        inviteeName: "Maria Alvarez",
+        title: "Conversation about your proposal",
+        message: "We loved your submission on interpreter-mediated pediatric care and have a couple of follow-up questions before we finalize the program.",
+        durationMin: 30,
+        bookUrl: `${base}/book/demo-token`,
+      });
+      break;
+    case "booking-confirmed":
+      html = bookingConfirmedInviteeEmail({
+        inviteeName: "Maria Alvarez",
+        hostName: "Jordan Lee",
+        startAt: new Date("2026-06-18T16:00:00Z"),
+        durationMin: 30,
+        tz: "America/Chicago",
+        joinUrl: "https://zoom.us/j/9999999999",
+        title: "Conversation about your proposal",
+      });
+      break;
+    case "booking-confirmed-nozoom":
+      // The fallback path: booking succeeds but no Zoom link was created.
+      html = bookingConfirmedInviteeEmail({
+        inviteeName: "Maria Alvarez",
+        hostName: "Jordan Lee",
+        startAt: new Date("2026-06-18T16:00:00Z"),
+        durationMin: 30,
+        tz: "America/Chicago",
+        joinUrl: null,
+        title: "Conversation about your proposal",
       });
       break;
     default:
