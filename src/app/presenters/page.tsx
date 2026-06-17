@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  Mic, Search, Plus, Download, Send, Check,
+  Mic, Search, UserPlus, Download, Send, Check,
   Clock, XCircle, RefreshCw, AlertCircle, CircleHelp, Trash2, Megaphone,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
@@ -137,6 +137,7 @@ export default function PresentersPage() {
                 <button
                   type="button"
                   onClick={() => setShowProposalCall(true)}
+                  title="Open call — emails a link inviting someone to submit their own proposal. Use for broad outreach."
                   className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-[#0E5566] bg-white border border-slate-200 hover:bg-slate-50 shadow-sm"
                 >
                   <Megaphone className="w-4 h-4" /> Send Call for Proposals
@@ -144,9 +145,10 @@ export default function PresentersPage() {
                 <button
                   type="button"
                   onClick={() => setShowInvite(true)}
+                  title="Direct invite — assign a specific person a specific talk and session to accept, decline, or request changes."
                   className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-[#0E5566] to-[#0066B3] hover:from-[#0A3F4D] hover:to-[#004F8C] shadow-sm"
                 >
-                  <Plus className="w-4 h-4" /> Invite presenter
+                  <UserPlus className="w-4 h-4" /> Invite a presenter directly
                 </button>
               </div>
             </div>
