@@ -6,14 +6,14 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Mic, Search, UserCheck, Download, Send, Check,
-  Clock, XCircle, RefreshCw, AlertCircle, CircleHelp, Trash2, Megaphone,
+  Clock, XCircle, RefreshCw, AlertCircle, CircleHelp, Trash2, Megaphone, Inbox,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
 import MobileNav from "@/components/layout/MobileNav";
 import { STATUS_LABELS } from "@/lib/presenters";
 import { parseResponse } from "@/lib/api";
-import { InviteComposer } from "@/components/presenters/InviteComposer";
+import { InviteComposer, type InviteEditable } from "@/components/presenters/InviteComposer";
 import ProposalCallComposer from "@/components/presenters/ProposalCallComposer";
 
 interface PresenterRow {
@@ -46,6 +46,7 @@ export default function PresentersPage() {
   const [filter, setFilter] = useState<string>("all");
   const [showInvite, setShowInvite] = useState(false);
   const [showProposalCall, setShowProposalCall] = useState(false);
+  const [acceptTarget, setAcceptTarget] = useState<InviteEditable | null>(null);
 
   const role = (session?.user as { role?: string } | undefined)?.role;
   const isAdmin = role === "admin" || role === "developer";
@@ -55,6 +56,31 @@ export default function PresentersPage() {
     const res = await fetch("/api/presenters");
     if (res.ok) setRows(await res.json());
     setLoading(false);
+  }, []);
+
+  // Open the confirm composer pre-filled from an applicant's full submission
+  // (the list payload omits the abstract and objectives, so fetch the record).
+  const startAccept = useCallback(async (id: string) => {
+    const res = await fetch(`/api/presenters/${id}`);
+    if (!res.ok) return;
+    const p = await res.json();
+    setAcceptTarget({
+      id: p.id,
+      name: p.name || "",
+      email: p.email || "",
+      affiliation: p.affiliation ?? null,
+      role: p.role ?? null,
+      sessionFormat: p.sessionFormat ?? null,
+      sessionLength: p.sessionLength ?? null,
+      qaLength: p.qaLength ?? null,
+      sessionTrack: p.sessionTrack ?? null,
+      preferredDay: p.preferredDay ?? null,
+      talkTitle: p.talkTitle ?? null,
+      talkAbstract: p.talkAbstract ?? null,
+      learningObjectives: p.learningObjectives ?? null,
+      honorariumAmount: p.honorariumAmount ?? null,
+      travelReimbursement: p.travelReimbursement ?? null,
+    });
   }, []);
 
   useEffect(() => {
@@ -82,6 +108,7 @@ export default function PresentersPage() {
 
   const counts = useMemo(() => ({
     all: rows.length,
+    proposed: rows.filter((r) => r.status === "proposed").length,
     invited: rows.filter((r) => r.status === "invited").length,
     confirmed: rows.filter((r) => r.status === "confirmed").length,
     tentative: rows.filter((r) => r.status === "tentative").length,
@@ -161,8 +188,9 @@ export default function PresentersPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 mb-6">
               <Stat label="Total" value={counts.all} active={filter === "all"} onClick={() => setFilter("all")} />
+              <Stat label="Applicants" value={counts.proposed} icon={<Inbox className="w-4 h-4 text-violet-500" />} active={filter === "proposed"} onClick={() => setFilter("proposed")} />
               <Stat label="Awaiting" value={counts.invited} icon={<Clock className="w-4 h-4 text-amber-500" />} active={filter === "invited"} onClick={() => setFilter("invited")} />
               <Stat label="Confirmed" value={counts.confirmed} icon={<Check className="w-4 h-4 text-emerald-500" />} active={filter === "confirmed"} onClick={() => setFilter("confirmed")} />
               <Stat label="Tentative" value={counts.tentative} icon={<CircleHelp className="w-4 h-4 text-sky-500" />} active={filter === "tentative"} onClick={() => setFilter("tentative")} />
@@ -206,7 +234,7 @@ export default function PresentersPage() {
               ) : (
                 <div className="divide-y divide-slate-100">
                   {filtered.map((r) => (
-                    <PresenterRowItem key={r.id} row={r} isAdmin={isAdmin} onChanged={load} />
+                    <PresenterRowItem key={r.id} row={r} isAdmin={isAdmin} onChanged={load} onAccept={startAccept} />
                   ))}
                 </div>
               )}
@@ -227,6 +255,15 @@ export default function PresentersPage() {
         <ProposalCallComposer
           onClose={() => setShowProposalCall(false)}
           onSent={() => setShowProposalCall(false)}
+        />
+      )}
+
+      {acceptTarget && (
+        <InviteComposer
+          existing={acceptTarget}
+          acceptMode
+          onClose={() => setAcceptTarget(null)}
+          onCreated={() => { setAcceptTarget(null); load(); }}
         />
       )}
     </div>
@@ -263,11 +300,12 @@ function Stat({
 }
 
 function PresenterRowItem({
-  row, isAdmin, onChanged,
+  row, isAdmin, onChanged, onAccept,
 }: {
   row: PresenterRow;
   isAdmin: boolean;
   onChanged: () => void;
+  onAccept: (id: string) => void;
 }) {
   const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -324,7 +362,18 @@ function PresenterRowItem({
         <span className={"inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold border " + status.color}>
           {status.label}
         </span>
-        {row.status !== "confirmed" && (
+        {row.status === "proposed" ? (
+          isAdmin && (
+            <button
+              type="button"
+              onClick={() => onAccept(row.id)}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-white bg-gradient-to-r from-[#0E5566] to-[#0066B3] hover:from-[#0A3F4D] hover:to-[#004F8C]"
+              title="Accept this applicant and email them a portal link to confirm participation"
+            >
+              <UserCheck className="w-3 h-3" /> Accept
+            </button>
+          )
+        ) : row.status !== "confirmed" ? (
           <button
             type="button"
             onClick={resend}
@@ -334,7 +383,7 @@ function PresenterRowItem({
           >
             <Send className="w-3 h-3" /> {busy ? "Sending" : "Resend"}
           </button>
-        )}
+        ) : null}
         {isAdmin && (
           confirming ? (
             <div className="inline-flex items-center gap-1 bg-rose-50 border border-rose-200 rounded-lg px-2 py-1">

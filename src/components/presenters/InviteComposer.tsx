@@ -30,13 +30,14 @@ export type InviteEditable = {
 };
 
 export function InviteComposer({
-  onClose, onCreated, existing,
+  onClose, onCreated, existing, acceptMode = false,
 }: {
   onClose: () => void;
   onCreated: () => void;
   existing?: InviteEditable;
+  acceptMode?: boolean;
 }) {
-  const isEdit = !!existing;
+  const isEdit = !!existing && !acceptMode;
 
   const [name, setName] = useState(existing?.name || "");
   const [email, setEmail] = useState(existing?.email || "");
@@ -96,7 +97,7 @@ export function InviteComposer({
     setError(null);
     setBusy(true);
     try {
-      const payload: Record<string, unknown> = {
+      const assignment: Record<string, unknown> = {
         name, affiliation: affiliation || null,
         role: role || null,
         sessionFormat: sessionFormat || null,
@@ -110,6 +111,25 @@ export function InviteComposer({
         honorariumAmount: honorariumAmount ? Number(honorariumAmount) : null,
         travelReimbursement: travelReimbursement ? Number(travelReimbursement) : null,
       };
+
+      // Accept-an-applicant: apply any edits, flip the proposal to "invited",
+      // and email their personal portal link so they can confirm.
+      if (acceptMode && existing) {
+        const res = await fetch(`/api/presenters/${existing.id}/invite`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...assignment, customMessage }),
+        });
+        const { ok, data, error } = await parseResponse<{ url: string; mailStatus?: "sent" | "skipped" | "failed" | "not_requested"; mailError?: string }>(res);
+        if (!ok || !data) throw new Error(error || "Failed");
+        setCreatedUrl(data.url);
+        setMailStatus(data.mailStatus ?? null);
+        setMailError(data.mailError ?? null);
+        onCreated();
+        return;
+      }
+
+      const payload: Record<string, unknown> = { ...assignment };
       if (!isEdit) {
         payload.email = email;
         payload.customMessage = customMessage;
@@ -153,10 +173,12 @@ export function InviteComposer({
         <div className="px-7 py-5 border-b border-slate-100 flex items-start justify-between shrink-0">
           <div>
             <div className="text-xl font-bold text-slate-900 tracking-tight">
-              {isEdit ? "Edit invitation" : "Compose invitation"}
+              {acceptMode ? "Accept applicant & invite to confirm" : isEdit ? "Edit invitation" : "Compose invitation"}
             </div>
             <div className="text-sm text-slate-500 mt-0.5">
-              {isEdit
+              {acceptMode
+                ? "Their submission is pre-filled. Adjust anything, then send their portal link so they can confirm participation."
+                : isEdit
                 ? "Changes apply immediately. Resend from the detail page to email an update."
                 : "Type the invitation as if you were writing it. The preview updates as you go."}
             </div>
@@ -447,7 +469,7 @@ export function InviteComposer({
                     className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                     style={{ background: canSubmit ? "linear-gradient(to right, #0E5566, #0066B3)" : "#94a3b8" }}
                   >
-                    {busy ? "Working…" : isEdit ? "Save changes" : sendNow ? (<>Send invitation <Send className="w-4 h-4" /></>) : "Save invitation"}
+                    {busy ? "Working…" : acceptMode ? (<>Accept &amp; send invitation <Send className="w-4 h-4" /></>) : isEdit ? "Save changes" : sendNow ? (<>Send invitation <Send className="w-4 h-4" /></>) : "Save invitation"}
                   </button>
                 )}
               </div>

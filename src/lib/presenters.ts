@@ -66,6 +66,7 @@ export const TRAVEL_MODES = [
 ];
 
 export const STATUS_LABELS: Record<string, { label: string; color: string }> = {
+  proposed: { label: "Applied", color: "bg-violet-50 text-violet-700 border-violet-200" },
   invited: { label: "Invited", color: "bg-slate-100 text-slate-700 border-slate-200" },
   confirmed: { label: "Confirmed", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
   tentative: { label: "Tentative", color: "bg-sky-50 text-sky-700 border-sky-200" },
