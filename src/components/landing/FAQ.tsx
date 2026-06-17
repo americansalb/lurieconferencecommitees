@@ -16,7 +16,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "How is registration priced?",
-    a: "Pricing is tiered: Early Bird through April 15, Standard through June 15, and Late through August 15. Virtual runs from $95 to $115; In-Person runs from $195 to $225. The Pricing section on this page shows the live schedule and which tier is active right now.",
+    a: "Pricing is tiered: Early Bird through April 15, Standard through July 15, and Late through August 15. Virtual runs from $95 to $115; In-Person runs from $195 to $225. The Pricing section on this page shows the live schedule and which tier is active right now.",
   },
   {
     q: "Where is the in-person venue?",

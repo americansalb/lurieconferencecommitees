@@ -4,7 +4,7 @@
 
 export const SCHEDULE = [
   { id: "early",    label: "Early Bird", end: "2026-04-15T23:59:59-05:00" },
-  { id: "standard", label: "Standard",   end: "2026-06-15T23:59:59-05:00" },
+  { id: "standard", label: "Standard",   end: "2026-07-15T23:59:59-05:00" },
   { id: "late",     label: "Late",       end: "2026-08-15T23:59:59-05:00" },
 ] as const;
 
