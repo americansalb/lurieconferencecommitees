@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  Mic, Search, UserPlus, Download, Send, Check,
+  Mic, Search, UserCheck, Download, Send, Check,
   Clock, XCircle, RefreshCw, AlertCircle, CircleHelp, Trash2, Megaphone,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
@@ -149,13 +149,13 @@ export default function PresentersPage() {
                 <button
                   type="button"
                   onClick={() => setShowInvite(true)}
-                  title="Direct invite — you assign a specific person a specific talk and session to accept, decline, or request changes."
+                  title="You've selected this speaker — send them their session details and a private portal link to confirm participation, request changes, or decline."
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-left text-white bg-gradient-to-r from-[#0E5566] to-[#0066B3] hover:from-[#0A3F4D] hover:to-[#004F8C] shadow-sm"
                 >
-                  <UserPlus className="w-4 h-4 shrink-0" />
+                  <UserCheck className="w-4 h-4 shrink-0" />
                   <span className="leading-tight">
-                    <span className="block text-sm font-semibold">Invite a Presenter</span>
-                    <span className="block text-[11px] font-medium text-white/70">You assign them a specific talk</span>
+                    <span className="block text-sm font-semibold">Confirm a Presenter</span>
+                    <span className="block text-[11px] font-medium text-white/70">You pick them; they confirm participation</span>
                   </span>
                 </button>
               </div>
