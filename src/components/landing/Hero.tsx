@@ -95,7 +95,7 @@ export default function Hero() {
             icon={Calendar}
             label="When"
             primary="August 15 and 16"
-            secondary="9:30 a.m. to 6:00 p.m. CDT, both days"
+            secondary={<>Aug 15: 9:30 a.m.&ndash;6:00 p.m.<br />Aug 16: 9:30 a.m.&ndash;4:00 p.m. CDT</>}
           />
           <InfoCard
             icon={Globe}
@@ -177,7 +177,7 @@ function InfoCard({
   icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   label: string;
   primary: string;
-  secondary: string;
+  secondary: React.ReactNode;
   badge?: string;
   accent?: boolean;
 }) {
