@@ -4,7 +4,7 @@ import { TOKENS } from "./tokens";
 const FAQS: { q: string; a: string }[] = [
   {
     q: "What is the conference about?",
-    a: "The 2026 Lurie Children's and AALB Conference is the 2nd Annual Joint Conference of Ann & Robert H. Lurie Children's Hospital of Chicago and Americans Against Language Barriers. The 2026 theme, True Language Access: Yesterday, Today, and Tomorrow, explores the past, present, and future of language access in healthcare across two full days of talks, panels, and workshops.",
+    a: "The 2026 Lurie Children's and AALB Conference is the 2nd Joint Conference of Ann & Robert H. Lurie Children's Hospital of Chicago and Americans Against Language Barriers. The 2026 theme, True Language Access: Yesterday, Today, and Tomorrow, explores the past, present, and future of language access in healthcare across two full days of talks, panels, and workshops.",
   },
   {
     q: "Can I attend virtually?",

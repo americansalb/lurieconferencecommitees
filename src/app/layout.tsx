@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     template: "%s | 2026 Lurie Children's and AALB Conference",
   },
   description:
-    "The 2nd Annual Joint Conference of Ann & Robert H. Lurie Children's Hospital of Chicago and Americans Against Language Barriers. True Language Access: Yesterday, Today, and Tomorrow. August 15 and 16, 2026, Chicago.",
+    "The 2nd Joint Conference of Ann & Robert H. Lurie Children's Hospital of Chicago and Americans Against Language Barriers. True Language Access: Yesterday, Today, and Tomorrow. August 15 and 16, 2026, Chicago.",
   openGraph: {
     title: "2026 Lurie Children's and AALB Conference",
     description:

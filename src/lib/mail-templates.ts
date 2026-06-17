@@ -93,7 +93,7 @@ function heroBanner() {
   return `
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="${TEAL}" style="background:${TEAL};background:linear-gradient(135deg, #0E5566 0%, #0C3B4B 100%);border-radius:14px;overflow:hidden;margin:0 0 22px 0;">
     <tr><td align="center" style="padding:30px 26px 26px 26px;">
-      <div style="font-size:11px;letter-spacing:0.18em;font-weight:700;color:${GOLD};text-transform:uppercase;">2nd Annual Joint Conference</div>
+      <div style="font-size:11px;letter-spacing:0.18em;font-weight:700;color:${GOLD};text-transform:uppercase;">2nd Joint Conference</div>
       <div style="font-size:27px;line-height:1.2;font-weight:800;color:#ffffff;margin:10px 0 0 0;letter-spacing:-0.01em;">
         2026 Lurie Children&rsquo;s<br/>&amp; <span style="color:${GOLD};">AALB</span> Conference
       </div>
@@ -385,7 +385,7 @@ export function sponsorInviteEmail({
     ${heroBanner()}
     <h1 style="font-size:22px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">Hi ${escapeHtml(first)},</h1>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
-      We would love for <strong>${escapeHtml(companyName)}</strong> to become a sponsor or exhibitor at the 2nd Annual Joint Conference of Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers (AALB), taking place August 15 and 16, 2026, in Chicago.
+      We would love for <strong>${escapeHtml(companyName)}</strong> to become a sponsor or exhibitor at the 2nd Joint Conference of Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers (AALB), taking place August 15 and 16, 2026, in Chicago.
     </p>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 4px 0;">
       This year&rsquo;s theme, <em>True Language Access: Yesterday, Today, and Tomorrow</em>, brings together healthcare professionals, medical interpreters, language service providers, advocates, and policymakers from across the country for two days of learning, networking, and dialogue on equitable healthcare communication.

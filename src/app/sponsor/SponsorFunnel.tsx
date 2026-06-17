@@ -334,7 +334,7 @@ function Browse({ onPick }: { onPick: (t: SponsorTier) => void }) {
           Invest in linguistic equity.
         </h1>
         <p className="mt-4 text-[15px] sm:text-[17px] leading-relaxed max-w-2xl mx-auto" style={{ color: C.muted }}>
-          Partner with the 2nd Annual Joint Conference of Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers on language access in healthcare.
+          Partner with the 2nd Joint Conference of Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers on language access in healthcare.
         </p>
         <div className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[12px]" style={{ color: C.mutedSoft }}>
           <span className="inline-flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" />August 15 and 16, 2026</span>

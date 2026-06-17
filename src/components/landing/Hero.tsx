@@ -50,7 +50,7 @@ export default function Hero() {
           }}
         >
           <Sparkles className="w-3 h-3" style={{ color: TOKENS.gold }} />
-          2nd Annual Joint Conference
+          2nd Joint Conference
         </div>
 
         {/* Headline. */}
