@@ -137,18 +137,26 @@ export default function PresentersPage() {
                 <button
                   type="button"
                   onClick={() => setShowProposalCall(true)}
-                  title="Open call — emails a link inviting someone to submit their own proposal. Use for broad outreach."
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-[#0E5566] bg-white border border-slate-200 hover:bg-slate-50 shadow-sm"
+                  title="Open call — emails a link inviting someone to submit their own proposal. They apply, you review."
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-left text-[#0E5566] bg-white border border-slate-200 hover:bg-slate-50 shadow-sm"
                 >
-                  <Megaphone className="w-4 h-4" /> Send Call for Proposals
+                  <Megaphone className="w-4 h-4 shrink-0" />
+                  <span className="leading-tight">
+                    <span className="block text-sm font-semibold">Call for Proposals</span>
+                    <span className="block text-[11px] font-medium text-slate-500">Open call &mdash; they apply to speak</span>
+                  </span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowInvite(true)}
-                  title="Direct invite — assign a specific person a specific talk and session to accept, decline, or request changes."
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-[#0E5566] to-[#0066B3] hover:from-[#0A3F4D] hover:to-[#004F8C] shadow-sm"
+                  title="Direct invite — you assign a specific person a specific talk and session to accept, decline, or request changes."
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-left text-white bg-gradient-to-r from-[#0E5566] to-[#0066B3] hover:from-[#0A3F4D] hover:to-[#004F8C] shadow-sm"
                 >
-                  <UserPlus className="w-4 h-4" /> Invite a presenter directly
+                  <UserPlus className="w-4 h-4 shrink-0" />
+                  <span className="leading-tight">
+                    <span className="block text-sm font-semibold">Invite a Presenter</span>
+                    <span className="block text-[11px] font-medium text-white/70">You assign them a specific talk</span>
+                  </span>
                 </button>
               </div>
             </div>
