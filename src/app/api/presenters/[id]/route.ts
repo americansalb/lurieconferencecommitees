@@ -70,8 +70,13 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       if (EDITABLE_FIELDS.has(k)) data[k] = v;
     }
 
-    if (data.status === "confirmed" && body.status === "confirmed") {
+    // Keep confirmedAt in sync with manual status overrides: stamp it when a
+    // presenter is marked confirmed, and clear it when they are moved off
+    // confirmed (e.g. undoing an accidental confirm).
+    if (body.status === "confirmed") {
       data.confirmedAt = new Date();
+    } else if (typeof body.status === "string") {
+      data.confirmedAt = null;
     }
 
     const updated = await prisma.presenter.update({ where: { id: params.id }, data });

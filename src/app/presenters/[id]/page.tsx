@@ -5,13 +5,13 @@ import { useSession } from "next-auth/react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import {
-  ArrowLeft, Mail, Send, Trash2, CheckCircle2, XCircle, Clock,
+  ArrowLeft, Mail, Send, Trash2, XCircle, Clock,
   Copy, Pencil, Save, X, ExternalLink,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
 import MobileNav from "@/components/layout/MobileNav";
-import { STATUS_LABELS } from "@/lib/presenters";
+import { STATUS_LABELS, STATUS_ORDER } from "@/lib/presenters";
 import { InviteComposer } from "@/components/presenters/InviteComposer";
 
 interface Presenter {
@@ -178,14 +178,21 @@ export default function PresenterDetailPage() {
                     <button onClick={resend} className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 rounded-lg">
                       <Send className="w-3.5 h-3.5" /> Resend
                     </button>
-                    {presenter.status !== "confirmed" && (
-                      <button
-                        onClick={() => patch({ status: "confirmed" })}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-emerald-700 hover:bg-emerald-50 rounded-lg"
+                    <label
+                      className="inline-flex items-center gap-1.5 px-2.5 py-2 text-xs font-medium bg-white border border-slate-200 rounded-lg"
+                      title="Manually set this presenter's status. Fully reversible — pick any stage, including reverting an accidental Confirmed back to Invited."
+                    >
+                      <span className="text-slate-400">Status</span>
+                      <select
+                        value={presenter.status}
+                        onChange={(e) => patch({ status: e.target.value })}
+                        className="bg-transparent font-semibold text-slate-800 focus:outline-none cursor-pointer"
                       >
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Mark confirmed
-                      </button>
-                    )}
+                        {STATUS_ORDER.map((s) => (
+                          <option key={s} value={s}>{STATUS_LABELS[s].label}</option>
+                        ))}
+                      </select>
+                    </label>
                     <button onClick={remove} className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 rounded-lg">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
