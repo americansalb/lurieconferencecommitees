@@ -1,6 +1,7 @@
 import Nav from "./Nav";
 import Hero from "./Hero";
 import Theme from "./Theme";
+import Speakers from "./Speakers";
 import Venue from "./Venue";
 import Pricing from "./Pricing";
 import CallForPresenters from "./CallForPresenters";
@@ -83,6 +84,7 @@ export default function Landing() {
       <main>
         <Hero />
         <Theme />
+        <Speakers />
         <Venue />
         <Pricing />
         <CallForPresenters />

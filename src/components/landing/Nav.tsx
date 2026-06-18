@@ -6,6 +6,7 @@ import { TOKENS } from "./tokens";
 
 const links = [
   { href: "#theme", label: "Theme" },
+  { href: "#speakers", label: "Speakers" },
   { href: "#venue", label: "Venue" },
   { href: "#pricing", label: "Pricing" },
   { href: "#proposals", label: "Proposals" },

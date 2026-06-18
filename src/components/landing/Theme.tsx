@@ -1,4 +1,3 @@
-import { Mic, ArrowRight } from "lucide-react";
 import { TOKENS } from "./tokens";
 
 // Three lenses on language access. Each pillar gets its own warm
@@ -110,48 +109,6 @@ export default function Theme() {
               </p>
             </div>
           ))}
-        </div>
-
-        {/* Speaker Lineup Coming Soon callout */}
-        <div className="mt-20 max-w-3xl mx-auto">
-          <div
-            className="rounded-2xl p-[1.5px]"
-            style={{
-              background: `linear-gradient(135deg, ${TOKENS.teal} 0%, ${TOKENS.blue} 45%, ${TOKENS.gold} 100%)`,
-            }}
-          >
-            <div className="bg-white rounded-[14px] p-10 sm:p-12 text-center">
-              <div
-                className="w-14 h-14 rounded-full mx-auto flex items-center justify-center mb-5"
-                style={{ background: TOKENS.tealSoft, color: TOKENS.teal }}
-              >
-                <Mic className="w-5 h-5" />
-              </div>
-              <h3
-                className="text-2xl sm:text-3xl font-bold leading-tight mb-3"
-                style={{ color: TOKENS.ink }}
-              >
-                Speaker lineup, coming soon.
-              </h3>
-              <p
-                className="text-[15px] leading-relaxed max-w-md mx-auto mb-7"
-                style={{ color: TOKENS.muted }}
-              >
-                We&rsquo;re curating a lineup of industry leaders, practitioners, and pioneers. Want to be one of them?
-              </p>
-              <a
-                href="/proposal"
-                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full font-bold text-sm transition-all"
-                style={{
-                  background: `linear-gradient(135deg, #D4B266 0%, ${TOKENS.gold} 100%)`,
-                  color: "#3C2E10",
-                  boxShadow: "0 10px 24px -10px rgba(201,161,75,0.55)",
-                }}
-              >
-                Submit a Speaker Proposal <ArrowRight className="w-4 h-4" />
-              </a>
-            </div>
-          </div>
         </div>
       </div>
     </section>
