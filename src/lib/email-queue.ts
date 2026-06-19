@@ -1,4 +1,6 @@
 import { prisma } from "./db";
+import { attendeeFromHeader, attendeeReplyTo } from "./attendees";
+import { sponsorFromHeader, sponsorReplyTo } from "./sponsors";
 
 // Default sending policy. Tunable via SystemSetting keys with the same names.
 export const DEFAULT_POLICY = {
@@ -126,6 +128,29 @@ export async function planSendTimes(count: number, policy: SendPolicy): Promise<
     results.push(new Date(cursor.getTime()));
   }
   return results;
+}
+
+// Per-recipient-type envelope (personalized From / Reply-To). Used by every
+// place that actually delivers a queued message (cron + admin flush).
+export function queueEnvelope(recipientType: string): { from?: string; replyTo?: string } {
+  if (recipientType === "attendee") return { from: attendeeFromHeader(), replyTo: attendeeReplyTo() };
+  if (recipientType === "sponsor") return { from: sponsorFromHeader(), replyTo: sponsorReplyTo() };
+  return {};
+}
+
+// After a queued invite is delivered, advance the recipient's record
+// (queued -> invited) and log an event. Single source for attendees + sponsors.
+export async function afterQueueSend(item: { recipientType: string; recipientId: string | null }) {
+  if (!item.recipientId) return;
+  if (item.recipientType === "attendee") {
+    await prisma.attendee.updateMany({ where: { id: item.recipientId, status: { in: ["queued"] } }, data: { status: "invited", invitedAt: new Date(), lastSentAt: new Date() } });
+    await prisma.attendee.updateMany({ where: { id: item.recipientId, status: { notIn: ["queued"] } }, data: { lastSentAt: new Date() } });
+    await prisma.attendeeEvent.create({ data: { attendeeId: item.recipientId, type: "invite_sent" } }).catch(() => {});
+  } else if (item.recipientType === "sponsor") {
+    await prisma.sponsor.updateMany({ where: { id: item.recipientId, status: { in: ["queued"] } }, data: { status: "invited", invitedAt: new Date(), lastSentAt: new Date() } });
+    await prisma.sponsor.updateMany({ where: { id: item.recipientId, status: { notIn: ["queued"] } }, data: { lastSentAt: new Date() } });
+    await prisma.sponsorEvent.create({ data: { sponsorId: item.recipientId, type: "invite_sent" } }).catch(() => {});
+  }
 }
 
 function hourKey(d: Date): string {

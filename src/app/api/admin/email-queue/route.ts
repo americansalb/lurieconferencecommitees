@@ -2,9 +2,8 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { isPaused, setPaused, getPolicy } from "@/lib/email-queue";
+import { isPaused, setPaused, getPolicy, queueEnvelope, afterQueueSend } from "@/lib/email-queue";
 import { sendMail } from "@/lib/mail";
-import { attendeeFromHeader, attendeeReplyTo } from "@/lib/attendees";
 
 function isAdmin(role?: string) {
   return role === "admin" || role === "developer";
@@ -87,33 +86,19 @@ export async function POST(req: Request) {
     if (claim.count === 0) continue;
 
     try {
-      const isAttendee = item.recipientType === "attendee";
       const result = await sendMail({
         to: item.to,
         subject: item.subject,
         html: item.html,
         text: item.textBody || undefined,
-        from: isAttendee ? attendeeFromHeader() : undefined,
-        replyTo: isAttendee ? attendeeReplyTo() : undefined,
+        ...queueEnvelope(item.recipientType),
       });
       const resendId = (result as { id?: string })?.id || null;
       await prisma.emailQueue.update({
         where: { id: item.id },
         data: { status: "sent", sentAt: new Date(), resendId },
       });
-      if (item.recipientType === "attendee" && item.recipientId) {
-        await prisma.attendee.updateMany({
-          where: { id: item.recipientId, status: { in: ["queued"] } },
-          data: { status: "invited", invitedAt: new Date(), lastSentAt: new Date() },
-        });
-        await prisma.attendee.updateMany({
-          where: { id: item.recipientId, status: { notIn: ["queued"] } },
-          data: { lastSentAt: new Date() },
-        });
-        await prisma.attendeeEvent.create({
-          data: { attendeeId: item.recipientId, type: "invite_sent" },
-        }).catch(() => {});
-      }
+      await afterQueueSend(item);
       sent++;
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);

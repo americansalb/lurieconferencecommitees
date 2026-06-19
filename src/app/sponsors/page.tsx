@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import {
   Award, Trash2, RefreshCw, Search, Filter, ExternalLink, Mail, Building2, Copy, Plus,
+  Clock, Pause, Play, Zap,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
@@ -39,6 +40,8 @@ export default function SponsorsAdminPage() {
   const [tierFilter, setTierFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [showInvite, setShowInvite] = useState(false);
+  const [queue, setQueue] = useState<{ nextScheduledFor: string | null; paused: boolean; sentLast24h: number } | null>(null);
+  const [flushing, setFlushing] = useState(false);
 
   const role = (session?.user as { role?: string })?.role;
   const isAdmin = role === "admin" || role === "developer";
@@ -55,10 +58,28 @@ export default function SponsorsAdminPage() {
         const data = await res.json();
         setSponsors(data.sponsors || []);
       }
+      const q = await fetch("/api/admin/email-queue");
+      if (q.ok) setQueue(await q.json());
     } finally {
       setLoading(false);
     }
   }, []);
+
+  async function sendNow() {
+    setFlushing(true);
+    try {
+      await fetch("/api/admin/email-queue", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ force: true }) });
+    } finally {
+      setFlushing(false);
+      load();
+    }
+  }
+
+  async function togglePause() {
+    if (!queue) return;
+    await fetch("/api/admin/email-queue", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ paused: !queue.paused }) });
+    load();
+  }
 
   useEffect(() => {
     if (status === "authenticated") load();
@@ -104,6 +125,7 @@ export default function SponsorsAdminPage() {
 
   const totalDollars = sponsors.filter((s) => s.paid).reduce((sum, s) => sum + s.amountCents, 0) / 100;
   const pipelineDollars = sponsors.filter((s) => !s.paid && !s.donateFoodInstead && s.status !== "declined").reduce((sum, s) => sum + s.amountCents, 0) / 100;
+  const queuedCount = sponsors.filter((s) => s.status === "queued").length;
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">
@@ -133,7 +155,7 @@ export default function SponsorsAdminPage() {
                 onClick={() => setShowInvite(true)}
                 className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white bg-gradient-to-r from-[#0E5566] to-[#0066B3] hover:from-[#0A3F4D] hover:to-[#004F8C] shadow-sm"
               >
-                <Plus className="w-3.5 h-3.5" /> Invite sponsor
+                <Plus className="w-3.5 h-3.5" /> Invite sponsors
               </button>
               <button onClick={load} className="p-2 rounded-lg hover:bg-white text-slate-400 hover:text-slate-700" title="Refresh">
                 <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
@@ -153,6 +175,33 @@ export default function SponsorsAdminPage() {
               <Stat label="Confirmed $" value={`$${totalDollars.toLocaleString("en-US")}`} accent="#0E5566" />
               <Stat label="Pipeline $" value={`$${pipelineDollars.toLocaleString("en-US")}`} accent="#0066B3" />
             </div>
+
+            {(queuedCount > 0 || queue?.paused) && (
+              <div className="mb-5 rounded-xl border border-[#0066B3]/20 bg-[#0066B3]/[0.04] px-4 py-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+                <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[#0E5566]">
+                  <Clock className="w-4 h-4" /> {queuedCount} invite{queuedCount === 1 ? "" : "s"} queued
+                </span>
+                {queue?.paused ? (
+                  <span className="text-sm font-medium text-amber-700">Sending paused</span>
+                ) : queue?.nextScheduledFor ? (
+                  <span className="text-sm text-slate-500">next ~{new Date(queue.nextScheduledFor).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
+                ) : null}
+                {typeof queue?.sentLast24h === "number" && queue.sentLast24h > 0 && (
+                  <span className="text-sm text-slate-400">· {queue.sentLast24h} sent in 24h</span>
+                )}
+                <span className="text-[11px] text-slate-400 hidden sm:inline">Paced on the shared schedule with attendee invites.</span>
+                {isAdmin && (
+                  <div className="ml-auto flex items-center gap-2">
+                    <button onClick={togglePause} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50">
+                      {queue?.paused ? <><Play className="w-3.5 h-3.5" /> Resume</> : <><Pause className="w-3.5 h-3.5" /> Pause</>}
+                    </button>
+                    <button onClick={sendNow} disabled={flushing} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-white bg-gradient-to-r from-[#0E5566] to-[#0066B3] disabled:opacity-50">
+                      {flushing ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />} Send now
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
               <div className="p-4 border-b border-slate-100 flex items-center gap-2 flex-wrap">
