@@ -722,3 +722,23 @@ model Booking {
   @@map("lcc_bookings")
   @@schema("lcc")
 }
+
+// A single item on the conference program (single-track). Free-form: title and
+// times are editable, with an optional loose reference to a Presenter so an
+// admin can pre-fill from the confirmed list and then tweak.
+model ScheduleSession {
+  id            String    @id @default(cuid())
+  title         String
+  kind          String    @default("session") // session|keynote|panel|workshop|break|lunch|registration|networking
+  description   String?
+  presenterName String?
+  presenterId   String?
+  startTime     DateTime
+  endTime       DateTime
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime? @updatedAt
+
+  @@index([startTime])
+  @@map("lcc_schedule_sessions")
+  @@schema("lcc")
+}
