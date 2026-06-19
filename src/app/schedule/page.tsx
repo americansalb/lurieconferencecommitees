@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { CalendarRange, Plus, MousePointerClick } from "lucide-react";
+import { CalendarRange, Plus, MousePointerClick, List, Trash2 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
 import MobileNav from "@/components/layout/MobileNav";
@@ -15,6 +15,7 @@ import {
 
 type SessionRow = ScheduleSessionLite & { createdAt: string };
 type ComposerState = { existing?: ScheduleSessionLite; dayId?: string; startHHMM?: string };
+type View = "calendar" | "agenda";
 
 const PX_PER_MIN = 1.25;
 
@@ -25,6 +26,7 @@ export default function SchedulePage() {
   const [presenters, setPresenters] = useState<SchedulePresenter[]>([]);
   const [loading, setLoading] = useState(true);
   const [composer, setComposer] = useState<ComposerState | null>(null);
+  const [view, setView] = useState<View>("calendar");
 
   const role = (session?.user as { role?: string } | undefined)?.role;
   const isAdmin = role === "admin" || role === "developer";
@@ -46,7 +48,6 @@ export default function SchedulePage() {
     load();
   }, [session, status, router, load]);
 
-  // Shared time window so both days line up; expands to fit any out-of-hours session.
   const [winStart, winEnd] = useMemo(() => {
     let s = 8 * 60;
     let e = 18 * 60 + 30;
@@ -79,6 +80,13 @@ export default function SchedulePage() {
     load();
   }
 
+  const dayProps = {
+    isAdmin,
+    onAdd: (dayId: string, hhmm: string) => setComposer({ dayId, startHHMM: hhmm }),
+    onEdit: (s: SessionRow) => setComposer({ existing: s }),
+    onRemove: remove,
+  };
+
   if (status === "loading") {
     return <div className="min-h-screen flex items-center justify-center text-slate-400 text-sm">Loading…</div>;
   }
@@ -90,25 +98,31 @@ export default function SchedulePage() {
         <Navbar />
         <main className="flex-1 px-5 sm:px-8 py-6 sm:py-8 pb-24 lg:pb-8">
           <div className="max-w-5xl mx-auto">
-            <div className="flex items-start justify-between gap-3 mb-5">
+            <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
               <div>
                 <div className="flex items-center gap-2 text-[11px] font-semibold tracking-[0.2em] uppercase text-[#0E5566]">
                   <CalendarRange className="w-3.5 h-3.5" /> Schedule builder
                 </div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight mt-1">Conference program</h1>
-                <p className="text-sm text-slate-500 mt-1">Both days at a glance — blocks are sized by length. {isAdmin && "Click a slot to add, a block to edit."}</p>
+                <p className="text-sm text-slate-500 mt-1">{view === "calendar" ? "Both days at a glance — blocks sized by length." : "Both days as a clean running order."} {isAdmin && (view === "calendar" ? "Click a slot to add, a block to edit." : "Click a row to edit.")}</p>
               </div>
-              {isAdmin && (
-                <button
-                  onClick={() => setComposer({})}
-                  className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-[#0E5566] to-[#0066B3] hover:from-[#0A3F4D] hover:to-[#004F8C] shadow-sm"
-                >
-                  <Plus className="w-4 h-4" /> Add session
-                </button>
-              )}
+              <div className="flex items-center gap-2">
+                {/* View toggle */}
+                <div className="inline-flex items-center bg-slate-100 rounded-xl p-0.5">
+                  <ViewBtn active={view === "calendar"} onClick={() => setView("calendar")} icon={<CalendarRange className="w-3.5 h-3.5" />} label="Calendar" />
+                  <ViewBtn active={view === "agenda"} onClick={() => setView("agenda")} icon={<List className="w-3.5 h-3.5" />} label="Agenda" />
+                </div>
+                {isAdmin && (
+                  <button
+                    onClick={() => setComposer({})}
+                    className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-[#0E5566] to-[#0066B3] hover:from-[#0A3F4D] hover:to-[#004F8C] shadow-sm"
+                  >
+                    <Plus className="w-4 h-4" /> Add session
+                  </button>
+                )}
+              </div>
             </div>
 
-            {/* Legend */}
             {usedKinds.length > 0 && (
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mb-4">
                 {usedKinds.map((k) => (
@@ -122,20 +136,14 @@ export default function SchedulePage() {
             {loading ? (
               <div className="py-20 text-center text-sm text-slate-400">Loading schedule…</div>
             ) : (
-              <div className="flex flex-col lg:flex-row gap-4">
-                {CONFERENCE_DAYS.map((d) => (
-                  <DayColumn
-                    key={d.id}
-                    day={d}
-                    sessions={byDay[d.id] || []}
-                    winStart={winStart}
-                    winEnd={winEnd}
-                    isAdmin={isAdmin}
-                    onAdd={(dayId, hhmm) => setComposer({ dayId, startHHMM: hhmm })}
-                    onEdit={(s) => setComposer({ existing: s })}
-                    onRemove={remove}
-                  />
-                ))}
+              <div className="flex flex-col lg:flex-row gap-4 items-start">
+                {CONFERENCE_DAYS.map((d) =>
+                  view === "calendar" ? (
+                    <CalendarDay key={d.id} day={d} sessions={byDay[d.id] || []} winStart={winStart} winEnd={winEnd} {...dayProps} />
+                  ) : (
+                    <AgendaDay key={d.id} day={d} sessions={byDay[d.id] || []} {...dayProps} />
+                  )
+                )}
               </div>
             )}
           </div>
@@ -157,22 +165,91 @@ export default function SchedulePage() {
   );
 }
 
-function DayColumn({
-  day, sessions, winStart, winEnd, isAdmin, onAdd, onEdit, onRemove,
-}: {
+function ViewBtn({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) {
+  return (
+    <button onClick={onClick} className={"inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-semibold transition-colors " + (active ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700")}>
+      {icon} {label}
+    </button>
+  );
+}
+
+function DayHeader({ day, sessions }: { day: (typeof CONFERENCE_DAYS)[number]; sessions: SessionRow[] }) {
+  const totalMins = sessions.reduce((a, s) => a + durationMinutes(s.startTime, s.endTime), 0);
+  return (
+    <div className="px-4 py-3 bg-gradient-to-r from-[#0E5566] to-[#0066B3] text-white">
+      <div className="text-sm font-bold">{day.label}</div>
+      <div className="text-[11px] text-white/70 mt-0.5">{sessions.length} session{sessions.length === 1 ? "" : "s"}{totalMins > 0 ? ` · ${formatDuration(totalMins)}` : ""}</div>
+    </div>
+  );
+}
+
+type DayProps = {
   day: (typeof CONFERENCE_DAYS)[number];
   sessions: SessionRow[];
-  winStart: number;
-  winEnd: number;
   isAdmin: boolean;
   onAdd: (dayId: string, hhmm: string) => void;
   onEdit: (s: SessionRow) => void;
   onRemove: (id: string) => void;
-}) {
+};
+
+function AgendaDay({ day, sessions, isAdmin, onAdd, onEdit, onRemove }: DayProps) {
+  return (
+    <div className="flex-1 min-w-0 rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+      <DayHeader day={day} sessions={sessions} />
+      {sessions.length === 0 ? (
+        <div className="px-6 py-14 text-center">
+          <MousePointerClick className="w-6 h-6 mx-auto text-slate-300" />
+          <div className="mt-2 text-[13px] font-medium text-slate-400">Nothing scheduled yet.</div>
+          {isAdmin && <button onClick={() => onAdd(day.id, day.start)} className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-semibold text-white bg-gradient-to-r from-[#0E5566] to-[#0066B3] shadow-sm"><Plus className="w-3.5 h-3.5" /> Add session</button>}
+        </div>
+      ) : (
+        <div className="divide-y divide-slate-100">
+          {sessions.map((s, i) => {
+            const meta = kindMeta(s.kind);
+            const dur = durationMinutes(s.startTime, s.endTime);
+            const prev = sessions[i - 1];
+            const gap = prev ? minutesOfDay(s.startTime) - minutesOfDay(prev.endTime) : 0;
+            return (
+              <Fragment key={s.id}>
+                {prev && gap !== 0 && (
+                  <div className={"px-4 py-1 text-center text-[10.5px] font-semibold " + (gap < 0 ? "text-rose-500 bg-rose-50/60" : "text-slate-300")}>
+                    {gap < 0 ? `⚠ overlaps by ${formatDuration(-gap)}` : `· ${formatDuration(gap)} gap ·`}
+                  </div>
+                )}
+                <div
+                  onClick={() => isAdmin && onEdit(s)}
+                  className={"group flex items-start gap-3 px-4 py-3 " + (isAdmin ? "cursor-pointer hover:bg-slate-50" : "")}
+                >
+                  <div className="w-14 shrink-0 text-right pt-0.5">
+                    <div className="text-[12px] font-bold text-slate-700 leading-none">{formatTime(s.startTime)}</div>
+                    <div className="text-[10px] text-slate-400 mt-1">{formatTime(s.endTime)}</div>
+                  </div>
+                  <div className="w-1 self-stretch rounded-full shrink-0" style={{ background: meta.accent }} />
+                  <div className="flex-1 min-w-0">
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] font-extrabold uppercase tracking-wide" style={{ background: meta.soft, color: meta.accent }}>{meta.label}</span>
+                    <div className="text-[14px] font-bold text-slate-900 leading-snug mt-1">{s.title}</div>
+                    {s.presenterName && <div className="text-[12.5px] text-slate-500">{s.presenterName}</div>}
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
+                    <span className="text-[11px] font-semibold text-slate-400 whitespace-nowrap">{formatDuration(dur)}</span>
+                    {isAdmin && (
+                      <button onClick={(e) => { e.stopPropagation(); onRemove(s.id); }} className="sm:opacity-0 group-hover:opacity-100 p-1 rounded text-slate-400 hover:text-rose-600 transition-opacity" title="Remove"><Trash2 className="w-3.5 h-3.5" /></button>
+                    )}
+                  </div>
+                </div>
+              </Fragment>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CalendarDay({ day, sessions, winStart, winEnd, isAdmin, onAdd, onEdit, onRemove }: DayProps & { winStart: number; winEnd: number }) {
   const height = (winEnd - winStart) * PX_PER_MIN;
   const hours: number[] = [];
   for (let h = winStart / 60; h <= winEnd / 60; h++) hours.push(h);
-  const totalMins = sessions.reduce((a, s) => a + durationMinutes(s.startTime, s.endTime), 0);
 
   function bgClick(e: React.MouseEvent<HTMLDivElement>) {
     if (!isAdmin) return;
@@ -187,15 +264,8 @@ function DayColumn({
 
   return (
     <div className="flex-1 min-w-0 rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
-      <div className="px-4 py-3 bg-gradient-to-r from-[#0E5566] to-[#0066B3] text-white">
-        <div className="text-sm font-bold">{day.label}</div>
-        <div className="text-[11px] text-white/70 mt-0.5">
-          {sessions.length} session{sessions.length === 1 ? "" : "s"}{totalMins > 0 ? ` · ${formatDuration(totalMins)}` : ""}
-        </div>
-      </div>
-
+      <DayHeader day={day} sessions={sessions} />
       <div className="relative" style={{ height }} onClick={bgClick}>
-        {/* Hour gridlines + labels */}
         {hours.map((h) => {
           const top = (h * 60 - winStart) * PX_PER_MIN;
           return (
@@ -205,7 +275,6 @@ function DayColumn({
           );
         })}
 
-        {/* Empty-day hint */}
         {sessions.length === 0 && (
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none px-6">
             <MousePointerClick className="w-6 h-6 text-slate-300" />
@@ -213,7 +282,6 @@ function DayColumn({
           </div>
         )}
 
-        {/* Session blocks */}
         <div className="absolute left-12 right-2 top-0 bottom-0">
           {sessions.map((s) => {
             const meta = kindMeta(s.kind);
@@ -234,11 +302,7 @@ function DayColumn({
                   <span className="text-[9.5px] font-extrabold uppercase tracking-wide" style={{ color: meta.accent }}>{meta.label}</span>
                   <span className="text-[9.5px] text-slate-400">{formatTime(s.startTime)}–{formatTime(s.endTime)}</span>
                   {isAdmin && (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); onRemove(s.id); }}
-                      className="ml-auto opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-600 text-[11px] font-bold leading-none"
-                      title="Remove"
-                    >✕</button>
+                    <button onClick={(e) => { e.stopPropagation(); onRemove(s.id); }} className="ml-auto opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-600 text-[11px] font-bold leading-none" title="Remove">✕</button>
                   )}
                 </div>
                 <div className={"font-bold text-slate-900 mt-0.5 leading-tight " + (compact ? "text-[11px] truncate" : "text-[12.5px] line-clamp-2")}>{s.title}</div>
