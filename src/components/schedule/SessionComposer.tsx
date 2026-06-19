@@ -32,13 +32,14 @@ export type ScheduleSessionLite = {
 };
 
 export default function SessionComposer({
-  onClose, onSaved, presenters, existing, defaultDayId,
+  onClose, onSaved, presenters, existing, defaultDayId, defaultStartHHMM,
 }: {
   onClose: () => void;
   onSaved: () => void;
   presenters: SchedulePresenter[];
   existing?: ScheduleSessionLite;
   defaultDayId?: string;
+  defaultStartHHMM?: string;
 }) {
   const isEdit = !!existing;
   const [step, setStep] = useState<"details" | "time">("details");
@@ -50,7 +51,7 @@ export default function SessionComposer({
   const [description, setDescription] = useState(existing?.description || "");
 
   const [dayId, setDayId] = useState(existing ? dayIdOf(existing.startTime) : (defaultDayId || CONFERENCE_DAYS[0].id));
-  const [startHHMM, setStartHHMM] = useState(existing ? toTimeInput(existing.startTime) : "09:30");
+  const [startHHMM, setStartHHMM] = useState(existing ? toTimeInput(existing.startTime) : (defaultStartHHMM || "09:30"));
   const [duration, setDuration] = useState(existing ? durationMinutes(existing.startTime, existing.endTime) : 60);
 
   const [pickerOpen, setPickerOpen] = useState(false);

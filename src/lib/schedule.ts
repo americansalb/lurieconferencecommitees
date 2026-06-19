@@ -62,6 +62,19 @@ export function toTimeInput(date: Date | string): string {
   return d.toLocaleTimeString("en-GB", { timeZone: CHICAGO_TZ, hour12: false, hour: "2-digit", minute: "2-digit" });
 }
 
+// Minutes since midnight (Chicago) for positioning blocks on a time grid.
+export function minutesOfDay(date: Date | string): number {
+  const [h, m] = toTimeInput(date).split(":").map(Number);
+  return h * 60 + m;
+}
+
+export function hourLabel(h: number): string {
+  const hh = ((h % 24) + 24) % 24;
+  const ampm = hh >= 12 ? "PM" : "AM";
+  const h12 = hh % 12 === 0 ? 12 : hh % 12;
+  return `${h12} ${ampm}`;
+}
+
 export function formatDuration(mins: number): string {
   if (mins < 60) return `${mins} min`;
   const h = Math.floor(mins / 60);
