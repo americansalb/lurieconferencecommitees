@@ -1,0 +1,153 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+import { ArrowUpRight, X } from "lucide-react";
+import { TOKENS } from "./tokens";
+import type { Speaker } from "./speakers-data";
+
+// One speaker card. The card itself stays compact (clamped bio preview); the
+// full bio opens in a lightbox modal so a long bio never blows out the grid.
+export default function SpeakerCard({ speaker, accent }: { speaker: Speaker; accent: string }) {
+  const [open, setOpen] = useState(false);
+  const s = speaker;
+  const isLong = s.bio.length > 180;
+
+  return (
+    <>
+      <article
+        className="group relative flex flex-col self-start rounded-3xl bg-white border overflow-hidden transition-all duration-300 hover:-translate-y-1.5"
+        style={{
+          borderColor: TOKENS.hairline,
+          boxShadow: "0 14px 36px -18px rgba(11,31,37,0.20), 0 2px 6px -3px rgba(11,31,37,0.06)",
+        }}
+      >
+        <div className="h-1.5 w-full shrink-0" style={{ background: accent }} />
+
+        <div className="relative aspect-[4/5] overflow-hidden bg-slate-100">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={s.photo}
+            alt={s.name}
+            loading="lazy"
+            className="w-full h-full object-cover transition-transform duration-[600ms] ease-out group-hover:scale-[1.04]"
+          />
+          <div
+            aria-hidden
+            className="absolute inset-x-0 bottom-0 h-24 pointer-events-none"
+            style={{ background: "linear-gradient(180deg, transparent 0%, rgba(11,31,37,0.10) 100%)" }}
+          />
+        </div>
+
+        <div className="flex flex-1 flex-col p-7">
+          <h3 className="text-[21px] font-bold leading-tight tracking-tight" style={{ color: TOKENS.ink }}>
+            {s.name}
+            {s.credentials ? (
+              <span className="font-semibold" style={{ color: TOKENS.mutedSoft }}>, {s.credentials}</span>
+            ) : null}
+          </h3>
+
+          <span className="mt-3 mb-3.5 block h-[3px] w-9 rounded-full" style={{ background: accent }} />
+
+          <div className="text-[12.5px] font-bold uppercase tracking-wide truncate" style={{ color: accent }} title={s.title}>
+            {s.title}
+          </div>
+          <div className="mt-0.5 text-[13px] leading-snug" style={{ color: TOKENS.muted }}>
+            {s.org}
+          </div>
+
+          <p className="mt-4 text-[14px] leading-relaxed line-clamp-3" style={{ color: TOKENS.inkSoft }}>
+            {s.bio}
+          </p>
+
+          {isLong && (
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              className="mt-3 inline-flex items-center gap-1 self-start text-[13px] font-bold tracking-wide hover:gap-1.5 transition-all"
+              style={{ color: accent }}
+            >
+              Read full bio
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+      </article>
+
+      {open && <SpeakerModal speaker={s} accent={accent} onClose={() => setOpen(false)} />}
+    </>
+  );
+}
+
+function SpeakerModal({ speaker: s, accent, onClose }: { speaker: Speaker; accent: string; onClose: () => void }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  // Lock body scroll and wire up Escape-to-close while the modal is open.
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [onClose]);
+
+  if (!mounted) return null;
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm speaker-overlay-in"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${s.name} — full biography`}
+    >
+      <div
+        className="relative bg-white w-full sm:max-w-2xl rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[92vh] overflow-hidden flex flex-col sm:flex-row speaker-modal-in"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Photo: banner on mobile, side column on desktop. */}
+        <div className="relative sm:w-[42%] shrink-0">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={s.photo} alt={s.name} className="w-full h-56 sm:h-full object-cover" />
+          <div className="absolute inset-x-0 top-0 h-1.5 sm:hidden" style={{ background: accent }} />
+        </div>
+
+        {/* Accent rail between photo and text on desktop. */}
+        <div className="hidden sm:block w-1.5 shrink-0" style={{ background: accent }} />
+
+        <div className="flex-1 p-7 sm:p-9 overflow-y-auto">
+          <h3 className="text-2xl font-bold tracking-tight pr-8" style={{ color: TOKENS.ink }}>
+            {s.name}
+            {s.credentials ? (
+              <span className="font-semibold" style={{ color: TOKENS.mutedSoft }}>, {s.credentials}</span>
+            ) : null}
+          </h3>
+          <div className="mt-2 text-[12.5px] font-bold uppercase tracking-wide" style={{ color: accent }}>
+            {s.title}
+          </div>
+          <div className="text-[13.5px]" style={{ color: TOKENS.muted }}>{s.org}</div>
+
+          <div className="mt-5 mb-5 h-px w-full" style={{ background: TOKENS.hairline }} />
+
+          <p className="text-[15px] leading-relaxed" style={{ color: TOKENS.inkSoft }}>
+            {s.bio}
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute top-3.5 right-3.5 w-9 h-9 rounded-full flex items-center justify-center bg-white/85 backdrop-blur text-slate-600 hover:text-slate-900 hover:bg-white shadow-sm transition-colors"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+    </div>,
+    document.body
+  );
+}
