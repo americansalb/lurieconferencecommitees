@@ -25,6 +25,11 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (b.description !== undefined) data.description = b.description ? String(b.description) : null;
   if (b.presenterName !== undefined) data.presenterName = b.presenterName ? String(b.presenterName).trim() : null;
   if (b.presenterId !== undefined) data.presenterId = b.presenterId ? String(b.presenterId) : null;
+  if (b.presenterIds !== undefined) {
+    const ids = Array.isArray(b.presenterIds) ? b.presenterIds.map(String).filter(Boolean) : [];
+    data.presenterIds = ids;
+    if (b.presenterId === undefined) data.presenterId = ids[0] || null;
+  }
   if (b.startTime !== undefined) {
     const d = new Date(b.startTime);
     if (Number.isNaN(d.getTime())) return NextResponse.json({ error: "Invalid start time." }, { status: 400 });

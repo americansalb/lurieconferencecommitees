@@ -68,6 +68,12 @@ export function minutesOfDay(date: Date | string): number {
   return h * 60 + m;
 }
 
+// "HH:MM" (24h) from minutes-since-midnight — inverse of minutesOfDay.
+export function minutesToHHMM(min: number): string {
+  const m = ((Math.round(min) % 1440) + 1440) % 1440;
+  return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+}
+
 export function hourLabel(h: number): string {
   const hh = ((h % 24) + 24) % 24;
   const ampm = hh >= 12 ? "PM" : "AM";

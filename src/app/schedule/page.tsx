@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { CalendarRange, Plus, MousePointerClick, List, Trash2 } from "lucide-react";
@@ -10,8 +10,17 @@ import MobileNav from "@/components/layout/MobileNav";
 import SessionComposer, { type SchedulePresenter, type ScheduleSessionLite } from "@/components/schedule/SessionComposer";
 import {
   CONFERENCE_DAYS, SESSION_KINDS, kindMeta, formatTime, formatDuration,
-  durationMinutes, dayIdOf, minutesOfDay, hourLabel,
+  durationMinutes, dayIdOf, minutesOfDay, hourLabel, minutesToHHMM, chicagoInstant, addMinutesIso,
 } from "@/lib/schedule";
+
+const clampN = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+const fmtMin = (min: number) => {
+  const m = ((Math.round(min) % 1440) + 1440) % 1440;
+  const hh = Math.floor(m / 60), mm = m % 60;
+  const ap = hh >= 12 ? "PM" : "AM";
+  const h12 = hh % 12 === 0 ? 12 : hh % 12;
+  return `${h12}:${String(mm).padStart(2, "0")} ${ap}`;
+};
 
 type SessionRow = ScheduleSessionLite & { createdAt: string };
 type ComposerState = { existing?: ScheduleSessionLite; dayId?: string; startHHMM?: string };
@@ -80,6 +89,27 @@ export default function SchedulePage() {
     load();
   }
 
+  // Drag/resize on the calendar: optimistic local update, then PATCH. Reverts on
+  // failure. Same conference day (vertical move only); use the editor to change days.
+  async function reschedule(s: SessionRow, startMin: number, dur: number) {
+    const dayId = dayIdOf(s.startTime);
+    const startIso = chicagoInstant(dayId, minutesToHHMM(startMin));
+    const endIso = addMinutesIso(startIso, dur);
+    if (startIso === s.startTime && endIso === s.endTime) return;
+    const prev = sessions;
+    setSessions((cur) => cur.map((x) => (x.id === s.id ? { ...x, startTime: startIso, endTime: endIso } : x)));
+    try {
+      const res = await fetch(`/api/schedule/${s.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ startTime: startIso, endTime: endIso }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      setSessions(prev);
+    }
+  }
+
   const dayProps = {
     isAdmin,
     onAdd: (dayId: string, hhmm: string) => setComposer({ dayId, startHHMM: hhmm }),
@@ -104,7 +134,7 @@ export default function SchedulePage() {
                   <CalendarRange className="w-3.5 h-3.5" /> Schedule builder
                 </div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight mt-1">Conference program</h1>
-                <p className="text-sm text-slate-500 mt-1">{view === "calendar" ? "Both days at a glance — blocks sized by length." : "Both days as a clean running order."} {isAdmin && (view === "calendar" ? "Click a slot to add, a block to edit." : "Click a row to edit.")}</p>
+                <p className="text-sm text-slate-500 mt-1">{view === "calendar" ? "Both days at a glance — blocks sized by length." : "Both days as a clean running order."} {isAdmin && (view === "calendar" ? "Click a slot to add · drag a block to move · drag its bottom edge to resize." : "Click a row to edit.")}</p>
               </div>
               <div className="flex items-center gap-2">
                 {/* View toggle */}
@@ -139,7 +169,7 @@ export default function SchedulePage() {
               <div className="flex flex-col lg:flex-row gap-4 items-start">
                 {CONFERENCE_DAYS.map((d) =>
                   view === "calendar" ? (
-                    <CalendarDay key={d.id} day={d} sessions={byDay[d.id] || []} winStart={winStart} winEnd={winEnd} {...dayProps} />
+                    <CalendarDay key={d.id} day={d} sessions={byDay[d.id] || []} winStart={winStart} winEnd={winEnd} onReschedule={reschedule} {...dayProps} />
                   ) : (
                     <AgendaDay key={d.id} day={d} sessions={byDay[d.id] || []} {...dayProps} />
                   )
@@ -246,20 +276,53 @@ function AgendaDay({ day, sessions, isAdmin, onAdd, onEdit, onRemove }: DayProps
   );
 }
 
-function CalendarDay({ day, sessions, winStart, winEnd, isAdmin, onAdd, onEdit, onRemove }: DayProps & { winStart: number; winEnd: number }) {
+function CalendarDay({ day, sessions, winStart, winEnd, isAdmin, onAdd, onEdit, onRemove, onReschedule }: DayProps & { winStart: number; winEnd: number; onReschedule: (s: SessionRow, startMin: number, dur: number) => void }) {
   const height = (winEnd - winStart) * PX_PER_MIN;
   const hours: number[] = [];
   for (let h = winStart / 60; h <= winEnd / 60; h++) hours.push(h);
 
+  const [drag, setDrag] = useState<{ id: string; mode: "move" | "resize"; startMin: number; dur: number } | null>(null);
+  const dragRef = useRef<{ id: string; mode: "move" | "resize"; startY: number; origStartMin: number; origDur: number; curStartMin: number; curDur: number; moved: boolean } | null>(null);
+  const lastDragEnd = useRef(0);
+
   function bgClick(e: React.MouseEvent<HTMLDivElement>) {
     if (!isAdmin) return;
+    if (Date.now() - lastDragEnd.current < 250) return; // ignore the click that ends a drag
     const rect = e.currentTarget.getBoundingClientRect();
     const y = e.clientY - rect.top;
-    let mins = winStart + Math.round((y / PX_PER_MIN) / 15) * 15;
-    mins = Math.max(winStart, Math.min(winEnd - 15, mins));
-    const hh = String(Math.floor(mins / 60)).padStart(2, "0");
-    const mm = String(mins % 60).padStart(2, "0");
-    onAdd(day.id, `${hh}:${mm}`);
+    const mins = clampN(winStart + Math.round((y / PX_PER_MIN) / 15) * 15, winStart, winEnd - 15);
+    onAdd(day.id, minutesToHHMM(mins));
+  }
+
+  function pointerDown(e: React.PointerEvent, s: SessionRow, startMin: number, dur: number) {
+    if (!isAdmin || e.button !== 0) return;
+    const mode: "move" | "resize" = (e.target as HTMLElement).dataset?.resize === "1" ? "resize" : "move";
+    e.stopPropagation();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    dragRef.current = { id: s.id, mode, startY: e.clientY, origStartMin: startMin, origDur: dur, curStartMin: startMin, curDur: dur, moved: false };
+    setDrag({ id: s.id, mode, startMin, dur });
+  }
+  function pointerMove(e: React.PointerEvent) {
+    const d = dragRef.current;
+    if (!d) return;
+    const dy = e.clientY - d.startY;
+    if (Math.abs(dy) > 3) d.moved = true;
+    const deltaMin = Math.round((dy / PX_PER_MIN) / 5) * 5;
+    if (d.mode === "move") {
+      d.curStartMin = clampN(d.origStartMin + deltaMin, winStart, winEnd - d.origDur);
+    } else {
+      d.curDur = clampN(d.origDur + deltaMin, 10, winEnd - d.origStartMin);
+    }
+    setDrag({ id: d.id, mode: d.mode, startMin: d.curStartMin, dur: d.curDur });
+  }
+  function pointerUp(s: SessionRow) {
+    const d = dragRef.current;
+    dragRef.current = null;
+    setDrag(null);
+    if (!d) return;
+    if (!d.moved) { onEdit(s); return; }
+    lastDragEnd.current = Date.now();
+    onReschedule(s, d.curStartMin, d.curDur);
   }
 
   return (
@@ -285,28 +348,37 @@ function CalendarDay({ day, sessions, winStart, winEnd, isAdmin, onAdd, onEdit, 
         <div className="absolute left-12 right-2 top-0 bottom-0">
           {sessions.map((s) => {
             const meta = kindMeta(s.kind);
-            const startMin = minutesOfDay(s.startTime);
-            const dur = durationMinutes(s.startTime, s.endTime);
+            const isDragging = drag?.id === s.id;
+            const startMin = isDragging ? drag!.startMin : minutesOfDay(s.startTime);
+            const dur = isDragging ? drag!.dur : durationMinutes(s.startTime, s.endTime);
             const top = (startMin - winStart) * PX_PER_MIN;
             const h = Math.max(dur * PX_PER_MIN, 28);
             const compact = h < 50;
             return (
               <div
                 key={s.id}
-                onClick={(e) => { e.stopPropagation(); if (isAdmin) onEdit(s); }}
-                className={"group absolute left-0 right-0 rounded-lg border-l-[3px] px-2.5 py-1.5 overflow-hidden shadow-sm transition-all " + (isAdmin ? "cursor-pointer hover:shadow-md hover:-translate-y-px" : "")}
-                style={{ top, height: h - 3, background: meta.soft, borderColor: meta.accent }}
+                onPointerDown={(e) => pointerDown(e, s, minutesOfDay(s.startTime), durationMinutes(s.startTime, s.endTime))}
+                onPointerMove={pointerMove}
+                onPointerUp={() => pointerUp(s)}
+                onClick={(e) => e.stopPropagation()}
+                className={"group absolute left-0 right-0 rounded-lg border-l-[3px] px-2.5 py-1.5 overflow-hidden shadow-sm " + (isAdmin ? "cursor-grab active:cursor-grabbing hover:shadow-md " : "") + (isDragging ? "ring-2 ring-[#0066B3] shadow-lg z-20" : "transition-[top,height] duration-150")}
+                style={{ top, height: h - 3, background: meta.soft, borderColor: meta.accent, touchAction: isAdmin ? "none" : undefined }}
                 title={s.title}
               >
                 <div className="flex items-center gap-1.5 leading-none">
                   <span className="text-[9.5px] font-extrabold uppercase tracking-wide" style={{ color: meta.accent }}>{meta.label}</span>
-                  <span className="text-[9.5px] text-slate-400">{formatTime(s.startTime)}–{formatTime(s.endTime)}</span>
+                  <span className="text-[9.5px] text-slate-400">{fmtMin(startMin)}–{fmtMin(startMin + dur)}</span>
                   {isAdmin && (
-                    <button onClick={(e) => { e.stopPropagation(); onRemove(s.id); }} className="ml-auto opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-600 text-[11px] font-bold leading-none" title="Remove">✕</button>
+                    <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onRemove(s.id); }} className="ml-auto opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-600 text-[11px] font-bold leading-none" title="Remove">✕</button>
                   )}
                 </div>
                 <div className={"font-bold text-slate-900 mt-0.5 leading-tight " + (compact ? "text-[11px] truncate" : "text-[12.5px] line-clamp-2")}>{s.title}</div>
                 {!compact && s.presenterName && <div className="text-[11px] text-slate-500 truncate mt-0.5">{s.presenterName}</div>}
+                {isAdmin && h >= 34 && (
+                  <div data-resize="1" className="absolute left-0 right-0 bottom-0 h-2.5 cursor-ns-resize flex items-end justify-center pb-0.5">
+                    <div data-resize="1" className="h-1 w-8 rounded-full bg-slate-400/25 group-hover:bg-slate-400/60" />
+                  </div>
+                )}
               </div>
             );
           })}

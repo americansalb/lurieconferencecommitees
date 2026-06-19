@@ -31,13 +31,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid time range." }, { status: 400 });
   }
 
+  const presenterIds = Array.isArray(b.presenterIds) ? b.presenterIds.map(String).filter(Boolean) : [];
   const created = await prisma.scheduleSession.create({
     data: {
       title,
       kind: String(b.kind || "session"),
       description: b.description ? String(b.description) : null,
       presenterName: b.presenterName ? String(b.presenterName).trim() : null,
-      presenterId: b.presenterId ? String(b.presenterId) : null,
+      presenterId: b.presenterId ? String(b.presenterId) : (presenterIds[0] || null),
+      presenterIds,
       startTime: start,
       endTime: end,
     },

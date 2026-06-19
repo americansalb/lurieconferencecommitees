@@ -733,6 +733,7 @@ model ScheduleSession {
   description   String?
   presenterName String?
   presenterId   String?
+  presenterIds  String[]  @default([])
   startTime     DateTime
   endTime       DateTime
   createdAt     DateTime  @default(now())
