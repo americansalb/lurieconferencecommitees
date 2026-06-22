@@ -332,6 +332,78 @@ export function attendeeInviteEmail({
   `);
 }
 
+// A warmer, fully-branded invite aimed at the AALB alumni community — uses the
+// hero banner, conference-at-a-glance card, and host sign-off, plus the same
+// personal discount card as the standard attendee invite. Same args as the
+// standard invite so the two are drop-in interchangeable.
+export function attendeeAlumniInviteEmail({
+  firstName,
+  url,
+  inviteMessage,
+  discountPercent,
+  inPersonOriginalCents,
+  inPersonDiscountedCents,
+}: AttendeeInviteArgs) {
+  const first = firstName || "there";
+  const originalDollars = `$${(inPersonOriginalCents / 100).toFixed(0)}`;
+  const discountedDollars = `$${(inPersonDiscountedCents / 100).toFixed(2)}`;
+  const extra = inviteMessage
+    ? `<div style="font-size:14px;line-height:1.6;color:${TEXT};background:#f8fafc;border-left:3px solid ${BLUE};padding:14px 16px;border-radius:6px;margin:18px 0 0 0;">${escapeHtml(inviteMessage).replace(/\n/g, "<br>")}</div>`
+    : "";
+  return shell(`
+    ${heroBanner()}
+    <div style="font-size:11px;letter-spacing:0.16em;font-weight:700;color:${GOLD};text-transform:uppercase;margin:0 0 8px 0;">An invitation for the AALB community</div>
+    <h1 style="font-size:23px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">Welcome back, ${escapeHtml(first)}.</h1>
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
+      As part of the AALB community, you&rsquo;ve helped move language access forward &mdash; and we&rsquo;d be honored to have you with us at the <strong>2026 Lurie Children&rsquo;s &amp; AALB Conference</strong>, August 15 and 16 in Chicago, with full virtual attendance also available.
+    </p>
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 4px 0;">
+      This year&rsquo;s theme, <em>True Language Access: Yesterday, Today, and Tomorrow</em>, brings together interpreters, clinicians, language service providers, advocates, and policymakers for two days of sessions on where the field stands and where it&rsquo;s headed.
+    </p>
+    ${extra}
+
+    ${sectionHeading("Conference at a Glance")}
+    ${glanceCard(GLANCE_ROWS)}
+
+    ${sectionHeading("Why You&rsquo;ll Want to Be There")}
+    ${bulletList([
+      "Practice-focused sessions on the standards, technology, and policy reshaping language access",
+      "10+ accredited CEUs (CCHI, NBCMI, RID, and ATA accreditation sought)",
+      "Time to reconnect with colleagues and mentors from across the AALB community",
+      "A front-row seat to the conversations shaping the next decade of the field",
+    ])}
+
+    ${sectionHeading("Your Alumni Rate")}
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 12px 0;">
+      In appreciation of your part in this community, your in-person registration is held at a personal rate:
+    </p>
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px 0;border-collapse:separate;">
+      <tr><td style="border:1px solid #e2e8f0;border-left:3px solid ${TEAL};padding:16px 20px;border-radius:8px;background:#ffffff;">
+        <div style="font-size:11px;letter-spacing:0.15em;text-transform:uppercase;font-weight:600;color:${TEAL};">
+          ${discountPercent}% off &middot; in-person registration
+        </div>
+        <div style="font-size:24px;font-weight:700;color:${TEXT};margin-top:6px;line-height:1.1;">
+          ${discountedDollars} <span style="font-size:14px;font-weight:500;color:${MUTED};margin-left:6px;text-decoration:line-through;">${originalDollars}</span>
+        </div>
+        <div style="font-size:13px;color:${MUTED};margin-top:6px;">
+          Virtual attendance is also available at the standard $105.
+        </div>
+      </td></tr>
+    </table>
+    ${button(url, "Reserve my alumni seat")}
+    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:8px 0 0 0;">
+      Or paste this into your browser:<br/>
+      <a href="${url}" style="color:${BLUE};word-break:break-all;">${url}</a>
+    </p>
+    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;">
+      This link and rate are personal to you. If a colleague from the community should also be invited, just reply and let us know.
+    </p>
+
+    ${signOff("With gratitude,")}
+    ${logoLockup()}
+  `);
+}
+
 export function attendeeConfirmedEmail({
   firstName,
   url,

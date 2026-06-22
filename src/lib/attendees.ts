@@ -1,5 +1,37 @@
 import { randomBytes } from "crypto";
 import { appUrl } from "./presenters";
+import { attendeeInviteEmail, attendeeAlumniInviteEmail } from "./mail-templates";
+
+export type AttendeeTemplate = "standard" | "alumni";
+export const ATTENDEE_TEMPLATES: { id: AttendeeTemplate; label: string; description: string }[] = [
+  { id: "standard", label: "Standard invite", description: "Concise personal invitation with the discounted rate." },
+  { id: "alumni", label: "AALB alumni", description: "Warm, fully-branded invitation for the AALB community." },
+];
+
+// Single source for rendering an attendee invitation, so send / resend /
+// preview / view-copy all produce identical output for a given template.
+export function buildAttendeeInvite(opts: {
+  firstName: string;
+  inviteToken: string;
+  discountPercent: number;
+  inviteMessage?: string | null;
+  template?: string | null;
+}): { subject: string; html: string; template: AttendeeTemplate } {
+  const template: AttendeeTemplate = opts.template === "alumni" ? "alumni" : "standard";
+  const baseCents = PRICING.inPerson.standardCents;
+  const finalCents = Math.round(baseCents * (100 - opts.discountPercent) / 100);
+  const render = template === "alumni" ? attendeeAlumniInviteEmail : attendeeInviteEmail;
+  const html = render({
+    firstName: opts.firstName,
+    url: attendeeFunnelUrl(opts.inviteToken),
+    inviteMessage: opts.inviteMessage ?? null,
+    discountPercent: opts.discountPercent,
+    inPersonOriginalCents: baseCents,
+    inPersonDiscountedCents: finalCents,
+  });
+  const subject = `${opts.firstName}, your invite to the 2026 Lurie Children's & AALB Conference`;
+  return { subject, html, template };
+}
 
 // "Personalized" envelope for attendee invitations. The display name appears
 // in the recipient's inbox; the actual sending address stays on the

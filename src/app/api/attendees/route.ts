@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { newAttendeeToken, parseAttendeeCsv, attendeeFunnelUrl, PRICING, attendeeFromHeader, attendeeReplyTo } from "@/lib/attendees";
-import { attendeeInviteEmail } from "@/lib/mail-templates";
+import { newAttendeeToken, parseAttendeeCsv, attendeeFromHeader, attendeeReplyTo, buildAttendeeInvite } from "@/lib/attendees";
 import { getPolicy, planSendTimes } from "@/lib/email-queue";
 import { sendMail } from "@/lib/mail";
 
@@ -49,6 +48,7 @@ export async function POST(req: Request) {
   const payload = await req.json();
   const { single, csv, inviteMessage, discountPercent } = payload;
   const pct = Math.max(0, Math.min(100, Number.isFinite(discountPercent) ? discountPercent : 25));
+  const template = payload.template === "alumni" ? "alumni" : "standard";
 
   // Single-recipient mode: send immediately, bypass the queue.
   if (single && typeof single === "object") {
@@ -76,6 +76,7 @@ export async function POST(req: Request) {
         discountPercent: pct,
         inviteToken: token,
         inviteMessage: inviteMessage?.trim() || null,
+        inviteTemplate: template,
         invitedById: invitedById || null,
         status: "queued",
       },
@@ -84,18 +85,10 @@ export async function POST(req: Request) {
       data: { attendeeId: attendee.id, type: "added_to_queue", actorEmail: adminEmail },
     });
 
-    const url = attendeeFunnelUrl(token);
-    const baseCents = PRICING.inPerson.standardCents;
-    const finalCents = Math.round(baseCents * (100 - pct) / 100);
-    const html = attendeeInviteEmail({
-      firstName,
-      url,
-      inviteMessage: inviteMessage?.trim() || null,
-      discountPercent: pct,
-      inPersonOriginalCents: baseCents,
-      inPersonDiscountedCents: finalCents,
+    const { subject, html } = buildAttendeeInvite({
+      firstName, inviteToken: token, discountPercent: pct,
+      inviteMessage: inviteMessage?.trim() || null, template,
     });
-    const subject = `${firstName}, your invite to the 2026 Lurie Children's & AALB Conference`;
 
     try {
       await sendMail({
@@ -105,6 +98,10 @@ export async function POST(req: Request) {
         from: attendeeFromHeader(),
         replyTo: attendeeReplyTo(),
       });
+      // Archive the exact email so it can be viewed later from the dashboard.
+      await prisma.emailQueue.create({
+        data: { batchId: "attendee-immediate", recipientType: "attendee", recipientId: attendee.id, to: email, subject, html, scheduledFor: new Date(), status: "sent", sentAt: new Date() },
+      }).catch(() => {});
       await prisma.attendee.update({
         where: { id: attendee.id },
         data: { status: "invited", invitedAt: new Date(), lastSentAt: new Date() },
@@ -151,6 +148,7 @@ export async function POST(req: Request) {
         discountPercent: pct,
         inviteToken: token,
         inviteMessage: inviteMessage?.trim() || null,
+        inviteTemplate: template,
         invitedById: invitedById || null,
         status: "queued",
       },
@@ -170,16 +168,9 @@ export async function POST(req: Request) {
       const att = created[i];
       const attendee = await prisma.attendee.findUnique({ where: { id: att.id } });
       if (!attendee) continue;
-      const url = attendeeFunnelUrl(att.token);
-      const baseCents = PRICING.inPerson.standardCents;
-      const finalCents = Math.round(baseCents * (100 - pct) / 100);
-      const html = attendeeInviteEmail({
-        firstName: attendee.firstName,
-        url,
-        inviteMessage: inviteMessage?.trim() || null,
-        discountPercent: pct,
-        inPersonOriginalCents: baseCents,
-        inPersonDiscountedCents: finalCents,
+      const { subject, html } = buildAttendeeInvite({
+        firstName: attendee.firstName, inviteToken: att.token, discountPercent: pct,
+        inviteMessage: inviteMessage?.trim() || null, template,
       });
       await prisma.emailQueue.create({
         data: {
@@ -187,7 +178,7 @@ export async function POST(req: Request) {
           recipientType: "attendee",
           recipientId: att.id,
           to: att.email,
-          subject: `${attendee.firstName}, your invite to the 2026 Lurie Children's & AALB Conference`,
+          subject,
           html,
           scheduledFor: times[i],
           status: "pending",

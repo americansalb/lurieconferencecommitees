@@ -5,12 +5,15 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import {
   Users, Send, Pause, Play, Trash2, Loader2, Mail, Check,
-  Filter, Search, RefreshCw, Zap, FileText, UserPlus, Copy, Rocket,
+  Filter, Search, RefreshCw, Zap, FileText, UserPlus, Copy, Rocket, Eye,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
 import MobileNav from "@/components/layout/MobileNav";
-import { ATTENDEE_STATUS_LABELS } from "@/lib/attendees";
+import { ATTENDEE_STATUS_LABELS, ATTENDEE_TEMPLATES } from "@/lib/attendees";
+import EmailPreviewModal from "@/components/attendees/EmailPreviewModal";
+
+type PreviewState = { title: string; meta?: string; html: string | null };
 
 type Attendee = {
   id: string;
@@ -66,6 +69,8 @@ export default function AttendeesPage() {
   // Shared composer state
   const [inviteMessage, setInviteMessage] = useState("");
   const [discountPercent, setDiscountPercent] = useState(25);
+  const [template, setTemplate] = useState<"standard" | "alumni">("standard");
+  const [preview, setPreview] = useState<PreviewState | null>(null);
 
   // Quick invite form
   const [single, setSingle] = useState({ firstName: "", lastName: "", email: "", affiliation: "" });
@@ -117,6 +122,7 @@ export default function AttendeesPage() {
         single,
         inviteMessage: inviteMessage.trim() || undefined,
         discountPercent,
+        template,
       }),
     });
     const json = await res.json();
@@ -138,7 +144,7 @@ export default function AttendeesPage() {
     const res = await fetch("/api/attendees", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ csv, inviteMessage, discountPercent }),
+      body: JSON.stringify({ csv, inviteMessage, discountPercent, template }),
     });
     const json = await res.json();
     setBulkSending(false);
@@ -146,6 +152,39 @@ export default function AttendeesPage() {
     if (json.created > 0) {
       setCsv("");
       load();
+    }
+  }
+
+  const templateLabel = (t: string) => (t === "alumni" ? "AALB alumni template" : "Standard template");
+
+  async function openPreview() {
+    setPreview({ title: "Email preview", meta: templateLabel(template), html: null });
+    try {
+      const res = await fetch("/api/attendees/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ template, discountPercent, inviteMessage, firstName: single.firstName || undefined }),
+      });
+      const j = await res.json();
+      setPreview({ title: j.subject || "Email preview", meta: `${templateLabel(template)} · sample preview`, html: j.html || "<p style='padding:24px;font-family:sans-serif'>Could not render.</p>" });
+    } catch {
+      setPreview({ title: "Email preview", meta: templateLabel(template), html: "<p style='padding:24px;font-family:sans-serif'>Network error.</p>" });
+    }
+  }
+
+  async function viewEmail(a: Attendee) {
+    setPreview({ title: `Email to ${a.firstName} ${a.lastName}`, html: null });
+    try {
+      const res = await fetch(`/api/attendees/${a.id}/email`);
+      const j = await res.json();
+      const when = j.source !== "sent"
+        ? "Regenerated preview · not sent yet"
+        : j.status === "sent"
+          ? `Sent${j.sentAt ? " " + new Date(j.sentAt).toLocaleString() : ""}`
+          : `Queued${j.scheduledFor ? " for " + new Date(j.scheduledFor).toLocaleString() : ""}`;
+      setPreview({ title: j.subject || `Email to ${a.email}`, meta: `${when} · to ${j.to}`, html: j.html });
+    } catch {
+      setPreview({ title: "Email", meta: a.email, html: "<p style='padding:24px;font-family:sans-serif'>Could not load.</p>" });
     }
   }
 
@@ -367,6 +406,30 @@ export default function AttendeesPage() {
                       className="mt-1 w-full px-3 py-2.5 text-sm border border-slate-200 rounded-lg outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10"
                     />
                   </label>
+
+                  <div className="mt-4">
+                    <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Email template</span>
+                    <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                      {ATTENDEE_TEMPLATES.map((t) => {
+                        const on = template === t.id;
+                        return (
+                          <button
+                            key={t.id} type="button" onClick={() => setTemplate(t.id)}
+                            className={"px-3 py-1.5 rounded-lg text-[13px] font-semibold border transition-colors " + (on ? "bg-[#0E5566] text-white border-[#0E5566]" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50")}
+                          >
+                            {t.label}
+                          </button>
+                        );
+                      })}
+                      <button
+                        type="button" onClick={openPreview}
+                        className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-semibold text-[#0E5566] bg-[#0E5566]/[0.06] border border-[#0E5566]/15 hover:bg-[#0E5566]/[0.1]"
+                      >
+                        <Eye className="w-3.5 h-3.5" /> Preview email
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-slate-400 mt-1.5">{ATTENDEE_TEMPLATES.find((t) => t.id === template)?.description}</p>
+                  </div>
                 </div>
 
                 {inviteSubTab === "quick" && (
@@ -569,6 +632,13 @@ export default function AttendeesPage() {
                               </button>
                             )}
                             <button
+                              onClick={() => viewEmail(a)}
+                              className="p-1.5 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-700"
+                              title="View the email we sent"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                            </button>
+                            <button
                               onClick={() => resendInvite(a.id)}
                               disabled={resendingId === a.id}
                               className="p-1.5 rounded hover:bg-slate-100 text-slate-400 hover:text-teal-700 disabled:opacity-50"
@@ -597,6 +667,16 @@ export default function AttendeesPage() {
         </div>
         <MobileNav />
       </div>
+
+      {preview && (
+        <EmailPreviewModal
+          title={preview.title}
+          meta={preview.meta}
+          html={preview.html}
+          loading={preview.html === null}
+          onClose={() => setPreview(null)}
+        />
+      )}
     </div>
   );
 }

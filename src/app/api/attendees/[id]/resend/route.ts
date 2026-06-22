@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { attendeeFunnelUrl, PRICING, attendeeFromHeader, attendeeReplyTo } from "@/lib/attendees";
-import { attendeeInviteEmail } from "@/lib/mail-templates";
+import { attendeeFromHeader, attendeeReplyTo, buildAttendeeInvite } from "@/lib/attendees";
 import { sendMail } from "@/lib/mail";
 
 export async function POST(_req: Request, { params }: { params: { id: string } }) {
@@ -16,26 +15,25 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
   const attendee = await prisma.attendee.findUnique({ where: { id: params.id } });
   if (!attendee) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const url = attendeeFunnelUrl(attendee.inviteToken);
-  const baseCents = PRICING.inPerson.standardCents;
-  const finalCents = Math.round(baseCents * (100 - attendee.discountPercent) / 100);
-  const html = attendeeInviteEmail({
+  const { subject, html } = buildAttendeeInvite({
     firstName: attendee.firstName,
-    url,
-    inviteMessage: attendee.inviteMessage,
+    inviteToken: attendee.inviteToken,
     discountPercent: attendee.discountPercent,
-    inPersonOriginalCents: baseCents,
-    inPersonDiscountedCents: finalCents,
+    inviteMessage: attendee.inviteMessage,
+    template: attendee.inviteTemplate,
   });
 
   try {
     await sendMail({
       to: attendee.email,
-      subject: `${attendee.firstName}, your invite to the 2026 Lurie Children's & AALB Conference`,
+      subject,
       html,
       from: attendeeFromHeader(),
       replyTo: attendeeReplyTo(),
     });
+    await prisma.emailQueue.create({
+      data: { batchId: "attendee-resend", recipientType: "attendee", recipientId: attendee.id, to: attendee.email, subject, html, scheduledFor: new Date(), status: "sent", sentAt: new Date() },
+    }).catch(() => {});
     await prisma.attendee.update({
       where: { id: attendee.id },
       data: {

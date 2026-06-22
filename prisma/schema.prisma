@@ -407,6 +407,7 @@ model Attendee {
 
   inviteToken          String          @unique
   inviteMessage        String?
+  inviteTemplate       String          @default("standard")
   invitedById          String?
   invitedAt            DateTime?
   lastSentAt           DateTime?
