@@ -6,10 +6,18 @@ import { ArrowUpRight, X } from "lucide-react";
 import { TOKENS } from "./tokens";
 import type { Speaker } from "./speakers-data";
 
+// Initials for the photo fallback, so a speaker still gets a clean, branded
+// card before their headshot file is dropped in /public/speakers/.
+function initials(name: string) {
+  const parts = name.replace(/[^A-Za-z\s]/g, "").split(/\s+/).filter(Boolean);
+  return ((parts[0]?.[0] || "") + (parts[parts.length - 1]?.[0] || "")).toUpperCase();
+}
+
 // One speaker card. The card itself stays compact (clamped bio preview); the
 // full bio opens in a lightbox modal so a long bio never blows out the grid.
 export default function SpeakerCard({ speaker, accent }: { speaker: Speaker; accent: string }) {
   const [open, setOpen] = useState(false);
+  const [imgError, setImgError] = useState(false);
   const s = speaker;
   const isLong = s.bio.length > 180;
 
@@ -25,18 +33,30 @@ export default function SpeakerCard({ speaker, accent }: { speaker: Speaker; acc
         <div className="h-1.5 w-full shrink-0" style={{ background: accent }} />
 
         <div className="relative aspect-[4/5] overflow-hidden bg-slate-100">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={s.photo}
-            alt={s.name}
-            loading="lazy"
-            className="w-full h-full object-cover transition-transform duration-[600ms] ease-out group-hover:scale-[1.04]"
-          />
-          <div
-            aria-hidden
-            className="absolute inset-x-0 bottom-0 h-24 pointer-events-none"
-            style={{ background: "linear-gradient(180deg, transparent 0%, rgba(11,31,37,0.10) 100%)" }}
-          />
+          {s.photo && !imgError ? (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={s.photo}
+                alt={s.name}
+                loading="lazy"
+                onError={() => setImgError(true)}
+                className="w-full h-full object-cover transition-transform duration-[600ms] ease-out group-hover:scale-[1.04]"
+              />
+              <div
+                aria-hidden
+                className="absolute inset-x-0 bottom-0 h-24 pointer-events-none"
+                style={{ background: "linear-gradient(180deg, transparent 0%, rgba(11,31,37,0.10) 100%)" }}
+              />
+            </>
+          ) : (
+            <div
+              className="w-full h-full flex items-center justify-center"
+              style={{ background: `linear-gradient(135deg, ${accent}14 0%, ${accent}30 100%)` }}
+            >
+              <span className="text-6xl font-bold tracking-tight" style={{ color: accent }}>{initials(s.name)}</span>
+            </div>
+          )}
         </div>
 
         <div className="flex flex-1 flex-col p-7">
@@ -49,7 +69,7 @@ export default function SpeakerCard({ speaker, accent }: { speaker: Speaker; acc
 
           <span className="mt-3 mb-3.5 block h-[3px] w-9 rounded-full" style={{ background: accent }} />
 
-          <div className="text-[12.5px] font-bold uppercase tracking-wide truncate" style={{ color: accent }} title={s.title}>
+          <div className="text-[12.5px] font-bold uppercase tracking-wide leading-snug line-clamp-2" style={{ color: accent }} title={s.title}>
             {s.title}
           </div>
           <div className="mt-0.5 text-[13px] leading-snug" style={{ color: TOKENS.muted }}>
@@ -81,6 +101,7 @@ export default function SpeakerCard({ speaker, accent }: { speaker: Speaker; acc
 
 function SpeakerModal({ speaker: s, accent, onClose }: { speaker: Speaker; accent: string; onClose: () => void }) {
   const [mounted, setMounted] = useState(false);
+  const [imgError, setImgError] = useState(false);
   useEffect(() => setMounted(true), []);
 
   // Lock body scroll and wire up Escape-to-close while the modal is open.
@@ -110,9 +131,18 @@ function SpeakerModal({ speaker: s, accent, onClose }: { speaker: Speaker; accen
         onClick={(e) => e.stopPropagation()}
       >
         {/* Photo: banner on mobile, side column on desktop. */}
-        <div className="relative sm:w-[42%] shrink-0">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={s.photo} alt={s.name} className="w-full h-56 sm:h-full object-cover" />
+        <div className="relative sm:w-[42%] shrink-0 bg-slate-100">
+          {s.photo && !imgError ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img src={s.photo} alt={s.name} onError={() => setImgError(true)} className="w-full h-56 sm:h-full object-cover" />
+          ) : (
+            <div
+              className="w-full h-56 sm:h-full flex items-center justify-center"
+              style={{ background: `linear-gradient(135deg, ${accent}14 0%, ${accent}30 100%)` }}
+            >
+              <span className="text-7xl font-bold tracking-tight" style={{ color: accent }}>{initials(s.name)}</span>
+            </div>
+          )}
           <div className="absolute inset-x-0 top-0 h-1.5 sm:hidden" style={{ background: accent }} />
         </div>
 

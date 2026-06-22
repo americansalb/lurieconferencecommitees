@@ -37,7 +37,7 @@ export default function Speakers() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
           {SPEAKERS.map((s, i) => (
             <SpeakerCard key={s.slug} speaker={s} accent={ACCENTS[i % ACCENTS.length]} />
           ))}
