@@ -42,7 +42,7 @@ export default function ForgotPasswordPage() {
 
         {sent ? (
           <div className="rounded-lg p-4 text-sm bg-emerald-50 text-emerald-700 border border-emerald-200">
-            If an account exists for that email address, we&apos;ve sent a reset link. Check your inbox &mdash; the link expires in 24 hours.
+            If an account exists for that email address, we&apos;ve sent a reset link. Check your inbox. The link expires in 24 hours.
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-5">

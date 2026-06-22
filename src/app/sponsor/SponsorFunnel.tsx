@@ -80,7 +80,7 @@ export default function SponsorFunnel() {
   }
 
   // Apply step is the only one with required text fields. Phone is required
-  // alongside company/name/email — the program team always needs a number to
+  // alongside company/name/email; the program team always needs a number to
   // coordinate logistics, signage, and on-site details with a sponsor.
   function validateApply(): string | null {
     if (!form.companyName.trim()) return "Tell us which organization you're with.";
@@ -153,7 +153,7 @@ export default function SponsorFunnel() {
     }
   }
 
-  // Done is terminal — its own calm confirmation screen, no rail or counter.
+  // Done is terminal; its own calm confirmation screen, no rail or counter.
   if (step === "done" && selected) {
     return (
       <Done
@@ -247,7 +247,7 @@ export default function SponsorFunnel() {
             title={<>Look good?</>}
             sub={
               selected.id === "food" && form.donateFoodInstead
-                ? "One step from confirming. We'll coordinate your food donation directly — nothing to pay."
+                ? "One step from confirming. We'll coordinate your food donation directly, with nothing to pay."
                 : "One step from confirming your sponsorship. You can pay by card next, or arrange an invoice or check."
             }
           />
@@ -269,10 +269,10 @@ export default function SponsorFunnel() {
             </div>
 
             <div className="p-5 space-y-1 divide-y" style={{ borderColor: C.hairline }}>
-              <SummaryRow label="Organization" value={form.companyName || "—"} onEdit={editApply} />
-              <SummaryRow label="Contact" value={[form.contactName, form.contactRole].filter(Boolean).join(" · ") || "—"} onEdit={editApply} />
-              <SummaryRow label="Email" value={form.contactEmail || "—"} onEdit={editApply} />
-              <SummaryRow label="Phone" value={form.contactPhone || "—"} onEdit={editApply} />
+              <SummaryRow label="Organization" value={form.companyName || "Not provided"} onEdit={editApply} />
+              <SummaryRow label="Contact" value={[form.contactName, form.contactRole].filter(Boolean).join(" · ") || "Not provided"} onEdit={editApply} />
+              <SummaryRow label="Email" value={form.contactEmail || "Not provided"} onEdit={editApply} />
+              <SummaryRow label="Phone" value={form.contactPhone || "Not provided"} onEdit={editApply} />
               {form.website && <SummaryRow label="Website" value={form.website} onEdit={editApply} />}
               {form.message && <SummaryRow label="Note" value={form.message} onEdit={editApply} />}
               {form.donateFoodInstead && selected.id === "food" && (

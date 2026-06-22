@@ -4,7 +4,7 @@
 // each speaker confirms; drop their headshot in /public/speakers/.
 //
 // `title` is kept to a single short line (the card shows it on one row);
-// fuller role detail lives in the bio. `bio` is the full bio — the card
+// fuller role detail lives in the bio. `bio` is the full bio; the card
 // shows a few lines and a "Read more" toggle reveals the rest.
 
 export type Speaker = {
@@ -33,7 +33,7 @@ export const SPEAKERS: Speaker[] = [
     credentials: "CoreCHI-P™",
     title: "Medical Interpreter Supervisor",
     org: "Harborview Medical Center, Seattle",
-    bio: "Yuliya Speroff is a Russian–English CoreCHI-P™ and Washington DSHS-certified interpreter and Medical Interpreter Supervisor at Harborview Medical Center in Seattle, Washington. Yuliya has extensive experience as a trainer, teaching both continuing education courses and introductory medical interpreter training programs for major professional organizations across the United States. Her passion for advancing the medical interpreting profession is reflected in multiple roles: she is the author of medicalinterpreterblog.com and serves as vice president of the National Council on Interpreting in Healthcare (NCIHC). Her contributions have been recognized nationally — she was named Interpreter of the Year by the California Healthcare Interpreting Association (CHIA) in 2021 and Trainer of the Year by Americans Against Language Barriers (AALB) in 2024.",
+    bio: "Yuliya Speroff is a Russian–English CoreCHI-P™ and Washington DSHS-certified interpreter and Medical Interpreter Supervisor at Harborview Medical Center in Seattle, Washington. Yuliya has extensive experience as a trainer, teaching both continuing education courses and introductory medical interpreter training programs for major professional organizations across the United States. Her passion for advancing the medical interpreting profession is reflected in multiple roles: she is the author of medicalinterpreterblog.com and serves as vice president of the National Council on Interpreting in Healthcare (NCIHC). Her contributions have been recognized nationally. She was named Interpreter of the Year by the California Healthcare Interpreting Association (CHIA) in 2021 and Trainer of the Year by Americans Against Language Barriers (AALB) in 2024.",
     photo: "/speakers/yuliya-speroff.webp",
   },
   {

@@ -43,7 +43,7 @@ function LoginForm() {
 
   return (
     <div className="min-h-screen flex bg-slate-50">
-      {/* Left — hero */}
+      {/* Left: hero */}
       <div className="hidden lg:flex flex-col justify-between w-[480px] shrink-0 p-12 bg-slate-900 text-white relative overflow-hidden">
         {/* Decorative gradient orbs */}
         <div className="absolute -top-24 -left-24 w-64 h-64 rounded-full bg-blue-500/10 blur-3xl" />
@@ -78,7 +78,7 @@ function LoginForm() {
         </div>
       </div>
 
-      {/* Right — form */}
+      {/* Right: form */}
       <div className="flex-1 flex items-center justify-center px-6">
         <div className="w-full max-w-sm">
           <div className="lg:hidden mb-8">

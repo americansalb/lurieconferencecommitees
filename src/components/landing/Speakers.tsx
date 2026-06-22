@@ -33,7 +33,7 @@ export default function Speakers() {
             className="mt-7 text-base sm:text-lg leading-relaxed max-w-2xl mx-auto"
             style={{ color: TOKENS.muted }}
           >
-            A growing lineup of the clinicians, interpreters, and advocates leading the work on language access — with more to be announced.
+            A growing lineup of the clinicians, interpreters, and advocates leading the work on language access, with more to be announced.
           </p>
         </div>
 

@@ -103,7 +103,7 @@ function SpeakerModal({ speaker: s, accent, onClose }: { speaker: Speaker; accen
       onClick={onClose}
       role="dialog"
       aria-modal="true"
-      aria-label={`${s.name} — full biography`}
+      aria-label={`${s.name}, full biography`}
     >
       <div
         className="relative bg-white w-full sm:max-w-2xl rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[92vh] overflow-hidden flex flex-col sm:flex-row speaker-modal-in"
