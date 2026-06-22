@@ -50,7 +50,7 @@ function roleArticle(role: string) {
 }
 
 // A gold-underlined section heading, matching the "Conference at a Glance" /
-// "Why Sponsor" style of the outreach templates (no emoji — colored labels
+// "Why Sponsor" style of the outreach templates (no emoji; colored labels
 // carry the structure instead).
 function sectionHeading(text: string) {
   return `<div style="font-size:12px;letter-spacing:0.14em;font-weight:700;color:${GOLD};text-transform:uppercase;margin:28px 0 12px 0;padding-bottom:8px;border-bottom:1px solid #eef1f4;">${text}</div>`;
@@ -332,7 +332,7 @@ export function attendeeInviteEmail({
   `);
 }
 
-// A warmer, fully-branded invite aimed at the AALB alumni community — uses the
+// A warmer, fully-branded invite aimed at the AALB alumni community; uses the
 // hero banner, conference-at-a-glance card, and host sign-off, plus the same
 // personal discount card as the standard attendee invite. Same args as the
 // standard invite so the two are drop-in interchangeable.
@@ -355,7 +355,7 @@ export function attendeeAlumniInviteEmail({
     <div style="font-size:11px;letter-spacing:0.16em;font-weight:700;color:${GOLD};text-transform:uppercase;margin:0 0 8px 0;">An invitation for the AALB community</div>
     <h1 style="font-size:23px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">Welcome back, ${escapeHtml(first)}.</h1>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
-      As part of the AALB community, you&rsquo;ve helped move language access forward &mdash; and we&rsquo;d be honored to have you with us at the <strong>2026 Lurie Children&rsquo;s &amp; AALB Conference</strong>, August 15 and 16 in Chicago, with full virtual attendance also available.
+      As part of the AALB community, you&rsquo;ve helped move language access forward, and we&rsquo;d be honored to have you with us at the <strong>2026 Lurie Children&rsquo;s &amp; AALB Conference</strong>, August 15 and 16 in Chicago, with full virtual attendance also available.
     </p>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 4px 0;">
       This year&rsquo;s theme, <em>True Language Access: Yesterday, Today, and Tomorrow</em>, brings together interpreters, clinicians, language service providers, advocates, and policymakers for two days of sessions on where the field stands and where it&rsquo;s headed.
@@ -748,7 +748,7 @@ export function bookingConfirmedInviteeEmail({
   return shell(`
     <h1 style="font-size:22px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">You&rsquo;re booked, ${escapeHtml(first)}.</h1>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
-      Your ${durationMin}-minute conversation${title ? ` &mdash; ${escapeHtml(title)}` : ""} with <strong>${escapeHtml(hostName)}</strong> is confirmed.
+      Your ${durationMin}-minute conversation${title ? ` (${escapeHtml(title)})` : ""} with <strong>${escapeHtml(hostName)}</strong> is confirmed.
     </p>
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:6px 0 4px 0;"><tr><td style="background:#f8fafc;border-left:3px solid ${TEAL};padding:14px 18px;border-radius:6px;">
       <div style="font-size:11px;letter-spacing:0.08em;font-weight:700;color:${TEAL};text-transform:uppercase;">When</div>
@@ -783,13 +783,13 @@ export function bookingConfirmedHostEmail({
   return shell(`
     <h1 style="font-size:22px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">New meeting booked, ${escapeHtml(first)}.</h1>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
-      <strong>${escapeHtml(inviteeName)}</strong> (<a href="mailto:${escapeHtml(inviteeEmail)}" style="color:${BLUE};">${escapeHtml(inviteeEmail)}</a>) booked a ${durationMin}-minute conversation${title ? ` &mdash; ${escapeHtml(title)}` : ""} with you.
+      <strong>${escapeHtml(inviteeName)}</strong> (<a href="mailto:${escapeHtml(inviteeEmail)}" style="color:${BLUE};">${escapeHtml(inviteeEmail)}</a>) booked a ${durationMin}-minute conversation${title ? ` (${escapeHtml(title)})` : ""} with you.
     </p>
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:6px 0 4px 0;"><tr><td style="background:#f8fafc;border-left:3px solid ${TEAL};padding:14px 18px;border-radius:6px;">
       <div style="font-size:11px;letter-spacing:0.08em;font-weight:700;color:${TEAL};text-transform:uppercase;">When (your time)</div>
       <div style="font-size:16px;font-weight:700;color:${TEXT};margin-top:4px;">${formatMeetingWhen(startAt, tz)}</div>
     </td></tr></table>
-    ${startUrl ? button(startUrl, "Start the Zoom meeting") : joinUrl ? button(joinUrl, "Join the Zoom meeting") : `<p style="font-size:14px;color:${MUTED};margin:16px 0 0 0;">Zoom link wasn&rsquo;t created automatically &mdash; set one up and share it with the invitee.</p>`}
+    ${startUrl ? button(startUrl, "Start the Zoom meeting") : joinUrl ? button(joinUrl, "Join the Zoom meeting") : `<p style="font-size:14px;color:${MUTED};margin:16px 0 0 0;">Zoom link wasn&rsquo;t created automatically. Set one up and share it with the invitee.</p>`}
     <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;">
       It&rsquo;s on your meetings list in the planning portal too.
     </p>
