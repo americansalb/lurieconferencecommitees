@@ -3,8 +3,9 @@ import { activePriceCents } from "@/components/landing/pricing-data";
 import { computePrice } from "@/lib/attendees";
 import { prisma } from "@/lib/db";
 import {
-  validateAndApply, describeDiscount, DISCOUNT_ERROR_MESSAGES,
+  validateAndApply, normalizeCode, describeDiscount, DISCOUNT_ERROR_MESSAGES,
 } from "@/lib/discounts";
+import { firstNameToCode } from "@/lib/codes";
 
 // Public: preview a discount code for the registration funnel. Returns the
 // recomputed price so the UI can show the new total before checkout. This is
@@ -29,6 +30,14 @@ export async function POST(req: Request) {
     const attendee = await prisma.attendee.findUnique({ where: { inviteToken: token } });
     if (!attendee) {
       return NextResponse.json({ ok: false, error: "Invalid registration link." }, { status: 404 });
+    }
+    // Their own first-name code is already applied through their link; tell
+    // them rather than stacking it (matches the checkout cap).
+    if (attendee.discountPercent > 0 && normalizeCode(code) === firstNameToCode(attendee.firstName)) {
+      return NextResponse.json(
+        { ok: false, error: "Your invitation already includes this discount, no code needed." },
+        { status: 200 }
+      );
     }
     const { finalCents } = computePrice(attendanceMode, attendee.discountPercent);
     baseCents = finalCents ?? activePriceCents(attendanceMode);

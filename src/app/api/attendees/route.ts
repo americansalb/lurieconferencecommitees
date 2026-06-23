@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { newAttendeeToken, parseAttendeeCsv, attendeeFromHeader, attendeeReplyTo, buildAttendeeInvite } from "@/lib/attendees";
+import { ensureFirstNameCode } from "@/lib/discounts";
 import { getPolicy, planSendTimes } from "@/lib/email-queue";
 import { sendMail } from "@/lib/mail";
 
@@ -84,6 +85,8 @@ export async function POST(req: Request) {
     await prisma.attendeeEvent.create({
       data: { attendeeId: attendee.id, type: "added_to_queue", actorEmail: adminEmail },
     });
+    // Make their personal first-name code redeemable on the public site too.
+    await ensureFirstNameCode(firstName, pct, adminEmail).catch((e) => console.error("[attendees] ensure code failed", e));
 
     const { subject, html } = buildAttendeeInvite({
       firstName, inviteToken: token, discountPercent: pct,
@@ -156,6 +159,7 @@ export async function POST(req: Request) {
     await prisma.attendeeEvent.create({
       data: { attendeeId: a.id, type: "added_to_queue", actorEmail: adminEmail },
     });
+    await ensureFirstNameCode(a.firstName, pct, adminEmail).catch((e) => console.error("[attendees] ensure code failed", e));
     created.push({ id: a.id, email: a.email, token });
   }
 

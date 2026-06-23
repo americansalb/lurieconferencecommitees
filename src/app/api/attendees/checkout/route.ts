@@ -3,7 +3,8 @@ import { prisma } from "@/lib/db";
 import { computePrice } from "@/lib/attendees";
 import { createCheckoutSession, isStripeConfigured } from "@/lib/stripe";
 import { appUrl } from "@/lib/presenters";
-import { validateAndApply, DISCOUNT_ERROR_MESSAGES } from "@/lib/discounts";
+import { validateAndApply, normalizeCode, DISCOUNT_ERROR_MESSAGES } from "@/lib/discounts";
+import { firstNameToCode } from "@/lib/codes";
 
 export async function POST(req: Request) {
   const { token, discountCode } = await req.json();
@@ -36,7 +37,14 @@ export async function POST(req: Request) {
   let discountCodeId: string | null = null;
   let discountCodeText: string | null = null;
   let codeDiscountCents = 0;
-  if (discountCode && String(discountCode).trim()) {
+  // A recipient's own first-name code is the same discount already applied
+  // through their personal link, so it never stacks on itself (cap at the
+  // personal rate). Other codes still apply on top.
+  const ownCodeRedundant =
+    attendee.discountPercent > 0 &&
+    !!discountCode &&
+    normalizeCode(String(discountCode)) === firstNameToCode(attendee.firstName);
+  if (discountCode && String(discountCode).trim() && !ownCodeRedundant) {
     const outcome = await validateAndApply(String(discountCode), afterPersonal, attendee.attendanceMode);
     if (!outcome.ok) {
       return NextResponse.json({ error: DISCOUNT_ERROR_MESSAGES[outcome.error] }, { status: 400 });

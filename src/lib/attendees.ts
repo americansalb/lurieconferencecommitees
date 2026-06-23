@@ -1,6 +1,7 @@
 import { randomBytes } from "crypto";
 import { appUrl } from "./presenters";
 import { attendeeInviteEmail, attendeeAlumniInviteEmail } from "./mail-templates";
+import { firstNameToCode } from "./codes";
 
 export type AttendeeTemplate = "standard" | "alumni";
 export const ATTENDEE_TEMPLATES: { id: AttendeeTemplate; label: string; description: string }[] = [
@@ -30,6 +31,8 @@ export function buildAttendeeInvite(opts: {
     inPersonDiscountedCents: inPerson.finalCents || 0,
     virtualOriginalCents: virtual.baseCents || 0,
     virtualDiscountedCents: virtual.finalCents || 0,
+    personalCode: firstNameToCode(opts.firstName),
+    mainSiteUrl: `${appUrl()}/register`,
   });
   const subject = `${opts.firstName}, your invite to the 2026 Lurie Children's & AALB Conference`;
   return { subject, html, template };

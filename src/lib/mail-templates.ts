@@ -279,7 +279,26 @@ type AttendeeInviteArgs = {
   inPersonDiscountedCents: number;
   virtualOriginalCents: number;
   virtualDiscountedCents: number;
+  personalCode: string;
+  mainSiteUrl: string;
 };
+
+// A note explaining the recipient's personal code: it's already baked into
+// their link, and they can also use it on the public site. Only shown when
+// there's actually a discount to give.
+function attendeeCodeNote(personalCode: string, discountPercent: number, mainSiteUrl: string) {
+  if (!personalCode || discountPercent <= 0) return "";
+  return `
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin:18px 0 0 0;border-collapse:separate;">
+      <tr><td style="background:#fbfcfd;border:1px solid #eef1f4;border-radius:10px;padding:14px 16px;">
+        <div style="font-size:11px;letter-spacing:0.12em;font-weight:700;color:${GOLD};text-transform:uppercase;">Your personal code</div>
+        <div style="font-size:20px;font-weight:800;color:${TEXT};letter-spacing:0.04em;margin:4px 0 6px 0;">${escapeHtml(personalCode)}</div>
+        <div style="font-size:13.5px;line-height:1.6;color:${MUTED};">
+          It&rsquo;s already applied through your button above, so there&rsquo;s nothing to enter. Prefer to look around first? You can register on <a href="${mainSiteUrl}" style="color:${BLUE};font-weight:600;">our main site</a> anytime using code <strong style="color:${TEXT};">${escapeHtml(personalCode)}</strong> for the same ${discountPercent}% off. This code is personal to you, so please don&rsquo;t share it.
+        </div>
+      </td></tr>
+    </table>`;
+}
 
 // The personal-rate card, showing the discounted in-person AND virtual prices
 // side by side. Shared by the standard and alumni attendee invites so they
@@ -325,6 +344,8 @@ export function attendeeInviteEmail({
   inPersonDiscountedCents,
   virtualOriginalCents,
   virtualDiscountedCents,
+  personalCode,
+  mainSiteUrl,
 }: AttendeeInviteArgs) {
   const first = firstName || "there";
   const extra = inviteMessage
@@ -347,7 +368,8 @@ export function attendeeInviteEmail({
     </p>
     ${attendeeRateCard({ discountPercent, inPersonOriginalCents, inPersonDiscountedCents, virtualOriginalCents, virtualDiscountedCents })}
     ${button(url, "Reserve my spot")}
-    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:8px 0 0 0;">
+    ${attendeeCodeNote(personalCode, discountPercent, mainSiteUrl)}
+    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;">
       Or paste this into your browser:<br/>
       <a href="${url}" style="color:${BLUE};word-break:break-all;">${url}</a>
     </p>
@@ -370,6 +392,8 @@ export function attendeeAlumniInviteEmail({
   inPersonDiscountedCents,
   virtualOriginalCents,
   virtualDiscountedCents,
+  personalCode,
+  mainSiteUrl,
 }: AttendeeInviteArgs) {
   const first = firstName || "there";
   const extra = inviteMessage
@@ -419,7 +443,8 @@ export function attendeeAlumniInviteEmail({
     </p>
     ${attendeeRateCard({ discountPercent, inPersonOriginalCents, inPersonDiscountedCents, virtualOriginalCents, virtualDiscountedCents })}
     ${button(url, "Reserve my alumni seat")}
-    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:8px 0 0 0;">
+    ${attendeeCodeNote(personalCode, discountPercent, mainSiteUrl)}
+    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;">
       Or paste this into your browser:<br/>
       <a href="${url}" style="color:${BLUE};word-break:break-all;">${url}</a>
     </p>

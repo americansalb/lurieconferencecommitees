@@ -1,5 +1,35 @@
 import { prisma } from "@/lib/db";
 import type { DiscountCode } from "@prisma/client";
+import { firstNameToCode } from "@/lib/codes";
+
+// Ensure a recipient's personal first-name discount code exists (idempotent).
+// Called whenever we email an attendee invite so the same percentage is
+// redeemable on the public site, not just baked into their personal link.
+// Two people with the same first name share one code: if it already exists we
+// leave it untouched.
+export async function ensureFirstNameCode(
+  firstName: string,
+  percent: number,
+  createdByEmail?: string | null,
+): Promise<string | null> {
+  const code = firstNameToCode(firstName);
+  const pct = Math.round(percent);
+  if (!code || pct <= 0) return null;
+  await prisma.discountCode.upsert({
+    where: { code },
+    create: {
+      code,
+      description: "Personal invite code (auto-created)",
+      kind: "percent",
+      inPersonValue: Math.min(100, pct),
+      virtualValue: Math.min(100, pct),
+      active: true,
+      createdByEmail: createdByEmail || null,
+    },
+    update: {}, // duplicate first names keep the existing code unchanged
+  });
+  return code;
+}
 
 // Server-side discount logic. The price is ALWAYS computed here from the
 // stored code; the client only ever sends the code string, never an amount.
