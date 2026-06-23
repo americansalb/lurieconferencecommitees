@@ -39,6 +39,15 @@ export async function GET() {
     prisma.emailQueue.count({ where: { status: "sent", sentAt: { gte: new Date(Date.now() - 3600 * 1000) } } }),
   ]);
 
+  // The individual queued sends, so the dashboard can show who is waiting and
+  // let an admin push any single one out now.
+  const pending = await prisma.emailQueue.findMany({
+    where: { status: "pending" },
+    orderBy: { scheduledFor: "asc" },
+    take: 500,
+    select: { id: true, to: true, subject: true, scheduledFor: true, recipientType: true, recipientId: true, attempts: true },
+  });
+
   return NextResponse.json({
     counts: counts.reduce<Record<string, number>>((acc, c) => ((acc[c.status] = c._count._all), acc), {}),
     nextScheduledFor: nextDue?.scheduledFor || null,
@@ -46,6 +55,7 @@ export async function GET() {
     sentLastHour: last1h,
     policy,
     paused,
+    pending,
   });
 }
 
@@ -101,9 +111,18 @@ export async function POST(req: Request) {
   }
 
   const force = body?.force === true;
-  const limit = Math.min(200, Math.max(1, parseInt(body?.limit, 10) || 100));
+  // Specific entries to send right now (the "send this one" action), regardless
+  // of their scheduled time.
+  const ids = Array.isArray(body?.ids)
+    ? (body.ids as unknown[]).filter((x): x is string => typeof x === "string")
+    : null;
+  const limit = ids && ids.length
+    ? Math.min(500, ids.length)
+    : Math.min(200, Math.max(1, parseInt(body?.limit, 10) || 100));
 
-  const where = force
+  const where = ids && ids.length
+    ? { status: "pending", id: { in: ids } }
+    : force
     ? { status: "pending" }
     : { status: "pending", scheduledFor: { lte: new Date() } };
 

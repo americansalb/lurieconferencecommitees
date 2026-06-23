@@ -6,6 +6,7 @@ import { useEffect, useState, useCallback } from "react";
 import {
   Users, Send, Pause, Play, Trash2, Loader2, Mail, Check,
   Filter, Search, RefreshCw, Zap, FileText, UserPlus, Copy, Rocket, Eye, SlidersHorizontal,
+  ChevronDown, ChevronRight,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
@@ -35,6 +36,16 @@ type Attendee = {
   createdAt: string;
 };
 
+type QueueEntry = {
+  id: string;
+  to: string;
+  subject: string;
+  scheduledFor: string | null;
+  recipientType: string;
+  recipientId: string | null;
+  attempts: number;
+};
+
 type QueueStatus = {
   counts: Record<string, number>;
   nextScheduledFor: string | null;
@@ -49,6 +60,7 @@ type QueueStatus = {
     sendTimezone: string;
   };
   paused: boolean;
+  pending: QueueEntry[];
 };
 
 type InviteSubTab = "quick" | "bulk";
@@ -70,9 +82,13 @@ export default function AttendeesPage() {
   // Shared composer state
   const [inviteMessage, setInviteMessage] = useState("");
   const [discountPercent, setDiscountPercent] = useState(25);
-  const [template, setTemplate] = useState<"standard" | "alumni">("standard");
+  // No default: the admin must explicitly pick Standard or AALB alumni so the
+  // wrong template never goes out by accident.
+  const [template, setTemplate] = useState<"standard" | "alumni" | null>(null);
   const [preview, setPreview] = useState<PreviewState | null>(null);
   const [showQueue, setShowQueue] = useState(false);
+  const [showQueueList, setShowQueueList] = useState(false);
+  const [sendingEntryId, setSendingEntryId] = useState<string | null>(null);
 
   // Quick invite form
   const [single, setSingle] = useState({ firstName: "", lastName: "", email: "", affiliation: "" });
@@ -111,6 +127,10 @@ export default function AttendeesPage() {
   }, [status, load]);
 
   async function sendQuick() {
+    if (!template) {
+      setQuickResult({ ok: false, message: "Choose an email template first: Standard or AALB alumni." });
+      return;
+    }
     if (!single.firstName.trim() || !single.lastName.trim() || !single.email.trim()) {
       setQuickResult({ ok: false, message: "Fill in first name, last name, and email." });
       return;
@@ -141,6 +161,10 @@ export default function AttendeesPage() {
 
   async function sendBulk() {
     if (!csv.trim()) return;
+    if (!template) {
+      setBulkResult({ created: 0, skipped: [], parseErrors: ["Choose an email template first: Standard or AALB alumni."] });
+      return;
+    }
     setBulkSending(true);
     setBulkResult(null);
     const res = await fetch("/api/attendees", {
@@ -157,9 +181,25 @@ export default function AttendeesPage() {
     }
   }
 
-  const templateLabel = (t: string) => (t === "alumni" ? "AALB alumni template" : "Standard template");
+  const templateLabel = (t: string | null) =>
+    t === "alumni" ? "AALB alumni template" : t === "standard" ? "Standard template" : "No template selected";
+
+  async function sendQueueEntry(id: string) {
+    setSendingEntryId(id);
+    try {
+      await fetch("/api/admin/email-queue", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: [id] }),
+      });
+      await load();
+    } finally {
+      setSendingEntryId(null);
+    }
+  }
 
   async function openPreview() {
+    if (!template) return;
     setPreview({ title: "Email preview", meta: templateLabel(template), html: null });
     try {
       const res = await fetch("/api/attendees/preview", {
@@ -354,6 +394,58 @@ export default function AttendeesPage() {
                   {" "}{queueStatus.policy.sendStartHour}:00–{queueStatus.policy.sendEndHour}:00 {queueStatus.policy.sendTimezone}.
                   {" "}Quick invites send immediately and skip these limits.
                 </div>
+
+                {(queueStatus.pending?.length || 0) > 0 && (
+                  <div className="mt-3 pt-3 border-t border-slate-100">
+                    <button
+                      onClick={() => setShowQueueList((v) => !v)}
+                      className="text-xs font-semibold text-slate-600 hover:text-slate-900 inline-flex items-center gap-1.5"
+                    >
+                      {showQueueList ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                      {showQueueList ? "Hide" : "Show"} the {queueStatus.pending.length} queued invite{queueStatus.pending.length === 1 ? "" : "s"}
+                    </button>
+                    {showQueueList && (
+                      <ul className="mt-2 divide-y divide-slate-100 border border-slate-100 rounded-lg overflow-hidden max-h-96 overflow-y-auto">
+                        {queueStatus.pending.map((entry) => {
+                          const att = attendees.find((a) => a.id === entry.recipientId);
+                          const name = att ? `${att.firstName} ${att.lastName}` : entry.to;
+                          return (
+                            <li key={entry.id} className="flex items-center gap-2 px-3 py-2 bg-white hover:bg-slate-50">
+                              <div className="flex-1 min-w-0">
+                                <div className="text-[13px] font-semibold text-slate-800 truncate">
+                                  {name}
+                                  {entry.recipientType !== "attendee" && (
+                                    <span className="ml-1.5 text-[10px] font-bold uppercase tracking-wide text-slate-400">{entry.recipientType}</span>
+                                  )}
+                                </div>
+                                <div className="text-[11px] text-slate-500 truncate">
+                                  {entry.to} · {entry.scheduledFor ? `scheduled ${new Date(entry.scheduledFor).toLocaleString()}` : "unscheduled"}
+                                </div>
+                              </div>
+                              {att && (
+                                <button
+                                  onClick={() => viewEmail(att)}
+                                  className="p-1.5 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-700"
+                                  title="View this email"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                              <button
+                                onClick={() => sendQueueEntry(entry.id)}
+                                disabled={sendingEntryId === entry.id}
+                                className="text-[11px] font-bold px-2.5 py-1 rounded-lg inline-flex items-center gap-1 bg-teal-50 text-teal-700 border border-teal-200 hover:bg-teal-100 disabled:opacity-50 shrink-0"
+                                title="Send this invite immediately"
+                              >
+                                {sendingEntryId === entry.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Rocket className="w-3 h-3" />} Send now
+                              </button>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
@@ -417,27 +509,38 @@ export default function AttendeesPage() {
                   </label>
 
                   <div className="mt-4">
-                    <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Email template</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
+                        Email template <span className="text-rose-500">*</span>
+                      </span>
+                      {!template && (
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">Choose one</span>
+                      )}
+                    </div>
                     <div className="mt-1.5 flex flex-wrap items-center gap-2">
                       {ATTENDEE_TEMPLATES.map((t) => {
                         const on = template === t.id;
                         return (
                           <button
                             key={t.id} type="button" onClick={() => setTemplate(t.id)}
-                            className={"px-3 py-1.5 rounded-lg text-[13px] font-semibold border transition-colors " + (on ? "bg-[#0E5566] text-white border-[#0E5566]" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50")}
+                            className={"px-3 py-1.5 rounded-lg text-[13px] font-semibold border transition-colors " + (on ? "bg-[#0E5566] text-white border-[#0E5566]" : !template ? "bg-white text-slate-700 border-amber-300 ring-1 ring-amber-200 hover:bg-amber-50" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50")}
                           >
                             {t.label}
                           </button>
                         );
                       })}
                       <button
-                        type="button" onClick={openPreview}
-                        className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-semibold text-[#0E5566] bg-[#0E5566]/[0.06] border border-[#0E5566]/15 hover:bg-[#0E5566]/[0.1]"
+                        type="button" onClick={openPreview} disabled={!template}
+                        className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-semibold text-[#0E5566] bg-[#0E5566]/[0.06] border border-[#0E5566]/15 hover:bg-[#0E5566]/[0.1] disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         <Eye className="w-3.5 h-3.5" /> Preview email
                       </button>
                     </div>
-                    <p className="text-[11px] text-slate-400 mt-1.5">{ATTENDEE_TEMPLATES.find((t) => t.id === template)?.description}</p>
+                    <p className="text-[11px] mt-1.5" style={{ color: template ? "#94a3b8" : "#b45309" }}>
+                      {template
+                        ? ATTENDEE_TEMPLATES.find((t) => t.id === template)?.description
+                        : "Pick a template so the right email goes out: Standard for general invitees, AALB alumni for the community."}
+                    </p>
                   </div>
                 </div>
 
@@ -491,8 +594,9 @@ export default function AttendeesPage() {
                     <div className="flex items-center justify-end gap-3">
                       <button
                         onClick={sendQuick}
-                        disabled={quickSending}
-                        className="px-5 py-2.5 rounded-xl font-bold text-white shadow-md disabled:opacity-50 inline-flex items-center gap-1.5"
+                        disabled={quickSending || !template}
+                        title={!template ? "Choose an email template first" : undefined}
+                        className="px-5 py-2.5 rounded-xl font-bold text-white shadow-md disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5"
                         style={{ background: "#0E5566" }}
                       >
                         {quickSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
@@ -540,8 +644,9 @@ export default function AttendeesPage() {
                     <div className="flex items-center justify-end gap-3">
                       <button
                         onClick={sendBulk}
-                        disabled={bulkSending || !csv.trim()}
-                        className="px-5 py-2.5 rounded-xl font-bold text-white shadow-md disabled:opacity-50 inline-flex items-center gap-1.5"
+                        disabled={bulkSending || !csv.trim() || !template}
+                        title={!template ? "Choose an email template first" : undefined}
+                        className="px-5 py-2.5 rounded-xl font-bold text-white shadow-md disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5"
                         style={{ background: "#0E5566" }}
                       >
                         {bulkSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
