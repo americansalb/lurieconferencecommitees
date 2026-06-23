@@ -1,4 +1,5 @@
 import { prisma } from "./db";
+import { sendMail } from "./mail";
 import { attendeeFromHeader, attendeeReplyTo } from "./attendees";
 import { sponsorFromHeader, sponsorReplyTo } from "./sponsors";
 
@@ -128,6 +129,61 @@ export async function planSendTimes(count: number, policy: SendPolicy): Promise<
     results.push(new Date(cursor.getTime()));
   }
   return results;
+}
+
+// Drains due items from the email queue: claims each atomically, sends via
+// Resend with the right envelope, advances the recipient, and retries or gives
+// up on failure. Shared by the cron(s) so queued invites actually go out.
+export async function runEmailQueue(limit = 25): Promise<{ processed: number; sent: number; failed: number; paused?: boolean }> {
+  if (await isPaused()) return { processed: 0, sent: 0, failed: 0, paused: true };
+
+  const now = new Date();
+  const due = await prisma.emailQueue.findMany({
+    where: { status: "pending", scheduledFor: { lte: now } },
+    orderBy: { scheduledFor: "asc" },
+    take: limit,
+  });
+
+  let sent = 0;
+  let failed = 0;
+  for (const item of due) {
+    const claim = await prisma.emailQueue.updateMany({
+      where: { id: item.id, status: "pending" },
+      data: { status: "sending", attempts: { increment: 1 } },
+    });
+    if (claim.count === 0) continue;
+
+    try {
+      const result = await sendMail({
+        to: item.to,
+        subject: item.subject,
+        html: item.html,
+        text: item.textBody || undefined,
+        ...queueEnvelope(item.recipientType),
+      });
+      const resendId = (result as { id?: string })?.id || null;
+      await prisma.emailQueue.update({
+        where: { id: item.id },
+        data: { status: "sent", sentAt: new Date(), resendId },
+      });
+      await afterQueueSend(item);
+      sent++;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      const status = (e as { status?: number }).status;
+      const giveUp = item.attempts >= 4 || (status !== undefined && status >= 400 && status < 500);
+      await prisma.emailQueue.update({
+        where: { id: item.id },
+        data: {
+          status: giveUp ? "failed" : "pending",
+          lastError: msg.slice(0, 500),
+          scheduledFor: giveUp ? item.scheduledFor : new Date(Date.now() + 10 * 60 * 1000),
+        },
+      });
+      failed++;
+    }
+  }
+  return { processed: due.length, sent, failed };
 }
 
 // Per-recipient-type envelope (personalized From / Reply-To). Used by every

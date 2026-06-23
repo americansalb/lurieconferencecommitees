@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { dispatchToUser, PushChannel } from "@/lib/push";
+import { runEmailQueue } from "@/lib/email-queue";
 
 function authorized(req: Request): boolean {
   const secret = process.env.CRON_SECRET;
@@ -66,7 +67,13 @@ async function handle() {
       failed++;
     }
   }
-  return NextResponse.json({ processed: due.length, delivered, failed });
+
+  // This is the only endpoint wired to the every-minute Render cron, so it also
+  // drains the email queue (bulk attendee/sponsor invites). Without this they
+  // would sit "pending" forever and never reach Resend.
+  const emails = await runEmailQueue();
+
+  return NextResponse.json({ processed: due.length, delivered, failed, emails });
 }
 
 function safeParse(s: string): Record<string, string> | undefined {
