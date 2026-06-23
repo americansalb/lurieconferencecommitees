@@ -415,18 +415,40 @@ export function attendeeAlumniInviteEmail({
     ${glanceCard(GLANCE_ROWS)}
 
     ${sectionHeading("A Few of This Year&rsquo;s Voices")}
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:2px 0 6px 0;">
-      ${[
-        ["Yuri Takabatake, MD", "Attending Physician, Lurie Children&rsquo;s Hospital of Chicago"],
-        ["Yuliya Speroff, CoreCHI-P", "AALB Trainer of the Year (2024); Vice President, National Council on Interpreting in Health Care; Medical Interpreter Supervisor, Harborview Medical Center"],
-        ["Wilma Alvarado-Little", "Associate Commissioner, New York State Department of Health"],
-        ["Patricia A. Alonzo, EdD", "Director of Strategic Partnerships, Equiti Health"],
-      ].map(([name, role]) => `
-        <tr><td style="padding:9px 0;border-bottom:1px solid #eef1f4;">
-          <div style="font-size:14.5px;font-weight:700;color:${TEXT};line-height:1.3;">${name}</div>
-          <div style="font-size:13px;color:${MUTED};margin-top:2px;line-height:1.4;">${role}</div>
-        </td></tr>`).join("")}
-    </table>
+    ${[
+      {
+        slug: "yuri-takabatake", name: "Yuri Takabatake, MD",
+        role: "Attending Physician, Lurie Children&rsquo;s Hospital of Chicago",
+        bio: "A hospital-medicine physician and language-equity researcher who has published on interpreter partnership during family-centered rounds, and co-founded Lurie Children&rsquo;s Language Access and Care Committee.",
+      },
+      {
+        slug: "yuliya-speroff", name: "Yuliya Speroff, CoreCHI-P",
+        role: "AALB Trainer of the Year (2024); VP, National Council on Interpreting in Health Care",
+        bio: "A Russian-English certified interpreter and Medical Interpreter Supervisor at Harborview Medical Center who trains interpreters nationally and writes medicalinterpreterblog.com. Named CHIA&rsquo;s Interpreter of the Year in 2021.",
+      },
+      {
+        slug: "wilma-alvarado-little", name: "Wilma Alvarado-Little",
+        role: "Associate Commissioner, New York State Department of Health",
+        bio: "Leads health literacy and language access at the NY State Department of Health. A former NCIHC board co-chair, she helped create the first national certification, standards of practice, and code of ethics for healthcare interpreters across 40+ years in the field.",
+      },
+      {
+        slug: "patricia-alonzo", name: "Patricia A. Alonzo, EdD",
+        role: "Director of Strategic Partnerships, Equiti Health",
+        bio: "A CMI-certified trilingual interpreter (English, Spanish, and ASL) with an EdD focused on outcomes for patients with limited English proficiency, and a national voice on access, cultural competency, and legislation.",
+      },
+    ].map((s) => `
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 14px 0;">
+        <tr>
+          <td width="76" valign="top" style="padding-right:14px;">
+            <img src="${ASSET_BASE}/speakers/${s.slug}.jpg" width="64" height="64" alt="${escapeHtml(s.name)}" style="display:block;width:64px;height:64px;border-radius:10px;object-fit:cover;border:1px solid #eef1f4;" />
+          </td>
+          <td valign="top">
+            <div style="font-size:15px;font-weight:700;color:${TEXT};line-height:1.25;">${s.name}</div>
+            <div style="font-size:12.5px;font-weight:600;color:${TEAL};margin-top:2px;line-height:1.35;">${s.role}</div>
+            <div style="font-size:12.5px;color:${MUTED};margin-top:5px;line-height:1.5;">${s.bio}</div>
+          </td>
+        </tr>
+      </table>`).join("")}
     <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:6px 0 0 0;">With more speakers to be announced.</p>
 
     ${sectionHeading("Why You&rsquo;ll Want to Be There")}
