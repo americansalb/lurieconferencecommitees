@@ -5,13 +5,14 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import {
   Award, Trash2, RefreshCw, Search, Filter, ExternalLink, Mail, Building2, Copy, Plus,
-  Clock, Pause, Play, Zap,
+  Clock, Pause, Play, Zap, SlidersHorizontal,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
 import MobileNav from "@/components/layout/MobileNav";
 import { SPONSOR_STATUS_LABELS, TIERS } from "@/lib/sponsors";
 import InviteSponsorComposer from "./InviteSponsorComposer";
+import QueueSettingsModal from "@/components/email/QueueSettingsModal";
 
 type Sponsor = {
   id: string;
@@ -40,6 +41,7 @@ export default function SponsorsAdminPage() {
   const [tierFilter, setTierFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [showInvite, setShowInvite] = useState(false);
+  const [showQueue, setShowQueue] = useState(false);
   const [queue, setQueue] = useState<{ nextScheduledFor: string | null; paused: boolean; sentLast24h: number } | null>(null);
   const [flushing, setFlushing] = useState(false);
 
@@ -169,6 +171,8 @@ export default function SponsorsAdminPage() {
               />
             )}
 
+            {showQueue && <QueueSettingsModal onClose={() => setShowQueue(false)} onChanged={load} />}
+
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-5">
               <Stat label="Applications" value={sponsors.length.toString()} />
               <Stat label="Confirmed (paid)" value={sponsors.filter((s) => s.paid).length.toString()} accent="#059669" />
@@ -192,6 +196,9 @@ export default function SponsorsAdminPage() {
                 <span className="text-[11px] text-slate-400 hidden sm:inline">Paced on the shared schedule with attendee invites.</span>
                 {isAdmin && (
                   <div className="ml-auto flex items-center gap-2">
+                    <button onClick={() => setShowQueue(true)} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50" title="Queue settings: rate, window, and partial sends">
+                      <SlidersHorizontal className="w-3.5 h-3.5" /> Adjust
+                    </button>
                     <button onClick={togglePause} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50">
                       {queue?.paused ? <><Play className="w-3.5 h-3.5" /> Resume</> : <><Pause className="w-3.5 h-3.5" /> Pause</>}
                     </button>

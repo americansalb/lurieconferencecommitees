@@ -31,6 +31,35 @@ export async function getPolicy(): Promise<SendPolicy> {
   }
 }
 
+// Validate + persist policy changes from the admin queue controls. Each field is
+// clamped to a sane range and merged onto the current policy.
+export async function savePolicy(input: Partial<SendPolicy>): Promise<SendPolicy> {
+  const current = await getPolicy();
+  const merged: SendPolicy = { ...current };
+  const clampInt = (v: unknown, lo: number, hi: number, fallback: number) => {
+    const n = Math.round(Number(v));
+    return Number.isFinite(n) ? Math.max(lo, Math.min(hi, n)) : fallback;
+  };
+  if (input.maxPerHour !== undefined) merged.maxPerHour = clampInt(input.maxPerHour, 1, 100000, current.maxPerHour);
+  if (input.maxPerDay !== undefined) merged.maxPerDay = clampInt(input.maxPerDay, 1, 1000000, current.maxPerDay);
+  if (input.minGapSeconds !== undefined) merged.minGapSeconds = clampInt(input.minGapSeconds, 0, 86400, current.minGapSeconds);
+  if (input.maxGapSeconds !== undefined) merged.maxGapSeconds = clampInt(input.maxGapSeconds, merged.minGapSeconds, 86400, current.maxGapSeconds);
+  if (input.sendStartHour !== undefined) merged.sendStartHour = clampInt(input.sendStartHour, 0, 23, current.sendStartHour);
+  if (input.sendEndHour !== undefined) merged.sendEndHour = clampInt(input.sendEndHour, merged.sendStartHour + 1, 24, current.sendEndHour);
+  if (Array.isArray(input.sendDays)) {
+    const days = Array.from(new Set(input.sendDays.map(Number).filter((d) => Number.isInteger(d) && d >= 0 && d <= 6)));
+    if (days.length) merged.sendDays = days.sort();
+  }
+  if (typeof input.sendTimezone === "string" && input.sendTimezone.trim()) merged.sendTimezone = input.sendTimezone.trim();
+
+  await prisma.systemSetting.upsert({
+    where: { key: "email.policy" },
+    create: { key: "email.policy", value: JSON.stringify(merged) },
+    update: { value: JSON.stringify(merged) },
+  });
+  return merged;
+}
+
 export async function isPaused(): Promise<boolean> {
   const row = await prisma.systemSetting.findUnique({
     where: { key: "email.paused" },
@@ -134,14 +163,25 @@ export async function planSendTimes(count: number, policy: SendPolicy): Promise<
 // Drains due items from the email queue: claims each atomically, sends via
 // Resend with the right envelope, advances the recipient, and retries or gives
 // up on failure. Shared by the cron(s) so queued invites actually go out.
-export async function runEmailQueue(limit = 25): Promise<{ processed: number; sent: number; failed: number; paused?: boolean }> {
+export async function runEmailQueue(limit = 25): Promise<{ processed: number; sent: number; failed: number; paused?: boolean; throttled?: boolean }> {
   if (await isPaused()) return { processed: 0, sent: 0, failed: 0, paused: true };
 
   const now = new Date();
+  // Live rate cap: keep cron releases within maxPerHour / maxPerDay so the queue
+  // drains at the configured pace instead of flooding. (Admin "Send now" runs on
+  // its own path and intentionally bypasses this.)
+  const policy = await getPolicy();
+  const [sentHour, sentDay] = await Promise.all([
+    prisma.emailQueue.count({ where: { status: "sent", sentAt: { gte: new Date(now.getTime() - 3600_000) } } }),
+    prisma.emailQueue.count({ where: { status: "sent", sentAt: { gte: new Date(now.getTime() - 24 * 3600_000) } } }),
+  ]);
+  const budget = Math.min(limit, Math.max(0, policy.maxPerHour - sentHour), Math.max(0, policy.maxPerDay - sentDay));
+  if (budget <= 0) return { processed: 0, sent: 0, failed: 0, throttled: true };
+
   const due = await prisma.emailQueue.findMany({
     where: { status: "pending", scheduledFor: { lte: now } },
     orderBy: { scheduledFor: "asc" },
-    take: limit,
+    take: budget,
   });
 
   let sent = 0;

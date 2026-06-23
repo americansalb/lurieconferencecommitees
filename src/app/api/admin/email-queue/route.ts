@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { isPaused, setPaused, getPolicy, queueEnvelope, afterQueueSend } from "@/lib/email-queue";
+import { isPaused, setPaused, getPolicy, savePolicy, queueEnvelope, afterQueueSend } from "@/lib/email-queue";
 import { sendMail } from "@/lib/mail";
 
 function isAdmin(role?: string) {
@@ -29,14 +29,16 @@ export async function GET() {
     isPaused(),
   ]);
 
-  const last24h = await prisma.emailQueue.count({
-    where: { status: "sent", sentAt: { gte: new Date(Date.now() - 24 * 3600 * 1000) } },
-  });
+  const [last24h, last1h] = await Promise.all([
+    prisma.emailQueue.count({ where: { status: "sent", sentAt: { gte: new Date(Date.now() - 24 * 3600 * 1000) } } }),
+    prisma.emailQueue.count({ where: { status: "sent", sentAt: { gte: new Date(Date.now() - 3600 * 1000) } } }),
+  ]);
 
   return NextResponse.json({
     counts: counts.reduce<Record<string, number>>((acc, c) => ((acc[c.status] = c._count._all), acc), {}),
     nextScheduledFor: nextDue?.scheduledFor || null,
     sentLast24h: last24h,
+    sentLastHour: last1h,
     policy,
     paused,
   });
@@ -47,11 +49,12 @@ export async function PATCH(req: Request) {
   if (!isAdmin((session?.user as { role?: string })?.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
-  const { paused } = await req.json();
-  if (typeof paused === "boolean") {
-    await setPaused(paused);
+  const body = await req.json().catch(() => ({}));
+  if (typeof body?.paused === "boolean") {
+    await setPaused(body.paused);
   }
-  return NextResponse.json({ ok: true });
+  const policy = body?.policy && typeof body.policy === "object" ? await savePolicy(body.policy) : await getPolicy();
+  return NextResponse.json({ ok: true, policy, paused: await isPaused() });
 }
 
 // Admin-triggered queue flush. With { force: true } it ignores scheduledFor

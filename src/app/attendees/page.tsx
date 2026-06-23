@@ -5,13 +5,14 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import {
   Users, Send, Pause, Play, Trash2, Loader2, Mail, Check,
-  Filter, Search, RefreshCw, Zap, FileText, UserPlus, Copy, Rocket, Eye,
+  Filter, Search, RefreshCw, Zap, FileText, UserPlus, Copy, Rocket, Eye, SlidersHorizontal,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
 import MobileNav from "@/components/layout/MobileNav";
 import { ATTENDEE_STATUS_LABELS, ATTENDEE_TEMPLATES } from "@/lib/attendees";
 import EmailPreviewModal from "@/components/attendees/EmailPreviewModal";
+import QueueSettingsModal from "@/components/email/QueueSettingsModal";
 
 type PreviewState = { title: string; meta?: string; html: string | null };
 
@@ -71,6 +72,7 @@ export default function AttendeesPage() {
   const [discountPercent, setDiscountPercent] = useState(25);
   const [template, setTemplate] = useState<"standard" | "alumni">("standard");
   const [preview, setPreview] = useState<PreviewState | null>(null);
+  const [showQueue, setShowQueue] = useState(false);
 
   // Quick invite form
   const [single, setSingle] = useState({ firstName: "", lastName: "", email: "", affiliation: "" });
@@ -313,6 +315,13 @@ export default function AttendeesPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={() => setShowQueue(true)}
+                      className="text-xs font-bold px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5 bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100"
+                      title="Queue settings: rate, window, and partial sends"
+                    >
+                      <SlidersHorizontal className="w-3 h-3" /> Adjust
+                    </button>
                     {(queueStatus.counts.pending || 0) > 0 && (
                       <button
                         onClick={flushQueueNow}
@@ -677,6 +686,8 @@ export default function AttendeesPage() {
           onClose={() => setPreview(null)}
         />
       )}
+
+      {showQueue && <QueueSettingsModal onClose={() => setShowQueue(false)} onChanged={load} />}
     </div>
   );
 }
