@@ -547,7 +547,7 @@ type SponsorAcceptedArgs = {
   assetBase?: string;
 };
 
-// Sent when an admin moves an application to "Awaiting payment" — i.e. accepts
+// Sent when an admin moves an application to "Awaiting payment", i.e. accepts
 // it and asks the contact to pay. A celebratory, fully branded confirmation
 // (hero, what's-included, conference glance), distinct from the plainer
 // application-received acknowledgement.
@@ -572,7 +572,7 @@ export function sponsorAcceptedEmail({
       </td></tr></table>`;
   return shell(`
     ${heroBanner()}
-    <h1 style="font-size:24px;font-weight:800;margin:0 0 14px 0;letter-spacing:-0.01em;">Congratulations, ${escapeHtml(first)} — you&rsquo;re confirmed.</h1>
+    <h1 style="font-size:24px;font-weight:800;margin:0 0 14px 0;letter-spacing:-0.01em;">Congratulations, ${escapeHtml(first)}. You&rsquo;re confirmed.</h1>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 6px 0;">
       ${roleLine}
     </p>
@@ -594,7 +594,7 @@ export function sponsorAcceptedEmail({
     ${glanceCard(GLANCE_ROWS)}
 
     <p style="font-size:14.5px;line-height:1.7;color:${TEXT};margin:18px 0 0 0;">
-      Thank you for standing with us for language access in healthcare. If you have any questions, simply reply to this email&mdash;we&rsquo;re glad to help.
+      Thank you for standing with us for language access in healthcare. If you have any questions, simply reply to this email and we&rsquo;ll be glad to help.
     </p>
 
     ${signOff()}

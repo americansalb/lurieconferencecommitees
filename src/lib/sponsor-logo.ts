@@ -11,7 +11,7 @@ export async function saveLogoFromDataUrl(sponsorId: string, dataUrl: unknown, f
   if (!mime.startsWith("image/")) return false;
   let buf: Buffer;
   try { buf = Buffer.from(m[2], "base64"); } catch { return false; }
-  if (buf.length === 0 || buf.length > 5 * 1024 * 1024) return false;
+  if (buf.length === 0 || buf.length > 25 * 1024 * 1024) return false;
   await prisma.sponsorLogo.upsert({
     where: { sponsorId },
     create: { sponsorId, data: buf, mime, fileName: (fileName || null) },

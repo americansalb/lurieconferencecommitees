@@ -148,7 +148,7 @@ export default function ExhibitorCompletionWizard({
               <SummaryRow label="Rep email" value={details.registreeEmail || "Not provided"} onEdit={() => { setStep("details"); toTop(); }} />
               {details.dietary && <SummaryRow label="Dietary / allergies" value={details.dietary} onEdit={() => { setStep("details"); toTop(); }} />}
               {details.accessibility && <SummaryRow label="Accessibility" value={details.accessibility} onEdit={() => { setStep("details"); toTop(); }} />}
-              <SummaryRow label="Website logo" value={details.wantsLogo ? (logo ? logo.name : hasLogo ? "On file" : "Yes — no file uploaded yet") : "Not displaying"} onEdit={() => { setStep("details"); toTop(); }} />
+              <SummaryRow label="Website logo" value={details.wantsLogo ? (logo ? logo.name : hasLogo ? "On file" : "Yes (no file uploaded yet)") : "Not displaying"} onEdit={() => { setStep("details"); toTop(); }} />
             </div>
           </div>
 

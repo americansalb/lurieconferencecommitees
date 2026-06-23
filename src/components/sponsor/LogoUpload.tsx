@@ -13,7 +13,7 @@ export default function LogoUpload({ value, onChange }: { value: LogoValue; onCh
     setErr(null);
     if (!file) return;
     if (!/^image\//.test(file.type)) { setErr("Please choose an image file (PNG, JPG, or SVG)."); return; }
-    if (file.size > 4 * 1024 * 1024) { setErr("That image is over 4 MB — please use a smaller file."); return; }
+    if (file.size > 25 * 1024 * 1024) { setErr("That image is over 25 MB. Please use a smaller file."); return; }
     const reader = new FileReader();
     reader.onload = () => onChange({ dataUrl: String(reader.result), mime: file.type, name: file.name });
     reader.readAsDataURL(file);
@@ -35,7 +35,7 @@ export default function LogoUpload({ value, onChange }: { value: LogoValue; onCh
         <button type="button" onClick={() => ref.current?.click()} className="w-full flex flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-slate-300 px-4 py-6 text-slate-500 hover:bg-slate-50 transition-colors">
           <UploadCloud className="w-5 h-5" />
           <span className="text-sm font-semibold">Upload your logo</span>
-          <span className="text-[11px] text-slate-400">PNG, JPG, or SVG · high resolution · up to 4 MB</span>
+          <span className="text-[11px] text-slate-400">PNG, JPG, or SVG · high resolution · up to 25 MB</span>
         </button>
       )}
       <input ref={ref} type="file" accept="image/*" className="hidden" onChange={(e) => onFile(e.target.files?.[0])} />

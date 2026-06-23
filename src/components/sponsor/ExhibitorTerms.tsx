@@ -5,7 +5,7 @@ import { C } from "@/components/funnel/Wizard";
 
 // Exhibitor terms shown in-flow (apply wizard + completion wizard) and agreed
 // to before any exhibitor payment. Modeled on the presenter policy so the two
-// agreements read like the same conference. Plain boilerplate — the program
+// agreements read like the same conference. Plain boilerplate; the program
 // team should review and adjust the wording to match conference policy.
 export function ExhibitorTermsContent() {
   return (

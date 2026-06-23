@@ -54,7 +54,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     try {
       await sendMail({
         to: updated.contactEmail,
-        subject: `You're confirmed — complete your ${t?.name || "sponsorship"} payment`,
+        subject: `You're confirmed: complete your ${t?.name || "sponsorship"} payment`,
         html: sponsorAcceptedEmail({
           firstName: (updated.contactName || "").split(" ")[0],
           companyName: updated.companyName,

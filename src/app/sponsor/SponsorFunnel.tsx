@@ -335,7 +335,7 @@ export default function SponsorFunnel() {
                   <SummaryRow label="Rep email" value={exhibitor.registreeEmail || "Not provided"} onEdit={editExhibit} />
                   {exhibitor.dietary && <SummaryRow label="Dietary / allergies" value={exhibitor.dietary} onEdit={editExhibit} />}
                   {exhibitor.accessibility && <SummaryRow label="Accessibility" value={exhibitor.accessibility} onEdit={editExhibit} />}
-                  <SummaryRow label="Website logo" value={exhibitor.wantsLogo ? (logo ? logo.name : "Yes — no file uploaded yet") : "Not displaying"} onEdit={editExhibit} />
+                  <SummaryRow label="Website logo" value={exhibitor.wantsLogo ? (logo ? logo.name : "Yes (no file uploaded yet)") : "Not displaying"} onEdit={editExhibit} />
                   <SummaryRow label="Exhibitor terms" value={exhibitorAgreed ? "Agreed" : "Not agreed"} onEdit={editExhibit} />
                 </>
               )}

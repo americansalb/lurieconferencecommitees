@@ -4,7 +4,7 @@ import ExhibitorCompletionWizard from "@/app/sponsor/status/[token]/ExhibitorCom
 // Dev-only visual harness for the exhibitor completion wizard, so it can be
 // eyeballed without seeding an accepted, unpaid exhibitor in the database.
 // Never served in production. The "Pay" action will fail against the demo
-// token — that's expected; this is for layout only.
+// token, which is expected; this is for layout only.
 export default function ExhibitorWizardPreview() {
   if (process.env.NODE_ENV === "production") notFound();
   return (
