@@ -37,6 +37,12 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
     await prisma.emailQueue.create({
       data: { batchId: "attendee-resend", recipientType: "attendee", recipientId: attendee.id, to: attendee.email, subject, html, scheduledFor: new Date(), status: "sent", sentAt: new Date() },
     }).catch(() => {});
+    // Drop any still-pending paced send for this person so the cron doesn't
+    // also deliver it: sending now supersedes the queued copy.
+    await prisma.emailQueue.updateMany({
+      where: { recipientType: "attendee", recipientId: attendee.id, status: "pending" },
+      data: { status: "cancelled" },
+    }).catch(() => {});
     await prisma.attendee.update({
       where: { id: attendee.id },
       data: {
