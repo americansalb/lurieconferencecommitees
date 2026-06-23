@@ -335,6 +335,48 @@ function attendeeRateCard({
     </table>`;
 }
 
+// Featured-speaker cards (headshot + concise bio), shared by both attendee
+// invites so the standard and alumni emails show the same lineup. Photos are
+// email-safe JPGs served from the conference site.
+function attendeeSpeakerCards() {
+  const speakers = [
+    {
+      slug: "yuri-takabatake", name: "Yuri Takabatake, MD",
+      role: "Attending Physician, Lurie Children&rsquo;s Hospital of Chicago",
+      bio: "A hospital-medicine physician and language-equity researcher who has published on interpreter partnership during family-centered rounds, and co-founded Lurie Children&rsquo;s Language Access and Care Committee.",
+    },
+    {
+      slug: "yuliya-speroff", name: "Yuliya Speroff, CoreCHI-P",
+      role: "AALB Trainer of the Year (2024); VP, National Council on Interpreting in Health Care",
+      bio: "A Russian-English certified interpreter and Medical Interpreter Supervisor at Harborview Medical Center who trains interpreters nationally and writes medicalinterpreterblog.com. Named CHIA&rsquo;s Interpreter of the Year in 2021.",
+    },
+    {
+      slug: "wilma-alvarado-little", name: "Wilma Alvarado-Little",
+      role: "Associate Commissioner, New York State Department of Health",
+      bio: "Leads health literacy and language access at the NY State Department of Health. A former NCIHC board co-chair, she helped create the first national certification, standards of practice, and code of ethics for healthcare interpreters across 40+ years in the field.",
+    },
+    {
+      slug: "patricia-alonzo", name: "Patricia A. Alonzo, EdD",
+      role: "Director of Strategic Partnerships, Equiti Health",
+      bio: "A CMI-certified trilingual interpreter (English, Spanish, and ASL) with an EdD focused on outcomes for patients with limited English proficiency, and a national voice on access, cultural competency, and legislation.",
+    },
+  ];
+  return speakers.map((s) => `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 14px 0;">
+      <tr>
+        <td width="76" valign="top" style="padding-right:14px;">
+          <img src="${ASSET_BASE}/speakers/${s.slug}.jpg" width="64" height="64" alt="${escapeHtml(s.name)}" style="display:block;width:64px;height:64px;border-radius:10px;object-fit:cover;border:1px solid #eef1f4;" />
+        </td>
+        <td valign="top">
+          <div style="font-size:15px;font-weight:700;color:${TEXT};line-height:1.25;">${s.name}</div>
+          <div style="font-size:12.5px;font-weight:600;color:${TEAL};margin-top:2px;line-height:1.35;">${s.role}</div>
+          <div style="font-size:12.5px;color:${MUTED};margin-top:5px;line-height:1.5;">${s.bio}</div>
+        </td>
+      </tr>
+    </table>`).join("") +
+    `<p style="font-size:13px;line-height:1.6;color:${MUTED};margin:6px 0 0 0;">With more speakers to be announced.</p>`;
+}
+
 export function attendeeInviteEmail({
   firstName,
   url,
@@ -352,19 +394,33 @@ export function attendeeInviteEmail({
     ? `<p style="font-size:15px;line-height:1.65;color:${TEXT};margin:14px 0;background:#f8fafc;border-left:3px solid ${BLUE};padding:14px 16px;border-radius:6px;">${escapeHtml(inviteMessage)}</p>`
     : "";
   return shell(`
+    ${heroBanner()}
     <h1 style="font-size:24px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">Hi ${escapeHtml(first)},</h1>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
-      I hope this finds you well. I&rsquo;m writing to invite you to the 2026 Lurie Children&rsquo;s and AALB Conference, August 15 and 16, 2026. The conference is held in person at Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago, with full virtual attendance also available.
+      I hope this finds you well. I&rsquo;m writing to invite you to the <strong>2026 Lurie Children&rsquo;s &amp; AALB Conference</strong>, August 15 and 16, 2026, held in person at Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago, with full virtual attendance also available.
     </p>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
-      Two days of sessions on language access in healthcare: current practice and what is shifting in standards, technology, and policy.
-    </p>
-    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 18px 0;">
-      Continuing education credit is submitted through CCHI, NBCMI, RID, and ATA.
+      This year&rsquo;s theme, <em>True Language Access: Yesterday, Today, and Tomorrow</em>, brings together interpreters, clinicians, language service providers, advocates, and policymakers for two days of sessions on where the field stands and where it&rsquo;s headed. Across three lenses, <strong>Yesterday</strong> honors the work that built language access as a civil right, <strong>Today</strong> confronts the gap between policy and practice at the bedside, and <strong>Tomorrow</strong> imagines the systems, training, and technology that make it the default for every patient.
     </p>
     ${extra}
-    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 10px 0;">
-      In appreciation of your work in the field, your registration is held at a personal rate, for in-person or virtual:
+
+    ${sectionHeading("Conference at a Glance")}
+    ${glanceCard(GLANCE_ROWS)}
+
+    ${sectionHeading("A Few of This Year&rsquo;s Voices")}
+    ${attendeeSpeakerCards()}
+
+    ${sectionHeading("Why Attend")}
+    ${bulletList([
+      "Practice-focused sessions on the standards, technology, and policy reshaping language access",
+      "10+ accredited CEUs (CCHI, NBCMI, RID, and ATA accreditation sought)",
+      "A national gathering of interpreters, clinicians, language service providers, advocates, and policymakers",
+      "A front-row seat to the conversations shaping the next decade of the field",
+    ])}
+
+    ${sectionHeading("Your Personal Rate")}
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 12px 0;">
+      In appreciation of your work in the field, your registration is held at a personal rate, whether you join us in Chicago or online:
     </p>
     ${attendeeRateCard({ discountPercent, inPersonOriginalCents, inPersonDiscountedCents, virtualOriginalCents, virtualDiscountedCents })}
     ${button(url, "Reserve my spot")}
@@ -374,8 +430,11 @@ export function attendeeInviteEmail({
       <a href="${url}" style="color:${BLUE};word-break:break-all;">${url}</a>
     </p>
     <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;">
-      The link and rate are personal to you. If a colleague should also be invited, please reply and let me know.
+      This link and rate are personal to you. If a colleague should also be invited, just reply and let me know.
     </p>
+
+    ${signOff()}
+    ${logoLockup()}
   `);
 }
 
@@ -415,41 +474,7 @@ export function attendeeAlumniInviteEmail({
     ${glanceCard(GLANCE_ROWS)}
 
     ${sectionHeading("A Few of This Year&rsquo;s Voices")}
-    ${[
-      {
-        slug: "yuri-takabatake", name: "Yuri Takabatake, MD",
-        role: "Attending Physician, Lurie Children&rsquo;s Hospital of Chicago",
-        bio: "A hospital-medicine physician and language-equity researcher who has published on interpreter partnership during family-centered rounds, and co-founded Lurie Children&rsquo;s Language Access and Care Committee.",
-      },
-      {
-        slug: "yuliya-speroff", name: "Yuliya Speroff, CoreCHI-P",
-        role: "AALB Trainer of the Year (2024); VP, National Council on Interpreting in Health Care",
-        bio: "A Russian-English certified interpreter and Medical Interpreter Supervisor at Harborview Medical Center who trains interpreters nationally and writes medicalinterpreterblog.com. Named CHIA&rsquo;s Interpreter of the Year in 2021.",
-      },
-      {
-        slug: "wilma-alvarado-little", name: "Wilma Alvarado-Little",
-        role: "Associate Commissioner, New York State Department of Health",
-        bio: "Leads health literacy and language access at the NY State Department of Health. A former NCIHC board co-chair, she helped create the first national certification, standards of practice, and code of ethics for healthcare interpreters across 40+ years in the field.",
-      },
-      {
-        slug: "patricia-alonzo", name: "Patricia A. Alonzo, EdD",
-        role: "Director of Strategic Partnerships, Equiti Health",
-        bio: "A CMI-certified trilingual interpreter (English, Spanish, and ASL) with an EdD focused on outcomes for patients with limited English proficiency, and a national voice on access, cultural competency, and legislation.",
-      },
-    ].map((s) => `
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 14px 0;">
-        <tr>
-          <td width="76" valign="top" style="padding-right:14px;">
-            <img src="${ASSET_BASE}/speakers/${s.slug}.jpg" width="64" height="64" alt="${escapeHtml(s.name)}" style="display:block;width:64px;height:64px;border-radius:10px;object-fit:cover;border:1px solid #eef1f4;" />
-          </td>
-          <td valign="top">
-            <div style="font-size:15px;font-weight:700;color:${TEXT};line-height:1.25;">${s.name}</div>
-            <div style="font-size:12.5px;font-weight:600;color:${TEAL};margin-top:2px;line-height:1.35;">${s.role}</div>
-            <div style="font-size:12.5px;color:${MUTED};margin-top:5px;line-height:1.5;">${s.bio}</div>
-          </td>
-        </tr>
-      </table>`).join("")}
-    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:6px 0 0 0;">With more speakers to be announced.</p>
+    ${attendeeSpeakerCards()}
 
     ${sectionHeading("Why You&rsquo;ll Want to Be There")}
     ${bulletList([
