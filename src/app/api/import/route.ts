@@ -26,7 +26,7 @@ export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!isAdmin((session.user as { role?: string }).role)) {
-    return NextResponse.json({ error: "Forbidden — admin only" }, { status: 403 });
+    return NextResponse.json({ error: "Forbidden, admin only" }, { status: 403 });
   }
   const actor = session.user.email || null;
 
@@ -57,7 +57,7 @@ export async function POST(req: Request) {
         else if (!ex.paid) { status = "update"; toUpdate.push({ id: ex.id, r }); }
         else status = "exists";
         seen.add(r.email);
-        rows.push({ cells: [`${r.firstName} ${r.lastName}`.trim(), r.email, r.mode, `$${(r.amountCents / 100).toFixed(0)}`, r.paidAt || "—"], status });
+        rows.push({ cells: [`${r.firstName} ${r.lastName}`.trim(), r.email, r.mode, `$${(r.amountCents / 100).toFixed(0)}`, r.paidAt || "–"], status });
       }
       if (commit) {
         for (const r of toCreate) {
@@ -95,7 +95,7 @@ export async function POST(req: Request) {
         const status: PreviewRow["status"] = dupe ? "exists" : "new";
         if (!dupe) toCreate.push(r);
         seen.add(r.contactEmail);
-        rows.push({ cells: [r.contactName, r.contactEmail, r.companyName, r.contactPhone || "—"], status });
+        rows.push({ cells: [r.contactName, r.contactEmail, r.companyName, r.contactPhone || "–"], status });
       }
       if (commit) {
         const exTier = tierById("exhibitor");
@@ -127,7 +127,7 @@ export async function POST(req: Request) {
       const status: PreviewRow["status"] = dupe ? "exists" : "new";
       if (!dupe) toCreate.push(r);
       seen.add(r.email);
-      rows.push({ cells: [r.name, r.email, r.talkTitle, r.sessionLength || "—"], status });
+      rows.push({ cells: [r.name, r.email, r.talkTitle, r.sessionLength || "–"], status });
     }
     if (commit) {
       for (const r of toCreate) {

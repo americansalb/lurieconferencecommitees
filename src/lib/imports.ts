@@ -1,5 +1,5 @@
 // Spreadsheet-import helpers shared by the admin Import page (preview) and the
-// /api/import route (commit). Pure string work only — safe to import on the
+// /api/import route (commit). Pure string work only, safe to import on the
 // client. The actual database writes live in the route.
 
 export type ImportType = "attendees" | "exhibitors" | "proposals";
@@ -40,7 +40,7 @@ function detectDelimiter(text: string): string {
 }
 
 // Parse delimited text (TSV or CSV) into rows of cells. Handles quoted fields,
-// escaped "" quotes, and — importantly for pasted RFP abstracts — newlines
+// escaped "" quotes, and, importantly for pasted RFP abstracts, newlines
 // inside quoted fields.
 export function parseTable(text: string, delimiter?: string): string[][] {
   const delim = delimiter || detectDelimiter(text);
@@ -119,7 +119,7 @@ export type ParsedImport =
 export function buildRecords(type: ImportType, text: string): ParsedImport {
   const rows = parseTable(text);
   const errors: string[] = [];
-  if (!rows.length) return { type, records: [], errors: ["Nothing to import — paste your rows first."] } as ParsedImport;
+  if (!rows.length) return { type, records: [], errors: ["Nothing to import, paste your rows first."] } as ParsedImport;
 
   const header = looksLikeHeader(rows[0]) ? rows[0] : null;
   const dataRows = header ? rows.slice(1) : rows;
@@ -140,10 +140,10 @@ export function buildRecords(type: ImportType, text: string): ParsedImport {
       const lastName = (r[idx.last] || "").trim();
       const email = (r[idx.email] || "").trim().toLowerCase();
       const cents = amountToCents(r[idx.amount] || "");
-      if (!isEmail(email)) { errors.push(`Row ${n + 1}: "${r[idx.email] || ""}" is not a valid email — skipped.`); return; }
-      if (cents == null) { errors.push(`Row ${n + 1} (${email}): missing/zero amount — skipped.`); return; }
+      if (!isEmail(email)) { errors.push(`Row ${n + 1}: "${r[idx.email] || ""}" is not a valid email, skipped.`); return; }
+      if (cents == null) { errors.push(`Row ${n + 1} (${email}): missing/zero amount, skipped.`); return; }
       records.push({
-        firstName: firstName || "—",
+        firstName: firstName || "–",
         lastName,
         email,
         amountCents: cents,
@@ -169,8 +169,8 @@ export function buildRecords(type: ImportType, text: string): ParsedImport {
     dataRows.forEach((r, n) => {
       const email = (r[idx.email] || "").trim().toLowerCase();
       const company = (r[idx.org] || "").trim();
-      if (!isEmail(email)) { errors.push(`Row ${n + 1}: "${r[idx.email] || ""}" is not a valid email — skipped.`); return; }
-      if (!company) { errors.push(`Row ${n + 1} (${email}): missing organization — skipped.`); return; }
+      if (!isEmail(email)) { errors.push(`Row ${n + 1}: "${r[idx.email] || ""}" is not a valid email, skipped.`); return; }
+      if (!company) { errors.push(`Row ${n + 1} (${email}): missing organization, skipped.`); return; }
       records.push({
         contactName: (r[idx.name] || "").trim() || company,
         contactEmail: email,
@@ -197,10 +197,10 @@ export function buildRecords(type: ImportType, text: string): ParsedImport {
   dataRows.forEach((r, n) => {
     const email = (r[idx.email] || "").trim().toLowerCase();
     const name = (r[idx.name] || "").trim();
-    if (!isEmail(email)) { errors.push(`Row ${n + 1}: "${r[idx.email] || ""}" is not a valid email — skipped.`); return; }
+    if (!isEmail(email)) { errors.push(`Row ${n + 1}: "${r[idx.email] || ""}" is not a valid email, skipped.`); return; }
     const { title, abstract } = splitTitleAbstract(r[idx.ta] || "");
     records.push({
-      name: name || "—",
+      name: name || "–",
       email,
       talkTitle: title,
       talkAbstract: abstract,

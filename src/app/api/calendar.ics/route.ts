@@ -31,7 +31,7 @@ export async function GET(req: Request) {
     : [];
 
   const ics = buildCalendar(
-    `Conference 2026 — ${user.name}`,
+    `Conference 2026, ${user.name}`,
     events.map((e) => ({
       id: e.id,
       title: `${e.committee.name}: ${e.title}`,

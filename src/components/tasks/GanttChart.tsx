@@ -211,7 +211,7 @@ export default function GanttChart({ committeeId, accentColor, lightColor, membe
       setShowForm(false);
       fetchTasks();
     } catch {
-      setFormError("Network error — please try again");
+      setFormError("Network error, please try again");
       setCreating(false);
     }
   }
@@ -745,7 +745,7 @@ export default function GanttChart({ committeeId, accentColor, lightColor, membe
                       <button
                         onClick={e => { e.stopPropagation(); cycleStatus(task); }}
                         className="shrink-0 p-0.5 rounded-md hover:bg-white hover:shadow-sm transition-all"
-                        title={`${statusCfg.label} — click to change`}
+                        title={`${statusCfg.label}, click to change`}
                       >
                         <StatusIcon className="w-4 h-4" style={{ color: statusCfg.color }} />
                       </button>

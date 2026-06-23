@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 import { buildAttendeeInvite } from "@/lib/attendees";
 
 // Returns the exact email this attendee was sent (the queued/archived copy),
-// or — if none is stored (e.g. nothing sent yet) — a faithful re-render from
+// or, if none is stored (e.g. nothing sent yet), a faithful re-render from
 // their current data, clearly flagged as a regenerated preview.
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);

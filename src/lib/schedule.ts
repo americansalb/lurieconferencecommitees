@@ -4,7 +4,7 @@
 // build instants with a fixed -05:00 offset and always render in America/Chicago.
 
 export const CHICAGO_TZ = "America/Chicago";
-const AUG_OFFSET = "-05:00"; // CDT — valid for the Aug 15-16 conference dates
+const AUG_OFFSET = "-05:00"; // CDT, valid for the Aug 15-16 conference dates
 
 export const CONFERENCE_DAYS = [
   { id: "2026-08-15", label: "Saturday, August 15", short: "Aug 15", start: "09:30", end: "18:00" },
@@ -68,7 +68,7 @@ export function minutesOfDay(date: Date | string): number {
   return h * 60 + m;
 }
 
-// "HH:MM" (24h) from minutes-since-midnight — inverse of minutesOfDay.
+// "HH:MM" (24h) from minutes-since-midnight, inverse of minutesOfDay.
 export function minutesToHHMM(min: number): string {
   const m = ((Math.round(min) % 1440) + 1440) % 1440;
   return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;

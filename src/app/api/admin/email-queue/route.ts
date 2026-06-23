@@ -63,7 +63,7 @@ export async function PATCH(req: Request) {
 }
 
 // Admin-triggered queue flush. With { force: true } it ignores scheduledFor
-// (sends everything pending right now) — useful when no cron is wired up yet
+// (sends everything pending right now), useful when no cron is wired up yet
 // or you just want the batch out the door.
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);

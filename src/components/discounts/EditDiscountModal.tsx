@@ -91,7 +91,7 @@ export default function EditDiscountModal({
             <input
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Partner organization — Northwestern"
+              placeholder="Partner organization, Northwestern"
               className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#0066B3]/20 focus:border-[#0066B3] outline-none"
             />
           </Field>
@@ -176,7 +176,7 @@ function ModeInput({
           min={0}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="—"
+          placeholder="–"
           className="w-full px-1 py-1 text-sm font-semibold bg-transparent outline-none tabular-nums"
         />
         {unit === "%" && <span className="text-slate-400 text-sm font-semibold">%</span>}

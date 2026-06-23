@@ -6,7 +6,7 @@ import { createZoomMeeting, isZoomConfigured } from "@/lib/zoom";
 import { bookingConfirmedInviteeEmail, bookingConfirmedHostEmail } from "@/lib/mail-templates";
 
 // Public: confirm a booking for a slot. Body: { startAt (ISO), tz }.
-// The slot is re-validated server-side against live availability — the client
+// The slot is re-validated server-side against live availability, the client
 // can't book a time that isn't actually free.
 export async function POST(
   req: Request,

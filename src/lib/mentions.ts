@@ -1,8 +1,8 @@
 // Parses @mentions from a discussion post body and resolves them to user IDs
 // among the committee membership. Supports three styles:
-//   @firstname             — single token, matches first word of full name
-//   @firstnamelastname     — concatenated, matches full name with spaces removed
-//   @"First Last"          — quoted, matches full name verbatim
+//   @firstname, single token, matches first word of full name
+//   @firstnamelastname, concatenated, matches full name with spaces removed
+//   @"First Last", quoted, matches full name verbatim
 // All matching is case-insensitive. If a token resolves to multiple users,
 // they're all mentioned.
 

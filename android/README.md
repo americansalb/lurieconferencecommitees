@@ -1,4 +1,4 @@
-# Lurie Conference — Android app
+# Lurie Conference, Android app
 
 Kotlin + Jetpack Compose app that mirrors the iOS client. Same backend, same
 notification preference model. Push delivered through Firebase Cloud Messaging.
@@ -36,16 +36,16 @@ Default is `https://conference.aalb.org`.
 
 ## What's inside
 
-- `App.kt` — application class; creates the FCM notification channel.
-- `MainActivity.kt` — requests POST_NOTIFICATIONS, then asks `PushRegistrar`
+- `App.kt`, application class; creates the FCM notification channel.
+- `MainActivity.kt`, requests POST_NOTIFICATIONS, then asks `PushRegistrar`
   to ship the current FCM token to `/api/devices`.
-- `data/TokenStore.kt` — encrypted prefs for the bearer token and cached user.
-- `api/ApiClient.kt` — OkHttp + kotlinx.serialization client (login, feed,
+- `data/TokenStore.kt`, encrypted prefs for the bearer token and cached user.
+- `api/ApiClient.kt`, OkHttp + kotlinx.serialization client (login, feed,
   committees, devices, notification preferences, test push, logout).
-- `push/LurieFirebaseMessagingService.kt` — handles token rotation and
+- `push/LurieFirebaseMessagingService.kt`, handles token rotation and
   incoming RemoteMessages; posts a system notification using the default
   channel.
-- `ui/screens/...` — Compose screens: Login, Feed, Committees, Notification
+- `ui/screens/...`, Compose screens: Login, Feed, Committees, Notification
   Settings, Profile.
 
 ## Releasing
@@ -60,8 +60,8 @@ Default is `https://conference.aalb.org`.
 
 ## Permissions
 
-- `INTERNET` — talk to the backend.
-- `POST_NOTIFICATIONS` — show push on Android 13+.
+- `INTERNET`, talk to the backend.
+- `POST_NOTIFICATIONS`, show push on Android 13+.
 
 Background polling, foreground services, and exact-alarm permissions are not
 required: scheduled reminders live on the backend, and FCM does the

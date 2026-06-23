@@ -564,7 +564,7 @@ function DashboardInner() {
       <div className="flex-1 flex flex-col min-w-0">
         <Navbar />
         <div className="flex-1 pb-24 md:pb-0">
-          {/* Home View — All Committees + Upcoming Events */}
+          {/* Home View, All Committees + Upcoming Events */}
           {!selectedSlug && (() => {
             const currentUserId = (session?.user as { id?: string })?.id;
             const displayCommittees = committeeFilter === "mine"

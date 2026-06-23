@@ -180,7 +180,7 @@ export default function PresenterDetailPage() {
                     </button>
                     <label
                       className="inline-flex items-center gap-1.5 px-2.5 py-2 text-xs font-medium bg-white border border-slate-200 rounded-lg"
-                      title="Manually set this presenter's status. Fully reversible — pick any stage, including reverting an accidental Confirmed back to Invited."
+                      title="Manually set this presenter's status. Fully reversible, pick any stage, including reverting an accidental Confirmed back to Invited."
                     >
                       <span className="text-slate-400">Status</span>
                       <select
@@ -393,7 +393,7 @@ function KV({ label, value, multiline, link }: { label: string; value: string | 
               {value} <ExternalLink className="w-3 h-3 shrink-0" />
             </a>
           ) : value
-        ) : <span className="text-slate-300">—</span>}
+        ) : <span className="text-slate-300">–</span>}
       </div>
     </div>
   );

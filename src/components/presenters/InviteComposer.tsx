@@ -223,7 +223,7 @@ export function InviteComposer({
                 {mailStatus === "sent"
                   ? `Invitation sent to ${firstName || name || "your presenter"}`
                   : mailStatus === "skipped" || mailStatus === "failed"
-                  ? "Presenter saved — email did not go out"
+                  ? "Presenter saved, email did not go out"
                   : "Presenter saved"}
               </div>
               <p className="text-sm text-slate-500 mt-2 leading-relaxed">
@@ -365,7 +365,7 @@ export function InviteComposer({
 
                 {step === "extras" && (
                   <div className="space-y-5 mt-6">
-                    <ComposerSection title="Proposed talk details" subtitle="A starting point — the presenter can refine or replace in their portal.">
+                    <ComposerSection title="Proposed talk details" subtitle="A starting point, the presenter can refine or replace in their portal.">
                       <div className="space-y-3">
                         <SoftInput value={talkTitle} onChange={setTalkTitle} placeholder="A draft working title" />
                         <SoftTextarea value={talkAbstract} onChange={setTalkAbstract} rows={3} placeholder="The talk in a paragraph or two…" />

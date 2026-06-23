@@ -8,7 +8,7 @@ import {
 
 // Public: preview a discount code for the registration funnel. Returns the
 // recomputed price so the UI can show the new total before checkout. This is
-// only a preview — the authoritative price is computed again at checkout.
+// only a preview, the authoritative price is computed again at checkout.
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
   const code = typeof body.code === "string" ? body.code : "";

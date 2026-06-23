@@ -76,9 +76,9 @@ export default function RedemptionList({ codeId }: { codeId: string }) {
         <tbody>
           {rows.map((r) => (
             <tr key={r.id} className="border-b border-slate-50 last:border-0">
-              <td className="px-3 py-2 text-slate-700 truncate max-w-[180px]">{r.attendeeEmail || "—"}</td>
+              <td className="px-3 py-2 text-slate-700 truncate max-w-[180px]">{r.attendeeEmail || "–"}</td>
               <td className="px-3 py-2 text-slate-500">
-                {r.attendanceMode === "in-person" ? "In-person" : r.attendanceMode === "virtual" ? "Virtual" : "—"}
+                {r.attendanceMode === "in-person" ? "In-person" : r.attendanceMode === "virtual" ? "Virtual" : "–"}
               </td>
               <td className="px-3 py-2 text-right text-slate-400 tabular-nums">{money(r.basePriceCents)}</td>
               <td className="px-3 py-2 text-right text-emerald-600 font-semibold tabular-nums">−{money(r.discountCents)}</td>

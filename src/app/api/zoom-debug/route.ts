@@ -80,7 +80,7 @@ export async function GET() {
   const grantedScopes = typeof token.data.scope === "string" ? token.data.scope.split(/\s+/).filter(Boolean) : [];
   const hasMeetingWrite = grantedScopes.some((s) => s.startsWith("meeting:write"));
 
-  // Try to list the account's Zoom users — these are the only valid host emails.
+  // Try to list the account's Zoom users, these are the only valid host emails.
   let hosts: { listed: boolean; status?: number; emails?: string[]; reason?: string } = { listed: false };
   try {
     const uRes = await fetch("https://api.zoom.us/v2/users?status=active&page_size=50", {
@@ -107,7 +107,7 @@ export async function GET() {
       : "MISSING a meeting:write scope. Add 'meeting:write:admin' to the Server-to-Server OAuth app's Scopes, then re-activate the app.",
     validZoomHosts: hosts,
     hostHint:
-      "Bookings create the meeting on the assigned team member's email. That email MUST appear in validZoomHosts above — otherwise Zoom returns 404 'User does not exist'. Make each team member's app email match a real licensed Zoom user, or add them to the Zoom account.",
+      "Bookings create the meeting on the assigned team member's email. That email MUST appear in validZoomHosts above, otherwise Zoom returns 404 'User does not exist'. Make each team member's app email match a real licensed Zoom user, or add them to the Zoom account.",
     next: "POST { \"hostEmail\": \"someone@yourdomain.com\" } to this URL to create + delete a real test meeting for that host.",
   });
 }
@@ -161,6 +161,6 @@ export async function POST(req: Request) {
     ok: true,
     hostEmail,
     meetingId: String(created.id),
-    note: "Created and deleted a test meeting successfully — Zoom is fully working for this host.",
+    note: "Created and deleted a test meeting successfully, Zoom is fully working for this host.",
   });
 }

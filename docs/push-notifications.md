@@ -1,4 +1,4 @@
-# Push notifications — setup and operations
+# Push notifications, setup and operations
 
 The system has three moving parts:
 
@@ -41,7 +41,7 @@ still work without keys, so you can wire the apps before keys are in place.
    10-character Key ID it shows you.
 4. Find your Team ID at <https://developer.apple.com/account>.
 5. Set `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_AUTH_KEY` (paste the entire `.p8`
-   contents — backslash-n escapes are fine; the server normalises them).
+   contents, backslash-n escapes are fine; the server normalises them).
 
 ## Setting up Firebase for FCM
 
@@ -96,7 +96,7 @@ services:
 }
 ```
 
-Vercel signs cron requests with `Authorization: Bearer $CRON_SECRET` —
+Vercel signs cron requests with `Authorization: Bearer $CRON_SECRET`, 
 just set `CRON_SECRET` on the project.
 
 ## Trigger map
@@ -129,7 +129,7 @@ except `broadcast` (broadcasts bypass do-not-disturb).
   The web "Notifications" page has a button for this.
 - Without APNs/FCM keys, the dispatcher still logs to
   `lcc_notification_log` with `status: "failed"` and a clear "not configured"
-  message — useful for sanity checks during development.
+  message, useful for sanity checks during development.
 
 ## Failure handling
 

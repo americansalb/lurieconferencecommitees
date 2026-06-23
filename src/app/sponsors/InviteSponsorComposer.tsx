@@ -146,13 +146,13 @@ export default function InviteSponsorComposer({
             ) : (
               <>
                 <div className="text-[13px] text-slate-500">
-                  Paste one prospect per line — <b className="text-slate-700">Company, Contact name, Email</b> (Phone and Website optional). A header row is fine. Invites are <b className="text-slate-700">queued and sent gradually</b> on the same paced schedule as attendee invites.
+                  Paste one prospect per line, <b className="text-slate-700">Company, Contact name, Email</b> (Phone and Website optional). A header row is fine. Invites are <b className="text-slate-700">queued and sent gradually</b> on the same paced schedule as attendee invites.
                 </div>
                 <label className="block">
                   <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Suggested level (optional)</span>
                   <select value={bulkTier} onChange={(e) => setBulkTier(e.target.value)} className="mt-1 w-full px-3 py-2.5 text-sm border border-slate-200 rounded-lg outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 bg-white">
                     <option value="">Let them choose on the page</option>
-                    {TIERS.map((t) => <option key={t.id} value={t.id}>{t.name} — {t.amountLabel}</option>)}
+                    {TIERS.map((t) => <option key={t.id} value={t.id}>{t.name}, {t.amountLabel}</option>)}
                   </select>
                 </label>
                 <label className="block">

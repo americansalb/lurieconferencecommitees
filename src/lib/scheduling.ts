@@ -9,7 +9,7 @@ export function newBookingToken(): string {
 }
 
 // The UTC offset (in minutes, e.g. -300 for CDT) that a given timezone is at
-// on a specific instant. Derived from Intl parts vs. the UTC clock — handles
+// on a specific instant. Derived from Intl parts vs. the UTC clock, handles
 // DST because it's evaluated at the actual instant.
 export function tzOffsetMinutes(timeZone: string, at: Date): number {
   const dtf = new Intl.DateTimeFormat("en-US", {
@@ -152,7 +152,7 @@ export function computeSlots(opts: {
   // interval. Candidate starts are anchored to the absolute granularity grid
   // (epoch-aligned), so they land on clean clock times (9:00, 9:30, …) and are
   // identical across requests. Previously the grid was anchored to `from`/now,
-  // which made every slot inherit the request's sub-minute offset — so a start
+  // which made every slot inherit the request's sub-minute offset, so a start
   // time returned by the slots endpoint never matched when posted back to
   // confirm, and bookings always failed with "that time is no longer available".
   const stepMs = granularity * 60000;

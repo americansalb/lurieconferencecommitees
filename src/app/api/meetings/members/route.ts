@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
 // Team members who can host meetings, with whether they've set any
-// availability — used by the invite composer to pick calendars to pool.
+// availability, used by the invite composer to pick calendars to pool.
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

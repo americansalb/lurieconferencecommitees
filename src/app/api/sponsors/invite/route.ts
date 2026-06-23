@@ -210,8 +210,8 @@ function parseSponsorInviteCsv(text: string): { rows: SponsorRow[]; errors: stri
     const email = (r[idx.email] ?? "").trim().toLowerCase();
     const company = (idx.company >= 0 ? (r[idx.company] ?? "") : "").trim();
     const contact = (idx.contact >= 0 ? (r[idx.contact] ?? "") : "").trim();
-    if (!isEmail(email)) { errors.push(`Row ${n + 1}: "${r[idx.email] ?? ""}" is not a valid email — skipped.`); return; }
-    if (!company) { errors.push(`Row ${n + 1} (${email}): missing company — skipped.`); return; }
+    if (!isEmail(email)) { errors.push(`Row ${n + 1}: "${r[idx.email] ?? ""}" is not a valid email, skipped.`); return; }
+    if (!company) { errors.push(`Row ${n + 1} (${email}): missing company, skipped.`); return; }
     out.push({
       companyName: company,
       contactName: contact || company,

@@ -6,12 +6,12 @@ import { Plus, Trash2, Loader2, Check, Clock, CalendarOff, CalendarPlus } from "
 const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 const TIMEZONES: { value: string; label: string }[] = [
-  { value: "America/New_York", label: "Eastern (ET) — America/New_York" },
-  { value: "America/Chicago", label: "Central (CT) — America/Chicago" },
-  { value: "America/Denver", label: "Mountain (MT) — America/Denver" },
-  { value: "America/Los_Angeles", label: "Pacific (PT) — America/Los_Angeles" },
-  { value: "America/Anchorage", label: "Alaska (AKT) — America/Anchorage" },
-  { value: "Pacific/Honolulu", label: "Hawaii (HT) — Pacific/Honolulu" },
+  { value: "America/New_York", label: "Eastern (ET), America/New_York" },
+  { value: "America/Chicago", label: "Central (CT), America/Chicago" },
+  { value: "America/Denver", label: "Mountain (MT), America/Denver" },
+  { value: "America/Los_Angeles", label: "Pacific (PT), America/Los_Angeles" },
+  { value: "America/Anchorage", label: "Alaska (AKT), America/Anchorage" },
+  { value: "Pacific/Honolulu", label: "Hawaii (HT), Pacific/Honolulu" },
   { value: "UTC", label: "UTC" },
   { value: "Europe/London", label: "London (GMT/BST)" },
   { value: "Europe/Paris", label: "Paris (CET/CEST)" },
@@ -65,7 +65,7 @@ export default function AvailabilityEditor() {
 
   // Persist the member's own timezone. Availability hours are stored as
   // wall-clock minutes interpreted in this zone, so it must be correct for
-  // the member — the booking page already uses each booker's own zone.
+  // the member, the booking page already uses each booker's own zone.
   async function saveTimezone(newTz: string) {
     if (!newTz || newTz === tz) return;
     setTz(newTz);
@@ -142,7 +142,7 @@ export default function AvailabilityEditor() {
                 onClick={() => saveTimezone(detectedTz)}
                 className="text-[11px] text-amber-600 hover:text-amber-700 mt-1.5 inline-flex items-center gap-1"
               >
-                This device is set to {detectedTz.replace(/_/g, " ")} — tap to switch your availability to it.
+                This device is set to {detectedTz.replace(/_/g, " ")}, tap to switch your availability to it.
               </button>
             )}
           </div>

@@ -9,7 +9,7 @@ type Variant = "general" | "healthcare";
 // Compose and send the open Call for Proposals to a recipient. Unlike the
 // presenter InviteComposer (which assigns a specific person a specific talk
 // and sends them to a portal to accept/decline), this is the broadcast
-// "please submit a proposal" outreach — the General and Healthcare variants
+// "please submit a proposal" outreach, the General and Healthcare variants
 // from the outreach drafts, with a real link to /proposal.
 export default function ProposalCallComposer({
   onClose, onSent,
@@ -106,13 +106,13 @@ export default function ProposalCallComposer({
                   active={variant === "general"}
                   onClick={() => setVariant("general")}
                   title="General"
-                  desc="The whole field — practitioners, researchers, educators, advocates."
+                  desc="The whole field, practitioners, researchers, educators, advocates."
                 />
                 <VariantCard
                   active={variant === "healthcare"}
                   onClick={() => setVariant("healthcare")}
                   title="Healthcare"
-                  desc="Clinicians — physicians, nurses, social workers, care coordinators."
+                  desc="Clinicians, physicians, nurses, social workers, care coordinators."
                 />
               </div>
             </div>

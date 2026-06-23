@@ -94,8 +94,8 @@ export async function POST(req: Request) {
         to: r.email,
         subject:
           variant === "healthcare"
-            ? "Call for Proposals: Share Your Clinical Perspective — 2026 Lurie Children's & AALB Conference"
-            : "Call for Proposals — 2026 Lurie Children's & AALB Conference",
+            ? "Call for Proposals: Share Your Clinical Perspective, 2026 Lurie Children's & AALB Conference"
+            : "Call for Proposals, 2026 Lurie Children's & AALB Conference",
         html,
         from: sponsorFromHeader(),
         replyTo: sponsorReplyTo(),

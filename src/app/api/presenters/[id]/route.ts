@@ -10,7 +10,7 @@ function isAdmin(role?: string) {
 function errorMessage(e: unknown): string {
   if (e instanceof Error) {
     if (e.message.includes("does not exist") || e.message.includes("relation")) {
-      return "Database table not found — the migration has not run yet. Trigger a redeploy on Render.";
+      return "Database table not found, the migration has not run yet. Trigger a redeploy on Render.";
     }
     return e.message;
   }

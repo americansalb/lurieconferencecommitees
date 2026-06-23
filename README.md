@@ -56,10 +56,10 @@ GMAIL_USER=contact@aalb.org
 GMAIL_APP_PASSWORD=<16-char app password>
 MAIL_FROM=Lurie Children's & AALB Conference <contact@aalb.org>
 MAIL_REPLY_TO=contact@aalb.org      # optional
-MAIL_BCC=contact@aalb.org           # optional — BCCs every confirmation to that mailbox
+MAIL_BCC=contact@aalb.org           # optional, BCCs every confirmation to that mailbox
 ```
 
-The app falls back to `RENDER_EXTERNAL_URL` (which Render injects automatically) for building presenter portal links, so you only need to set the URL vars below when you want to override — e.g. when `conference.aalb.org` goes live:
+The app falls back to `RENDER_EXTERNAL_URL` (which Render injects automatically) for building presenter portal links, so you only need to set the URL vars below when you want to override, e.g. when `conference.aalb.org` goes live:
 
 ```
 NEXTAUTH_URL=https://conference.aalb.org
@@ -78,7 +78,7 @@ npx prisma migrate deploy
 
 ### URLs
 
-- `/` — public marketing landing
-- `/presenters` — presenter confirmations dashboard (any logged-in member can view; admins can edit)
-- `/presenters/[id]` — presenter detail
-- `/presenters/confirm/[token]` — public, tokenized presenter wizard, sent in invitation emails
+- `/`, public marketing landing
+- `/presenters`, presenter confirmations dashboard (any logged-in member can view; admins can edit)
+- `/presenters/[id]`, presenter detail
+- `/presenters/confirm/[token]`, public, tokenized presenter wizard, sent in invitation emails

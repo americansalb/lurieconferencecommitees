@@ -164,19 +164,19 @@ export default function PresentersPage() {
                 <button
                   type="button"
                   onClick={() => setShowProposalCall(true)}
-                  title="Open call — emails a link inviting someone to submit their own proposal. They apply, you review."
+                  title="Open call, emails a link inviting someone to submit their own proposal. They apply, you review."
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-left text-[#0E5566] bg-white border border-slate-200 hover:bg-slate-50 shadow-sm"
                 >
                   <Megaphone className="w-4 h-4 shrink-0" />
                   <span className="leading-tight">
                     <span className="block text-sm font-semibold">Call for Proposals</span>
-                    <span className="block text-[11px] font-medium text-slate-500">Open call &mdash; they apply to speak</span>
+                    <span className="block text-[11px] font-medium text-slate-500">Open call, they apply to speak</span>
                   </span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowInvite(true)}
-                  title="You've selected this speaker — send them their session details and a private portal link to confirm participation, request changes, or decline."
+                  title="You've selected this speaker, send them their session details and a private portal link to confirm participation, request changes, or decline."
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-left text-white bg-gradient-to-r from-[#0E5566] to-[#0066B3] hover:from-[#0A3F4D] hover:to-[#004F8C] shadow-sm"
                 >
                   <UserCheck className="w-4 h-4 shrink-0" />

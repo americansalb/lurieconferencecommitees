@@ -110,7 +110,7 @@ export function describeDiscount(
   }
   if (v) return `${v} (virtual)`;
   if (p) return `${p} (in-person)`;
-  return "—";
+  return "–";
 }
 
 function stripOff(s: string): string {

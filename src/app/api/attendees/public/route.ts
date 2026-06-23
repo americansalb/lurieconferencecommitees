@@ -141,7 +141,7 @@ export async function POST(req: Request) {
     });
   }
 
-  const codeSuffix = discountCodeText ? ` — code ${discountCodeText}` : "";
+  const codeSuffix = discountCodeText ? `, code ${discountCodeText}` : "";
   const session = await createCheckoutSession({
     amountCents: finalCents,
     customerEmail: attendee.email,

@@ -121,7 +121,7 @@ export async function POST(req: Request) {
           });
           if ((result as { skipped?: boolean }).skipped) {
             mailStatus = "skipped";
-            mailError = "Mail transport returned skipped — env vars likely missing.";
+            mailError = "Mail transport returned skipped, env vars likely missing.";
           } else {
             mailStatus = "sent";
             await prisma.presenter.update({ where: { id: presenter.id }, data: { lastSentAt: new Date() } });

@@ -85,7 +85,7 @@ export async function POST(req: Request) {
   try {
     await sendMail({
       to: inviteeEmail,
-      subject: invite.title || "Let's find a time to talk — 2026 Lurie Children's & AALB Conference",
+      subject: invite.title || "Let's find a time to talk, 2026 Lurie Children's & AALB Conference",
       html: bookingInviteEmail({
         inviteeName,
         title: invite.title,

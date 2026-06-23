@@ -1,5 +1,5 @@
 // Minimal RFC 5545 VCALENDAR builder. Outputs UTC times so subscribers in any
-// timezone see correct moments. Long lines are not folded — modern clients
+// timezone see correct moments. Long lines are not folded, modern clients
 // (Google, Apple, Outlook) all tolerate that.
 
 export type IcalEvent = {

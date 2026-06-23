@@ -15,7 +15,7 @@ git push origin <dev-branch>:master
 ```
 
 If the push to `master` is not a clean fast-forward, stop and ask
-before doing anything destructive — investigate the divergence first.
+before doing anything destructive, investigate the divergence first.
 
 Do not open a pull request unless the user explicitly asks for one.
 

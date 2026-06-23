@@ -134,7 +134,7 @@ export default function SchedulePage() {
                   <CalendarRange className="w-3.5 h-3.5" /> Schedule builder
                 </div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight mt-1">Conference program</h1>
-                <p className="text-sm text-slate-500 mt-1">{view === "calendar" ? "Both days at a glance — blocks sized by length." : "Both days as a clean running order."} {isAdmin && (view === "calendar" ? "Click a slot to add · drag a block to move · drag its bottom edge to resize." : "Click a row to edit.")}</p>
+                <p className="text-sm text-slate-500 mt-1">{view === "calendar" ? "Both days at a glance, blocks sized by length." : "Both days as a clean running order."} {isAdmin && (view === "calendar" ? "Click a slot to add · drag a block to move · drag its bottom edge to resize." : "Click a row to edit.")}</p>
               </div>
               <div className="flex items-center gap-2">
                 {/* View toggle */}

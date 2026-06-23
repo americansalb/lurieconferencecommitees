@@ -11,7 +11,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!isAdmin((session.user as { role?: string }).role)) {
-    return NextResponse.json({ error: "Forbidden — admin only" }, { status: 403 });
+    return NextResponse.json({ error: "Forbidden, admin only" }, { status: 403 });
   }
 
   const b = await req.json().catch(() => ({}));
@@ -53,7 +53,7 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!isAdmin((session.user as { role?: string }).role)) {
-    return NextResponse.json({ error: "Forbidden — admin only" }, { status: 403 });
+    return NextResponse.json({ error: "Forbidden, admin only" }, { status: 403 });
   }
   try {
     await prisma.scheduleSession.delete({ where: { id: params.id } });

@@ -70,7 +70,7 @@ export default function QueueSettingsModal({ onClose, onChanged }: { onClose: ()
     try {
       const r = await fetch("/api/admin/email-queue", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "testEmail", to: testTo || undefined }) });
       const j = await r.json();
-      setMsg(r.ok ? `Test queued to ${j.queuedTestTo} — first in line.` : (j.error || "Could not queue test."));
+      setMsg(r.ok ? `Test queued to ${j.queuedTestTo}, first in line.` : (j.error || "Could not queue test."));
       await refresh(); onChanged?.();
     } finally { setBusy(null); }
   }
@@ -79,7 +79,7 @@ export default function QueueSettingsModal({ onClose, onChanged }: { onClose: ()
     try {
       const r = await fetch("/api/admin/email-queue", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "burst", count: burstCount, minutes: burstMinutes }) });
       const j = await r.json();
-      setMsg(!j.bursting ? "Nothing queued to burst yet." : `Releasing ${j.bursting} over ${j.minutes} min${j.paused ? " — sending is paused, resume to release" : " — watch your inbox"}.`);
+      setMsg(!j.bursting ? "Nothing queued to burst yet." : `Releasing ${j.bursting} over ${j.minutes} min${j.paused ? ", sending is paused, resume to release" : ", watch your inbox"}.`);
       await refresh(); onChanged?.();
     } finally { setBusy(null); }
   }
@@ -157,7 +157,7 @@ export default function QueueSettingsModal({ onClose, onChanged }: { onClose: ()
             <div className="border-t border-slate-100 pt-4">
               <div className="text-[11px] font-bold uppercase tracking-wide text-slate-500 mb-2">Test send</div>
               <div className="flex flex-wrap items-center gap-2">
-                <input type="email" value={testTo} onChange={(e) => setTestTo(e.target.value)} placeholder="you@org.com — defaults to your login"
+                <input type="email" value={testTo} onChange={(e) => setTestTo(e.target.value)} placeholder="you@org.com, defaults to your login"
                   className="flex-1 min-w-[180px] px-3 py-1.5 text-sm border border-slate-200 rounded-lg outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10" />
                 <button onClick={queueTest} disabled={busy === "test"} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800 text-white hover:bg-slate-900 disabled:opacity-50 inline-flex items-center gap-1.5">
                   {busy === "test" ? <Loader2 className="w-3 h-3 animate-spin" /> : <FlaskConical className="w-3 h-3" />} Queue test → front

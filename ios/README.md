@@ -1,4 +1,4 @@
-# Lurie Conference — iOS app
+# Lurie Conference, iOS app
 
 SwiftUI app for the 2026 Lurie Children's & AALB Conference Committee Hub.
 Primary purpose: receive push notifications for committee events, task
@@ -42,12 +42,12 @@ LURIE_TEAM_ID=ABC123XYZ xcodegen generate
 The backend dispatches APNs through the auth-key flow. On Render (or wherever
 the Next.js app runs), set:
 
-- `APNS_KEY_ID` — Key ID from the .p8 file (10 chars).
-- `APNS_TEAM_ID` — Your Apple Developer Team ID.
-- `APNS_BUNDLE_ID` — Must match the Xcode bundle identifier.
-- `APNS_AUTH_KEY` — Full contents of the `.p8` file. `\n` escape sequences are
+- `APNS_KEY_ID`, Key ID from the .p8 file (10 chars).
+- `APNS_TEAM_ID`, Your Apple Developer Team ID.
+- `APNS_BUNDLE_ID`, Must match the Xcode bundle identifier.
+- `APNS_AUTH_KEY`, Full contents of the `.p8` file. `\n` escape sequences are
   fine; the server normalizes them.
-- `APNS_ENV` — `production` (default) or `sandbox` for development builds.
+- `APNS_ENV`, `production` (default) or `sandbox` for development builds.
 
 To generate the auth key: <https://developer.apple.com/account/resources/authkeys/list>.
 Create a key with **Apple Push Notifications service (APNs)** enabled. Download

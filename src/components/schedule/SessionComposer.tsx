@@ -32,7 +32,7 @@ export type ScheduleSessionLite = {
   endTime: string;
 };
 
-// A presenter on a session — either linked to a presenter record (id set) or a
+// A presenter on a session, either linked to a presenter record (id set) or a
 // free-typed guest name (id null).
 type Chip = { id: string | null; name: string };
 
@@ -152,7 +152,7 @@ export default function SessionComposer({
         <div className="px-6 pt-5 pb-4 border-b border-slate-100 flex items-center gap-3 shrink-0">
           <div className="flex-1">
             <div className="text-sm font-extrabold text-slate-900">{isEdit ? "Edit session" : "Add a session"}</div>
-            <div className="text-[11px] text-slate-400 mt-0.5">Step {step === "details" ? "1" : "2"} of 2 — {step === "details" ? "Details" : "Time"}</div>
+            <div className="text-[11px] text-slate-400 mt-0.5">Step {step === "details" ? "1" : "2"} of 2, {step === "details" ? "Details" : "Time"}</div>
           </div>
           <div className="flex items-center gap-1.5">
             <StepDot active={step === "details"} done={step === "time"} />
@@ -195,7 +195,7 @@ export default function SessionComposer({
                 />
               </div>
 
-              {/* Presenter(s) — multi-select */}
+              {/* Presenter(s), multi-select */}
               <div>
                 <Label>Presenter(s) <span className="font-normal text-slate-400">(optional)</span></Label>
 

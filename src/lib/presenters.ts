@@ -75,7 +75,7 @@ export const STATUS_LABELS: Record<string, { label: string; color: string }> = {
 };
 
 // Ordered for status pickers (earliest stage first). The detail-page status
-// override iterates this so an admin can move a presenter to any stage —
+// override iterates this so an admin can move a presenter to any stage, 
 // including reverting an accidental "Confirmed" back to "Invited".
 export const STATUS_ORDER = ["proposed", "invited", "confirmed", "tentative", "changes_requested", "declined"] as const;
 

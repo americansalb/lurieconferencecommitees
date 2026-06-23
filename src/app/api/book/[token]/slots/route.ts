@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { computeSlots, groupSlotsByDay, formatSlotTime } from "@/lib/scheduling";
 
 // Public: the bookable slots for an invite, in the invitee's timezone. No
-// auth — the unguessable token is the credential. Query: ?tz=America/New_York
+// auth, the unguessable token is the credential. Query: ?tz=America/New_York
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ token: string }> }

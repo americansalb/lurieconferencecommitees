@@ -256,7 +256,7 @@ export default function ProfilePage() {
                   Rotate URL
                 </button>
                 <span className="text-[11px] text-slate-400">
-                  Anyone with this URL can read your event list — don&apos;t share it.
+                  Anyone with this URL can read your event list, don&apos;t share it.
                 </span>
               </div>
             </div>
