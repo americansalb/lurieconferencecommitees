@@ -536,6 +536,45 @@ export function sponsorApplicationReceivedEmail({
   `);
 }
 
+type SponsorAcceptedArgs = {
+  firstName: string;
+  companyName: string;
+  tier: { name: string; amountLabel: string; ticketsIncluded: number };
+  statusUrl: string;
+  donatesFoodInstead: boolean;
+  isExhibitor: boolean;
+};
+
+// Sent when an admin moves an application to "Awaiting payment" — i.e. accepts
+// it and asks the contact to pay. Distinct from the application-received note.
+export function sponsorAcceptedEmail({
+  firstName, companyName, tier, statusUrl, donatesFoodInstead, isExhibitor,
+}: SponsorAcceptedArgs) {
+  const first = firstName || "there";
+  const roleLine = isExhibitor
+    ? `We&rsquo;re delighted to confirm <strong>${escapeHtml(companyName)}</strong> as an exhibitor at the 2026 Lurie Children&rsquo;s and AALB Conference, August 15 and 16, 2026, at Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago.`
+    : `We&rsquo;re delighted to confirm <strong>${escapeHtml(companyName)}</strong> as a sponsor of the 2026 Lurie Children&rsquo;s and AALB Conference at the <strong>${escapeHtml(tier.name)}</strong> level.`;
+  const payLine = donatesFoodInstead
+    ? `As you opted to donate food in kind, there is no payment to complete &mdash; our team will be in touch to coordinate menu, quantities, and logistics.`
+    : `To secure your place, please complete your payment of <strong>${escapeHtml(tier.amountLabel)}</strong>${tier.ticketsIncluded ? `, which includes ${tier.ticketsIncluded} conference ticket${tier.ticketsIncluded === 1 ? "" : "s"}` : ""}.`;
+  return shell(`
+    <h1 style="font-size:22px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">You&rsquo;re in, ${escapeHtml(first)}.</h1>
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
+      ${roleLine}
+    </p>
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
+      ${payLine}
+    </p>
+    ${donatesFoodInstead ? "" : button(statusUrl, isExhibitor ? "Complete your details &amp; payment" : "Complete your payment")}
+    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;">
+      All sponsorship payments are tax-deductible to the fullest extent allowed by law under IRS code 501(c)(3). EINs: 83-3016421 and 36-2170833.
+    </p>
+    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:8px 0 0 0;">
+      Questions? Simply reply to this email.
+    </p>
+  `);
+}
+
 type SponsorPaidArgs = {
   firstName: string;
   companyName: string;

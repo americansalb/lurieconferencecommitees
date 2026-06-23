@@ -95,6 +95,13 @@ export default function SponsorsAdminPage() {
   }, [status, load]);
 
   async function updateStatus(id: string, newStatus: string) {
+    // Moving to "Awaiting payment" emails the applicant their acceptance +
+    // pay link. Confirm first so an inline misclick doesn't email someone.
+    if (newStatus === "awaiting_payment") {
+      const s = sponsors.find((x) => x.id === id);
+      const owes = s && !s.paid && !s.donateFoodInstead && s.amountCents > 0;
+      if (owes && !confirm(`Email ${s?.companyName || "this applicant"} their acceptance and a link to complete payment now?`)) return;
+    }
     await fetch(`/api/sponsors/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },

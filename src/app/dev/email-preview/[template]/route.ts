@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   sponsorInviteEmail,
+  sponsorAcceptedEmail,
   proposalCallEmail,
   bookingInviteEmail,
   bookingConfirmedInviteeEmail,
@@ -37,6 +38,26 @@ export async function GET(
         inviteMessage: null,
         landingUrl: `${base}/sponsor`,
         assetBase: base,
+      });
+      break;
+    case "sponsor-accepted":
+      html = sponsorAcceptedEmail({
+        firstName: "Maria",
+        companyName: "Northwestern Language Services",
+        tier: { name: "Gold Sponsor", amountLabel: "$2,500", ticketsIncluded: 2 },
+        statusUrl: `${base}/sponsor/status/demo-token`,
+        donatesFoodInstead: false,
+        isExhibitor: false,
+      });
+      break;
+    case "exhibitor-accepted":
+      html = sponsorAcceptedEmail({
+        firstName: "Jace",
+        companyName: "Maya Bridge Language Services",
+        tier: { name: "Exhibitor Table", amountLabel: "$650", ticketsIncluded: 1 },
+        statusUrl: `${base}/sponsor/status/demo-token`,
+        donatesFoodInstead: false,
+        isExhibitor: true,
       });
       break;
     case "cfp-general":
