@@ -25,6 +25,13 @@ type Sponsor = {
   amountCents: number;
   donateFoodInstead: boolean;
   message: string | null;
+  registreeName: string | null;
+  registreeEmail: string | null;
+  dietary: string | null;
+  accessibility: string | null;
+  wantsLogo: boolean;
+  exhibitorDetailsAt: string | null;
+  logo: { mime: string } | null;
   status: string;
   paid: boolean;
   paidAt: string | null;
@@ -313,6 +320,27 @@ export default function SponsorsAdminPage() {
                         {s.message && (
                           <div className="mt-2 ml-12 text-xs text-slate-600 bg-slate-50 rounded px-3 py-2 border-l-2 border-slate-200">
                             {s.message}
+                          </div>
+                        )}
+                        {s.tier === "exhibitor" && (s.registreeName || s.wantsLogo || s.exhibitorDetailsAt) && (
+                          <div className="mt-2 ml-12 rounded-lg border border-[#0066B3]/15 bg-[#0066B3]/[0.03] px-3 py-2">
+                            <div className="text-[10px] font-bold uppercase tracking-wide text-[#0066B3] mb-1">Exhibitor details</div>
+                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-slate-600">
+                              {s.registreeName && <span><span className="text-slate-400">Rep:</span> {s.registreeName}{s.registreeEmail ? ` · ${s.registreeEmail}` : ""}</span>}
+                              {s.website && <a href={s.website} target="_blank" rel="noopener noreferrer" className="font-medium text-[#0066B3] hover:underline">{s.website}</a>}
+                              {s.dietary && <span><span className="text-slate-400">Dietary:</span> {s.dietary}</span>}
+                              {s.accessibility && <span><span className="text-slate-400">Access:</span> {s.accessibility}</span>}
+                            </div>
+                            {s.wantsLogo && (
+                              <div className="mt-2">
+                                {s.logo ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img src={`/api/sponsors/${s.id}/logo`} alt={`${s.companyName} logo`} className="h-10 w-auto max-w-[140px] object-contain bg-white rounded border border-slate-200 p-1" />
+                                ) : (
+                                  <span className="text-[11px] font-semibold text-amber-600">Wants logo shown — no file uploaded yet</span>
+                                )}
+                              </div>
+                            )}
                           </div>
                         )}
                         {isAdmin && (

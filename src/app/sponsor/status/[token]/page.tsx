@@ -4,12 +4,14 @@ import { Calendar, MapPin, CreditCard, Check, FileText } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { tierById, SPONSOR_STATUS_LABELS } from "@/lib/sponsors";
 import PayNowButton from "./PayNowButton";
+import ExhibitorPay from "./ExhibitorPay";
 
 export const dynamic = "force-dynamic";
 
 export default async function SponsorStatusPage({ params }: { params: { token: string } }) {
   const sponsor = await prisma.sponsor.findUnique({
     where: { applicationToken: params.token },
+    include: { logo: { select: { mime: true } } },
   });
   if (!sponsor) notFound();
 
@@ -50,12 +52,28 @@ export default async function SponsorStatusPage({ params }: { params: { token: s
           )}
 
           {!sponsor.paid && !sponsor.donateFoodInstead && sponsor.amountCents > 0 && (
-            <div className="mt-6">
-              <div className="text-xs text-slate-500 mb-3">
-                Pay {amount} now with a card via Stripe, or reply to the confirmation email to arrange invoice or check.
+            sponsor.tier === "exhibitor" ? (
+              <ExhibitorPay
+                token={params.token}
+                accent={accent}
+                amountLabel={amount}
+                hasLogo={!!sponsor.logo}
+                initial={{
+                  registreeName: sponsor.registreeName || "",
+                  registreeEmail: sponsor.registreeEmail || "",
+                  dietary: sponsor.dietary || "",
+                  accessibility: sponsor.accessibility || "",
+                  wantsLogo: sponsor.wantsLogo,
+                }}
+              />
+            ) : (
+              <div className="mt-6">
+                <div className="text-xs text-slate-500 mb-3">
+                  Pay {amount} now with a card via Stripe, or reply to the confirmation email to arrange invoice or check.
+                </div>
+                <PayNowButton token={params.token} accent={accent} amountLabel={amount} />
               </div>
-              <PayNowButton token={params.token} accent={accent} amountLabel={amount} />
-            </div>
+            )
           )}
 
           {sponsor.paid && (

@@ -11,13 +11,15 @@ import {
   PrimaryButton, InlineError, Hint, useEnterKey,
 } from "@/components/funnel/Wizard";
 import { TIERS, fullBenefits, SponsorTier } from "@/lib/sponsors";
+import ExhibitorDetailsForm, { TableNotice, EMPTY_EXHIBITOR, type ExhibitorDetails } from "@/components/sponsor/ExhibitorDetailsForm";
+import type { LogoValue } from "@/components/sponsor/LogoUpload";
 
 // Flow: browse (compare every tier, full width) → details (one tier) →
-// apply (company + contact) → review ("look good?") → done (pay / next
-// steps). Browse stays wide because choosing a sponsorship level is a
-// comparison decision; the rest are focused, one-thing-per-screen steps.
-type Step = "browse" | "details" | "apply" | "review" | "done";
-const FLOW: Step[] = ["browse", "details", "apply", "review"];
+// apply (company + contact) → [exhibit: table details, exhibitor tier only] →
+// review ("look good?") → done (pay / next steps). Browse stays wide because
+// choosing a sponsorship level is a comparison decision; the rest are focused,
+// one-thing-per-screen steps.
+type Step = "browse" | "details" | "apply" | "exhibit" | "review" | "done";
 
 type FormState = {
   companyName: string;
@@ -48,6 +50,8 @@ export default function SponsorFunnel() {
   const [step, setStep] = useState<Step>("browse");
   const [selected, setSelected] = useState<SponsorTier | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY);
+  const [exhibitor, setExhibitor] = useState<ExhibitorDetails>(EMPTY_EXHIBITOR);
+  const [logo, setLogo] = useState<LogoValue>(null);
   const [showMore, setShowMore] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -75,7 +79,8 @@ export default function SponsorFunnel() {
     if (step === "browse") { router.push("/"); return; }
     if (step === "details") { setSelected(null); setStep("browse"); }
     else if (step === "apply") setStep("details");
-    else if (step === "review") setStep("apply");
+    else if (step === "exhibit") setStep("apply");
+    else if (step === "review") setStep(selected?.id === "exhibitor" ? "exhibit" : "apply");
     toTop();
   }
 
@@ -87,6 +92,7 @@ export default function SponsorFunnel() {
     if (!form.contactName.trim()) return "We need a contact name.";
     if (!EMAIL_RE.test(form.contactEmail.trim())) return "Please share a valid email so we can reach you.";
     if (!form.contactPhone.trim()) return "A phone number lets us coordinate the details with you.";
+    if (selected?.id === "exhibitor" && !form.website.trim()) return "Please add your organization's website.";
     return null;
   }
 
@@ -94,11 +100,18 @@ export default function SponsorFunnel() {
     const err = validateApply();
     if (err) { setError(err); return; }
     setError(null);
+    setStep(selected?.id === "exhibitor" ? "exhibit" : "review");
+    toTop();
+  }
+
+  function fromExhibit() {
+    if (!exhibitor.registreeName.trim()) { setError("Please add the name of whoever will staff your table."); return; }
+    setError(null);
     setStep("review");
     toTop();
   }
 
-  useEnterKey(() => { if (step === "apply") fromApply(); }, step === "apply");
+  useEnterKey(() => { if (step === "apply") fromApply(); else if (step === "exhibit") fromExhibit(); }, step === "apply" || step === "exhibit");
 
   async function submit() {
     if (!selected) return;
@@ -112,6 +125,14 @@ export default function SponsorFunnel() {
           ...form,
           tier: selected.id,
           donateFoodInstead: selected.id === "food" ? form.donateFoodInstead : false,
+          ...(selected.id === "exhibitor" ? {
+            registreeName: exhibitor.registreeName,
+            registreeEmail: exhibitor.registreeEmail,
+            dietary: exhibitor.dietary,
+            accessibility: exhibitor.accessibility,
+            wantsLogo: exhibitor.wantsLogo,
+            logo: exhibitor.wantsLogo && logo ? { dataUrl: logo.dataUrl, name: logo.name } : undefined,
+          } : {}),
         }),
       });
       const json = await res.json();
@@ -168,13 +189,16 @@ export default function SponsorFunnel() {
     );
   }
 
-  const current = Math.max(0, FLOW.indexOf(step));
+  const flow: Step[] = selected?.id === "exhibitor"
+    ? ["browse", "details", "apply", "exhibit", "review"]
+    : ["browse", "details", "apply", "review"];
+  const current = Math.max(0, flow.indexOf(step));
 
   return (
     <WizardShell
-      eyebrow="Sponsorship"
+      eyebrow={selected?.id === "exhibitor" ? "Exhibitor" : "Sponsorship"}
       current={current}
-      total={FLOW.length}
+      total={flow.length}
       onBack={goBack}
       wide={step === "browse"}
     >
@@ -197,12 +221,15 @@ export default function SponsorFunnel() {
             sub={<><AccentChip tier={selected} /> <span className="ml-1">{selected.amountLabel}</span></>}
           />
           <div className="space-y-3">
-            <TextInput label="Company / organization" value={form.companyName} onChange={(v) => setF("companyName", v)} required autoFocus />
+            <TextInput label={selected.id === "exhibitor" ? "Full name of your organization" : "Company / organization"} value={form.companyName} onChange={(v) => setF("companyName", v)} required autoFocus />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <TextInput label="Your name" value={form.contactName} onChange={(v) => setF("contactName", v)} required />
               <TextInput label="Email" value={form.contactEmail} onChange={(v) => setF("contactEmail", v)} required type="email" inputMode="email" />
             </div>
             <TextInput label="Phone" value={form.contactPhone} onChange={(v) => setF("contactPhone", v)} required type="tel" inputMode="tel" placeholder="So we can coordinate the details" />
+            {selected.id === "exhibitor" && (
+              <TextInput label="Website" value={form.website} onChange={(v) => setF("website", v)} required placeholder="https://" inputMode="url" />
+            )}
 
             {selected.acceptsAlternativePayment && (
               <ToggleRow
@@ -217,7 +244,9 @@ export default function SponsorFunnel() {
             {showMore ? (
               <div className="space-y-3">
                 <TextInput label="Your role" value={form.contactRole} onChange={(v) => setF("contactRole", v)} placeholder="e.g. Marketing Director" />
-                <TextInput label="Website" value={form.website} onChange={(v) => setF("website", v)} placeholder="https://" inputMode="url" />
+                {selected.id !== "exhibitor" && (
+                  <TextInput label="Website" value={form.website} onChange={(v) => setF("website", v)} placeholder="https://" inputMode="url" />
+                )}
                 <TextArea label="Anything you'd like to add" value={form.message} onChange={(v) => setF("message", v)} rows={3} placeholder="A session you'd like to sponsor, materials to distribute, scheduling notes…" hint="optional" />
               </div>
             ) : (
@@ -238,6 +267,21 @@ export default function SponsorFunnel() {
             <PrimaryButton onClick={fromApply}>Continue to review</PrimaryButton>
           </div>
           <Hint>Required: organization, name, email, and phone. Everything else is optional.</Hint>
+        </StepFrame>
+      )}
+
+      {step === "exhibit" && selected && (
+        <StepFrame stepKey="exhibit">
+          <Question
+            title={<>Your exhibitor table.</>}
+            sub={<>A few details so we can set up your space and your representative&rsquo;s day.</>}
+          />
+          <ExhibitorDetailsForm value={exhibitor} onChange={setExhibitor} logo={logo} onLogo={setLogo} />
+          <InlineError message={error} />
+          <div className="mt-7">
+            <PrimaryButton onClick={fromExhibit}>Continue to review</PrimaryButton>
+          </div>
+          <Hint>The logo is optional and included at no charge. Everything else helps us prepare for your team on site.</Hint>
         </StepFrame>
       )}
 
@@ -278,8 +322,18 @@ export default function SponsorFunnel() {
               {form.donateFoodInstead && selected.id === "food" && (
                 <SummaryRow label="In kind" value="Donating food instead of the fee" onEdit={editApply} />
               )}
+              {selected.id === "exhibitor" && (
+                <>
+                  <SummaryRow label="Table rep" value={exhibitor.registreeName || "Not provided"} onEdit={editExhibit} />
+                  {exhibitor.dietary && <SummaryRow label="Dietary / allergies" value={exhibitor.dietary} onEdit={editExhibit} />}
+                  {exhibitor.accessibility && <SummaryRow label="Accessibility" value={exhibitor.accessibility} onEdit={editExhibit} />}
+                  <SummaryRow label="Website logo" value={exhibitor.wantsLogo ? (logo ? logo.name : "Yes — no file uploaded yet") : "Not displaying"} onEdit={editExhibit} />
+                </>
+              )}
             </div>
           </div>
+
+          {selected.id === "exhibitor" && <div className="mt-4"><TableNotice /></div>}
 
           <InlineError message={error} />
 
@@ -293,6 +347,7 @@ export default function SponsorFunnel() {
   );
 
   function editApply() { setStep("apply"); toTop(); }
+  function editExhibit() { setStep("exhibit"); toTop(); }
 }
 
 function AccentChip({ tier }: { tier: SponsorTier }) {

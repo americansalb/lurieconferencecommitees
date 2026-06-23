@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
 import { newSponsorToken, tierById, sponsorFromHeader, sponsorReplyTo, sponsorStatusUrl } from "@/lib/sponsors";
 import { sponsorApplicationReceivedEmail, sponsorAdminNotificationEmail } from "@/lib/mail-templates";
+import { saveLogoFromDataUrl } from "@/lib/sponsor-logo";
 
 function isEmail(s: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((s || "").trim());
@@ -17,6 +18,7 @@ export async function GET() {
   }
   const sponsors = await prisma.sponsor.findMany({
     orderBy: { createdAt: "desc" },
+    include: { logo: { select: { mime: true } } },
   });
   return NextResponse.json({ sponsors });
 }
@@ -27,6 +29,7 @@ export async function POST(req: Request) {
   const {
     companyName, contactName, contactEmail, contactPhone, contactRole, website,
     tier, donateFoodInstead, message,
+    registreeName, registreeEmail, dietary, accessibility, wantsLogo, logo,
   } = body;
 
   if (!companyName?.trim() || !contactName?.trim() || !isEmail(contactEmail || "") || !contactPhone?.trim() || !tier) {
@@ -38,6 +41,12 @@ export async function POST(req: Request) {
 
   const t = tierById(tier);
   if (!t) return NextResponse.json({ error: "Unknown tier." }, { status: 400 });
+
+  const isExhibitor = t.id === "exhibitor";
+  if (isExhibitor) {
+    if (!website?.trim()) return NextResponse.json({ error: "A website is required for exhibitors." }, { status: 400 });
+    if (!registreeName?.trim()) return NextResponse.json({ error: "Tell us who will staff the table." }, { status: 400 });
+  }
 
   // Food sponsor with donation-in-kind: amount stays 0, no Stripe path.
   const usesAlternative = t.id === "food" && donateFoodInstead === true;
@@ -56,10 +65,19 @@ export async function POST(req: Request) {
       amountCents,
       donateFoodInstead: usesAlternative,
       message: message?.trim() || null,
+      registreeName: isExhibitor ? (registreeName?.trim() || null) : null,
+      registreeEmail: isExhibitor ? (registreeEmail?.trim().toLowerCase() || null) : null,
+      dietary: isExhibitor ? (dietary?.trim() || null) : null,
+      accessibility: isExhibitor ? (accessibility?.trim() || null) : null,
+      wantsLogo: isExhibitor ? Boolean(wantsLogo) : false,
+      exhibitorDetailsAt: isExhibitor ? new Date() : null,
       applicationToken: token,
       status: "submitted",
     },
   });
+  if (isExhibitor && wantsLogo && logo?.dataUrl) {
+    await saveLogoFromDataUrl(sponsor.id, logo.dataUrl, logo?.name).catch((e) => console.error("[sponsors] logo save failed", e));
+  }
   await prisma.sponsorEvent.create({
     data: { sponsorId: sponsor.id, type: "submitted", meta: t.id },
   });

@@ -483,6 +483,14 @@ model Sponsor {
   contactRole           String?
   website               String?
 
+  // Exhibitor on-site details (collected for the Exhibitor Table tier).
+  registreeName         String?
+  registreeEmail        String?
+  dietary               String?
+  accessibility         String?
+  wantsLogo             Boolean        @default(false)
+  exhibitorDetailsAt    DateTime?
+
   tier                  String
   customTierName        String?
   amountCents           Int
@@ -508,10 +516,26 @@ model Sponsor {
   updatedAt             DateTime?      @updatedAt
 
   events                SponsorEvent[]
+  logo                  SponsorLogo?
 
   @@index([status])
   @@index([tier])
   @@map("lcc_sponsors")
+  @@schema("lcc")
+}
+
+// Exhibitor/sponsor logo, stored out-of-row so the Sponsor list query never
+// pulls the image bytes. One per sponsor; served via /api/sponsors/:id/logo.
+model SponsorLogo {
+  sponsorId String   @id
+  sponsor   Sponsor  @relation(fields: [sponsorId], references: [id], onDelete: Cascade)
+  data      Bytes
+  mime      String
+  fileName  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime? @updatedAt
+
+  @@map("lcc_sponsor_logos")
   @@schema("lcc")
 }
 
