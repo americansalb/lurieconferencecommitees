@@ -394,7 +394,7 @@ export function attendeeAlumniInviteEmail({
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:2px 0 6px 0;">
       ${[
         ["Yuri Takabatake, MD", "Attending Physician, Lurie Children&rsquo;s Hospital of Chicago"],
-        ["Yuliya Speroff, CoreCHI-P", "AALB Trainer of the Year (2024); Medical Interpreter Supervisor, Harborview Medical Center"],
+        ["Yuliya Speroff, CoreCHI-P", "AALB Trainer of the Year (2024); Vice President, National Council on Interpreting in Health Care; Medical Interpreter Supervisor, Harborview Medical Center"],
         ["Wilma Alvarado-Little", "Associate Commissioner, New York State Department of Health"],
         ["Patricia A. Alonzo, EdD", "Director of Strategic Partnerships, Equiti Health"],
       ].map(([name, role]) => `
