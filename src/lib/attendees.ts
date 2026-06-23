@@ -18,16 +18,18 @@ export function buildAttendeeInvite(opts: {
   template?: string | null;
 }): { subject: string; html: string; template: AttendeeTemplate } {
   const template: AttendeeTemplate = opts.template === "alumni" ? "alumni" : "standard";
-  const baseCents = PRICING.inPerson.standardCents;
-  const finalCents = Math.round(baseCents * (100 - opts.discountPercent) / 100);
+  const inPerson = computePrice("in-person", opts.discountPercent);
+  const virtual = computePrice("virtual", opts.discountPercent);
   const render = template === "alumni" ? attendeeAlumniInviteEmail : attendeeInviteEmail;
   const html = render({
     firstName: opts.firstName,
     url: attendeeFunnelUrl(opts.inviteToken),
     inviteMessage: opts.inviteMessage ?? null,
     discountPercent: opts.discountPercent,
-    inPersonOriginalCents: baseCents,
-    inPersonDiscountedCents: finalCents,
+    inPersonOriginalCents: inPerson.baseCents || 0,
+    inPersonDiscountedCents: inPerson.finalCents || 0,
+    virtualOriginalCents: virtual.baseCents || 0,
+    virtualDiscountedCents: virtual.finalCents || 0,
   });
   const subject = `${opts.firstName}, your invite to the 2026 Lurie Children's & AALB Conference`;
   return { subject, html, template };
@@ -89,7 +91,8 @@ export function computePrice(mode: string | null | undefined, discountPercent: n
   }
   if (mode === "virtual") {
     const base = PRICING.virtual.standardCents;
-    return { baseCents: base, finalCents: base };
+    const final = Math.round(base * (100 - discountPercent) / 100);
+    return { baseCents: base, finalCents: final };
   }
   return { baseCents: null, finalCents: null };
 }

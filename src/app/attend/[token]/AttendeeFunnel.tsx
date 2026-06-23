@@ -11,6 +11,7 @@ type Pricing = {
   inPersonBaseCents: number;
   inPersonFinalCents: number;
   virtualBaseCents: number;
+  virtualFinalCents: number;
 };
 
 type Initial = {
@@ -180,7 +181,7 @@ export default function AttendeeFunnel({
   const finalCents = data.attendanceMode === "in-person"
     ? pricing.inPersonFinalCents
     : data.attendanceMode === "virtual"
-    ? pricing.virtualBaseCents
+    ? pricing.virtualFinalCents
     : 0;
   const baseCents = data.attendanceMode === "in-person"
     ? pricing.inPersonBaseCents
@@ -266,14 +267,26 @@ export default function AttendeeFunnel({
               <div className="mt-6 rounded-lg p-4 bg-white"
                 style={{ border: `1px solid #e2e8f0`, borderLeftWidth: 3, borderLeftColor: TEAL }}>
                 <div className="text-[10px] font-bold tracking-widest uppercase" style={{ color: TEAL }}>
-                  {data.discountPercent}% off &middot; in-person registration
+                  {data.discountPercent}% off &middot; your personal rate
                 </div>
-                <div className="mt-1.5 flex items-baseline gap-2">
-                  <span className="text-2xl font-bold text-slate-900">{dollars(pricing.inPersonFinalCents)}</span>
-                  <span className="text-sm text-slate-400 line-through">{dollarsNoCents(pricing.inPersonBaseCents)}</span>
+                <div className="mt-2 grid grid-cols-2 gap-3">
+                  <div>
+                    <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">In-person</div>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-xl font-bold text-slate-900">{dollars(pricing.inPersonFinalCents)}</span>
+                      {data.discountPercent > 0 && <span className="text-xs text-slate-400 line-through">{dollarsNoCents(pricing.inPersonBaseCents)}</span>}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Virtual</div>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-xl font-bold text-slate-900">{dollars(pricing.virtualFinalCents)}</span>
+                      {data.discountPercent > 0 && <span className="text-xs text-slate-400 line-through">{dollarsNoCents(pricing.virtualBaseCents)}</span>}
+                    </div>
+                  </div>
                 </div>
-                <div className="text-xs text-slate-500 mt-1.5">
-                  Your invitation rate, applied automatically at checkout. Virtual attendance is also available at the standard {dollarsNoCents(pricing.virtualBaseCents)}.
+                <div className="text-xs text-slate-500 mt-2.5">
+                  Your invitation rate, applied automatically at checkout for either option.
                 </div>
               </div>
 
@@ -323,7 +336,8 @@ export default function AttendeeFunnel({
                     icon={Monitor}
                     title="Virtual"
                     subtitle="Live stream all sessions"
-                    badge={dollars(pricing.virtualBaseCents)}
+                    badge={dollars(pricing.virtualFinalCents)}
+                    badgeOriginal={data.discountPercent > 0 ? dollarsNoCents(pricing.virtualBaseCents) : undefined}
                   />
                 </div>
               </div>

@@ -26,6 +26,7 @@ export default async function AttendPage({ params }: { params: { token: string }
   }
 
   const inPersonPreview = computePrice("in-person", attendee.discountPercent);
+  const virtualPreview = computePrice("virtual", attendee.discountPercent);
 
   return (
     <AttendeeFunnel
@@ -49,7 +50,8 @@ export default async function AttendPage({ params }: { params: { token: string }
       pricing={{
         inPersonBaseCents: inPersonPreview.baseCents || 0,
         inPersonFinalCents: inPersonPreview.finalCents || 0,
-        virtualBaseCents: 10500,
+        virtualBaseCents: virtualPreview.baseCents || 0,
+        virtualFinalCents: virtualPreview.finalCents || 0,
       }}
     />
   );

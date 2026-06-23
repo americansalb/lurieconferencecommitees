@@ -277,7 +277,44 @@ type AttendeeInviteArgs = {
   discountPercent: number;
   inPersonOriginalCents: number;
   inPersonDiscountedCents: number;
+  virtualOriginalCents: number;
+  virtualDiscountedCents: number;
 };
+
+// The personal-rate card, showing the discounted in-person AND virtual prices
+// side by side. Shared by the standard and alumni attendee invites so they
+// always price both options the same way.
+function attendeeRateCard({
+  discountPercent, inPersonOriginalCents, inPersonDiscountedCents, virtualOriginalCents, virtualDiscountedCents,
+}: {
+  discountPercent: number;
+  inPersonOriginalCents: number;
+  inPersonDiscountedCents: number;
+  virtualOriginalCents: number;
+  virtualDiscountedCents: number;
+}) {
+  const d2 = (c: number) => `$${(c / 100).toFixed(2)}`;
+  const d0 = (c: number) => `$${(c / 100).toFixed(0)}`;
+  const hasDiscount = discountPercent > 0;
+  const col = (label: string, disc: number, orig: number) => `
+    <td width="50%" style="vertical-align:top;padding:0 8px;">
+      <div style="font-size:11px;letter-spacing:0.08em;font-weight:700;color:${TEAL};text-transform:uppercase;">${label}</div>
+      <div style="font-size:22px;font-weight:700;color:${TEXT};margin-top:3px;line-height:1.1;">
+        ${d2(disc)}${hasDiscount && disc < orig ? ` <span style="font-size:13px;font-weight:500;color:${MUTED};text-decoration:line-through;">${d0(orig)}</span>` : ""}
+      </div>
+    </td>`;
+  return `
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 20px 0;border-collapse:separate;">
+      <tr><td style="border:1px solid #e2e8f0;border-left:3px solid ${TEAL};padding:16px 14px;border-radius:8px;background:#ffffff;">
+        ${hasDiscount ? `<div style="font-size:11px;letter-spacing:0.15em;text-transform:uppercase;font-weight:700;color:${TEAL};padding:0 8px 10px 8px;">${discountPercent}% off &middot; your personal rate</div>` : ""}
+        <table role="presentation" cellpadding="0" cellspacing="0" width="100%"><tr>
+          ${col("In-person", inPersonDiscountedCents, inPersonOriginalCents)}
+          ${col("Virtual", virtualDiscountedCents, virtualOriginalCents)}
+        </tr></table>
+        <div style="font-size:12px;color:${MUTED};margin-top:12px;padding:0 8px;">Applied automatically at checkout, for whichever option you choose.</div>
+      </td></tr>
+    </table>`;
+}
 
 export function attendeeInviteEmail({
   firstName,
@@ -286,17 +323,17 @@ export function attendeeInviteEmail({
   discountPercent,
   inPersonOriginalCents,
   inPersonDiscountedCents,
+  virtualOriginalCents,
+  virtualDiscountedCents,
 }: AttendeeInviteArgs) {
   const first = firstName || "there";
-  const originalDollars = `$${(inPersonOriginalCents / 100).toFixed(0)}`;
-  const discountedDollars = `$${(inPersonDiscountedCents / 100).toFixed(2)}`;
   const extra = inviteMessage
     ? `<p style="font-size:15px;line-height:1.65;color:${TEXT};margin:14px 0;background:#f8fafc;border-left:3px solid ${BLUE};padding:14px 16px;border-radius:6px;">${escapeHtml(inviteMessage)}</p>`
     : "";
   return shell(`
     <h1 style="font-size:24px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">Hi ${escapeHtml(first)},</h1>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
-      I&rsquo;m writing to invite you to the 2026 Lurie Children&rsquo;s and AALB Conference, August 15 and 16, 2026. The conference is held in person at Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago, with full virtual attendance also available.
+      I hope this finds you well. I&rsquo;m writing to invite you to the 2026 Lurie Children&rsquo;s and AALB Conference, August 15 and 16, 2026. The conference is held in person at Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago, with full virtual attendance also available.
     </p>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
       Two days of sessions on language access in healthcare: current practice and what is shifting in standards, technology, and policy.
@@ -306,21 +343,9 @@ export function attendeeInviteEmail({
     </p>
     ${extra}
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 10px 0;">
-      In appreciation of your work in the field, your registration is held at a personal rate:
+      In appreciation of your work in the field, your registration is held at a personal rate, for in-person or virtual:
     </p>
-    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px 0;border-collapse:separate;">
-      <tr><td style="border:1px solid #e2e8f0;border-left:3px solid ${TEAL};padding:16px 20px;border-radius:8px;background:#ffffff;">
-        <div style="font-size:11px;letter-spacing:0.15em;text-transform:uppercase;font-weight:600;color:${TEAL};">
-          ${discountPercent}% off &middot; in-person registration
-        </div>
-        <div style="font-size:24px;font-weight:700;color:${TEXT};margin-top:6px;line-height:1.1;">
-          ${discountedDollars} <span style="font-size:14px;font-weight:500;color:${MUTED};margin-left:6px;text-decoration:line-through;">${originalDollars}</span>
-        </div>
-        <div style="font-size:13px;color:${MUTED};margin-top:6px;">
-          Virtual attendance is also available at the standard $105.
-        </div>
-      </td></tr>
-    </table>
+    ${attendeeRateCard({ discountPercent, inPersonOriginalCents, inPersonDiscountedCents, virtualOriginalCents, virtualDiscountedCents })}
     ${button(url, "Reserve my spot")}
     <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:8px 0 0 0;">
       Or paste this into your browser:<br/>
@@ -343,10 +368,10 @@ export function attendeeAlumniInviteEmail({
   discountPercent,
   inPersonOriginalCents,
   inPersonDiscountedCents,
+  virtualOriginalCents,
+  virtualDiscountedCents,
 }: AttendeeInviteArgs) {
   const first = firstName || "there";
-  const originalDollars = `$${(inPersonOriginalCents / 100).toFixed(0)}`;
-  const discountedDollars = `$${(inPersonDiscountedCents / 100).toFixed(2)}`;
   const extra = inviteMessage
     ? `<div style="font-size:14px;line-height:1.6;color:${TEXT};background:#f8fafc;border-left:3px solid ${BLUE};padding:14px 16px;border-radius:6px;margin:18px 0 0 0;">${escapeHtml(inviteMessage).replace(/\n/g, "<br>")}</div>`
     : "";
@@ -355,15 +380,30 @@ export function attendeeAlumniInviteEmail({
     <div style="font-size:11px;letter-spacing:0.16em;font-weight:700;color:${GOLD};text-transform:uppercase;margin:0 0 8px 0;">An invitation for the AALB community</div>
     <h1 style="font-size:23px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">Welcome back, ${escapeHtml(first)}.</h1>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
-      As part of the AALB community, you&rsquo;ve helped move language access forward, and we&rsquo;d be honored to have you with us at the <strong>2026 Lurie Children&rsquo;s &amp; AALB Conference</strong>, August 15 and 16 in Chicago, with full virtual attendance also available.
+      We hope this note finds you well, and that the year has treated you and your work kindly. As part of the AALB community, you&rsquo;ve helped move language access forward, and we&rsquo;d be honored to have you with us at the <strong>2026 Lurie Children&rsquo;s &amp; AALB Conference</strong>, August 15 and 16 in Chicago, with full virtual attendance also available.
     </p>
-    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 4px 0;">
-      This year&rsquo;s theme, <em>True Language Access: Yesterday, Today, and Tomorrow</em>, brings together interpreters, clinicians, language service providers, advocates, and policymakers for two days of sessions on where the field stands and where it&rsquo;s headed.
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
+      This year&rsquo;s theme, <em>True Language Access: Yesterday, Today, and Tomorrow</em>, brings together interpreters, clinicians, language service providers, advocates, and policymakers for two days of sessions on where the field stands and where it&rsquo;s headed. Across three lenses, <strong>Yesterday</strong> honors the work that built language access as a civil right, <strong>Today</strong> confronts the gap between policy and practice at the bedside, and <strong>Tomorrow</strong> imagines the systems, training, and technology that make it the default for every patient.
     </p>
     ${extra}
 
     ${sectionHeading("Conference at a Glance")}
     ${glanceCard(GLANCE_ROWS)}
+
+    ${sectionHeading("A Few of This Year&rsquo;s Voices")}
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:2px 0 6px 0;">
+      ${[
+        ["Yuri Takabatake, MD", "Attending Physician, Lurie Children&rsquo;s Hospital of Chicago"],
+        ["Yuliya Speroff, CoreCHI-P", "Medical Interpreter Supervisor, Harborview Medical Center; VP, NCIHC"],
+        ["Wilma Alvarado-Little", "Associate Commissioner, New York State Department of Health"],
+        ["Patricia A. Alonzo, EdD", "Director of Strategic Partnerships, Equiti Health"],
+      ].map(([name, role]) => `
+        <tr><td style="padding:9px 0;border-bottom:1px solid #eef1f4;">
+          <div style="font-size:14.5px;font-weight:700;color:${TEXT};line-height:1.3;">${name}</div>
+          <div style="font-size:13px;color:${MUTED};margin-top:2px;line-height:1.4;">${role}</div>
+        </td></tr>`).join("")}
+    </table>
+    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:6px 0 0 0;">With more speakers to be announced.</p>
 
     ${sectionHeading("Why You&rsquo;ll Want to Be There")}
     ${bulletList([
@@ -375,21 +415,9 @@ export function attendeeAlumniInviteEmail({
 
     ${sectionHeading("Your Alumni Rate")}
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 12px 0;">
-      In appreciation of your part in this community, your in-person registration is held at a personal rate:
+      In appreciation of your part in this community, your registration is held at a personal rate, whether you join us in Chicago or online:
     </p>
-    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px 0;border-collapse:separate;">
-      <tr><td style="border:1px solid #e2e8f0;border-left:3px solid ${TEAL};padding:16px 20px;border-radius:8px;background:#ffffff;">
-        <div style="font-size:11px;letter-spacing:0.15em;text-transform:uppercase;font-weight:600;color:${TEAL};">
-          ${discountPercent}% off &middot; in-person registration
-        </div>
-        <div style="font-size:24px;font-weight:700;color:${TEXT};margin-top:6px;line-height:1.1;">
-          ${discountedDollars} <span style="font-size:14px;font-weight:500;color:${MUTED};margin-left:6px;text-decoration:line-through;">${originalDollars}</span>
-        </div>
-        <div style="font-size:13px;color:${MUTED};margin-top:6px;">
-          Virtual attendance is also available at the standard $105.
-        </div>
-      </td></tr>
-    </table>
+    ${attendeeRateCard({ discountPercent, inPersonOriginalCents, inPersonDiscountedCents, virtualOriginalCents, virtualDiscountedCents })}
     ${button(url, "Reserve my alumni seat")}
     <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:8px 0 0 0;">
       Or paste this into your browser:<br/>

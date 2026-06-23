@@ -51,7 +51,7 @@ export async function POST(req: Request) {
   const productName = isInPerson
     ? "Conference 2026: In-Person Registration"
     : "Conference 2026: Virtual Registration";
-  const personalNote = isInPerson && attendee.discountPercent > 0
+  const personalNote = attendee.discountPercent > 0
     ? ` ${attendee.discountPercent}% personal-invite discount applied.`
     : "";
   const codeNote = discountCodeText ? ` Code ${discountCodeText} applied.` : "";
