@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
-import { tierById, sponsorStatusUrl, sponsorFromHeader, sponsorReplyTo } from "@/lib/sponsors";
+import { tierById, fullBenefits, sponsorStatusUrl, sponsorFromHeader, sponsorReplyTo } from "@/lib/sponsors";
 import { sponsorAcceptedEmail } from "@/lib/mail-templates";
 
 function isAdmin(role?: string) {
@@ -62,6 +62,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
           statusUrl: sponsorStatusUrl(updated.applicationToken),
           donatesFoodInstead: updated.donateFoodInstead,
           isExhibitor: updated.tier === "exhibitor",
+          benefits: fullBenefits(updated.tier),
         }),
         from: sponsorFromHeader(),
         replyTo: sponsorReplyTo(),

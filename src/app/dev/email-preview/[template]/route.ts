@@ -6,6 +6,7 @@ import {
   bookingInviteEmail,
   bookingConfirmedInviteeEmail,
 } from "@/lib/mail-templates";
+import { fullBenefits } from "@/lib/sponsors";
 
 // Dev-only HTML preview of outreach email templates, so we can eyeball the
 // rendered design. Never served in production.
@@ -48,6 +49,8 @@ export async function GET(
         statusUrl: `${base}/sponsor/status/demo-token`,
         donatesFoodInstead: false,
         isExhibitor: false,
+        benefits: fullBenefits("gold"),
+        assetBase: base,
       });
       break;
     case "exhibitor-accepted":
@@ -58,6 +61,8 @@ export async function GET(
         statusUrl: `${base}/sponsor/status/demo-token`,
         donatesFoodInstead: false,
         isExhibitor: true,
+        benefits: fullBenefits("exhibitor"),
+        assetBase: base,
       });
       break;
     case "cfp-general":

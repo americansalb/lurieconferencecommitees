@@ -2,9 +2,9 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Calendar, MapPin, CreditCard, Check, FileText } from "lucide-react";
 import { prisma } from "@/lib/db";
-import { tierById, SPONSOR_STATUS_LABELS } from "@/lib/sponsors";
+import { tierById, fullBenefits, SPONSOR_STATUS_LABELS } from "@/lib/sponsors";
 import PayNowButton from "./PayNowButton";
-import ExhibitorPay from "./ExhibitorPay";
+import ExhibitorCompletionWizard from "./ExhibitorCompletionWizard";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +26,28 @@ export default async function SponsorStatusPage({ params }: { params: { token: s
   const accent = tier?.accent || TEAL;
   const status = SPONSOR_STATUS_LABELS[sponsor.status] || SPONSOR_STATUS_LABELS.submitted;
   const amount = tier?.amountLabel || `$${(sponsor.amountCents / 100).toFixed(0)}`;
+
+  // Accepted, unpaid exhibitors complete their table details, agree to the
+  // terms, and pay through a full-screen wizard (matches the apply funnel)
+  // rather than the status card.
+  if (tier && sponsor.tier === "exhibitor" && !sponsor.paid && !sponsor.donateFoodInstead && sponsor.amountCents > 0) {
+    return (
+      <ExhibitorCompletionWizard
+        token={params.token}
+        companyName={sponsor.companyName}
+        tier={{ name: tier.name, amountLabel: amount, ticketsIncluded: tier.ticketsIncluded, accent, accentSoft: tier.accentSoft }}
+        benefits={fullBenefits(sponsor.tier)}
+        hasLogo={!!sponsor.logo}
+        initial={{
+          registreeName: sponsor.registreeName || "",
+          registreeEmail: sponsor.registreeEmail || "",
+          dietary: sponsor.dietary || "",
+          accessibility: sponsor.accessibility || "",
+          wantsLogo: sponsor.wantsLogo,
+        }}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen px-4 py-10"
@@ -52,28 +74,12 @@ export default async function SponsorStatusPage({ params }: { params: { token: s
           )}
 
           {!sponsor.paid && !sponsor.donateFoodInstead && sponsor.amountCents > 0 && (
-            sponsor.tier === "exhibitor" ? (
-              <ExhibitorPay
-                token={params.token}
-                accent={accent}
-                amountLabel={amount}
-                hasLogo={!!sponsor.logo}
-                initial={{
-                  registreeName: sponsor.registreeName || "",
-                  registreeEmail: sponsor.registreeEmail || "",
-                  dietary: sponsor.dietary || "",
-                  accessibility: sponsor.accessibility || "",
-                  wantsLogo: sponsor.wantsLogo,
-                }}
-              />
-            ) : (
-              <div className="mt-6">
-                <div className="text-xs text-slate-500 mb-3">
-                  Pay {amount} now with a card via Stripe, or reply to the confirmation email to arrange invoice or check.
-                </div>
-                <PayNowButton token={params.token} accent={accent} amountLabel={amount} />
+            <div className="mt-6">
+              <div className="text-xs text-slate-500 mb-3">
+                Pay {amount} now with a card via Stripe, or reply to the confirmation email to arrange invoice or check.
               </div>
-            )
+              <PayNowButton token={params.token} accent={accent} amountLabel={amount} />
+            </div>
           )}
 
           {sponsor.paid && (

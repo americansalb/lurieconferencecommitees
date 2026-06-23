@@ -12,6 +12,7 @@ import {
 } from "@/components/funnel/Wizard";
 import { TIERS, fullBenefits, SponsorTier } from "@/lib/sponsors";
 import ExhibitorDetailsForm, { TableNotice, EMPTY_EXHIBITOR, type ExhibitorDetails } from "@/components/sponsor/ExhibitorDetailsForm";
+import { ExhibitorTermsAgree } from "@/components/sponsor/ExhibitorTerms";
 import type { LogoValue } from "@/components/sponsor/LogoUpload";
 
 // Flow: browse (compare every tier, full width) → details (one tier) →
@@ -51,6 +52,7 @@ export default function SponsorFunnel() {
   const [selected, setSelected] = useState<SponsorTier | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY);
   const [exhibitor, setExhibitor] = useState<ExhibitorDetails>(EMPTY_EXHIBITOR);
+  const [exhibitorAgreed, setExhibitorAgreed] = useState(false);
   const [logo, setLogo] = useState<LogoValue>(null);
   const [showMore, setShowMore] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -106,6 +108,8 @@ export default function SponsorFunnel() {
 
   function fromExhibit() {
     if (!exhibitor.registreeName.trim()) { setError("Please add the name of whoever will staff your table."); return; }
+    if (!EMAIL_RE.test(exhibitor.registreeEmail.trim())) { setError("Please add a valid email for your table representative."); return; }
+    if (!exhibitorAgreed) { setError("Please review and agree to the exhibitor terms to continue."); return; }
     setError(null);
     setStep("review");
     toTop();
@@ -131,6 +135,7 @@ export default function SponsorFunnel() {
             dietary: exhibitor.dietary,
             accessibility: exhibitor.accessibility,
             wantsLogo: exhibitor.wantsLogo,
+            agreedToTerms: exhibitorAgreed,
             logo: exhibitor.wantsLogo && logo ? { dataUrl: logo.dataUrl, name: logo.name } : undefined,
           } : {}),
         }),
@@ -277,6 +282,8 @@ export default function SponsorFunnel() {
             sub={<>A few details so we can set up your space and your representative&rsquo;s day.</>}
           />
           <ExhibitorDetailsForm value={exhibitor} onChange={setExhibitor} logo={logo} onLogo={setLogo} />
+          <div className="mt-6 text-[11px] font-bold uppercase tracking-widest" style={{ color: C.gold }}>Exhibitor terms</div>
+          <div className="mt-3"><ExhibitorTermsAgree agreed={exhibitorAgreed} onChange={setExhibitorAgreed} /></div>
           <InlineError message={error} />
           <div className="mt-7">
             <PrimaryButton onClick={fromExhibit}>Continue to review</PrimaryButton>
@@ -325,9 +332,11 @@ export default function SponsorFunnel() {
               {selected.id === "exhibitor" && (
                 <>
                   <SummaryRow label="Table rep" value={exhibitor.registreeName || "Not provided"} onEdit={editExhibit} />
+                  <SummaryRow label="Rep email" value={exhibitor.registreeEmail || "Not provided"} onEdit={editExhibit} />
                   {exhibitor.dietary && <SummaryRow label="Dietary / allergies" value={exhibitor.dietary} onEdit={editExhibit} />}
                   {exhibitor.accessibility && <SummaryRow label="Accessibility" value={exhibitor.accessibility} onEdit={editExhibit} />}
                   <SummaryRow label="Website logo" value={exhibitor.wantsLogo ? (logo ? logo.name : "Yes — no file uploaded yet") : "Not displaying"} onEdit={editExhibit} />
+                  <SummaryRow label="Exhibitor terms" value={exhibitorAgreed ? "Agreed" : "Not agreed"} onEdit={editExhibit} />
                 </>
               )}
             </div>

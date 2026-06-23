@@ -543,34 +543,66 @@ type SponsorAcceptedArgs = {
   statusUrl: string;
   donatesFoodInstead: boolean;
   isExhibitor: boolean;
+  benefits?: string[];
+  assetBase?: string;
 };
 
 // Sent when an admin moves an application to "Awaiting payment" — i.e. accepts
-// it and asks the contact to pay. Distinct from the application-received note.
+// it and asks the contact to pay. A celebratory, fully branded confirmation
+// (hero, what's-included, conference glance), distinct from the plainer
+// application-received acknowledgement.
 export function sponsorAcceptedEmail({
-  firstName, companyName, tier, statusUrl, donatesFoodInstead, isExhibitor,
+  firstName, companyName, tier, statusUrl, donatesFoodInstead, isExhibitor, benefits, assetBase,
 }: SponsorAcceptedArgs) {
   const first = firstName || "there";
+  const ticketLine = tier.ticketsIncluded
+    ? `${tier.ticketsIncluded} conference ${tier.ticketsIncluded === 1 ? "ticket" : "tickets"}`
+    : "Recognition at the conference";
   const roleLine = isExhibitor
-    ? `We&rsquo;re delighted to confirm <strong>${escapeHtml(companyName)}</strong> as an exhibitor at the 2026 Lurie Children&rsquo;s and AALB Conference, August 15 and 16, 2026, at Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago.`
-    : `We&rsquo;re delighted to confirm <strong>${escapeHtml(companyName)}</strong> as a sponsor of the 2026 Lurie Children&rsquo;s and AALB Conference at the <strong>${escapeHtml(tier.name)}</strong> level.`;
-  const payLine = donatesFoodInstead
-    ? `As you opted to donate food in kind, there is no payment to complete &mdash; our team will be in touch to coordinate menu, quantities, and logistics.`
-    : `To secure your place, please complete your payment of <strong>${escapeHtml(tier.amountLabel)}</strong>${tier.ticketsIncluded ? `, which includes ${tier.ticketsIncluded} conference ticket${tier.ticketsIncluded === 1 ? "" : "s"}` : ""}.`;
+    ? `It is our pleasure to welcome <strong>${escapeHtml(companyName)}</strong> as an <strong>exhibitor</strong> at the 2nd Joint Conference of Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers, August 15 and 16, 2026, in Chicago.`
+    : `It is our pleasure to welcome <strong>${escapeHtml(companyName)}</strong> as a <strong>${escapeHtml(tier.name)}</strong> of the 2nd Joint Conference of Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers, August 15 and 16, 2026, in Chicago.`;
+  const payCallout = donatesFoodInstead
+    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0;"><tr><td style="background:#f8fafc;border-left:3px solid ${GOLD};padding:16px 18px;border-radius:6px;">
+        <div style="font-size:11px;letter-spacing:0.14em;font-weight:700;color:${GOLD};text-transform:uppercase;">Next step</div>
+        <div style="font-size:14.5px;line-height:1.6;color:${TEXT};margin-top:5px;">You opted to donate food in kind, so there is nothing to pay. Our team will be in touch to coordinate menu, quantities, and logistics.</div>
+      </td></tr></table>`
+    : `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0;"><tr><td style="background:#f8fafc;border-left:3px solid ${BLUE};padding:16px 18px;border-radius:6px;">
+        <div style="font-size:11px;letter-spacing:0.14em;font-weight:700;color:${BLUE};text-transform:uppercase;">One step left</div>
+        <div style="font-size:14.5px;line-height:1.6;color:${TEXT};margin-top:5px;">Complete your payment of <strong>${escapeHtml(tier.amountLabel)}</strong> to secure ${isExhibitor ? "your table" : "your place"}.${isExhibitor ? " You&rsquo;ll confirm your table representative and details on the way." : ""}</div>
+      </td></tr></table>`;
   return shell(`
-    <h1 style="font-size:22px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">You&rsquo;re in, ${escapeHtml(first)}.</h1>
-    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
+    ${heroBanner()}
+    <h1 style="font-size:24px;font-weight:800;margin:0 0 14px 0;letter-spacing:-0.01em;">Congratulations, ${escapeHtml(first)} — you&rsquo;re confirmed.</h1>
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 6px 0;">
       ${roleLine}
     </p>
-    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
-      ${payLine}
-    </p>
+
+    ${payCallout}
+
     ${donatesFoodInstead ? "" : button(statusUrl, isExhibitor ? "Complete your details &amp; payment" : "Complete your payment")}
-    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;">
-      All sponsorship payments are tax-deductible to the fullest extent allowed by law under IRS code 501(c)(3). EINs: 83-3016421 and 36-2170833.
+
+    ${sectionHeading(isExhibitor ? "Your exhibitor table" : "Your sponsorship")}
+    ${glanceCard([
+      { label: isExhibitor ? "Participation" : "Level", value: escapeHtml(tier.name) },
+      { label: donatesFoodInstead ? "Contribution" : "Investment", value: donatesFoodInstead ? "Food donated in kind" : escapeHtml(tier.amountLabel) },
+      { label: "Includes", value: ticketLine },
+    ])}
+
+    ${benefits && benefits.length ? `${sectionHeading("What&rsquo;s included")}${bulletList(benefits)}` : ""}
+
+    ${sectionHeading("Conference at a Glance")}
+    ${glanceCard(GLANCE_ROWS)}
+
+    <p style="font-size:14.5px;line-height:1.7;color:${TEXT};margin:18px 0 0 0;">
+      Thank you for standing with us for language access in healthcare. If you have any questions, simply reply to this email&mdash;we&rsquo;re glad to help.
     </p>
-    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:8px 0 0 0;">
-      Questions? Simply reply to this email.
+
+    ${signOff()}
+
+    ${logoLockup(assetBase)}
+
+    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;padding-top:14px;border-top:1px solid #eef1f4;">
+      All sponsorship payments are tax-deductible to the fullest extent allowed by law under IRS code 501(c)(3). EINs: 83-3016421 and 36-2170833.
     </p>
   `);
 }

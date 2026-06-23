@@ -29,7 +29,7 @@ export async function POST(req: Request) {
   const {
     companyName, contactName, contactEmail, contactPhone, contactRole, website,
     tier, donateFoodInstead, message,
-    registreeName, registreeEmail, dietary, accessibility, wantsLogo, logo,
+    registreeName, registreeEmail, dietary, accessibility, wantsLogo, logo, agreedToTerms,
   } = body;
 
   if (!companyName?.trim() || !contactName?.trim() || !isEmail(contactEmail || "") || !contactPhone?.trim() || !tier) {
@@ -46,6 +46,7 @@ export async function POST(req: Request) {
   if (isExhibitor) {
     if (!website?.trim()) return NextResponse.json({ error: "A website is required for exhibitors." }, { status: 400 });
     if (!registreeName?.trim()) return NextResponse.json({ error: "Tell us who will staff the table." }, { status: 400 });
+    if (!isEmail(registreeEmail || "")) return NextResponse.json({ error: "A valid email for your table representative is required." }, { status: 400 });
   }
 
   // Food sponsor with donation-in-kind: amount stays 0, no Stripe path.
@@ -81,6 +82,9 @@ export async function POST(req: Request) {
   await prisma.sponsorEvent.create({
     data: { sponsorId: sponsor.id, type: "submitted", meta: t.id },
   });
+  if (isExhibitor && agreedToTerms) {
+    await prisma.sponsorEvent.create({ data: { sponsorId: sponsor.id, type: "exhibitor_terms_agreed" } }).catch(() => {});
+  }
 
   // Fire-and-forget notifications. Errors don't block the user's flow.
   sendMail({

@@ -12,7 +12,7 @@ export type ExhibitorDetails = {
 };
 
 export const EMPTY_EXHIBITOR: ExhibitorDetails = {
-  registreeName: "", registreeEmail: "", dietary: "", accessibility: "", wantsLogo: false,
+  registreeName: "", registreeEmail: "", dietary: "", accessibility: "", wantsLogo: true,
 };
 
 export function TableNotice() {
@@ -43,7 +43,7 @@ export default function ExhibitorDetailsForm({
       <TableNotice />
 
       <Field label="Name of the attendee staffing your table" required value={value.registreeName} onChange={(v) => set("registreeName", v)} placeholder="Who will represent you on site?" />
-      <Field label="Their email" value={value.registreeEmail} onChange={(v) => set("registreeEmail", v)} type="email" hint="optional — we'll send their conference ticket here" />
+      <Field label="Their email" required value={value.registreeEmail} onChange={(v) => set("registreeEmail", v)} type="email" hint="we'll send their conference ticket and details here" />
       <AreaField label="Dietary needs or allergies" value={value.dietary} onChange={(v) => set("dietary", v)} placeholder="Vegetarian, vegan, gluten-free, allergies…" hint="optional" />
       <AreaField label="Accessibility needs" value={value.accessibility} onChange={(v) => set("accessibility", v)} placeholder="Anything we can do to make the day work better for them." hint="optional" />
 

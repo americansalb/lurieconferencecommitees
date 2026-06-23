@@ -51,6 +51,9 @@ export default function SponsorsAdminPage() {
   const [showQueue, setShowQueue] = useState(false);
   const [queue, setQueue] = useState<{ nextScheduledFor: string | null; paused: boolean; sentLast24h: number } | null>(null);
   const [flushing, setFlushing] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    title: string; message: string; confirmLabel: string; danger?: boolean; onConfirm: () => void;
+  } | null>(null);
 
   const role = (session?.user as { role?: string })?.role;
   const isAdmin = role === "admin" || role === "developer";
@@ -94,14 +97,7 @@ export default function SponsorsAdminPage() {
     if (status === "authenticated") load();
   }, [status, load]);
 
-  async function updateStatus(id: string, newStatus: string) {
-    // Moving to "Awaiting payment" emails the applicant their acceptance +
-    // pay link. Confirm first so an inline misclick doesn't email someone.
-    if (newStatus === "awaiting_payment") {
-      const s = sponsors.find((x) => x.id === id);
-      const owes = s && !s.paid && !s.donateFoodInstead && s.amountCents > 0;
-      if (owes && !confirm(`Email ${s?.companyName || "this applicant"} their acceptance and a link to complete payment now?`)) return;
-    }
+  async function applyStatus(id: string, newStatus: string) {
     await fetch(`/api/sponsors/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -110,10 +106,38 @@ export default function SponsorsAdminPage() {
     load();
   }
 
-  async function remove(id: string) {
-    if (!confirm("Delete this sponsor application? This cannot be undone.")) return;
-    await fetch(`/api/sponsors/${id}`, { method: "DELETE" });
-    load();
+  function updateStatus(id: string, newStatus: string) {
+    // Moving to "Awaiting payment" emails the applicant their acceptance +
+    // pay link. Confirm in-app first so an inline misclick doesn't email someone.
+    if (newStatus === "awaiting_payment") {
+      const s = sponsors.find((x) => x.id === id);
+      const owes = s && !s.paid && !s.donateFoodInstead && s.amountCents > 0;
+      if (owes) {
+        setConfirmDialog({
+          title: "Accept and email this applicant?",
+          message: `${s!.companyName} will receive an email confirming their acceptance with a link to complete payment. It sends right away.`,
+          confirmLabel: "Accept & send email",
+          onConfirm: () => { setConfirmDialog(null); void applyStatus(id, newStatus); },
+        });
+        return;
+      }
+    }
+    void applyStatus(id, newStatus);
+  }
+
+  function remove(id: string) {
+    const s = sponsors.find((x) => x.id === id);
+    setConfirmDialog({
+      title: "Delete this application?",
+      message: `${s?.companyName || "This application"} will be permanently deleted. This cannot be undone.`,
+      confirmLabel: "Delete",
+      danger: true,
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        await fetch(`/api/sponsors/${id}`, { method: "DELETE" });
+        load();
+      },
+    });
   }
 
   async function copyStatusLink(token: string) {
@@ -377,6 +401,56 @@ export default function SponsorsAdminPage() {
           </div>
         </div>
         <MobileNav />
+      </div>
+      {confirmDialog && (
+        <ConfirmDialog
+          {...confirmDialog}
+          onCancel={() => setConfirmDialog(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function ConfirmDialog({
+  title, message, confirmLabel, danger, onConfirm, onCancel,
+}: {
+  title: string;
+  message: string;
+  confirmLabel: string;
+  danger?: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm"
+      onClick={onCancel}
+    >
+      <div
+        className="w-full max-w-sm bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="h-1.5" style={{ background: danger ? "#e11d48" : "#0E5566" }} />
+        <div className="p-6">
+          <h2 className="text-lg font-bold text-slate-900">{title}</h2>
+          <p className="mt-2 text-sm text-slate-600 leading-relaxed">{message}</p>
+          <div className="mt-6 flex items-center justify-end gap-2">
+            <button
+              onClick={onCancel}
+              className="px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={onConfirm}
+              className="px-4 py-2 rounded-lg text-sm font-bold text-white shadow-sm transition-colors"
+              style={{ background: danger ? "#e11d48" : "#0E5566" }}
+            >
+              {confirmLabel}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
