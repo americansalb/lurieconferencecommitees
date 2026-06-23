@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { X, Loader2, Pause, Play, Rocket, Zap, Check } from "lucide-react";
+import { X, Loader2, Pause, Play, Rocket, Zap, Check, FlaskConical } from "lucide-react";
 
 type Policy = {
   maxPerHour: number; maxPerDay: number;
@@ -28,6 +28,9 @@ export default function QueueSettingsModal({ onClose, onChanged }: { onClose: ()
   const [endHour, setEndHour] = useState(17);
   const [days, setDays] = useState<number[]>([1, 2, 3, 4, 5]);
   const [sendN, setSendN] = useState(10);
+  const [testTo, setTestTo] = useState("");
+  const [burstCount, setBurstCount] = useState(5);
+  const [burstMinutes, setBurstMinutes] = useState(2);
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -59,6 +62,24 @@ export default function QueueSettingsModal({ onClose, onChanged }: { onClose: ()
       const r = await fetch("/api/admin/email-queue", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ force: true, limit }) });
       const j = await r.json();
       setMsg(`Released ${j.sent ?? 0} now${j.failed ? `, ${j.failed} failed` : ""}.`);
+      await refresh(); onChanged?.();
+    } finally { setBusy(null); }
+  }
+  async function queueTest() {
+    setBusy("test"); setMsg(null);
+    try {
+      const r = await fetch("/api/admin/email-queue", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "testEmail", to: testTo || undefined }) });
+      const j = await r.json();
+      setMsg(r.ok ? `Test queued to ${j.queuedTestTo} — first in line.` : (j.error || "Could not queue test."));
+      await refresh(); onChanged?.();
+    } finally { setBusy(null); }
+  }
+  async function runBurst() {
+    setBusy("burst"); setMsg(null);
+    try {
+      const r = await fetch("/api/admin/email-queue", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "burst", count: burstCount, minutes: burstMinutes }) });
+      const j = await r.json();
+      setMsg(!j.bursting ? "Nothing queued to burst yet." : `Releasing ${j.bursting} over ${j.minutes} min${j.paused ? " — sending is paused, resume to release" : " — watch your inbox"}.`);
       await refresh(); onChanged?.();
     } finally { setBusy(null); }
   }
@@ -131,6 +152,28 @@ export default function QueueSettingsModal({ onClose, onChanged }: { onClose: ()
               <button onClick={saveSettings} disabled={busy === "save"} className="px-4 py-2 rounded-lg text-sm font-bold text-white bg-gradient-to-r from-[#0E5566] to-[#0066B3] disabled:opacity-50 inline-flex items-center gap-1.5">
                 {busy === "save" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} Save settings
               </button>
+            </div>
+
+            <div className="border-t border-slate-100 pt-4">
+              <div className="text-[11px] font-bold uppercase tracking-wide text-slate-500 mb-2">Test send</div>
+              <div className="flex flex-wrap items-center gap-2">
+                <input type="email" value={testTo} onChange={(e) => setTestTo(e.target.value)} placeholder="you@org.com — defaults to your login"
+                  className="flex-1 min-w-[180px] px-3 py-1.5 text-sm border border-slate-200 rounded-lg outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10" />
+                <button onClick={queueTest} disabled={busy === "test"} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800 text-white hover:bg-slate-900 disabled:opacity-50 inline-flex items-center gap-1.5">
+                  {busy === "test" ? <Loader2 className="w-3 h-3 animate-spin" /> : <FlaskConical className="w-3 h-3" />} Queue test → front
+                </button>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 mt-2.5 text-sm text-slate-600">
+                <span>Burst</span>
+                <input type="number" min={1} max={50} value={burstCount} onChange={(e) => setBurstCount(Math.max(1, Math.min(50, parseInt(e.target.value || "1", 10))))} className="w-14 px-2 py-1.5 text-sm border border-slate-200 rounded-lg outline-none" />
+                <span>over</span>
+                <input type="number" min={1} max={60} value={burstMinutes} onChange={(e) => setBurstMinutes(Math.max(1, Math.min(60, parseInt(e.target.value || "1", 10))))} className="w-14 px-2 py-1.5 text-sm border border-slate-200 rounded-lg outline-none" />
+                <span>min</span>
+                <button onClick={runBurst} disabled={busy === "burst"} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-teal-50 text-teal-700 border border-teal-200 hover:bg-teal-100 disabled:opacity-50 inline-flex items-center gap-1.5">
+                  {busy === "burst" ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />} Run test burst
+                </button>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-1.5">Moves the next {burstCount} queued to the front and drips them over {burstMinutes} min via the background sender. Pair with a test email to confirm delivery.</p>
             </div>
 
             <div className="border-t border-slate-100 pt-4">

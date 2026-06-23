@@ -4,9 +4,14 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { isPaused, setPaused, getPolicy, savePolicy, queueEnvelope, afterQueueSend } from "@/lib/email-queue";
 import { sendMail } from "@/lib/mail";
+import { buildAttendeeInvite } from "@/lib/attendees";
 
 function isAdmin(role?: string) {
   return role === "admin" || role === "developer";
+}
+
+function isEmail(s: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((s || "").trim());
 }
 
 export async function GET() {
@@ -66,6 +71,35 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const body = await req.json().catch(() => ({}));
+
+  // Queue a realistic test invite at the FRONT of the line (defaults to the
+  // admin's own address) so the next release verifies the full pipeline.
+  if (body?.action === "testEmail") {
+    const to = (typeof body.to === "string" && body.to.trim()) ? body.to.trim() : (session?.user?.email || "");
+    if (!isEmail(to)) return NextResponse.json({ error: "A valid email is required." }, { status: 400 });
+    const { subject, html } = buildAttendeeInvite({ firstName: "Test", inviteToken: "TEST-PREVIEW", discountPercent: 25, inviteMessage: null, template: "standard" });
+    await prisma.emailQueue.create({
+      data: { batchId: "test", recipientType: "test", to, subject: `[TEST] ${subject}`, html, scheduledFor: new Date(Date.now() - 1000), status: "pending" },
+    });
+    return NextResponse.json({ ok: true, queuedTestTo: to });
+  }
+
+  // Test burst: move the next N pending items to the front and spread them
+  // across the next few minutes so the background sender drips them out.
+  if (body?.action === "burst") {
+    const count = Math.min(50, Math.max(1, parseInt(body?.count, 10) || 5));
+    const minutes = Math.min(60, Math.max(1, parseInt(body?.minutes, 10) || 2));
+    const items = await prisma.emailQueue.findMany({
+      where: { status: "pending" }, orderBy: { scheduledFor: "asc" }, take: count, select: { id: true },
+    });
+    const now = Date.now();
+    const step = items.length > 1 ? (minutes * 60000) / (items.length - 1) : 0;
+    for (let i = 0; i < items.length; i++) {
+      await prisma.emailQueue.update({ where: { id: items[i].id }, data: { scheduledFor: new Date(now + Math.round(i * step)) } });
+    }
+    return NextResponse.json({ ok: true, bursting: items.length, minutes, paused: await isPaused() });
+  }
+
   const force = body?.force === true;
   const limit = Math.min(200, Math.max(1, parseInt(body?.limit, 10) || 100));
 
