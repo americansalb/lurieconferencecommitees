@@ -1,6 +1,6 @@
 import { prisma } from "./db";
 import { sendMail } from "./mail";
-import { attendeeFromHeader, attendeeReplyTo } from "./attendees";
+import { attendeeFromHeader, attendeeReplyTo, attendeeBcc } from "./attendees";
 import { sponsorFromHeader, sponsorReplyTo } from "./sponsors";
 
 // Default sending policy. Tunable via SystemSetting keys with the same names.
@@ -228,8 +228,8 @@ export async function runEmailQueue(limit = 25): Promise<{ processed: number; se
 
 // Per-recipient-type envelope (personalized From / Reply-To). Used by every
 // place that actually delivers a queued message (cron + admin flush).
-export function queueEnvelope(recipientType: string): { from?: string; replyTo?: string } {
-  if (recipientType === "attendee") return { from: attendeeFromHeader(), replyTo: attendeeReplyTo() };
+export function queueEnvelope(recipientType: string): { from?: string; replyTo?: string; bcc?: string } {
+  if (recipientType === "attendee") return { from: attendeeFromHeader(), replyTo: attendeeReplyTo(), bcc: attendeeBcc() };
   if (recipientType === "sponsor") return { from: sponsorFromHeader(), replyTo: sponsorReplyTo() };
   return {};
 }

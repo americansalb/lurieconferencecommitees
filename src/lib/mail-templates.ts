@@ -341,14 +341,14 @@ function attendeeRateCard({
 function attendeeSpeakerCards() {
   const speakers = [
     {
-      slug: "yuri-takabatake", name: "Yuri Takabatake, MD",
-      role: "Attending Physician, Lurie Children&rsquo;s Hospital of Chicago",
-      bio: "A hospital-medicine physician and language-equity researcher who has published on interpreter partnership during family-centered rounds, and co-founded Lurie Children&rsquo;s Language Access and Care Committee.",
-    },
-    {
       slug: "yuliya-speroff", name: "Yuliya Speroff, CoreCHI-P",
       role: "AALB Trainer of the Year (2024); VP, National Council on Interpreting in Health Care",
       bio: "A Russian-English certified interpreter and Medical Interpreter Supervisor at Harborview Medical Center who trains interpreters nationally and writes medicalinterpreterblog.com. Named CHIA&rsquo;s Interpreter of the Year in 2021.",
+    },
+    {
+      slug: "yuri-takabatake", name: "Yuri Takabatake, MD",
+      role: "Attending Physician, Lurie Children&rsquo;s Hospital of Chicago",
+      bio: "A hospital-medicine physician and language-equity researcher who has published on interpreter partnership during family-centered rounds, and co-founded Lurie Children&rsquo;s Language Access and Care Committee.",
     },
     {
       slug: "wilma-alvarado-little", name: "Wilma Alvarado-Little",

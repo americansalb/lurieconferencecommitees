@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { attendeeFromHeader, attendeeReplyTo, buildAttendeeInvite } from "@/lib/attendees";
+import { attendeeFromHeader, attendeeReplyTo, attendeeBcc, buildAttendeeInvite } from "@/lib/attendees";
 import { ensureFirstNameCode } from "@/lib/discounts";
 import { sendMail } from "@/lib/mail";
 
@@ -33,6 +33,7 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
       html,
       from: attendeeFromHeader(),
       replyTo: attendeeReplyTo(),
+      bcc: attendeeBcc(),
     });
     await prisma.emailQueue.create({
       data: { batchId: "attendee-resend", recipientType: "attendee", recipientId: attendee.id, to: attendee.email, subject, html, scheduledFor: new Date(), status: "sent", sentAt: new Date() },

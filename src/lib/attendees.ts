@@ -64,8 +64,15 @@ export function attendeeReplyTo(): string | undefined {
   return (
     process.env.ATTENDEE_REPLY_TO?.trim() ||
     process.env.MAIL_REPLY_TO?.trim() ||
-    undefined
+    "contact@aalb.org"
   );
+}
+
+// Where an archive copy of each invite is bcc'd. Kept distinct from the
+// reply-to so replies reach the team (contact@) while copies land in the
+// conference inbox (conference@) instead of flooding contact@.
+export function attendeeBcc(): string | undefined {
+  return process.env.ATTENDEE_BCC?.trim() || "conference@aalb.org";
 }
 
 export function newAttendeeToken() {

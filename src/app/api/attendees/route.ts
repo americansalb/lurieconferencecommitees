@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { newAttendeeToken, parseAttendeeCsv, attendeeFromHeader, attendeeReplyTo, buildAttendeeInvite } from "@/lib/attendees";
+import { newAttendeeToken, parseAttendeeCsv, attendeeFromHeader, attendeeReplyTo, attendeeBcc, buildAttendeeInvite } from "@/lib/attendees";
 import { ensureFirstNameCode } from "@/lib/discounts";
 import { getPolicy, planSendTimes } from "@/lib/email-queue";
 import { sendMail } from "@/lib/mail";
@@ -100,6 +100,7 @@ export async function POST(req: Request) {
         html,
         from: attendeeFromHeader(),
         replyTo: attendeeReplyTo(),
+        bcc: attendeeBcc(),
       });
       // Archive the exact email so it can be viewed later from the dashboard.
       await prisma.emailQueue.create({
