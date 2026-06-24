@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { isPaused, setPaused, getPolicy, savePolicy, queueEnvelope, afterQueueSend } from "@/lib/email-queue";
+import { isPaused, setPaused, getPolicy, savePolicy, queueEnvelope, afterQueueSend, runEmailQueue } from "@/lib/email-queue";
 import { sendMail } from "@/lib/mail";
 import { buildAttendeeInvite } from "@/lib/attendees";
 
@@ -19,6 +19,13 @@ export async function GET() {
   if (!isAdmin((session?.user as { role?: string })?.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
+
+  // Opportunistic drain: send any items that are due right now, so the paced
+  // queue keeps advancing on admin activity even if the external Render cron
+  // isn't reaching the app. Fire-and-forget; runEmailQueue still respects the
+  // pause flag, the hourly/daily caps, scheduled times, and claims each row
+  // atomically, so it's safe to overlap with the cron and with itself.
+  void runEmailQueue().catch((e) => console.error("[email-queue] opportunistic drain failed", e));
 
   const [counts, nextDue, policy, paused] = await Promise.all([
     prisma.emailQueue.groupBy({

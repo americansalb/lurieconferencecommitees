@@ -107,24 +107,35 @@ export default function AttendeesPage() {
     if (status === "unauthenticated") router.replace("/login");
   }, [status, router]);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const [a, q] = await Promise.all([
         fetch("/api/attendees").then((r) => (r.ok ? r.json() : { attendees: [] })),
         // Queue status is admin-gated server-side; non-admins just get null and the panel stays hidden.
+        // This fetch also nudges the server to send any now-due queued invites.
         fetch("/api/admin/email-queue").then((r) => (r.ok ? r.json() : null)).catch(() => null),
       ]);
       setAttendees(a.attendees || []);
       setQueueStatus(q);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
     if (status === "authenticated") load();
   }, [status, load]);
+
+  // While invites are still queued, refresh quietly every 30s. Each refresh's
+  // queue fetch also drains any now-due sends server-side, so the batch goes
+  // out on its own while this page is open even if the background cron isn't.
+  const pendingCount = queueStatus?.counts?.pending || 0;
+  useEffect(() => {
+    if (status !== "authenticated" || pendingCount <= 0) return;
+    const t = setInterval(() => load(true), 30000);
+    return () => clearInterval(t);
+  }, [status, pendingCount, load]);
 
   async function sendQuick() {
     if (!template) {
@@ -325,7 +336,7 @@ export default function AttendeesPage() {
                 <h1 className="text-xl font-extrabold text-slate-900">Attendees</h1>
                 <p className="text-xs text-slate-500">Invite, track, and convert personal-discount invites</p>
               </div>
-              <button onClick={load} className="p-2 rounded-lg hover:bg-white text-slate-400 hover:text-slate-700" title="Refresh">
+              <button onClick={() => load()} className="p-2 rounded-lg hover:bg-white text-slate-400 hover:text-slate-700" title="Refresh">
                 <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
               </button>
             </div>
