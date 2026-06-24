@@ -334,7 +334,7 @@ export default function AttendeesPage() {
               </div>
               <div className="flex-1">
                 <h1 className="text-xl font-extrabold text-slate-900">Attendees</h1>
-                <p className="text-xs text-slate-500">Invite, track, and convert personal-discount invites</p>
+                <p className="text-xs text-slate-500">Invite people and track them through to paid attendees</p>
               </div>
               <button onClick={() => load()} className="p-2 rounded-lg hover:bg-white text-slate-400 hover:text-slate-700" title="Refresh">
                 <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
@@ -342,10 +342,10 @@ export default function AttendeesPage() {
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-5">
-              <Stat label="Total" value={stats.total} />
-              <Stat label="Viewed" value={stats.viewed} accent="#0066B3" />
-              <Stat label="Confirmed" value={stats.confirmed} accent="#0E5566" />
-              <Stat label="Paid" value={stats.paid} accent="#059669" />
+              <Stat label="Invited" value={stats.total} sub="total in pipeline" />
+              <Stat label="Viewed" value={stats.viewed} accent="#0066B3" sub="opened invite" />
+              <Stat label="Confirmed" value={stats.confirmed} accent="#0E5566" sub="registered" />
+              <Stat label="Attendees" value={stats.paid} accent="#059669" sub="paid in full" />
             </div>
 
             {queueStatus && (queueStatus.counts.pending > 0 || queueStatus.paused) && (
@@ -463,7 +463,7 @@ export default function AttendeesPage() {
             {/* Top tabs */}
             <div className="flex gap-1 bg-slate-100 rounded-lg p-1 mb-4 w-fit">
               <TabBtn active={tab === "invite"} onClick={() => setTab("invite")} label="Invite" />
-              <TabBtn active={tab === "list"} onClick={() => setTab("list")} label={`Attendees (${attendees.length})`} />
+              <TabBtn active={tab === "list"} onClick={() => setTab("list")} label={`Invitees (${attendees.length})`} />
             </div>
 
             {tab === "invite" && (
@@ -716,7 +716,7 @@ export default function AttendeesPage() {
 
                 {filtered.length === 0 ? (
                   <div className="p-10 text-center text-sm text-slate-400">
-                    {attendees.length === 0 ? "No attendees yet. Head to the Invite tab." : "No matches."}
+                    {attendees.length === 0 ? "No invitees yet. Head to the Invite tab." : "No matches."}
                   </div>
                 ) : (
                   <ul className="divide-y divide-slate-100">
@@ -808,11 +808,12 @@ export default function AttendeesPage() {
   );
 }
 
-function Stat({ label, value, accent }: { label: string; value: number; accent?: string }) {
+function Stat({ label, value, accent, sub }: { label: string; value: number; accent?: string; sub?: string }) {
   return (
     <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-sm">
       <div className="text-[10px] font-bold tracking-wider uppercase text-slate-400">{label}</div>
       <div className="text-2xl font-extrabold mt-1" style={{ color: accent || "#0f172a" }}>{value}</div>
+      {sub ? <div className="text-[10px] text-slate-400 mt-0.5 truncate">{sub}</div> : null}
     </div>
   );
 }
