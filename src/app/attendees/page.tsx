@@ -65,6 +65,10 @@ export default function AttendeesPage() {
   const [composerIds, setComposerIds] = useState<string[] | null>(null);
   const [portalNote, setPortalNote] = useState<string | null>(null);
   const [showEventSettings, setShowEventSettings] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    title: string; message: string; confirmLabel: string; danger?: boolean; onConfirm: () => void;
+  } | null>(null);
+  const [reinvite, setReinvite] = useState<{ sending: boolean; note: string | null }>({ sending: false, note: null });
 
   // Shared composer state
   const [inviteMessage, setInviteMessage] = useState("");
@@ -228,8 +232,16 @@ export default function AttendeesPage() {
     }
   }
 
-  async function flushQueueNow() {
-    if (!confirm("Send all currently-queued invites right now, ignoring the paced schedule?\n\nUse this only for small batches. Large bursts hurt domain reputation.")) return;
+  function flushQueueNow() {
+    setConfirmDialog({
+      title: "Send the whole queue now?",
+      message: "Every currently-queued invite goes out right away, ignoring the paced schedule. Use this only for small batches; large bursts hurt domain reputation.",
+      confirmLabel: "Send queue now",
+      onConfirm: () => { setConfirmDialog(null); void doFlushQueueNow(); },
+    });
+  }
+
+  async function doFlushQueueNow() {
     setFlushing(true);
     setFlushResult(null);
     try {
@@ -272,6 +284,26 @@ export default function AttendeesPage() {
     load(true);
   }
 
+  async function reinviteNonResponders() {
+    setReinvite({ sending: true, note: null });
+    try {
+      const res = await fetch("/api/attendees/resend-bulk", { method: "POST" });
+      const json = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setReinvite({
+          sending: false,
+          note: `Re-queued ${json.queued || 0} invite${json.queued === 1 ? "" : "s"}. They'll send paced; hit "Send queue now" to push them out immediately.`,
+        });
+      } else {
+        setReinvite({ sending: false, note: json.error || "Could not re-queue invites." });
+      }
+      await load();
+    } catch {
+      setReinvite({ sending: false, note: "Network error while re-queuing." });
+    }
+    setTimeout(() => setReinvite((r) => ({ ...r, note: null })), 9000);
+  }
+
   if (status !== "authenticated") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -281,6 +313,12 @@ export default function AttendeesPage() {
   }
 
   const previewDiscounted = ((21000 * (100 - discountPercent) / 100) / 100).toFixed(2);
+  // People we've already emailed who still haven't registered: the audience a
+  // bulk re-invite would target. Computed from the loaded list so the button can
+  // show a live count without an extra round trip.
+  const reinvitable = attendees.filter(
+    (a) => !a.paid && (a.status === "invited" || a.status === "viewed" || a.status === "rsvp_pending")
+  ).length;
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">
@@ -431,6 +469,38 @@ export default function AttendeesPage() {
 
             {tab === "invite" && (
               <div>
+                {isAdmin && (
+                  <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm mb-4">
+                    <div className="flex items-start justify-between gap-3 flex-wrap">
+                      <div className="min-w-0">
+                        <div className="text-sm font-bold text-slate-900 inline-flex items-center gap-1.5">
+                          <RefreshCw className="w-4 h-4 text-teal-700" /> Re-invite non-responders
+                        </div>
+                        <p className="text-xs text-slate-500 mt-1 max-w-lg">
+                          Re-sends the invite to the <strong>{reinvitable}</strong> {reinvitable === 1 ? "person" : "people"} we&rsquo;ve
+                          already emailed who haven&rsquo;t registered yet, each with their own template and discount. Anyone who paid
+                          or signed up is skipped, and no BCC is attached. Paced through the queue to protect the domain.
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setConfirmDialog({
+                          title: `Re-invite ${reinvitable} ${reinvitable === 1 ? "person" : "people"}?`,
+                          message: "Everyone we invited who hasn't registered will be re-queued and sent paced over the next while. Anyone who already paid or signed up is skipped, and no BCC is attached.",
+                          confirmLabel: "Re-queue invites",
+                          onConfirm: () => { setConfirmDialog(null); void reinviteNonResponders(); },
+                        })}
+                        disabled={reinvite.sending || reinvitable === 0}
+                        className="px-4 py-2 rounded-lg text-sm font-bold text-white shadow-sm inline-flex items-center gap-1.5 disabled:opacity-50 shrink-0"
+                        style={{ background: "#0E5566" }}
+                      >
+                        {reinvite.sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                        {reinvitable === 0 ? "No one to re-invite" : "Re-invite them"}
+                      </button>
+                    </div>
+                    {reinvite.note && <div className="mt-2 text-xs font-semibold text-teal-700">{reinvite.note}</div>}
+                  </div>
+                )}
+
                 {/* Sub-tabs */}
                 <div className="flex gap-2 mb-4">
                   <SubTabBtn
@@ -699,6 +769,57 @@ export default function AttendeesPage() {
           }}
         />
       )}
+
+      {confirmDialog && (
+        <ConfirmDialog
+          {...confirmDialog}
+          onCancel={() => setConfirmDialog(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function ConfirmDialog({
+  title, message, confirmLabel, danger, onConfirm, onCancel,
+}: {
+  title: string;
+  message: string;
+  confirmLabel: string;
+  danger?: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm"
+      onClick={onCancel}
+    >
+      <div
+        className="w-full max-w-sm bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="h-1.5" style={{ background: danger ? "#e11d48" : "#0E5566" }} />
+        <div className="p-6">
+          <h2 className="text-lg font-bold text-slate-900">{title}</h2>
+          <p className="mt-2 text-sm text-slate-600 leading-relaxed">{message}</p>
+          <div className="mt-6 flex items-center justify-end gap-2">
+            <button
+              onClick={onCancel}
+              className="px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={onConfirm}
+              className="px-4 py-2 rounded-lg text-sm font-bold text-white shadow-sm transition-colors"
+              style={{ background: danger ? "#e11d48" : "#0E5566" }}
+            >
+              {confirmLabel}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
