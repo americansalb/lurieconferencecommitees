@@ -68,11 +68,15 @@ export function attendeeReplyTo(): string | undefined {
   );
 }
 
-// Where an archive copy of each invite is bcc'd. Kept distinct from the
-// reply-to so replies reach the team (contact@) while copies land in the
-// conference inbox (conference@) instead of flooding contact@.
+// Optional archive copy of each invite. We deliberately do NOT hard-code a
+// default address: BCC'ing a mailbox that doesn't exist yet (e.g. before
+// conference@aalb.org is actually created) makes that address hard-bounce on
+// every single send. Resend then suppresses it, and the steady drip of bounces
+// drags down the whole sending domain's reputation. Turn this on only once the
+// mailbox is real, by setting ATTENDEE_BCC. Kept distinct from the reply-to so
+// replies still reach the team at contact@.
 export function attendeeBcc(): string | undefined {
-  return process.env.ATTENDEE_BCC?.trim() || "conference@aalb.org";
+  return process.env.ATTENDEE_BCC?.trim() || undefined;
 }
 
 export function newAttendeeToken() {
