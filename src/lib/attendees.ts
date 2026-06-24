@@ -156,6 +156,61 @@ export const ATTENDEE_SOURCE_LABELS: Record<AttendeeSource, string> = {
   organic: "Signed up",
 };
 
+// A precise single position in the funnel, so the list answers "have we emailed
+// them yet? did they open it? did they pay?" at a glance. attendeeStage() above
+// is the coarse 4-bucket version; it lumps queued (not emailed), invited
+// (emailed), and viewed (opened) all into "invited", which is exactly what made
+// the list unreadable. attendeeStep() keeps those three apart.
+export type AttendeeStep =
+  | "queued"       // on the list, NOT emailed yet
+  | "emailed"      // invite sent, no open
+  | "opened"       // opened the invite, no action
+  | "registering"  // started checkout / signed up, not paid
+  | "attending"    // paid
+  | "declined";    // said no
+
+export const ATTENDEE_STEP_LABELS: Record<AttendeeStep, { label: string; blurb: string; color: string; dot: string }> = {
+  queued:      { label: "Not emailed", blurb: "On the list, not sent yet", color: "bg-slate-100 text-slate-600 border-slate-200", dot: "#94a3b8" },
+  emailed:     { label: "Emailed",     blurb: "Invite sent, awaiting reply", color: "bg-sky-50 text-sky-700 border-sky-200", dot: "#0284c7" },
+  opened:      { label: "Opened",      blurb: "Opened the invite, no reply", color: "bg-indigo-50 text-indigo-700 border-indigo-200", dot: "#6366f1" },
+  registering: { label: "Registering", blurb: "Started, not paid yet", color: "bg-amber-50 text-amber-700 border-amber-200", dot: "#d97706" },
+  attending:   { label: "Attending",   blurb: "Paid and coming", color: "bg-green-100 text-green-800 border-green-300", dot: "#16a34a" },
+  declined:    { label: "Declined",    blurb: "Not coming", color: "bg-rose-50 text-rose-700 border-rose-200", dot: "#e11d48" },
+};
+
+export function attendeeStep(a: { paid: boolean; status: string }): AttendeeStep {
+  if (a.paid) return "attending";
+  switch (a.status) {
+    case "declined": return "declined";
+    case "registered":
+    case "rsvp_pending":
+    case "confirmed": return "registering";
+    case "viewed": return "opened";
+    case "invited": return "emailed";
+    case "queued":
+    default: return "queued";
+  }
+}
+
+// The one timestamp worth showing for where they are: "Emailed Jun 20",
+// "Opened Jun 21", "Added Jun 18". Returns the verb plus the relevant ISO date.
+export function attendeeStepMoment(a: {
+  paid: boolean; status: string;
+  createdAt?: string | null; invitedAt?: string | null; lastSentAt?: string | null;
+  viewedAt?: string | null; confirmedAt?: string | null;
+}): { verb: string; iso: string | null } {
+  switch (attendeeStep(a)) {
+    case "attending":   return { verb: "Paid", iso: a.confirmedAt ?? null };
+    case "registering": return { verb: "Started", iso: a.viewedAt ?? a.invitedAt ?? a.createdAt ?? null };
+    case "opened":      return { verb: "Opened", iso: a.viewedAt ?? null };
+    case "emailed":     return { verb: "Emailed", iso: a.lastSentAt ?? a.invitedAt ?? null };
+    case "declined":    return { verb: "Declined", iso: a.confirmedAt ?? a.viewedAt ?? null };
+    case "queued":
+    default:            return { verb: "Added", iso: a.createdAt ?? null };
+  }
+}
+
+
 export type CsvParseRow = {
   firstName: string;
   lastName: string;

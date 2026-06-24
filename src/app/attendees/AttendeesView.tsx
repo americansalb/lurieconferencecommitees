@@ -3,8 +3,8 @@
 import { useMemo, useState } from "react";
 import { Search, Mail, Send, MapPin, Monitor, Check } from "lucide-react";
 import {
-  ATTENDEE_STAGE_LABELS, ATTENDEE_SOURCE_LABELS, AttendeeStage,
-  attendeeStage, attendeeSource,
+  ATTENDEE_STEP_LABELS, ATTENDEE_SOURCE_LABELS, AttendeeStep,
+  attendeeStep, attendeeStepMoment, attendeeSource,
 } from "@/lib/attendees";
 
 export type Attendee = {
@@ -26,7 +26,24 @@ export type Attendee = {
   createdAt: string;
 };
 
-type StageFilter = "all" | AttendeeStage;
+// The funnel, left to right, in plain language. Each card owns one or more of
+// the precise steps; the row badge still shows the exact step (Emailed vs
+// Opened) so nothing is hidden, the cards just group for the headline count.
+const STEP_CARDS: {
+  key: string; label: string; sub: string; accent: string; steps: AttendeeStep[]; hero?: boolean;
+}[] = [
+  { key: "queued",      label: "Not emailed", sub: "queued, not sent",     accent: "#64748b", steps: ["queued"] },
+  { key: "emailed",     label: "Emailed",     sub: "sent, awaiting reply", accent: "#0284c7", steps: ["emailed", "opened"] },
+  { key: "registering", label: "Registering", sub: "started, not paid",    accent: "#d97706", steps: ["registering"] },
+  { key: "attending",   label: "Attending",   sub: "paid, coming",         accent: "#16a34a", steps: ["attending"], hero: true },
+  { key: "declined",    label: "Declined",    sub: "not coming",           accent: "#64748b", steps: ["declined"] },
+];
+
+function shortDate(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? "" : d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
 
 export default function AttendeesView({
   attendees, onOpenDetail, onCompose, onSendPortal,
@@ -36,20 +53,34 @@ export default function AttendeesView({
   onCompose: (ids: string[]) => void;
   onSendPortal: (ids: string[]) => void;
 }) {
-  const [stageFilter, setStageFilter] = useState<StageFilter>("all");
+  const [cardFilter, setCardFilter] = useState<string>("all");
   const [sourceFilter, setSourceFilter] = useState<"all" | "invited" | "organic">("all");
   const [modeFilter, setModeFilter] = useState<"all" | "in-person" | "virtual">("all");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
-  const counts = useMemo(() => {
-    const c = { attending: 0, registered: 0, invited: 0, declined: 0, total: attendees.length };
-    for (const a of attendees) c[attendeeStage(a)]++;
-    return c;
+  // One pass: tag every attendee with its precise step, then tally per card.
+  const stepOf = useMemo(() => {
+    const m = new Map<string, AttendeeStep>();
+    for (const a of attendees) m.set(a.id, attendeeStep(a));
+    return m;
   }, [attendees]);
 
+  const cardCounts = useMemo(() => {
+    const c: Record<string, number> = {};
+    for (const card of STEP_CARDS) c[card.key] = 0;
+    for (const a of attendees) {
+      const step = stepOf.get(a.id)!;
+      const card = STEP_CARDS.find((cd) => cd.steps.includes(step));
+      if (card) c[card.key]++;
+    }
+    return c;
+  }, [attendees, stepOf]);
+
+  const activeCard = STEP_CARDS.find((c) => c.key === cardFilter) || null;
+
   const filtered = useMemo(() => attendees.filter((a) => {
-    if (stageFilter !== "all" && attendeeStage(a) !== stageFilter) return false;
+    if (activeCard && !activeCard.steps.includes(stepOf.get(a.id)!)) return false;
     if (sourceFilter !== "all" && attendeeSource(a) !== sourceFilter) return false;
     if (modeFilter !== "all" && a.attendanceMode !== modeFilter) return false;
     if (search) {
@@ -57,7 +88,7 @@ export default function AttendeesView({
       if (![a.firstName, a.lastName, a.email, a.affiliation].some((v) => v?.toLowerCase().includes(s))) return false;
     }
     return true;
-  }), [attendees, stageFilter, sourceFilter, modeFilter, search]);
+  }), [attendees, activeCard, sourceFilter, modeFilter, search, stepOf]);
 
   const allShownSelected = filtered.length > 0 && filtered.every((a) => selected.has(a.id));
   function toggleAll() {
@@ -75,12 +106,20 @@ export default function AttendeesView({
 
   return (
     <div>
-      {/* Funnel stats — clickable filters. Attending is the hero. */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
-        <StatCard label="Attendees" sub="paid · coming" value={counts.attending} accent="#16a34a" big active={stageFilter === "attending"} onClick={() => setStageFilter(stageFilter === "attending" ? "all" : "attending")} />
-        <StatCard label="Registering" sub="started, unpaid" value={counts.registered} accent="#d97706" active={stageFilter === "registered"} onClick={() => setStageFilter(stageFilter === "registered" ? "all" : "registered")} />
-        <StatCard label="Invited" sub="awaiting reply" value={counts.invited} accent="#0284c7" active={stageFilter === "invited"} onClick={() => setStageFilter(stageFilter === "invited" ? "all" : "invited")} />
-        <StatCard label="Declined" sub="not coming" value={counts.declined} accent="#64748b" active={stageFilter === "declined"} onClick={() => setStageFilter(stageFilter === "declined" ? "all" : "declined")} />
+      {/* The funnel, left to right. Click any bucket to filter to it. */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-4">
+        {STEP_CARDS.map((card) => (
+          <StatCard
+            key={card.key}
+            label={card.label}
+            sub={card.sub}
+            value={cardCounts[card.key]}
+            accent={card.accent}
+            big={card.hero}
+            active={cardFilter === card.key}
+            onClick={() => setCardFilter(cardFilter === card.key ? "all" : card.key)}
+          />
+        ))}
       </div>
 
       <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
@@ -93,6 +132,18 @@ export default function AttendeesView({
           <Segmented value={sourceFilter} onChange={(v) => setSourceFilter(v as typeof sourceFilter)} options={[["all", "All sources"], ["invited", "Invited"], ["organic", "Signed up"]]} />
           <Segmented value={modeFilter} onChange={(v) => setModeFilter(v as typeof modeFilter)} options={[["all", "All"], ["in-person", "In-person"], ["virtual", "Virtual"]]} />
         </div>
+
+        {/* Active-filter hint so it's obvious what the list is showing */}
+        {(activeCard || sourceFilter !== "all" || modeFilter !== "all" || search) && (
+          <div className="px-4 py-2 bg-slate-50 border-b border-slate-100 text-[11px] text-slate-500 flex items-center gap-2 flex-wrap">
+            <span className="font-semibold text-slate-600">Showing:</span>
+            {activeCard && <Pill>{activeCard.label} · {activeCard.sub}</Pill>}
+            {sourceFilter !== "all" && <Pill>{sourceFilter === "invited" ? "Invited by us" : "Signed up themselves"}</Pill>}
+            {modeFilter !== "all" && <Pill>{modeFilter === "virtual" ? "Virtual" : "In-person"}</Pill>}
+            {search && <Pill>“{search}”</Pill>}
+            <button onClick={() => { setCardFilter("all"); setSourceFilter("all"); setModeFilter("all"); setSearch(""); }} className="ml-auto font-semibold text-slate-500 hover:text-slate-800">Clear all</button>
+          </div>
+        )}
 
         {/* Bulk action bar */}
         {selectedIds.length > 0 && (
@@ -119,13 +170,19 @@ export default function AttendeesView({
         ) : (
           <ul className="divide-y divide-slate-100">
             {filtered.map((a) => {
-              const stage = attendeeStage(a);
-              const stageCfg = ATTENDEE_STAGE_LABELS[stage];
+              const step = stepOf.get(a.id)!;
+              const cfg = ATTENDEE_STEP_LABELS[step];
+              const moment = attendeeStepMoment(a);
               const source = attendeeSource(a);
               const sel = selected.has(a.id);
+              const when = step === "attending" && a.finalPriceCents != null
+                ? `$${(a.finalPriceCents / 100).toFixed(2)}`
+                : moment.iso ? `${moment.verb} ${shortDate(moment.iso)}` : moment.verb;
               return (
                 <li key={a.id} className={`flex items-center gap-3 px-4 py-3 hover:bg-slate-50 cursor-pointer ${sel ? "bg-teal-50/40" : ""}`} onClick={() => onOpenDetail(a.id)}>
                   <div onClick={(e) => { e.stopPropagation(); toggle(a.id); }}><Checkbox checked={sel} onChange={() => {}} /></div>
+                  {/* Colored dot = step, so the eye can scan state down the column */}
+                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: cfg.dot }} title={cfg.blurb} />
                   <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600 shrink-0">
                     {(a.firstName[0] + (a.lastName[0] || "")).toUpperCase()}
                   </div>
@@ -142,7 +199,10 @@ export default function AttendeesView({
                       {a.attendanceMode === "in-person" ? "In-person" : "Virtual"}
                     </span>
                   )}
-                  <span className={`text-[10px] font-bold px-2 py-1 rounded-full border ${stageCfg.color} shrink-0`}>{stageCfg.label}</span>
+                  <div className="flex flex-col items-end gap-1 shrink-0 w-[104px]">
+                    <span className={`text-[10px] font-bold px-2 py-1 rounded-full border ${cfg.color}`}>{cfg.label}</span>
+                    <span className="text-[11px] text-slate-400 truncate max-w-full">{when}</span>
+                  </div>
                 </li>
               );
             })}
@@ -156,11 +216,18 @@ export default function AttendeesView({
 function StatCard({ label, sub, value, accent, big, active, onClick }: { label: string; sub: string; value: number; accent: string; big?: boolean; active?: boolean; onClick: () => void }) {
   return (
     <button onClick={onClick} className={`text-left bg-white border rounded-xl p-3 shadow-sm transition-all ${active ? "ring-2" : "hover:border-slate-300"}`} style={{ borderColor: active ? accent : undefined, boxShadow: active ? `0 0 0 1px ${accent}` : undefined }}>
-      <div className="text-[10px] font-bold tracking-wider uppercase text-slate-400">{label}</div>
+      <div className="flex items-center gap-1.5">
+        <span className="w-2 h-2 rounded-full" style={{ background: accent }} />
+        <div className="text-[10px] font-bold tracking-wider uppercase text-slate-400">{label}</div>
+      </div>
       <div className={`${big ? "text-3xl" : "text-2xl"} font-extrabold mt-1`} style={{ color: accent }}>{value}</div>
       <div className="text-[10px] text-slate-400 mt-0.5 truncate">{sub}</div>
     </button>
   );
+}
+
+function Pill({ children }: { children: React.ReactNode }) {
+  return <span className="px-2 py-0.5 rounded-full bg-white border border-slate-200 font-semibold text-slate-600">{children}</span>;
 }
 
 function Segmented({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: [string, string][] }) {

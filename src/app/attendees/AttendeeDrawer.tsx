@@ -6,8 +6,8 @@ import {
   CreditCard, Clock, Tag, Send, LinkIcon,
 } from "lucide-react";
 import {
-  ATTENDEE_STAGE_LABELS, ATTENDEE_SOURCE_LABELS, ATTENDEE_STATUS_LABELS,
-  attendeeStage, attendeeSource, formatPrice,
+  ATTENDEE_STEP_LABELS, ATTENDEE_SOURCE_LABELS, ATTENDEE_STATUS_LABELS,
+  attendeeStep, attendeeSource, formatPrice,
 } from "@/lib/attendees";
 
 type Detail = {
@@ -113,8 +113,8 @@ export default function AttendeeDrawer({
     try { await fetch(`/api/attendees/${a.id}`, { method: "DELETE" }); onChanged(); onClose(); } finally { setBusy(null); }
   }
 
-  const stage = a ? attendeeStage(a) : null;
-  const stageCfg = stage ? ATTENDEE_STAGE_LABELS[stage] : null;
+  const step = a ? attendeeStep(a) : null;
+  const stageCfg = step ? ATTENDEE_STEP_LABELS[step] : null;
   const source = a ? attendeeSource(a) : null;
 
   return (
@@ -138,7 +138,7 @@ export default function AttendeeDrawer({
             <div className="p-5 space-y-5">
               {/* Quick facts */}
               <div className="grid grid-cols-2 gap-2 text-sm">
-                <Fact label="Source" value={source ? ATTENDEE_SOURCE_LABELS[source] : "—"} />
+                <Fact label="Source" value={source ? ATTENDEE_SOURCE_LABELS[source] : "Not set"} />
                 <Fact label="Attendance" value={a.attendanceMode === "in-person" ? "In-person" : a.attendanceMode === "virtual" ? "Virtual" : "Not chosen"} icon={a.attendanceMode === "virtual" ? Monitor : MapPin} />
                 <Fact label="Payment" value={a.paid ? `${formatPrice(a.finalPriceCents)} paid` : "Not paid"} icon={CreditCard} accent={a.paid ? "#16a34a" : undefined} />
                 <Fact label="Status" value={(ATTENDEE_STATUS_LABELS[a.status]?.label) || a.status} />
