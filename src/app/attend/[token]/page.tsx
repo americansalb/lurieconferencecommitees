@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { computePrice } from "@/lib/attendees";
+import { getEventSettings } from "@/lib/event-settings";
 import AttendeeFunnel from "./AttendeeFunnel";
+import AttendeePortal from "./AttendeePortal";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +12,22 @@ export default async function AttendPage({ params }: { params: { token: string }
     where: { inviteToken: params.token },
   });
   if (!attendee) notFound();
+
+  // Already paid: this is now their returning portal, not the registration funnel.
+  if (attendee.paid) {
+    const settings = await getEventSettings();
+    return (
+      <AttendeePortal
+        token={params.token}
+        firstName={attendee.firstName}
+        email={attendee.email}
+        attendanceMode={attendee.attendanceMode}
+        finalPriceCents={attendee.finalPriceCents}
+        joinUrl={settings.joinUrl}
+        agendaUrl={settings.agendaUrl}
+      />
+    );
+  }
 
   // Mark first view (best-effort, fire-and-forget on server boundary).
   if (!attendee.viewedAt) {

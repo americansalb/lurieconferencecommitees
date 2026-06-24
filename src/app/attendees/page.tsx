@@ -6,7 +6,7 @@ import { useEffect, useState, useCallback } from "react";
 import {
   Users, Send, Pause, Play, Loader2, Mail, Check,
   RefreshCw, Zap, FileText, UserPlus, Rocket, Eye, SlidersHorizontal,
-  ChevronDown, ChevronRight,
+  ChevronDown, ChevronRight, Video,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
@@ -17,6 +17,7 @@ import QueueSettingsModal from "@/components/email/QueueSettingsModal";
 import AttendeesView, { type Attendee } from "./AttendeesView";
 import AttendeeDrawer from "./AttendeeDrawer";
 import BroadcastComposer from "./BroadcastComposer";
+import EventSettingsModal from "./EventSettingsModal";
 
 type PreviewState = { title: string; meta?: string; html: string | null };
 
@@ -63,6 +64,7 @@ export default function AttendeesPage() {
   const [detailId, setDetailId] = useState<string | null>(null);
   const [composerIds, setComposerIds] = useState<string[] | null>(null);
   const [portalNote, setPortalNote] = useState<string | null>(null);
+  const [showEventSettings, setShowEventSettings] = useState(false);
 
   // Shared composer state
   const [inviteMessage, setInviteMessage] = useState("");
@@ -295,6 +297,11 @@ export default function AttendeesPage() {
                 <h1 className="text-xl font-extrabold text-slate-900">Attendees</h1>
                 <p className="text-xs text-slate-500">Invite people and track them through to paid attendees</p>
               </div>
+              {isAdmin && (
+                <button onClick={() => setShowEventSettings(true)} className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 inline-flex items-center gap-1.5" title="Set the attendee portal join link and agenda">
+                  <Video className="w-3.5 h-3.5" /> Portal
+                </button>
+              )}
               <button onClick={() => load()} className="p-2 rounded-lg hover:bg-white text-slate-400 hover:text-slate-700" title="Refresh">
                 <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
               </button>
@@ -667,6 +674,7 @@ export default function AttendeesPage() {
       )}
 
       {showQueue && <QueueSettingsModal onClose={() => setShowQueue(false)} onChanged={load} />}
+      {showEventSettings && <EventSettingsModal onClose={() => setShowEventSettings(false)} />}
 
       {detailId && (
         <AttendeeDrawer
