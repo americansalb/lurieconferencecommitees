@@ -537,6 +537,55 @@ export function attendeeConfirmedEmail({
   `);
 }
 
+// Sends an attendee their personal portal link (where they find their
+// registration, and for virtual attendees their join link closer to the date).
+export function attendeePortalLinkEmail({
+  firstName, portalUrl, attendanceMode, assetBase,
+}: {
+  firstName: string;
+  portalUrl: string;
+  attendanceMode: string | null;
+  assetBase?: string;
+}) {
+  const first = firstName || "there";
+  const isVirtual = attendanceMode === "virtual";
+  return shell(`
+    ${heroBanner()}
+    <h1 style="font-size:23px;font-weight:700;margin:0 0 14px 0;letter-spacing:-0.01em;">Your conference portal, ${escapeHtml(first)}.</h1>
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
+      Here&rsquo;s your personal link for the 2026 Lurie Children&rsquo;s &amp; AALB Conference. Bookmark it: it&rsquo;s where you&rsquo;ll find your registration, add the dates to your calendar${isVirtual ? ", and get your live join link closer to the event" : ", and see arrival details"}.
+    </p>
+    ${button(portalUrl, "Open my portal")}
+    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;">
+      Questions? Just reply to this email and we&rsquo;ll help.
+    </p>
+    ${signOff()}
+    ${logoLockup(assetBase)}
+  `);
+}
+
+// A general broadcast to attendees. The admin writes the body (plain text); the
+// caller escapes it and converts newlines, then passes it as bodyHtml here.
+export function attendeeBroadcastEmail({
+  firstName, bodyHtml, ctaUrl, ctaLabel, assetBase,
+}: {
+  firstName: string;
+  bodyHtml: string;
+  ctaUrl?: string | null;
+  ctaLabel?: string | null;
+  assetBase?: string;
+}) {
+  const first = firstName || "there";
+  return shell(`
+    ${heroBanner()}
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">Hi ${escapeHtml(first)},</p>
+    <div style="font-size:15px;line-height:1.7;color:${TEXT};">${bodyHtml}</div>
+    ${ctaUrl ? button(ctaUrl, ctaLabel || "Open") : ""}
+    ${signOff()}
+    ${logoLockup(assetBase)}
+  `);
+}
+
 type SponsorInviteArgs = {
   contactFirstName: string;
   companyName: string;

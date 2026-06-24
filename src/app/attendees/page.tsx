@@ -4,37 +4,21 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import {
-  Users, Send, Pause, Play, Trash2, Loader2, Mail, Check,
-  Filter, Search, RefreshCw, Zap, FileText, UserPlus, Copy, Rocket, Eye, SlidersHorizontal,
+  Users, Send, Pause, Play, Loader2, Mail, Check,
+  RefreshCw, Zap, FileText, UserPlus, Rocket, Eye, SlidersHorizontal,
   ChevronDown, ChevronRight,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
 import MobileNav from "@/components/layout/MobileNav";
-import { ATTENDEE_STATUS_LABELS, ATTENDEE_TEMPLATES } from "@/lib/attendees";
+import { ATTENDEE_TEMPLATES } from "@/lib/attendees";
 import EmailPreviewModal from "@/components/attendees/EmailPreviewModal";
 import QueueSettingsModal from "@/components/email/QueueSettingsModal";
+import AttendeesView, { type Attendee } from "./AttendeesView";
+import AttendeeDrawer from "./AttendeeDrawer";
+import BroadcastComposer from "./BroadcastComposer";
 
 type PreviewState = { title: string; meta?: string; html: string | null };
-
-type Attendee = {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  affiliation: string | null;
-  attendanceMode: string | null;
-  status: string;
-  paid: boolean;
-  finalPriceCents: number | null;
-  discountPercent: number;
-  inviteToken?: string;
-  invitedAt: string | null;
-  lastSentAt: string | null;
-  viewedAt: string | null;
-  confirmedAt: string | null;
-  createdAt: string;
-};
 
 type QueueEntry = {
   id: string;
@@ -68,16 +52,17 @@ type InviteSubTab = "quick" | "bulk";
 export default function AttendeesPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [tab, setTab] = useState<"invite" | "list">("invite");
+  const [tab, setTab] = useState<"attendees" | "invite">("attendees");
   const [inviteSubTab, setInviteSubTab] = useState<InviteSubTab>("quick");
   const [attendees, setAttendees] = useState<Attendee[]>([]);
   const [queueStatus, setQueueStatus] = useState<QueueStatus | null>(null);
-  const [filter, setFilter] = useState<string>("all");
-  const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
-  const [resendingId, setResendingId] = useState<string | null>(null);
   const [flushing, setFlushing] = useState(false);
   const [flushResult, setFlushResult] = useState<string | null>(null);
+  // Attendees view: detail drawer + broadcast composer + portal-link sends.
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const [composerIds, setComposerIds] = useState<string[] | null>(null);
+  const [portalNote, setPortalNote] = useState<string | null>(null);
 
   // Shared composer state
   const [inviteMessage, setInviteMessage] = useState("");
@@ -241,16 +226,6 @@ export default function AttendeesPage() {
     }
   }
 
-  async function resendInvite(id: string) {
-    setResendingId(id);
-    try {
-      await fetch(`/api/attendees/${id}/resend`, { method: "POST" });
-      await load();
-    } finally {
-      setResendingId(null);
-    }
-  }
-
   async function flushQueueNow() {
     if (!confirm("Send all currently-queued invites right now, ignoring the paced schedule?\n\nUse this only for small batches. Large bursts hurt domain reputation.")) return;
     setFlushing(true);
@@ -284,15 +259,15 @@ export default function AttendeesPage() {
     load();
   }
 
-  async function deleteAttendee(id: string) {
-    if (!confirm("Remove this attendee and cancel any pending invite?")) return;
-    await fetch(`/api/attendees/${id}`, { method: "DELETE" });
-    load();
-  }
-
-  async function copyInviteLink(token: string) {
-    const url = `${window.location.origin}/attend/${token}`;
-    try { await navigator.clipboard.writeText(url); } catch { /* ignore */ }
+  async function sendPortalLink(ids: string[]) {
+    if (!ids.length) return;
+    const res = await fetch("/api/attendees/portal-link", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids }),
+    }).then((r) => r.json()).catch(() => ({ sent: 0 }));
+    setPortalNote(`Portal link sent to ${res.sent || 0}${res.failed ? `, ${res.failed} failed` : ""}.`);
+    setTimeout(() => setPortalNote(null), 4000);
+    load(true);
   }
 
   if (status !== "authenticated") {
@@ -302,22 +277,6 @@ export default function AttendeesPage() {
       </div>
     );
   }
-
-  const filtered = attendees.filter((a) => {
-    if (filter !== "all" && a.status !== filter) return false;
-    if (search) {
-      const s = search.toLowerCase();
-      if (![a.firstName, a.lastName, a.email, a.affiliation].some((v) => v?.toLowerCase().includes(s))) return false;
-    }
-    return true;
-  });
-
-  const stats = {
-    total: attendees.length,
-    paid: attendees.filter((a) => a.paid).length,
-    confirmed: attendees.filter((a) => a.status === "confirmed" || a.status === "paid").length,
-    viewed: attendees.filter((a) => !!a.viewedAt).length,
-  };
 
   const previewDiscounted = ((21000 * (100 - discountPercent) / 100) / 100).toFixed(2);
 
@@ -341,12 +300,9 @@ export default function AttendeesPage() {
               </button>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-5">
-              <Stat label="Invited" value={stats.total} sub="total in pipeline" />
-              <Stat label="Viewed" value={stats.viewed} accent="#0066B3" sub="opened invite" />
-              <Stat label="Confirmed" value={stats.confirmed} accent="#0E5566" sub="registered" />
-              <Stat label="Attendees" value={stats.paid} accent="#059669" sub="paid in full" />
-            </div>
+            {portalNote && (
+              <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-800">{portalNote}</div>
+            )}
 
             {queueStatus && (queueStatus.counts.pending > 0 || queueStatus.paused) && (
               <div className="bg-white border border-slate-200 rounded-xl p-4 mb-5 shadow-sm">
@@ -462,8 +418,8 @@ export default function AttendeesPage() {
 
             {/* Top tabs */}
             <div className="flex gap-1 bg-slate-100 rounded-lg p-1 mb-4 w-fit">
+              <TabBtn active={tab === "attendees"} onClick={() => setTab("attendees")} label="Attendees" />
               <TabBtn active={tab === "invite"} onClick={() => setTab("invite")} label="Invite" />
-              <TabBtn active={tab === "list"} onClick={() => setTab("list")} label={`Invitees (${attendees.length})`} />
             </div>
 
             {tab === "invite" && (
@@ -687,106 +643,13 @@ export default function AttendeesPage() {
               </div>
             )}
 
-            {tab === "list" && (
-              <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                <div className="p-4 border-b border-slate-100 flex items-center gap-2 flex-wrap">
-                  <div className="relative flex-1 min-w-[180px]">
-                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      placeholder="Search by name, email, org…"
-                      className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10"
-                    />
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <Filter className="w-3.5 h-3.5 text-slate-400" />
-                    <select
-                      value={filter}
-                      onChange={(e) => setFilter(e.target.value)}
-                      className="text-sm border border-slate-200 rounded-lg px-2 py-2 outline-none focus:border-teal-500"
-                    >
-                      <option value="all">All statuses</option>
-                      {Object.entries(ATTENDEE_STATUS_LABELS).map(([k, v]) => (
-                        <option key={k} value={k}>{v.label}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {filtered.length === 0 ? (
-                  <div className="p-10 text-center text-sm text-slate-400">
-                    {attendees.length === 0 ? "No invitees yet. Head to the Invite tab." : "No matches."}
-                  </div>
-                ) : (
-                  <ul className="divide-y divide-slate-100">
-                    {filtered.map((a) => {
-                      const sl = ATTENDEE_STATUS_LABELS[a.status] || ATTENDEE_STATUS_LABELS.queued;
-                      return (
-                        <li key={a.id} className="p-4 flex items-center gap-3 hover:bg-slate-50 group">
-                          <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600">
-                            {(a.firstName[0] + a.lastName[0]).toUpperCase()}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="text-sm font-bold text-slate-900 truncate">
-                              {a.firstName} {a.lastName}
-                            </div>
-                            <div className="text-xs text-slate-500 truncate">
-                              {a.email}{a.affiliation && ` · ${a.affiliation}`}
-                              {a.lastSentAt && (
-                                <span className="ml-1 text-slate-400">· last sent {new Date(a.lastSentAt).toLocaleDateString()}</span>
-                              )}
-                            </div>
-                          </div>
-                          <span className={`text-[10px] font-bold px-2 py-1 rounded-full border ${sl.color}`}>
-                            {sl.label}
-                          </span>
-                          {a.attendanceMode && (
-                            <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-slate-100 text-slate-600 hidden sm:inline">
-                              {a.attendanceMode === "in-person" ? "In-person" : "Virtual"}
-                            </span>
-                          )}
-                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            {a.inviteToken && (
-                              <button
-                                onClick={() => copyInviteLink(a.inviteToken!)}
-                                className="p-1.5 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-700"
-                                title="Copy invite link"
-                              >
-                                <Copy className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-                            <button
-                              onClick={() => viewEmail(a)}
-                              className="p-1.5 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-700"
-                              title="View the email we sent"
-                            >
-                              <Eye className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => resendInvite(a.id)}
-                              disabled={resendingId === a.id}
-                              className="p-1.5 rounded hover:bg-slate-100 text-slate-400 hover:text-teal-700 disabled:opacity-50"
-                              title="Resend invite now"
-                            >
-                              {resendingId === a.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
-                            </button>
-                            {isAdmin && (
-                              <button
-                                onClick={() => deleteAttendee(a.id)}
-                                className="p-1.5 rounded hover:bg-rose-50 text-slate-300 hover:text-rose-500"
-                                title="Delete (admin only)"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-              </div>
+            {tab === "attendees" && (
+              <AttendeesView
+                attendees={attendees}
+                onOpenDetail={(id) => setDetailId(id)}
+                onCompose={(ids) => setComposerIds(ids)}
+                onSendPortal={sendPortalLink}
+              />
             )}
           </div>
         </div>
@@ -804,16 +667,30 @@ export default function AttendeesPage() {
       )}
 
       {showQueue && <QueueSettingsModal onClose={() => setShowQueue(false)} onChanged={load} />}
-    </div>
-  );
-}
 
-function Stat({ label, value, accent, sub }: { label: string; value: number; accent?: string; sub?: string }) {
-  return (
-    <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-sm">
-      <div className="text-[10px] font-bold tracking-wider uppercase text-slate-400">{label}</div>
-      <div className="text-2xl font-extrabold mt-1" style={{ color: accent || "#0f172a" }}>{value}</div>
-      {sub ? <div className="text-[10px] text-slate-400 mt-0.5 truncate">{sub}</div> : null}
+      {detailId && (
+        <AttendeeDrawer
+          attendeeId={detailId}
+          isAdmin={isAdmin}
+          onClose={() => setDetailId(null)}
+          onChanged={() => load(true)}
+          onCompose={(ids) => { setDetailId(null); setComposerIds(ids); }}
+        />
+      )}
+
+      {composerIds && (
+        <BroadcastComposer
+          recipientIds={composerIds}
+          recipientLabel={composerIds.length === 1 ? "1 person" : `${composerIds.length} people`}
+          onClose={() => setComposerIds(null)}
+          onSent={(sent, failed) => {
+            setComposerIds(null);
+            setPortalNote(`Email sent to ${sent}${failed ? `, ${failed} failed` : ""}.`);
+            setTimeout(() => setPortalNote(null), 4000);
+            load(true);
+          }}
+        />
+      )}
     </div>
   );
 }

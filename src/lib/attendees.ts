@@ -116,10 +116,40 @@ export const ATTENDEE_STATUS_LABELS: Record<string, { label: string; color: stri
   queued: { label: "Queued", color: "bg-slate-100 text-slate-600 border-slate-200" },
   invited: { label: "Invited", color: "bg-sky-50 text-sky-700 border-sky-200" },
   viewed: { label: "Viewed", color: "bg-indigo-50 text-indigo-700 border-indigo-200" },
+  registered: { label: "Registering", color: "bg-amber-50 text-amber-700 border-amber-200" },
   rsvp_pending: { label: "RSVP started", color: "bg-amber-50 text-amber-700 border-amber-200" },
   confirmed: { label: "Confirmed", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
   paid: { label: "Paid", color: "bg-green-100 text-green-800 border-green-300" },
   declined: { label: "Declined", color: "bg-rose-50 text-rose-700 border-rose-200" },
+};
+
+// The funnel stage we actually care about, collapsing the raw status + paid
+// flag from both the invited funnel and the public (self-registered) funnel.
+export type AttendeeStage = "attending" | "registered" | "invited" | "declined";
+
+export const ATTENDEE_STAGE_LABELS: Record<AttendeeStage, { label: string; color: string; dot: string }> = {
+  attending: { label: "Attending", color: "bg-green-100 text-green-800 border-green-300", dot: "#16a34a" },
+  registered: { label: "Registering", color: "bg-amber-50 text-amber-700 border-amber-200", dot: "#d97706" },
+  invited: { label: "Invited", color: "bg-sky-50 text-sky-700 border-sky-200", dot: "#0284c7" },
+  declined: { label: "Declined", color: "bg-rose-50 text-rose-700 border-rose-200", dot: "#e11d48" },
+};
+
+export function attendeeStage(a: { paid: boolean; status: string }): AttendeeStage {
+  if (a.paid) return "attending";
+  if (a.status === "declined") return "declined";
+  if (a.status === "registered" || a.status === "confirmed" || a.status === "rsvp_pending") return "registered";
+  return "invited"; // queued / invited / viewed
+}
+
+// How the person entered the system: we invited/added them, vs they signed up
+// on the public site themselves. Invited records carry an invitedById.
+export type AttendeeSource = "invited" | "organic";
+export function attendeeSource(a: { invitedById?: string | null; invitedAt?: string | null }): AttendeeSource {
+  return a.invitedById || a.invitedAt ? "invited" : "organic";
+}
+export const ATTENDEE_SOURCE_LABELS: Record<AttendeeSource, string> = {
+  invited: "Invited",
+  organic: "Signed up",
 };
 
 export type CsvParseRow = {
