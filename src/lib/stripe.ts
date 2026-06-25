@@ -57,6 +57,38 @@ export async function createCheckoutSession(args: CheckoutSessionArgs): Promise<
   return { id: data.id, url: data.url };
 }
 
+type RetrievedSession = {
+  id: string;
+  paid: boolean;
+  amountTotal: number | null;
+  paymentIntentId: string | null;
+};
+
+// Fetch a checkout session straight from Stripe to verify its real payment
+// state, independent of whether the webhook ever arrived. Lets the success page
+// and an admin action confirm a payment even if the webhook was missed.
+// Returns null if Stripe has no such session.
+export async function retrieveCheckoutSession(sessionId: string): Promise<RetrievedSession | null> {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) throw new Error("STRIPE_SECRET_KEY not configured");
+  const res = await fetch(
+    `https://api.stripe.com/v1/checkout/sessions/${encodeURIComponent(sessionId)}`,
+    { headers: { Authorization: `Bearer ${key}` } }
+  );
+  const data = await res.json();
+  if (!res.ok) {
+    if (res.status === 404) return null;
+    throw new Error(`Stripe error ${res.status}: ${data?.error?.message || "unknown"}`);
+  }
+  const pi = data?.payment_intent;
+  return {
+    id: data.id,
+    paid: data?.payment_status === "paid",
+    amountTotal: typeof data?.amount_total === "number" ? data.amount_total : null,
+    paymentIntentId: typeof pi === "string" ? pi : (pi?.id ?? null),
+  };
+}
+
 // Verifies a Stripe webhook signature header against the raw payload using
 // the configured webhook secret. Returns true if the signature is valid.
 export async function verifyWebhookSignature(

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import {
   Award, Trash2, RefreshCw, Search, Filter, ExternalLink, Mail, Building2, Copy, Plus,
-  Clock, Pause, Play, Zap, SlidersHorizontal,
+  Clock, Pause, Play, Zap, SlidersHorizontal, Loader2, BadgeCheck,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
@@ -54,6 +54,8 @@ export default function SponsorsAdminPage() {
   const [confirmDialog, setConfirmDialog] = useState<{
     title: string; message: string; confirmLabel: string; danger?: boolean; onConfirm: () => void;
   } | null>(null);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [actionNote, setActionNote] = useState<string | null>(null);
 
   const role = (session?.user as { role?: string })?.role;
   const isAdmin = role === "admin" || role === "developer";
@@ -143,6 +145,34 @@ export default function SponsorsAdminPage() {
   async function copyStatusLink(token: string) {
     const url = `${window.location.origin}/sponsor/status/${token}`;
     try { await navigator.clipboard.writeText(url); } catch { /* ignore */ }
+  }
+
+  // Verify a payment with Stripe and, if it went through, mark paid + email.
+  // Recovers a payment the webhook never delivered.
+  async function confirmPayment(id: string) {
+    const s = sponsors.find((x) => x.id === id);
+    setConfirmingId(id);
+    setActionNote(null);
+    try {
+      const res = await fetch(`/api/sponsors/${id}/confirm-payment`, { method: "POST" });
+      const j = await res.json().catch(() => ({}));
+      const who = s?.companyName || "Sponsor";
+      if (res.ok && j.ok && j.paidOnStripe) {
+        setActionNote(
+          j.emailed
+            ? `${who}: payment verified, marked paid, confirmation email sent.`
+            : `${who}: payment verified and marked paid, but the email failed (${j.error || "see logs"}).`
+        );
+      } else if (j.paidOnStripe === false) {
+        setActionNote(`${who}: Stripe shows this checkout has not been paid, so nothing changed.`);
+      } else {
+        setActionNote(`${who}: could not confirm. ${j.error || "Unknown error."}`);
+      }
+      await load();
+    } finally {
+      setConfirmingId(null);
+      setTimeout(() => setActionNote(null), 8000);
+    }
   }
 
   if (status !== "authenticated") {
@@ -322,6 +352,17 @@ export default function SponsorsAdminPage() {
                             </div>
                           </div>
                           <span className={`text-[10px] font-bold px-2 py-1 rounded-full border ${sl.color}`}>{sl.label}</span>
+                          {isAdmin && !s.paid && s.amountCents > 0 && s.status === "awaiting_payment" && (
+                            <button
+                              onClick={() => confirmPayment(s.id)}
+                              disabled={confirmingId === s.id}
+                              className="text-[10px] font-bold px-2 py-1 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 inline-flex items-center gap-1 shrink-0 disabled:opacity-50"
+                              title="Check Stripe for this payment; if it went through, mark paid and email them"
+                            >
+                              {confirmingId === s.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <BadgeCheck className="w-3 h-3" />}
+                              Confirm payment
+                            </button>
+                          )}
                           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button
                               onClick={() => copyStatusLink(s.applicationToken)}
@@ -407,6 +448,11 @@ export default function SponsorsAdminPage() {
           {...confirmDialog}
           onCancel={() => setConfirmDialog(null)}
         />
+      )}
+      {actionNote && (
+        <div className="fixed bottom-4 right-4 z-[90] max-w-sm rounded-xl bg-slate-900 text-white text-sm font-semibold px-4 py-3 shadow-2xl">
+          {actionNote}
+        </div>
       )}
     </div>
   );

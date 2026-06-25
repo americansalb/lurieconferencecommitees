@@ -2,13 +2,44 @@ import Link from "next/link";
 import { Check, Calendar, MapPin } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { tierById } from "@/lib/sponsors";
+import { retrieveCheckoutSession, isStripeConfigured } from "@/lib/stripe";
+import { confirmSponsorPaid } from "@/lib/sponsor-confirm";
 
 export const dynamic = "force-dynamic";
 
-export default async function SponsorSuccessPage({ params }: { params: { token: string } }) {
-  const sponsor = await prisma.sponsor.findUnique({
+export default async function SponsorSuccessPage({
+  params, searchParams,
+}: {
+  params: { token: string };
+  searchParams: { cs?: string };
+}) {
+  let sponsor = await prisma.sponsor.findUnique({
     where: { applicationToken: params.token },
   });
+
+  // Webhook-independent confirmation: Stripe just sent them here after paying,
+  // so if we haven't recorded it yet, verify the session straight from Stripe
+  // and confirm. This self-heals a missed or delayed webhook instead of leaving
+  // a paid sponsor stuck at "awaiting payment" with no email.
+  if (sponsor && !sponsor.paid && isStripeConfigured()) {
+    const sessionId = searchParams?.cs || sponsor.stripeSessionId;
+    if (sessionId) {
+      try {
+        const verified = await retrieveCheckoutSession(sessionId);
+        if (verified?.paid) {
+          await confirmSponsorPaid(sponsor.id, {
+            paymentIntentId: verified.paymentIntentId,
+            amountTotal: verified.amountTotal,
+            sessionId: verified.id,
+            source: "success_page",
+          });
+          sponsor = await prisma.sponsor.findUnique({ where: { applicationToken: params.token } });
+        }
+      } catch (e) {
+        console.error("[sponsor success] payment verify failed", e);
+      }
+    }
+  }
   const tier = sponsor ? tierById(sponsor.tier) : null;
   const TEAL = "#0E5566";
 
