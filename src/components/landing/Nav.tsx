@@ -9,7 +9,6 @@ const links = [
   { href: "#speakers", label: "Speakers" },
   { href: "#venue", label: "Venue" },
   { href: "#pricing", label: "Pricing" },
-  { href: "#proposals", label: "Proposals" },
   { href: "#sponsors", label: "Sponsors" },
   { href: "#faq", label: "FAQ" },
 ];

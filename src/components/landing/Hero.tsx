@@ -118,19 +118,8 @@ export default function Hero() {
           />
         </div>
 
-        {/* Two gold pill CTAs. */}
+        {/* Single CTA: registration is the focus. */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3">
-          <a
-            href="/proposal"
-            className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full font-bold text-[15px] transition-all"
-            style={{
-              background: `linear-gradient(135deg, #E8C56F 0%, ${TOKENS.gold} 100%)`,
-              color: "#3C2E10",
-              boxShadow: "0 14px 34px -12px rgba(201,161,75,0.55), 0 0 0 1px rgba(255,255,255,0.08) inset",
-            }}
-          >
-            Submit a Proposal <ArrowRight className="w-4 h-4" />
-          </a>
           <a
             href="/register"
             className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full font-bold text-[15px] transition-all"
