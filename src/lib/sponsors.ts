@@ -158,6 +158,7 @@ export const SPONSOR_STATUS_LABELS: Record<string, { label: string; color: strin
   in_conversation: { label: "In conversation", color: "bg-sky-50 text-sky-700 border-sky-200" },
   awaiting_payment: { label: "Awaiting payment", color: "bg-amber-50 text-amber-800 border-amber-200" },
   paid: { label: "Paid", color: "bg-green-100 text-green-800 border-green-300" },
+  confirmed: { label: "Confirmation sent", color: "bg-emerald-600 text-white border-emerald-600" },
   declined: { label: "Declined", color: "bg-rose-50 text-rose-700 border-rose-200" },
 };
 

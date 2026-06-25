@@ -196,6 +196,8 @@ export default function SponsorsAdminPage() {
   const totalDollars = sponsors.filter((s) => s.paid).reduce((sum, s) => sum + s.amountCents, 0) / 100;
   const pipelineDollars = sponsors.filter((s) => !s.paid && !s.donateFoodInstead && s.status !== "declined").reduce((sum, s) => sum + s.amountCents, 0) / 100;
   const queuedCount = sponsors.filter((s) => s.status === "queued").length;
+  // Paid but the confirmation email hasn't gone out yet: the ones to chase.
+  const confirmationPending = sponsors.filter((s) => s.status === "paid").length;
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">
@@ -243,10 +245,20 @@ export default function SponsorsAdminPage() {
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-5">
               <Stat label="Applications" value={sponsors.length.toString()} />
-              <Stat label="Confirmed (paid)" value={sponsors.filter((s) => s.paid).length.toString()} accent="#059669" />
-              <Stat label="Confirmed $" value={`$${totalDollars.toLocaleString("en-US")}`} accent="#0E5566" />
+              <Stat label="Paid" value={sponsors.filter((s) => s.paid).length.toString()} accent="#059669" />
+              <Stat label="Paid $" value={`$${totalDollars.toLocaleString("en-US")}`} accent="#0E5566" />
               <Stat label="Pipeline $" value={`$${pipelineDollars.toLocaleString("en-US")}`} accent="#0066B3" />
             </div>
+
+            {confirmationPending > 0 && (
+              <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 flex items-center gap-3 text-sm">
+                <Mail className="w-4 h-4 text-amber-600 shrink-0" />
+                <span className="text-amber-800 font-semibold">
+                  {confirmationPending} paid {confirmationPending === 1 ? "sponsor hasn’t" : "sponsors haven’t"} been sent a confirmation yet.
+                </span>
+                <button onClick={() => setFilter("paid")} className="ml-auto text-xs font-bold text-amber-700 underline hover:text-amber-900">Show them</button>
+              </div>
+            )}
 
             {(queuedCount > 0 || queue?.paused) && (
               <div className="mb-5 rounded-xl border border-[#0066B3]/20 bg-[#0066B3]/[0.04] px-4 py-3 flex flex-wrap items-center gap-x-4 gap-y-2">

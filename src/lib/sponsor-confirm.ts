@@ -81,6 +81,9 @@ export async function confirmSponsorPaid(
       from: sponsorFromHeader(),
       replyTo: sponsorReplyTo(),
     });
+    // The confirmation is out: advance to "Confirmation sent" so a paid sponsor
+    // who never got the email stays visibly stuck at "Paid".
+    await prisma.sponsor.update({ where: { id: sponsor.id }, data: { status: "confirmed" } }).catch(() => {});
     await prisma.sponsorEvent.create({
       data: { sponsorId: sponsor.id, type: "paid_email_sent", actorEmail: opts.actorEmail ?? null, meta: opts.source || null },
     }).catch(() => {});
