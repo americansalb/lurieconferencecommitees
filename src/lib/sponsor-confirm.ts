@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
 import { sponsorPaidEmail } from "@/lib/mail-templates";
-import { sponsorFromHeader, sponsorReplyTo, sponsorStatusUrl, tierById } from "@/lib/sponsors";
+import { sponsorFromHeader, sponsorReplyTo, sponsorStatusUrl, tierById, fullBenefits } from "@/lib/sponsors";
 
 export type ConfirmResult = {
   ok: boolean;
@@ -33,7 +33,10 @@ export async function confirmSponsorPaid(
     forceEmail?: boolean; // re-send the confirmation even if already paid
   } = {}
 ): Promise<ConfirmResult> {
-  const sponsor = await prisma.sponsor.findUnique({ where: { id: sponsorId } });
+  const sponsor = await prisma.sponsor.findUnique({
+    where: { id: sponsorId },
+    include: { logo: { select: { mime: true } } },
+  });
   if (!sponsor) return { ok: false, alreadyPaid: false, emailed: false, error: "Sponsor not found" };
 
   const wasPaid = sponsor.paid;
@@ -77,6 +80,12 @@ export async function confirmSponsorPaid(
         tierName: t?.name || sponsor.tier,
         amountCents: sponsor.amountCents,
         statusUrl: sponsorStatusUrl(sponsor.applicationToken),
+        isExhibitor: sponsor.tier === "exhibitor",
+        ticketsIncluded: t?.ticketsIncluded ?? 0,
+        wantsLogo: sponsor.wantsLogo,
+        hasLogo: !!sponsor.logo,
+        registreeName: sponsor.registreeName,
+        benefits: fullBenefits(sponsor.tier),
       }),
       from: sponsorFromHeader(),
       replyTo: sponsorReplyTo(),

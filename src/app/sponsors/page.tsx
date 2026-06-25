@@ -55,6 +55,7 @@ export default function SponsorsAdminPage() {
     title: string; message: string; confirmLabel: string; danger?: boolean; onConfirm: () => void;
   } | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [requestingLogoId, setRequestingLogoId] = useState<string | null>(null);
   const [actionNote, setActionNote] = useState<string | null>(null);
 
   const role = (session?.user as { role?: string })?.role;
@@ -171,6 +172,26 @@ export default function SponsorsAdminPage() {
       await load();
     } finally {
       setConfirmingId(null);
+      setTimeout(() => setActionNote(null), 8000);
+    }
+  }
+
+  // Email the sponsor asking for a higher-resolution logo, with an upload link.
+  async function requestLogo(id: string) {
+    const s = sponsors.find((x) => x.id === id);
+    setRequestingLogoId(id);
+    setActionNote(null);
+    try {
+      const res = await fetch(`/api/sponsors/${id}/request-logo`, { method: "POST" });
+      const j = await res.json().catch(() => ({}));
+      const who = s?.companyName || "Sponsor";
+      setActionNote(
+        res.ok && j.ok
+          ? `${who}: emailed a request for a high-resolution logo with an upload link.`
+          : `${who}: could not send the logo request. ${j.error || ""}`
+      );
+    } finally {
+      setRequestingLogoId(null);
       setTimeout(() => setActionNote(null), 8000);
     }
   }
@@ -419,13 +440,24 @@ export default function SponsorsAdminPage() {
                               {s.dietary && <span><span className="text-slate-400">Dietary:</span> {s.dietary}</span>}
                               {s.accessibility && <span><span className="text-slate-400">Access:</span> {s.accessibility}</span>}
                             </div>
-                            {s.wantsLogo && (
-                              <div className="mt-2">
+                            {(s.wantsLogo || s.logo) && (
+                              <div className="mt-2 flex items-center gap-3 flex-wrap">
                                 {s.logo ? (
                                   // eslint-disable-next-line @next/next/no-img-element
                                   <img src={`/api/sponsors/${s.id}/logo`} alt={`${s.companyName} logo`} className="h-10 w-auto max-w-[140px] object-contain bg-white rounded border border-slate-200 p-1" />
                                 ) : (
                                   <span className="text-[11px] font-semibold text-amber-600">Wants logo shown (no file uploaded yet)</span>
+                                )}
+                                {isAdmin && (
+                                  <button
+                                    onClick={() => requestLogo(s.id)}
+                                    disabled={requestingLogoId === s.id}
+                                    className="text-[11px] font-bold px-2.5 py-1 rounded-lg border border-[#0066B3]/20 bg-white text-[#0066B3] hover:bg-[#0066B3]/[0.06] inline-flex items-center gap-1 disabled:opacity-50"
+                                    title="Email them asking for a higher-resolution logo, with a one-click upload link"
+                                  >
+                                    {requestingLogoId === s.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3" />}
+                                    {s.logo ? "Request better logo" : "Request logo"}
+                                  </button>
                                 )}
                               </div>
                             )}

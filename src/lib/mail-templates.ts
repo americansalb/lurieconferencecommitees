@@ -762,25 +762,118 @@ type SponsorPaidArgs = {
   tierName: string;
   amountCents: number;
   statusUrl: string;
+  isExhibitor?: boolean;
+  ticketsIncluded?: number;
+  wantsLogo?: boolean;
+  hasLogo?: boolean;
+  registreeName?: string | null;
+  benefits?: string[];
+  assetBase?: string;
 };
 
+// Sent the moment a sponsor/exhibitor payment is confirmed. Fully branded
+// receipt that reflects back exactly what we already have from them, so it never
+// asks for something they've already given (e.g. a logo they uploaded).
 export function sponsorPaidEmail({
   firstName, companyName, tierName, amountCents, statusUrl,
+  isExhibitor = false, ticketsIncluded = 0, wantsLogo = false, hasLogo = false,
+  registreeName = null, benefits, assetBase,
 }: SponsorPaidArgs) {
   const first = firstName || "there";
   const amount = `$${(amountCents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const ticketLine = ticketsIncluded
+    ? `${ticketsIncluded} conference ${ticketsIncluded === 1 ? "ticket" : "tickets"}`
+    : "Recognition at the conference";
+
+  // Reflect back what we already hold, so the email is accurate per recipient.
+  const onFile: string[] = [];
+  if (isExhibitor && registreeName) {
+    onFile.push(`<strong>Table representative:</strong> ${escapeHtml(registreeName)}`);
+  }
+  if (hasLogo) {
+    onFile.push(`<strong>Logo:</strong> received. We&rsquo;ll feature ${escapeHtml(companyName)} on the conference website, and you can view or replace it from your portal.`);
+  } else if (wantsLogo) {
+    onFile.push(`<strong>Logo:</strong> you asked to be featured on the site, but we don&rsquo;t have a file yet. Upload it from your portal whenever you&rsquo;re ready.`);
+  }
+
+  const logoOutstanding = wantsLogo && !hasLogo;
+  const nextLine = isExhibitor
+    ? `Closer to the conference we&rsquo;ll send your tickets, table setup and load-in details, and the final schedule.${logoOutstanding ? " The one thing we still need from you is your logo." : " Nothing else is needed from you right now."}`
+    : `Closer to the conference we&rsquo;ll send your tickets, recognition placement, and the final schedule.${logoOutstanding ? " The one thing we still need from you is your logo." : " Nothing else is needed from you right now."}`;
+
   return shell(`
-    <h1 style="font-size:22px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">Thank you for your sponsorship, ${escapeHtml(first)}.</h1>
-    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
-      ${escapeHtml(companyName)} is confirmed as a sponsor of the 2026 Lurie Children&rsquo;s and AALB Conference at the ${escapeHtml(tierName)} level. Your payment of ${escapeHtml(amount)} has been received.
+    ${heroBanner()}
+    <h1 style="font-size:24px;font-weight:800;margin:0 0 14px 0;letter-spacing:-0.01em;">You&rsquo;re all set, ${escapeHtml(first)}.</h1>
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 6px 0;">
+      ${escapeHtml(companyName)} is confirmed as ${isExhibitor ? "an <strong>exhibitor</strong>" : `a <strong>${escapeHtml(tierName)}</strong>`} at the 2nd Joint Conference of Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers, August 15 and 16, 2026, in Chicago. Your payment of <strong>${escapeHtml(amount)}</strong> has been received, and this email is your receipt.
     </p>
-    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
-      Our team will follow up shortly with logo and material specifications, ticket allocation, and any tier-specific details we need to coordinate.
+
+    ${sectionHeading(isExhibitor ? "Your exhibitor table" : "Your sponsorship")}
+    ${glanceCard([
+      { label: isExhibitor ? "Participation" : "Level", value: isExhibitor ? "Exhibitor" : escapeHtml(tierName) },
+      { label: "Paid", value: escapeHtml(amount) },
+      { label: "Includes", value: ticketLine },
+    ])}
+
+    ${onFile.length ? `${sectionHeading("What we have from you")}${bulletList(onFile)}` : ""}
+
+    ${sectionHeading("What happens next")}
+    <p style="font-size:14.5px;line-height:1.7;color:${TEXT};margin:0 0 16px 0;">${nextLine}</p>
+
+    ${button(statusUrl, "View your portal")}
+
+    ${benefits && benefits.length ? `${sectionHeading("What&rsquo;s included")}${bulletList(benefits)}` : ""}
+
+    ${sectionHeading("Conference at a Glance")}
+    ${glanceCard(GLANCE_ROWS)}
+
+    <p style="font-size:14.5px;line-height:1.7;color:${TEXT};margin:18px 0 0 0;">
+      Thank you for standing with us for language access in healthcare. Questions about anything above? Just reply to this email and we&rsquo;ll be glad to help.
     </p>
-    ${button(statusUrl, "View your sponsorship")}
-    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;">
+
+    ${signOff()}
+
+    ${logoLockup(assetBase)}
+
+    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;padding-top:14px;border-top:1px solid #eef1f4;">
       Your payment is tax-deductible to the fullest extent allowed by law under IRS code 501(c)(3). EINs: 83-3016421 and 36-2170833. Keep this email as your receipt.
     </p>
+  `);
+}
+
+type SponsorLogoRequestArgs = {
+  firstName: string;
+  companyName: string;
+  statusUrl: string;
+  assetBase?: string;
+};
+
+// Admin-triggered request for a print/web quality logo, with a one-click path to
+// upload it from the portal, so the team stops chasing logos by hand.
+export function sponsorLogoRequestEmail({
+  firstName, companyName, statusUrl, assetBase,
+}: SponsorLogoRequestArgs) {
+  const first = firstName || "there";
+  return shell(`
+    <h1 style="font-size:22px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">A quick logo request, ${escapeHtml(first)}.</h1>
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
+      We&rsquo;re putting together the conference materials and want to feature ${escapeHtml(companyName)} at its best. The logo we have on file is a little low-resolution for print and large-screen use, so we&rsquo;d love a higher-quality version.
+    </p>
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 6px 0;">Ideally:</p>
+    ${bulletList([
+      "Vector if you have it (.SVG, .EPS, .AI, or .PDF), which scales to any size with no quality loss",
+      "Otherwise a PNG at least 1000px wide, with a transparent background",
+      "A horizontal version if one exists",
+    ])}
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:14px 0 16px 0;">
+      The fastest way is to upload it right from your portal:
+    </p>
+    ${button(statusUrl, "Upload your logo")}
+    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;">
+      Prefer email? Just reply to this message with the file attached and we&rsquo;ll take it from there.
+    </p>
+    ${signOff()}
+    ${logoLockup(assetBase)}
   `);
 }
 

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { tierById, fullBenefits, SPONSOR_STATUS_LABELS } from "@/lib/sponsors";
 import PayNowButton from "./PayNowButton";
 import ExhibitorCompletionWizard from "./ExhibitorCompletionWizard";
+import LogoUploader from "./LogoUploader";
 
 export const dynamic = "force-dynamic";
 
@@ -88,6 +89,20 @@ export default async function SponsorStatusPage({ params }: { params: { token: s
             </div>
           )}
 
+          {(sponsor.tier === "exhibitor" || sponsor.wantsLogo || sponsor.logo) && (
+            <div className="mt-6 rounded-xl border border-slate-100 bg-slate-50/70 p-4">
+              <div className="text-[10px] font-bold tracking-widest uppercase text-slate-400 mb-3">Your logo</div>
+              <LogoUploader token={params.token} sponsorId={sponsor.id} companyName={sponsor.companyName} hasLogo={!!sponsor.logo} />
+              {(sponsor.registreeName || sponsor.dietary || sponsor.accessibility) && (
+                <dl className="mt-4 pt-3 border-t border-slate-200/70 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
+                  {sponsor.registreeName && <Detail label="Table representative" value={`${sponsor.registreeName}${sponsor.registreeEmail ? ` · ${sponsor.registreeEmail}` : ""}`} />}
+                  {sponsor.dietary && <Detail label="Dietary" value={sponsor.dietary} />}
+                  {sponsor.accessibility && <Detail label="Accessibility" value={sponsor.accessibility} />}
+                </dl>
+              )}
+            </div>
+          )}
+
           <div className="mt-7 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
             <Info icon={Calendar} label="Dates" value="August 15 and 16, 2026" />
             <Info icon={MapPin} label="Venue" value="Lurie Children's, Chicago" />
@@ -108,6 +123,15 @@ export default async function SponsorStatusPage({ params }: { params: { token: s
           </p>
         </div>
       </div>
+    </div>
+  );
+}
+
+function Detail({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt className="text-[10px] font-bold tracking-widest uppercase text-slate-400">{label}</dt>
+      <dd className="mt-0.5 text-sm font-semibold text-slate-800">{value}</dd>
     </div>
   );
 }
