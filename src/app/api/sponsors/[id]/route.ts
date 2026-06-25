@@ -38,6 +38,14 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const existing = await prisma.sponsor.findUnique({ where: { id: params.id } });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+  // Manually moving a sponsor to "paid" should also set the paid flag, so they
+  // count as revenue and can be sent a confirmation. (Stripe-confirmed payments
+  // set this via the webhook / confirm-payment flow.)
+  if (data.status === "paid" && !existing.paid) {
+    data.paid = true;
+    data.paidAt = new Date();
+  }
+
   const updated = await prisma.sponsor.update({ where: { id: params.id }, data });
 
   // Accepting an applicant = moving them to "Awaiting payment". On that

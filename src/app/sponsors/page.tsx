@@ -157,14 +157,14 @@ export default function SponsorsAdminPage() {
       const res = await fetch(`/api/sponsors/${id}/confirm-payment`, { method: "POST" });
       const j = await res.json().catch(() => ({}));
       const who = s?.companyName || "Sponsor";
-      if (res.ok && j.ok && j.paidOnStripe) {
+      if (j.paidOnStripe === false) {
+        setActionNote(`${who}: Stripe shows this checkout has not been paid, so nothing changed.`);
+      } else if (res.ok && j.ok) {
         setActionNote(
           j.emailed
-            ? `${who}: payment verified, marked paid, confirmation email sent.`
-            : `${who}: payment verified and marked paid, but the email failed (${j.error || "see logs"}).`
+            ? `${who}: confirmed and the confirmation email was sent.`
+            : `${who}: marked paid, but the email failed (${j.error || "see logs"}).`
         );
-      } else if (j.paidOnStripe === false) {
-        setActionNote(`${who}: Stripe shows this checkout has not been paid, so nothing changed.`);
       } else {
         setActionNote(`${who}: could not confirm. ${j.error || "Unknown error."}`);
       }
@@ -325,6 +325,10 @@ export default function SponsorsAdminPage() {
                   {filtered.map((s) => {
                     const tier = TIERS.find((t) => t.id === s.tier);
                     const sl = SPONSOR_STATUS_LABELS[s.status] || SPONSOR_STATUS_LABELS.submitted;
+                    // "Confirm payment" verifies an awaiting payment with Stripe;
+                    // "Send confirmation" (re)sends the receipt to a paid sponsor.
+                    const isConfirmAction = !s.paid && s.status === "awaiting_payment";
+                    const showPayAction = isAdmin && s.amountCents > 0 && (s.status === "awaiting_payment" || s.paid || s.status === "paid");
                     return (
                       <li key={s.id} className="p-4 group">
                         <div className="flex items-center gap-3">
@@ -352,15 +356,15 @@ export default function SponsorsAdminPage() {
                             </div>
                           </div>
                           <span className={`text-[10px] font-bold px-2 py-1 rounded-full border ${sl.color}`}>{sl.label}</span>
-                          {isAdmin && !s.paid && s.amountCents > 0 && s.status === "awaiting_payment" && (
+                          {showPayAction && (
                             <button
                               onClick={() => confirmPayment(s.id)}
                               disabled={confirmingId === s.id}
                               className="text-[10px] font-bold px-2 py-1 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 inline-flex items-center gap-1 shrink-0 disabled:opacity-50"
-                              title="Check Stripe for this payment; if it went through, mark paid and email them"
+                              title={isConfirmAction ? "Check Stripe for this payment; if it went through, mark paid and email them" : "Send the payment confirmation email to this sponsor"}
                             >
-                              {confirmingId === s.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <BadgeCheck className="w-3 h-3" />}
-                              Confirm payment
+                              {confirmingId === s.id ? <Loader2 className="w-3 h-3 animate-spin" /> : isConfirmAction ? <BadgeCheck className="w-3 h-3" /> : <Mail className="w-3 h-3" />}
+                              {isConfirmAction ? "Confirm payment" : "Send confirmation"}
                             </button>
                           )}
                           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

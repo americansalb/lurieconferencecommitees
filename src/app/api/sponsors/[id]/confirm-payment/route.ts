@@ -25,7 +25,14 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
   // Already recorded as paid: just (re)send the confirmation email.
   if (sponsor.paid) {
     const r = await confirmSponsorPaid(sponsor.id, { actorEmail, source: "admin", forceEmail: true });
-    return NextResponse.json({ ...r, verified: true, paidOnStripe: true });
+    return NextResponse.json({ ...r, verified: true });
+  }
+
+  // Admin already moved them to "paid" by hand (e.g. a check, or recovering a
+  // payment). Trust that and send the confirmation without a Stripe round-trip.
+  if (sponsor.status === "paid") {
+    const r = await confirmSponsorPaid(sponsor.id, { actorEmail, source: "admin" });
+    return NextResponse.json({ ...r });
   }
 
   if (!isStripeConfigured()) {

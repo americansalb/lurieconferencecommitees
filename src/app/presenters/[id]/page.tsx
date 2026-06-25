@@ -6,7 +6,7 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft, Mail, Send, Trash2, XCircle, Clock,
-  Copy, Pencil, Save, X, ExternalLink,
+  Copy, Pencil, Save, X, ExternalLink, Check, Loader2,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
@@ -81,6 +81,10 @@ export default function PresenterDetailPage() {
   const [adminNotes, setAdminNotes] = useState("");
   const [editingNotes, setEditingNotes] = useState(false);
   const [editingInvitation, setEditingInvitation] = useState(false);
+  const [acceptingAdjustments, setAcceptingAdjustments] = useState(false);
+  const [adjustmentNote, setAdjustmentNote] = useState<string | null>(null);
+  const [showAdjustComposer, setShowAdjustComposer] = useState(false);
+  const [adjustMessage, setAdjustMessage] = useState("");
 
   const role = (session?.user as { role?: string } | undefined)?.role;
   const isAdmin = role === "admin" || role === "developer";
@@ -112,6 +116,33 @@ export default function PresenterDetailPage() {
       body: JSON.stringify(data),
     });
     await load();
+  }
+
+  // Accept the presenter's requested adjustments: re-open their confirmation
+  // (back to Invited) and email them to take another look and confirm.
+  async function acceptAdjustments() {
+    setAcceptingAdjustments(true);
+    setAdjustmentNote(null);
+    try {
+      const res = await fetch(`/api/presenters/${params.id}/accept-adjustments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ note: adjustMessage.trim() || undefined }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (res.ok && j.ok) {
+        setAdjustmentNote(j.emailed
+          ? "Accepted. Moved back to Invited and emailed them to re-confirm."
+          : `Moved back to Invited, but the email failed: ${j.error || "see logs"}.`);
+        setShowAdjustComposer(false);
+        setAdjustMessage("");
+      } else {
+        setAdjustmentNote(j.error || "Could not accept adjustments.");
+      }
+      await load();
+    } finally {
+      setAcceptingAdjustments(false);
+    }
   }
 
   async function resend() {
@@ -235,6 +266,53 @@ export default function PresenterDetailPage() {
                     <Section title="From the presenter">
                       <KV label="Requested adjustments" value={presenter.requestedChanges} multiline />
                       <KV label="Notes and questions" value={presenter.presenterMessage} multiline />
+                      {isAdmin && presenter.status === "changes_requested" && (
+                        <div className="mt-3 pt-3 border-t border-slate-100">
+                          {!showAdjustComposer ? (
+                            <button
+                              onClick={() => setShowAdjustComposer(true)}
+                              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700"
+                            >
+                              <Check className="w-3.5 h-3.5" /> Accept adjustments &amp; ask to re-confirm
+                            </button>
+                          ) : (
+                            <div className="space-y-2">
+                              <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
+                                Optional note to {presenter.name.split(" ")[0]} (what you changed)
+                              </label>
+                              <textarea
+                                value={adjustMessage}
+                                onChange={(e) => setAdjustMessage(e.target.value)}
+                                rows={3}
+                                placeholder="e.g. We extended your session to 45 minutes as you asked. Take a look and confirm when ready."
+                                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10"
+                              />
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={acceptAdjustments}
+                                  disabled={acceptingAdjustments}
+                                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50"
+                                >
+                                  {acceptingAdjustments ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                                  Re-open &amp; email to re-confirm
+                                </button>
+                                <button
+                                  onClick={() => { setShowAdjustComposer(false); setAdjustMessage(""); }}
+                                  className="px-3 py-2 rounded-lg text-xs font-semibold text-slate-500 hover:bg-slate-100"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                          <p className="text-[11px] text-slate-400 mt-2">
+                            Moves {presenter.name.split(" ")[0]} back to <strong>Invited</strong> and emails their portal link so they can confirm again.
+                          </p>
+                          {adjustmentNote && (
+                            <div className="mt-2 text-xs font-semibold text-emerald-700">{adjustmentNote}</div>
+                          )}
+                        </div>
+                      )}
                     </Section>
                   )}
                   <Section title="About">
