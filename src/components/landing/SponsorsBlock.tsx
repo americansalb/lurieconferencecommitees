@@ -94,16 +94,27 @@ export default function SponsorsBlock() {
 function PartnerLogo({ partner }: { partner: { name: string; logo: string; role?: string; url?: string } }) {
   const inner = (
     <div
-      className="bg-white rounded-2xl flex flex-col items-center justify-center px-10 py-8"
-      style={{ border: `1px solid ${TOKENS.hairline}`, boxShadow: "0 12px 32px -18px rgba(11,31,37,0.22)", minWidth: 280 }}
+      className="rounded-[22px] p-[1.5px]"
+      style={{
+        background: `linear-gradient(135deg, ${TOKENS.gold} 0%, ${TOKENS.goldSoft} 48%, ${TOKENS.gold} 100%)`,
+        boxShadow: "0 22px 48px -24px rgba(201,161,75,0.42), 0 4px 14px -8px rgba(11,31,37,0.14)",
+      }}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={partner.logo} alt={partner.name} className="h-16 sm:h-[76px] w-auto max-w-[340px] object-contain" />
-      {partner.role && (
-        <div className="mt-3.5 text-[10px] font-bold tracking-[0.28em] uppercase" style={{ color: TOKENS.mutedSoft }}>
-          {partner.role}
-        </div>
-      )}
+      <div
+        className="bg-white rounded-[20px] flex flex-col items-center px-12 py-9"
+        style={{ minWidth: 300 }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={partner.logo} alt={partner.name} className="h-16 sm:h-[78px] w-auto max-w-[340px] object-contain" />
+        {partner.role && (
+          <>
+            <span className="mt-5 mb-3.5 block h-px w-10 rounded-full" style={{ background: TOKENS.gold, opacity: 0.55 }} />
+            <div className="text-[10px] font-bold tracking-[0.3em] uppercase" style={{ color: TOKENS.gold }}>
+              {partner.role}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
   return partner.url
