@@ -36,7 +36,7 @@ export async function POST(req: Request) {
 
   const {
     companyName, contactName, contactEmail, contactPhone, contactRole, website,
-    tier, inviteMessage,
+    tier, inviteMessage, compExhibitor,
   } = body;
 
   if (!companyName?.trim() || !contactName?.trim() || !isEmail(contactEmail || "")) {
@@ -46,10 +46,12 @@ export async function POST(req: Request) {
     );
   }
 
-  // tier is now optional. "undecided" means the invitee will pick on the landing page.
-  const suggested = tier ? tierById(tier) : null;
-  const tierId = suggested ? suggested.id : "undecided";
-  const amountCents = suggested ? suggested.amountCents : 0;
+  // A complimentary exhibitor table is the exhibitor tier at $0. Otherwise the
+  // tier is optional: "undecided" means the invitee picks on the landing page.
+  const compTable = Boolean(compExhibitor);
+  const suggested = compTable ? null : (tier ? tierById(tier) : null);
+  const tierId = compTable ? "exhibitor" : (suggested ? suggested.id : "undecided");
+  const amountCents = compTable ? 0 : (suggested ? suggested.amountCents : 0);
 
   const email = contactEmail.trim().toLowerCase();
   const existing = await prisma.sponsor.findFirst({
@@ -93,12 +95,15 @@ export async function POST(req: Request) {
     inviteMessage: sponsor.inviteMessage,
     landingUrl,
     assetBase: appUrl(),
+    compExhibitor: compTable,
   });
 
   try {
     await sendMail({
       to: sponsor.contactEmail,
-      subject: `Invitation to Sponsor the 2026 Lurie Children's and AALB Conference`,
+      subject: compTable
+        ? `You're invited: a complimentary exhibitor table at the 2026 Lurie Children's and AALB Conference`
+        : `Invitation to Sponsor the 2026 Lurie Children's and AALB Conference`,
       html,
       from: sponsorFromHeader(),
       replyTo: sponsorReplyTo(),
@@ -117,13 +122,14 @@ export async function POST(req: Request) {
 }
 
 async function bulkInvite(
-  body: { csv?: string; tier?: string; inviteMessage?: string },
+  body: { csv?: string; tier?: string; inviteMessage?: string; compExhibitor?: boolean },
   invitedById: string | null,
   actorEmail: string | null,
 ) {
-  const suggested = body.tier ? tierById(body.tier) : null;
-  const tierId = suggested ? suggested.id : "undecided";
-  const amountCents = suggested ? suggested.amountCents : 0;
+  const compTable = Boolean(body.compExhibitor);
+  const suggested = compTable ? null : (body.tier ? tierById(body.tier) : null);
+  const tierId = compTable ? "exhibitor" : (suggested ? suggested.id : "undecided");
+  const amountCents = compTable ? 0 : (suggested ? suggested.amountCents : 0);
   const inviteMessage = body.inviteMessage?.trim() || null;
   const { rows, errors } = parseSponsorInviteCsv(body.csv || "");
 
@@ -163,11 +169,14 @@ async function bulkInvite(
         inviteMessage,
         landingUrl,
         assetBase: appUrl(),
+        compExhibitor: compTable,
       });
       await prisma.emailQueue.create({
         data: {
           batchId, recipientType: "sponsor", recipientId: c.id, to: c.contactEmail,
-          subject: `Invitation to Sponsor the 2026 Lurie Children's and AALB Conference`,
+          subject: compTable
+            ? `You're invited: a complimentary exhibitor table at the 2026 Lurie Children's and AALB Conference`
+            : `Invitation to Sponsor the 2026 Lurie Children's and AALB Conference`,
           html, scheduledFor: times[i], status: "pending",
         },
       });

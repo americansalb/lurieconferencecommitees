@@ -31,12 +31,14 @@ export default async function SponsorStatusPage({ params }: { params: { token: s
   // Accepted, unpaid exhibitors complete their table details, agree to the
   // terms, and pay through a full-screen wizard (matches the apply funnel)
   // rather than the status card.
-  if (tier && sponsor.tier === "exhibitor" && !sponsor.paid && !sponsor.donateFoodInstead && sponsor.amountCents > 0) {
+  if (tier && sponsor.tier === "exhibitor" && !sponsor.paid && !sponsor.donateFoodInstead) {
+    const free = sponsor.amountCents === 0;
     return (
       <ExhibitorCompletionWizard
         token={params.token}
         companyName={sponsor.companyName}
-        tier={{ name: tier.name, amountLabel: amount, ticketsIncluded: tier.ticketsIncluded, accent, accentSoft: tier.accentSoft }}
+        free={free}
+        tier={{ name: tier.name, amountLabel: free ? "Complimentary" : amount, ticketsIncluded: tier.ticketsIncluded, accent, accentSoft: tier.accentSoft }}
         benefits={fullBenefits(sponsor.tier)}
         hasLogo={!!sponsor.logo}
         initial={{

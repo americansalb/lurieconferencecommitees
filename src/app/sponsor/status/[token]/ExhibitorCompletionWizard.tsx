@@ -18,7 +18,7 @@ type Step = "details" | "terms" | "pay";
 // it matches the application funnel instead of a single dense form. Rendered
 // full-screen by the status page for unpaid exhibitors.
 export default function ExhibitorCompletionWizard({
-  token, companyName, tier, benefits, hasLogo, initial,
+  token, companyName, tier, benefits, hasLogo, initial, free = false,
 }: {
   token: string;
   companyName: string;
@@ -26,6 +26,7 @@ export default function ExhibitorCompletionWizard({
   benefits: string[];
   hasLogo: boolean;
   initial: ExhibitorDetails;
+  free?: boolean;
 }) {
   const router = useRouter();
   const [step, setStep] = useState<Step>("details");
@@ -79,6 +80,18 @@ export default function ExhibitorCompletionWizard({
       });
       if (!save.ok) { const j = await save.json().catch(() => ({})); throw new Error(j.error || "Could not save your details."); }
 
+      // Complimentary table: no Stripe, just claim and confirm.
+      if (free) {
+        const res = await fetch("/api/sponsors/claim-table", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token }),
+        });
+        const j = await res.json().catch(() => ({}));
+        if (!res.ok || !j.ok) throw new Error(j.error || "Could not confirm your table.");
+        window.location.href = `/sponsor/success/${token}`;
+        return;
+      }
+
       const res = await fetch("/api/sponsors/checkout", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token }),
@@ -120,15 +133,15 @@ export default function ExhibitorCompletionWizard({
           />
           <ExhibitorTermsAgree agreed={agreed} onChange={setAgreed} />
           <InlineError message={error} />
-          <div className="mt-7"><PrimaryButton onClick={fromTerms}>Continue to payment</PrimaryButton></div>
+          <div className="mt-7"><PrimaryButton onClick={fromTerms}>{free ? "Continue" : "Continue to payment"}</PrimaryButton></div>
         </StepFrame>
       )}
 
       {step === "pay" && (
         <StepFrame stepKey="pay">
           <Question
-            title={<>Ready to confirm.</>}
-            sub={<>Pay by card to secure your table. Tax-deductible under IRS code 501(c)(3).</>}
+            title={free ? <>Claim your complimentary table.</> : <>Ready to confirm.</>}
+            sub={free ? <>No payment needed, this table is on us. Confirm the details below and you&rsquo;re set.</> : <>Pay by card to secure your table. Tax-deductible under IRS code 501(c)(3).</>}
           />
 
           <div className="rounded-2xl border bg-white overflow-hidden" style={{ borderColor: C.hairline }}>
@@ -166,8 +179,8 @@ export default function ExhibitorCompletionWizard({
           )}
 
           <InlineError message={error} />
-          <div className="mt-7"><PrimaryButton onClick={saveAndPay} loading={busy} icon={CreditCard}>Pay {tier.amountLabel}</PrimaryButton></div>
-          <Hint>Payment processed by Stripe. EINs 83-3016421 and 36-2170833.</Hint>
+          <div className="mt-7"><PrimaryButton onClick={saveAndPay} loading={busy} icon={free ? Check : CreditCard}>{free ? "Claim your table" : `Pay ${tier.amountLabel}`}</PrimaryButton></div>
+          <Hint>{free ? "No charge. We will email your confirmation once you claim." : "Payment processed by Stripe. EINs 83-3016421 and 36-2170833."}</Hint>
         </StepFrame>
       )}
     </WizardShell>

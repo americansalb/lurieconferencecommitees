@@ -162,6 +162,13 @@ export const SPONSOR_STATUS_LABELS: Record<string, { label: string; color: strin
   declined: { label: "Declined", color: "bg-rose-50 text-rose-700 border-rose-200" },
 };
 
+// A complimentary exhibitor table: the exhibitor tier offered at no charge,
+// created via a "free exhibitor table" invite. amountCents 0 distinguishes it
+// from a paid exhibitor; donateFoodInstead is a separate in-kind path.
+export function isCompExhibitor(s: { tier: string; amountCents: number; donateFoodInstead?: boolean | null }): boolean {
+  return s.tier === "exhibitor" && s.amountCents === 0 && !s.donateFoodInstead;
+}
+
 export const SPONSOR_FROM_NAME_DEFAULT = "Iris Lafitte, AALB Operations Manager";
 
 function extractAddress(s: string): string {

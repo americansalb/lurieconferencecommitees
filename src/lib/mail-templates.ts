@@ -593,15 +593,25 @@ type SponsorInviteArgs = {
   inviteMessage: string | null;
   landingUrl: string;
   assetBase?: string;
+  compExhibitor?: boolean;
 };
 
 export function sponsorInviteEmail({
-  contactFirstName, companyName, suggestedTier, inviteMessage, landingUrl, assetBase,
+  contactFirstName, companyName, suggestedTier, inviteMessage, landingUrl, assetBase, compExhibitor = false,
 }: SponsorInviteArgs) {
   const first = contactFirstName || "there";
-  const tierLine = suggestedTier
+  const ctaLabel = compExhibitor ? "Claim your complimentary table" : "Browse levels and apply";
+  const tierLine = compExhibitor
+    ? `Your exhibitor table is on us, there is nothing to pay. Just confirm a couple of details (who will staff your table and, if you&rsquo;d like, your logo) and you&rsquo;re all set.`
+    : suggestedTier
     ? `We thought the <strong>${escapeHtml(suggestedTier.name)}</strong> level (${escapeHtml(suggestedTier.amountLabel)}, ${suggestedTier.ticketsIncluded} ticket${suggestedTier.ticketsIncluded === 1 ? "" : "s"} included) might be a natural fit, but please choose whichever level works best for ${escapeHtml(companyName)}.`
     : `On the invitation page you&rsquo;ll find every sponsorship level we offer, from Exhibitor Tables to Diamond, and you can choose whichever one is the right fit for ${escapeHtml(companyName)}.`;
+  const compCallout = compExhibitor
+    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:18px 0 0 0;"><tr><td style="background:#f7f3ea;border-left:3px solid ${GOLD};padding:16px 18px;border-radius:6px;">
+        <div style="font-size:11px;letter-spacing:0.14em;font-weight:700;color:${GOLD};text-transform:uppercase;">Our gift to you</div>
+        <div style="font-size:15px;line-height:1.6;color:${TEXT};margin-top:5px;">We&rsquo;d like to offer <strong>${escapeHtml(companyName)}</strong> a <strong>complimentary exhibitor table</strong>, at no charge. Claim it below and tell us who will staff it.</div>
+      </td></tr></table>`
+    : "";
   return shell(`
     ${heroBanner()}
     <h1 style="font-size:22px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">Hi ${escapeHtml(first)},</h1>
@@ -611,9 +621,10 @@ export function sponsorInviteEmail({
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 4px 0;">
       This year&rsquo;s theme, <em>True Language Access: Yesterday, Today, and Tomorrow</em>, brings together healthcare professionals, medical interpreters, language service providers, advocates, and policymakers from across the country for two days of learning, networking, and dialogue on equitable healthcare communication.
     </p>
+    ${compCallout}
     ${inviteMessage ? `<div style="font-size:14px;line-height:1.6;color:${TEXT};background:#f8fafc;border-left:3px solid ${BLUE};padding:14px 16px;border-radius:6px;margin:18px 0 0 0;">${escapeHtml(inviteMessage).replace(/\n/g, "<br>")}</div>` : ""}
 
-    ${button(landingUrl, "Browse levels and apply")}
+    ${button(landingUrl, ctaLabel)}
 
     ${sectionHeading("Conference at a Glance")}
     ${glanceCard(GLANCE_ROWS)}
@@ -640,7 +651,7 @@ export function sponsorInviteEmail({
     <p style="font-size:14.5px;line-height:1.7;color:${TEXT};margin:0 0 4px 0;">
       ${tierLine} Sponsorship opportunities are limited, so we encourage you to reach out at your earliest convenience.
     </p>
-    ${button(landingUrl, "Browse levels and apply")}
+    ${button(landingUrl, ctaLabel)}
 
     ${signOff()}
 
@@ -780,7 +791,13 @@ export function sponsorPaidEmail({
   registreeName = null, benefits, assetBase,
 }: SponsorPaidArgs) {
   const first = firstName || "there";
-  const amount = `$${(amountCents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const isComplimentary = amountCents === 0;
+  const amount = isComplimentary
+    ? "Complimentary"
+    : `$${(amountCents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const receiptSentence = isComplimentary
+    ? "Your complimentary table is all set, there is nothing to pay."
+    : `Your payment of <strong>${escapeHtml(amount)}</strong> has been received, and this email is your receipt.`;
   const ticketLine = ticketsIncluded
     ? `${ticketsIncluded} conference ${ticketsIncluded === 1 ? "ticket" : "tickets"}`
     : "Recognition at the conference";
@@ -805,13 +822,13 @@ export function sponsorPaidEmail({
     ${heroBanner()}
     <h1 style="font-size:24px;font-weight:800;margin:0 0 14px 0;letter-spacing:-0.01em;">You&rsquo;re all set, ${escapeHtml(first)}.</h1>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 6px 0;">
-      ${escapeHtml(companyName)} is confirmed as ${isExhibitor ? "an <strong>exhibitor</strong>" : `a <strong>${escapeHtml(tierName)}</strong>`} at the 2nd Joint Conference of Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers, August 15 and 16, 2026, in Chicago. Your payment of <strong>${escapeHtml(amount)}</strong> has been received, and this email is your receipt.
+      ${escapeHtml(companyName)} is confirmed as ${isExhibitor ? "an <strong>exhibitor</strong>" : `a <strong>${escapeHtml(tierName)}</strong>`} at the 2nd Joint Conference of Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers, August 15 and 16, 2026, in Chicago. ${receiptSentence}
     </p>
 
     ${sectionHeading(isExhibitor ? "Your exhibitor table" : "Your sponsorship")}
     ${glanceCard([
       { label: isExhibitor ? "Participation" : "Level", value: isExhibitor ? "Exhibitor" : escapeHtml(tierName) },
-      { label: "Paid", value: escapeHtml(amount) },
+      { label: isComplimentary ? "Cost" : "Paid", value: escapeHtml(amount) },
       { label: "Includes", value: ticketLine },
     ])}
 
@@ -836,7 +853,9 @@ export function sponsorPaidEmail({
     ${logoLockup(assetBase)}
 
     <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;padding-top:14px;border-top:1px solid #eef1f4;">
-      Your payment is tax-deductible to the fullest extent allowed by law under IRS code 501(c)(3). EINs: 83-3016421 and 36-2170833. Keep this email as your receipt.
+      ${isComplimentary
+        ? "Hosted by Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers, a 501(c)(3) nonprofit. EINs: 83-3016421 and 36-2170833."
+        : "Your payment is tax-deductible to the fullest extent allowed by law under IRS code 501(c)(3). EINs: 83-3016421 and 36-2170833. Keep this email as your receipt."}
     </p>
   `);
 }

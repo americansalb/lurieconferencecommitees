@@ -33,6 +33,7 @@ export default function InviteSponsorComposer({
 
   // Shared
   const [inviteMessage, setInviteMessage] = useState("");
+  const [compExhibitor, setCompExhibitor] = useState(false);
 
   async function send() {
     if (!companyName.trim() || !contactName.trim() || !contactEmail.trim()) {
@@ -45,7 +46,7 @@ export default function InviteSponsorComposer({
       const res = await fetch("/api/sponsors/invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ companyName, contactName, contactEmail, contactRole, contactPhone, website, inviteMessage }),
+        body: JSON.stringify({ companyName, contactName, contactEmail, contactRole, contactPhone, website, inviteMessage, compExhibitor }),
       });
       const json = await res.json();
       if (res.ok && json.sent) {
@@ -69,7 +70,7 @@ export default function InviteSponsorComposer({
       const res = await fetch("/api/sponsors/invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ csv, tier: bulkTier || undefined, inviteMessage }),
+        body: JSON.stringify({ csv, tier: compExhibitor ? undefined : (bulkTier || undefined), inviteMessage, compExhibitor }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Could not queue invites.");
@@ -113,6 +114,7 @@ export default function InviteSponsorComposer({
               <Field label="Phone (optional)" value={contactPhone} onChange={setContactPhone} />
               <Field label="Website (optional)" value={website} onChange={setWebsite} placeholder="https://" className="sm:col-span-2" />
             </div>
+            <CompToggle checked={compExhibitor} onChange={setCompExhibitor} />
             <MessageField value={inviteMessage} onChange={setInviteMessage} contactName={contactName} />
             {result && <ResultBanner ok={result.ok} message={result.message} />}
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
@@ -148,13 +150,16 @@ export default function InviteSponsorComposer({
                 <div className="text-[13px] text-slate-500">
                   Paste one prospect per line, <b className="text-slate-700">Company, Contact name, Email</b> (Phone and Website optional). A header row is fine. Invites are <b className="text-slate-700">queued and sent gradually</b> on the same paced schedule as attendee invites.
                 </div>
-                <label className="block">
-                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Suggested level (optional)</span>
-                  <select value={bulkTier} onChange={(e) => setBulkTier(e.target.value)} className="mt-1 w-full px-3 py-2.5 text-sm border border-slate-200 rounded-lg outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 bg-white">
-                    <option value="">Let them choose on the page</option>
-                    {TIERS.map((t) => <option key={t.id} value={t.id}>{t.name}, {t.amountLabel}</option>)}
-                  </select>
-                </label>
+                <CompToggle checked={compExhibitor} onChange={setCompExhibitor} />
+                {!compExhibitor && (
+                  <label className="block">
+                    <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Suggested level (optional)</span>
+                    <select value={bulkTier} onChange={(e) => setBulkTier(e.target.value)} className="mt-1 w-full px-3 py-2.5 text-sm border border-slate-200 rounded-lg outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 bg-white">
+                      <option value="">Let them choose on the page</option>
+                      {TIERS.map((t) => <option key={t.id} value={t.id}>{t.name}, {t.amountLabel}</option>)}
+                    </select>
+                  </label>
+                )}
                 <label className="block">
                   <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Prospect list</span>
                   <textarea
@@ -207,6 +212,21 @@ function MessageField({ value, onChange, contactName }: { value: string; onChang
         className="mt-1 w-full px-3 py-2.5 text-sm border border-slate-200 rounded-lg outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10"
       />
       <span className="text-[10px] text-slate-400 mt-1 block">Appears at the top of the invitation page in a highlighted callout.</span>
+    </label>
+  );
+}
+
+function CompToggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <label
+      className="flex items-start gap-2.5 rounded-xl border p-3 cursor-pointer transition-colors"
+      style={{ borderColor: checked ? "#0E5566" : "#e2e8f0", background: checked ? "rgba(14,85,102,0.04)" : "white" }}
+    >
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="mt-0.5 w-4 h-4 accent-[#0E5566]" />
+      <span>
+        <span className="block text-[13px] font-bold text-slate-800">Offer a complimentary exhibitor table</span>
+        <span className="block text-[11px] text-slate-500">They get a free exhibitor table. The invite asks them to claim it and confirm their details, no payment, no level to pick.</span>
+      </span>
     </label>
   );
 }

@@ -1,5 +1,6 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
+import { isCompExhibitor } from "@/lib/sponsors";
 import InvitedLanding from "./InvitedLanding";
 
 export const dynamic = "force-dynamic";
@@ -7,6 +8,12 @@ export const dynamic = "force-dynamic";
 export default async function SponsorInvitedPage({ params }: { params: { token: string } }) {
   const sponsor = await prisma.sponsor.findUnique({ where: { applicationToken: params.token } });
   if (!sponsor) notFound();
+
+  // A complimentary exhibitor table skips "pick a level" and goes straight to
+  // claiming their table.
+  if (isCompExhibitor(sponsor) && !sponsor.paid) {
+    redirect(`/sponsor/status/${params.token}`);
+  }
 
   // Log the view once (best effort). Subsequent views are harmless.
   if (sponsor.status === "invited") {
