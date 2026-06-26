@@ -53,4 +53,21 @@ export const SPEAKERS: Speaker[] = [
     bio: "Dr. Patricia A. Alonzo is a trilingual medical interpreter (English, Spanish, and ASL) with a Bachelor’s in ASL Interpreting, a Master’s in Educational Leadership, and an EdD in Organizational Leadership focused on the health outcomes of Limited English Proficient patients in healthcare settings. Currently Director of Strategic Partnerships at Equiti Health, she combines interpreting expertise with strategic leadership. Her interpreting career began in Chicago as a trilingual freelance interpreter and continued at Moffitt Cancer Center, providing critical language services to LEP patients. During her decade at Stratus/AMN Healthcare she grew through a range of roles, and as VP of Language Operations at Universal Language Services she led the organization through transformational growth. Dr. Alonzo holds CMI national certification and frequently speaks on language access, cultural competency, and legislation.",
     photo: "/speakers/patricia-alonzo.webp",
   },
+  {
+    slug: "marisa-rueda-will",
+    name: "Marisa Rueda Will",
+    credentials: "CHI™-Spanish",
+    title: "Founder & Lead Trainer",
+    org: "Tica Interpreter Training & Translations",
+    bio: "Marisa Rueda Will is a veteran medical interpreter and trainer with over 18 years of experience at Mayo Clinic, where she rose to Level III and served as a Simulation Center Instructor. A certified Spanish healthcare interpreter (CHI™-Spanish) and Licensed Interpreter Trainer, Marisa holds a degree from Luther College and recently completed her Master’s in Interpreting Studies at Western Oregon University. She is actively involved in the industry, serving on the NCIHC Webinars Work Group and as a CCHI Commissioner, and presenting at major national conferences including ATA, CHIA, and CCHI. Today, she owns Tica Interpreter Training and Translations, where she specializes in education through storytelling, delivering professional training rooted in real patient experiences.",
+    photo: "",
+  },
+  {
+    slug: "daniel-gutierrez-mena",
+    name: "Daniel Gutiérrez Mena",
+    title: "Medical Interpreter & Health Educator",
+    org: "Rush University Medical Center",
+    bio: "Daniel Gutiérrez Mena, founder of AlbaHealth.us, blends yoga, mindfulness, and global healthcare experience to create transformative wellness education that connects individuals to their physical, mental, and spiritual dimensions. From his journey immigrating from Lima to Chicago to his work across clinical care, research, and health innovation, he integrates modern science with indigenous wisdom to help others rediscover their relationship with health and the Earth.",
+    photo: "",
+  },
 ];
