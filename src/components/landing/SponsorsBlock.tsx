@@ -4,7 +4,7 @@ import { TOKENS } from "./tokens";
 // Confirmed exhibitors / sponsors shown on the landing page. Add entries here
 // as they come in; the "joined by" strip scales gracefully from one upward.
 const PARTNERS: { name: string; logo: string; role?: string; url?: string }[] = [
-  { name: "LanguageLine Solutions", logo: "https://AALBTraining.b-cdn.net/language%20line%20logo.png", role: "Exhibitor", url: "https://www.languageline.com" },
+  { name: "LanguageLine Solutions", logo: "/partners/languageline.png", role: "Exhibitor", url: "https://www.languageline.com" },
 ];
 
 const BENEFITS = [
@@ -94,11 +94,11 @@ export default function SponsorsBlock() {
 function PartnerLogo({ partner }: { partner: { name: string; logo: string; role?: string; url?: string } }) {
   const inner = (
     <div
-      className="bg-white rounded-2xl flex flex-col items-center justify-center px-10 py-7"
-      style={{ border: `1px solid ${TOKENS.hairline}`, boxShadow: "0 12px 32px -18px rgba(11,31,37,0.22)", minWidth: 240 }}
+      className="bg-white rounded-2xl flex flex-col items-center justify-center px-10 py-8"
+      style={{ border: `1px solid ${TOKENS.hairline}`, boxShadow: "0 12px 32px -18px rgba(11,31,37,0.22)", minWidth: 280 }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={partner.logo} alt={partner.name} className="h-16 sm:h-20 w-auto max-w-[260px] object-contain" />
+      <img src={partner.logo} alt={partner.name} className="h-16 sm:h-[76px] w-auto max-w-[340px] object-contain" />
       {partner.role && (
         <div className="mt-3.5 text-[10px] font-bold tracking-[0.28em] uppercase" style={{ color: TOKENS.mutedSoft }}>
           {partner.role}
