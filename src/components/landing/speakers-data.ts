@@ -60,7 +60,7 @@ export const SPEAKERS: Speaker[] = [
     title: "Founder & Lead Trainer",
     org: "Tica Interpreter Training & Translations",
     bio: "Marisa Rueda Will is a veteran medical interpreter and trainer with over 18 years of experience at Mayo Clinic, where she rose to Level III and served as a Simulation Center Instructor. A certified Spanish healthcare interpreter (CHI™-Spanish) and Licensed Interpreter Trainer, Marisa holds a degree from Luther College and recently completed her Master’s in Interpreting Studies at Western Oregon University. She is actively involved in the industry, serving on the NCIHC Webinars Work Group and as a CCHI Commissioner, and presenting at major national conferences including ATA, CHIA, and CCHI. Today, she owns Tica Interpreter Training and Translations, where she specializes in education through storytelling, delivering professional training rooted in real patient experiences.",
-    photo: "",
+    photo: "/speakers/marisa-rueda-will.webp",
   },
   {
     slug: "daniel-gutierrez-mena",
@@ -68,6 +68,6 @@ export const SPEAKERS: Speaker[] = [
     title: "Medical Interpreter & Health Educator",
     org: "Rush University Medical Center",
     bio: "Daniel Gutiérrez Mena, founder of AlbaHealth.us, blends yoga, mindfulness, and global healthcare experience to create transformative wellness education that connects individuals to their physical, mental, and spiritual dimensions. From his journey immigrating from Lima to Chicago to his work across clinical care, research, and health innovation, he integrates modern science with indigenous wisdom to help others rediscover their relationship with health and the Earth.",
-    photo: "",
+    photo: "/speakers/daniel-gutierrez-mena.webp",
   },
 ];
