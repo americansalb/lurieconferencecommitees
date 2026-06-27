@@ -38,6 +38,7 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
       contactName: sponsor.contactName,
       companyName: sponsor.companyName,
       note: sponsor.inviteMessage,
+      pledgeUrl: `${appUrl()}/sponsor/food/${sponsor.applicationToken}`,
       learnMoreUrl: appUrl(),
       unsubscribeUrl: sponsorUnsubscribeUrl(sponsor.applicationToken),
       assetBase: appUrl(),

@@ -902,7 +902,10 @@ type SponsorFoodLetterArgs = {
   companyName: string;
   // A personalized line about this restaurant (cuisine, story, specialty).
   note?: string | null;
-  // Conference home, for the "see the conference" button.
+  // The self-serve pledge funnel (primary CTA). When set, the button invites
+  // them to pledge food and become a tracked Food Sponsor in one step.
+  pledgeUrl?: string;
+  // Conference home, for the secondary "see the conference" link.
   learnMoreUrl?: string;
   // One-click unsubscribe URL (deliverability / CAN-SPAM).
   unsubscribeUrl?: string;
@@ -916,7 +919,7 @@ type SponsorFoodLetterArgs = {
 // the next step is a short conversation, with a link to the conference. No em
 // dashes; both host institutions are named on the tax line.
 export function sponsorFoodLetterEmail({
-  contactName, companyName, note, learnMoreUrl, unsubscribeUrl, assetBase,
+  contactName, companyName, note, pledgeUrl, learnMoreUrl, unsubscribeUrl, assetBase,
 }: SponsorFoodLetterArgs) {
   const site = (learnMoreUrl || ASSET_BASE).replace(/\/$/, "");
   const postalAddress = process.env.MAIL_POSTAL_ADDRESS?.trim() || "Americans Against Language Barriers, Chicago, IL";
@@ -964,10 +967,13 @@ export function sponsorFoodLetterEmail({
     ${glanceCard(GLANCE_ROWS)}
 
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:16px 0 0 0;">
-      If this resonates, the easiest next step is a short conversation about what you could provide and what works for your kitchen. Simply reply to this email and it reaches us directly.
+      The easiest next step is to tell us what you could provide. It takes a minute, it does not commit you to anything final, and it puts you on our Food Sponsor list right away. You are also always welcome to simply reply to this email.
     </p>
 
-    ${button(site, "See the conference")}
+    ${pledgeUrl ? button(pledgeUrl, "Pledge to feed the conference &rarr;") : button(site, "See the conference")}
+    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:2px 0 0 0;">
+      Or <a href="${site}" style="color:${BLUE};font-weight:600;text-decoration:none;">see the conference</a> first.
+    </p>
 
     ${signOff("With gratitude,")}
 
@@ -976,6 +982,47 @@ export function sponsorFoodLetterEmail({
     <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;padding-top:14px;border-top:1px solid #eef1f4;">
       ${escapeHtml(postalAddress)}.${unsubscribeUrl ? ` You received this invitation to provide food for the conference. <a href="${unsubscribeUrl}" style="color:${MUTED};text-decoration:underline;">Unsubscribe</a>.` : ""}
     </p>
+  `);
+}
+
+type SponsorFoodPledgeArgs = {
+  contactName: string;
+  companyName: string;
+  // What they pledged to provide, and the chosen arrangement label.
+  provide: string;
+  arrangementLabel: string;
+  assetBase?: string;
+};
+
+// Confirmation sent when a restaurant pledges food through the funnel. Warm,
+// short, and makes clear they are now a tracked Food Sponsor; the team will
+// reach out to coordinate logistics.
+export function sponsorFoodPledgeEmail({ contactName, companyName, provide, arrangementLabel, assetBase }: SponsorFoodPledgeArgs) {
+  const first = (contactName || "").split(" ")[0] || "there";
+  return shell(`
+    <h1 style="font-size:23px;font-weight:800;margin:0 0 12px 0;letter-spacing:-0.01em;">Thank you, ${escapeHtml(first)}.</h1>
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
+      We are genuinely grateful. With your help, <strong>${escapeHtml(companyName)}</strong> is now an official <strong>Food Sponsor</strong> of the 2026 Lurie Children&rsquo;s and AALB Conference, and you are helping us hold the line on a fully plant-based, meat-free event.
+    </p>
+    ${sectionHeading("What we noted")}
+    ${glanceCard([
+      { label: "What you can provide", value: escapeHtml(provide || "We will confirm together") },
+      { label: "Arrangement", value: escapeHtml(arrangementLabel) },
+    ])}
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:16px 0 0 0;">
+      Our team will reach out shortly to coordinate the details, timing, quantities, and drop-off. Nothing here is final until we talk, so there is no pressure on the specifics yet.
+    </p>
+    ${sectionHeading("Your recognition")}
+    ${bulletList([
+      "Your name and logo on the conference website",
+      "Your name and logo on signage at the conference",
+      "An honorable mention at the meal you provide",
+    ])}
+    <p style="font-size:14px;line-height:1.7;color:${MUTED};margin:14px 0 0 0;">
+      Your in-kind food donation is tax-deductible as a charitable contribution to a 501(c)(3), and we are glad to provide a donation receipt for its value. Please consult your tax advisor.
+    </p>
+    ${signOff("With gratitude,")}
+    ${logoLockup(assetBase)}
   `);
 }
 
