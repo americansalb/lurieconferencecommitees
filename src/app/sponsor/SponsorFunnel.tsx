@@ -311,7 +311,9 @@ export default function SponsorFunnel() {
                   {selected.amountLabel}
                 </div>
                 <div className="text-[13px]" style={{ color: C.muted }}>
-                  includes {selected.ticketsIncluded} conference ticket{selected.ticketsIncluded === 1 ? "" : "s"}
+                  {selected.ticketsIncluded > 0
+                    ? `includes ${selected.ticketsIncluded} conference ticket${selected.ticketsIncluded === 1 ? "" : "s"}`
+                    : "logo recognition · no ticket included"}
                 </div>
               </div>
               <button onClick={() => { setStep("details"); toTop(); }} className="inline-flex items-center gap-1 text-[12px] font-semibold shrink-0" style={{ color: C.teal }}>
@@ -386,7 +388,7 @@ function SummaryRow({ label, value, onEdit }: { label: string; value: string; on
 }
 
 function Browse({ onPick }: { onPick: (t: SponsorTier) => void }) {
-  const mainTiers = TIERS.filter((t) => ["silver", "gold", "diamond"].includes(t.id));
+  const mainTiers = TIERS.filter((t) => ["supporter", "silver", "gold", "diamond"].includes(t.id));
   const specialty = TIERS.filter((t) => ["food", "asl"].includes(t.id));
   const exhibitor = TIERS.find((t) => t.id === "exhibitor")!;
 
@@ -419,9 +421,9 @@ function Browse({ onPick }: { onPick: (t: SponsorTier) => void }) {
         title="Sponsorship levels"
         sub="All sponsorships are tax-deductible under IRS code 501(c)(3)."
       >
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {mainTiers.map((tier, i) => (
-            <TierCard key={tier.id} tier={tier} onPick={onPick} featured={i === 2} />
+            <TierCard key={tier.id} tier={tier} onPick={onPick} featured={i === mainTiers.length - 1} />
           ))}
         </div>
       </TierGroup>
@@ -570,7 +572,7 @@ function Details({ tier, onApply }: { tier: SponsorTier; onApply: () => void }) 
         <div className="p-5 sm:p-6">
           <div className="flex items-baseline gap-3 flex-wrap">
             <span className="text-[36px] font-bold tabular-nums leading-none" style={{ color: C.ink }}>{tier.amountLabel}</span>
-            <span className="text-[13px]" style={{ color: C.muted }}>includes {tier.ticketsIncluded} conference ticket{tier.ticketsIncluded === 1 ? "" : "s"}</span>
+            <span className="text-[13px]" style={{ color: C.muted }}>{tier.ticketsIncluded > 0 ? `includes ${tier.ticketsIncluded} conference ticket${tier.ticketsIncluded === 1 ? "" : "s"}` : "logo recognition · no ticket included"}</span>
           </div>
 
           <div className="text-[11px] font-bold tracking-widest uppercase mt-6 mb-3" style={{ color: C.gold }}>What&rsquo;s included</div>

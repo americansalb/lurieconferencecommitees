@@ -18,7 +18,7 @@ export type SponsorTier = {
   tagline: string;
   benefits: string[];
   inheritsFrom?: string;
-  variant: "silver" | "gold" | "diamond" | "food" | "asl" | "exhibitor";
+  variant: "supporter" | "silver" | "gold" | "diamond" | "food" | "asl" | "exhibitor";
   accent: string;
   accentSoft: string;
   acceptsAlternativePayment?: { label: string; note: string };
@@ -26,6 +26,21 @@ export type SponsorTier = {
 
 // Pricing and benefits straight from the 2026 Sponsorship & Exhibitor Prospectus.
 export const TIERS: SponsorTier[] = [
+  {
+    id: "supporter",
+    name: "Supporter",
+    amountCents: 35000,
+    amountLabel: "$350",
+    ticketsIncluded: 0,
+    tagline: "Show your support with logo recognition.",
+    variant: "supporter",
+    accent: "#A56A43",
+    accentSoft: "#F5E9DF",
+    benefits: [
+      "Logo on the conference website",
+      "Logo on printed conference materials",
+    ],
+  },
   {
     id: "silver",
     name: "Silver Sponsor",

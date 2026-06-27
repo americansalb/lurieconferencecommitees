@@ -182,7 +182,7 @@ function Hero({ firstName, companyName, accent }: { firstName: string; companyNa
 }
 
 function ChooseTier({ onPick, pct }: { onPick: (t: SponsorTier) => void; pct: number }) {
-  const mainTiers = TIERS.filter((t) => ["silver", "gold", "diamond"].includes(t.id));
+  const mainTiers = TIERS.filter((t) => ["supporter", "silver", "gold", "diamond"].includes(t.id));
   const specialty = TIERS.filter((t) => ["food", "asl"].includes(t.id));
   const exhibitor = TIERS.find((t) => t.id === "exhibitor")!;
 
@@ -193,9 +193,9 @@ function ChooseTier({ onPick, pct }: { onPick: (t: SponsorTier) => void; pct: nu
         <p className="text-sm text-slate-500 mt-1">All sponsorships are tax-deductible under IRS code 501(c)(3).</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
         {mainTiers.map((tier, i) => (
-          <TierCard key={tier.id} tier={tier} onPick={onPick} pct={pct} featured={i === 2} />
+          <TierCard key={tier.id} tier={tier} onPick={onPick} pct={pct} featured={i === mainTiers.length - 1} />
         ))}
       </div>
 
@@ -314,7 +314,7 @@ function Details({
           <div className="mt-1 flex items-baseline gap-3 flex-wrap">
             <span className="text-4xl font-extrabold text-slate-900 tracking-tight">{payLabel}</span>
             {disc && <span className="text-lg text-slate-400 line-through">{tier.amountLabel}</span>}
-            <span className="text-sm text-slate-500">includes {tier.ticketsIncluded} conference ticket{tier.ticketsIncluded === 1 ? "" : "s"}</span>
+            <span className="text-sm text-slate-500">{tier.ticketsIncluded > 0 ? `includes ${tier.ticketsIncluded} conference ticket${tier.ticketsIncluded === 1 ? "" : "s"}` : "logo recognition · no ticket included"}</span>
           </div>
           {disc && (
             <div className="mt-1 text-xs font-bold uppercase tracking-wide" style={{ color: GOLD }}>
