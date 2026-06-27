@@ -410,7 +410,8 @@ export default function SponsorsAdminPage() {
     if (!activeStatuses.includes(s.status)) return false;
     if (tierFilter !== "all" && s.tier !== tierFilter) return false;
     if (foodFilter === "food" && s.tier !== "food") return false;
-    if (foodFilter === "nonfood" && s.tier === "food") return false;
+    if (foodFilter === "asl" && s.tier !== "asl") return false;
+    if (foodFilter === "other" && (s.tier === "food" || s.tier === "asl")) return false;
     if (search) {
       const q = search.toLowerCase();
       if (![s.companyName, s.contactName, s.contactEmail, s.website].some((v) => v?.toLowerCase().includes(q))) return false;
@@ -606,11 +607,12 @@ export default function SponsorsAdminPage() {
                     value={foodFilter}
                     onChange={(e) => setFoodFilter(e.target.value)}
                     className="text-sm border border-slate-200 rounded-lg px-2 py-2 outline-none focus:border-teal-500"
-                    title="Filter food sponsors (restaurants/caterers) apart from everyone else"
+                    title="Filter in-kind sponsors (food / ASL) apart from everyone else"
                   >
-                    <option value="all">Food &amp; non-food</option>
+                    <option value="all">All categories</option>
                     <option value="food">Food sponsors</option>
-                    <option value="nonfood">Non-food</option>
+                    <option value="asl">ASL sponsors</option>
+                    <option value="other">Everyone else</option>
                   </select>
                 </div>
               </div>
