@@ -163,25 +163,44 @@ export async function planSendTimes(count: number, policy: SendPolicy): Promise<
 // Drains due items from the email queue: claims each atomically, sends via
 // Resend with the right envelope, advances the recipient, and retries or gives
 // up on failure. Shared by the cron(s) so queued invites actually go out.
-export async function runEmailQueue(limit = 25): Promise<{ processed: number; sent: number; failed: number; paused?: boolean; throttled?: boolean }> {
+export async function runEmailQueue(): Promise<{ processed: number; sent: number; failed: number; paused?: boolean; throttled?: boolean }> {
   if (await isPaused()) return { processed: 0, sent: 0, failed: 0, paused: true };
 
   const now = new Date();
-  // Live rate cap: keep cron releases within maxPerHour / maxPerDay so the queue
-  // drains at the configured pace instead of flooding. (Admin "Send now" runs on
-  // its own path and intentionally bypasses this.)
   const policy = await getPolicy();
+
+  // The real governor: a minimum wall-clock gap between deliveries, derived from
+  // both the explicit min gap and the rate implied by maxPerHour. This is what
+  // makes the queue DRIP instead of bursting. Each invocation releases at most
+  // ONE message, and only once this gap has elapsed since the last send. So no
+  // matter how the trigger behaves, fired every minute, fired in bunches, or
+  // catching up after the cron was down, it can never dump the whole hourly
+  // budget at once. (The admin "Send now" flush is a separate path that
+  // intentionally ignores all of this.)
+  const effGapMs = Math.max(policy.minGapSeconds, Math.ceil(3600 / Math.max(1, policy.maxPerHour))) * 1000;
+
+  const lastSent = await prisma.emailQueue.findFirst({
+    where: { status: "sent", sentAt: { not: null } },
+    orderBy: { sentAt: "desc" },
+    select: { sentAt: true },
+  });
+  if (lastSent?.sentAt && now.getTime() - lastSent.sentAt.getTime() < effGapMs) {
+    return { processed: 0, sent: 0, failed: 0, throttled: true };
+  }
+
+  // Hourly / daily caps as a safety ceiling on top of the gap.
   const [sentHour, sentDay] = await Promise.all([
     prisma.emailQueue.count({ where: { status: "sent", sentAt: { gte: new Date(now.getTime() - 3600_000) } } }),
     prisma.emailQueue.count({ where: { status: "sent", sentAt: { gte: new Date(now.getTime() - 24 * 3600_000) } } }),
   ]);
-  const budget = Math.min(limit, Math.max(0, policy.maxPerHour - sentHour), Math.max(0, policy.maxPerDay - sentDay));
-  if (budget <= 0) return { processed: 0, sent: 0, failed: 0, throttled: true };
+  if (sentHour >= policy.maxPerHour || sentDay >= policy.maxPerDay) {
+    return { processed: 0, sent: 0, failed: 0, throttled: true };
+  }
 
   const due = await prisma.emailQueue.findMany({
     where: { status: "pending", scheduledFor: { lte: now } },
     orderBy: { scheduledFor: "asc" },
-    take: budget,
+    take: 1,
   });
 
   let sent = 0;
