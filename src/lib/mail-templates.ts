@@ -33,6 +33,10 @@ function shell(inner: string) {
           </td></tr>
           <tr><td style="padding:18px 32px 24px 32px;border-top:1px solid #e2e8f0;color:${MUTED};font-size:12px;line-height:1.6;">
             You are receiving this because you were invited to participate in the 2026 Lurie Children&rsquo;s and AALB Conference. If this was sent in error, please disregard.
+            <div style="margin-top:12px;padding-top:12px;border-top:1px solid #eef1f4;font-size:11px;line-height:1.7;color:#94a3b8;">
+              Presented jointly by Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers<br/>
+              <span style="white-space:nowrap;">501(c)(3) &middot; EINs 83-3016421 and 36-2170833</span>
+            </div>
           </td></tr>
         </table>
       </td></tr>
@@ -660,7 +664,7 @@ export function sponsorInviteEmail({
     ${logoLockup(assetBase)}
 
     <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;padding-top:14px;border-top:1px solid #eef1f4;">
-      The conference is presented jointly by Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers, both 501(c)(3) nonprofits (EINs: 83-3016421 and 36-2170833); sponsorships may be tax-deductible depending on the benefits received, so please consult your tax advisor. If this is the wrong contact at ${escapeHtml(companyName)}, please forward this along or simply reply.
+      Sponsorships may be tax-deductible depending on the benefits received, so please consult your tax advisor. If this is the wrong contact at ${escapeHtml(companyName)}, please forward this along or simply reply.
     </p>
     <p style="font-size:12px;line-height:1.6;color:${MUTED};margin:10px 0 0 0;">
       ${escapeHtml(postalAddress)}.${unsubscribeUrl ? ` You received this invitation to sponsor the conference. <a href="${unsubscribeUrl}" style="color:${MUTED};text-decoration:underline;">Unsubscribe</a>.` : ""}
@@ -953,7 +957,7 @@ export function sponsorFoodLetterEmail({
       "Our deep gratitude, and a room full of people tasting your cooking",
     ])}
     <p style="font-size:14px;line-height:1.7;color:${MUTED};margin:8px 0 0 0;">
-      Donated food may be tax-deductible. The conference is presented jointly by Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers, both 501(c)(3) nonprofits (EINs 83-3016421 and 36-2170833). Please consult your tax advisor.
+      Your in-kind food donation is <strong>tax-deductible</strong> as a charitable contribution to a 501(c)(3), and we are glad to provide a donation receipt for its value. Please consult your tax advisor.
     </p>
 
     ${sectionHeading("The conference at a glance")}
@@ -1000,7 +1004,7 @@ export function sponsorApplicationReceivedEmail({
     </p>
     ${donatesFoodInstead ? "" : `${button(statusUrl, "Review and complete payment")}`}
     <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;">
-      The conference is presented jointly by Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers, both 501(c)(3) nonprofits (EINs: 83-3016421 and 36-2170833). Your payment may be tax-deductible as a business expense, or as a charitable contribution to the extent it exceeds the value of any benefits received. Please consult your tax advisor.
+      Your payment may be tax-deductible as a business expense, or as a charitable contribution to the extent it exceeds the value of any benefits received. Please consult your tax advisor.
     </p>
     <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:8px 0 0 0;">
       If you have any questions, simply reply to this email.
@@ -1074,7 +1078,7 @@ export function sponsorAcceptedEmail({
     ${logoLockup(assetBase)}
 
     <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;padding-top:14px;border-top:1px solid #eef1f4;">
-      The conference is presented jointly by Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers, both 501(c)(3) nonprofits (EINs: 83-3016421 and 36-2170833). Your payment may be tax-deductible as a business expense, or as a charitable contribution to the extent it exceeds the value of any benefits received. Please consult your tax advisor.
+      Your payment may be tax-deductible as a business expense, or as a charitable contribution to the extent it exceeds the value of any benefits received. Please consult your tax advisor.
     </p>
   `);
 }
@@ -1166,8 +1170,8 @@ export function sponsorPaidEmail({
 
     <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;padding-top:14px;border-top:1px solid #eef1f4;">
       ${isComplimentary
-        ? "Hosted by Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers, a 501(c)(3) nonprofit. EINs: 83-3016421 and 36-2170833."
-        : "The conference is presented jointly by Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers, both 501(c)(3) nonprofits (EINs: 83-3016421 and 36-2170833). Your payment may be tax-deductible as a business expense, or as a charitable contribution to the extent it exceeds the value of any benefits received; consult your tax advisor. Keep this email as your receipt."}
+        ? "This table is complimentary, so there is nothing to pay. Keep this email for your records."
+        : "Your payment may be tax-deductible as a business expense, or as a charitable contribution to the extent it exceeds the value of any benefits received; consult your tax advisor. Keep this email as your receipt."}
     </p>
   `);
 }
