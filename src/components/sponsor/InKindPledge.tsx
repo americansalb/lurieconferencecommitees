@@ -31,7 +31,7 @@ const CONFIG = {
       <>This will be our <strong className="text-white">third meat-free conference in a row</strong>. A gathering devoted to making sure no one goes unheard should not put meat on the table, and an all-plant-based event of this size is only possible with kitchens like <strong className="text-white">{company}</strong>.</>
     ),
     cardTitle: "What could you provide?",
-    cardSub: "A rough idea is perfect, we’ll sort the details together.",
+    cardSub: "A rough idea is perfect. We’re expecting about 70 to 80 people in person, and we’ll sort the details together.",
     fieldLabel: "Your plant-based offering",
     fieldPlaceholder: "e.g. 50 vegan sandwiches and a big salad, or trays of tacos for ~100",
     qtyLabel: "Estimated servings (optional)",

@@ -716,7 +716,7 @@ export default function SponsorsAdminPage() {
                               {s.status === "prospect" ? "Send invite" : "Resend"}
                             </button>
                           )}
-                          {isAdmin && (s.status === "prospect" || s.status === "invited") && (
+                          {isAdmin && (s.status === "prospect" || s.status === "invited") && s.tier !== "food" && s.tier !== "asl" && (
                             <button
                               onClick={() => sendLetter(s.id)}
                               disabled={sendingLetterId === s.id}

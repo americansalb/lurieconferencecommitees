@@ -26,6 +26,11 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
   if (sponsor.unsubscribedAt) {
     return NextResponse.json({ ok: false, sent: false, error: "This organization has unsubscribed." }, { status: 409 });
   }
+  // The 20% courtesy is for paid sponsorships. Food/ASL sponsors are asked to
+  // donate in kind, so a discount is meaningless; use the in-kind invite instead.
+  if (sponsor.tier === "food" || sponsor.tier === "asl") {
+    return NextResponse.json({ ok: false, sent: false, error: "The 20% offer does not apply to in-kind food or ASL sponsors. Use Send invite instead." }, { status: 400 });
+  }
 
   // VIP courtesy: 20% off any paid level, including the exhibitor table.
   // Only a complimentary (already-free) table gets no discount.

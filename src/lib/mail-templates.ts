@@ -951,7 +951,7 @@ export function sponsorFoodLetterEmail({
 
     ${sectionHeading("The ask")}
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 8px 0;">
-      What we are really hoping for is a <strong>donation of your food</strong>, a plant-based meal, or part of one, for our attendees. And if donating the whole thing is not possible, there is an easy middle ground: you could donate part and let us <strong>purchase the rest</strong>. Last year, for example, a partner donated fifty sandwiches and we bought twenty more. Either way, your in-kind donation makes you an official <strong>Food Sponsor</strong>, recognized with:
+      We are expecting about <strong>70 to 80 attendees in person</strong>, plus a virtual audience, so even part of a meal goes a long way. What we are really hoping for is a <strong>donation of your food</strong>, a plant-based meal, or part of one, for our attendees. And if donating the whole thing is not possible, there is an easy middle ground: you could donate part and let us <strong>purchase the rest</strong>. Last year, for example, a partner donated fifty sandwiches and we bought twenty more. Either way, your in-kind donation makes you an official <strong>Food Sponsor</strong>, recognized with:
     </p>
     ${bulletList([
       "Your name and logo on the conference website",
@@ -1019,7 +1019,7 @@ export function sponsorAslLetterEmail({
 
     ${sectionHeading("The ask")}
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 8px 0;">
-      What we are really hoping for is a <strong>donation of your interpreters&rsquo; time</strong>, ASL interpretation for a session, a day, or the full event. And if donating the whole thing is not possible, there is an easy middle ground: you could donate some hours and let us cover the rest. Either way, your in-kind donation makes you an official <strong>ASL Interpreter Sponsor</strong>, recognized with:
+      We are expecting about <strong>70 to 80 attendees in person</strong>, plus a virtual audience. What we are really hoping for is a <strong>donation of your interpreters&rsquo; time</strong>, ASL interpretation for a session, a day, or the full event. And if donating the whole thing is not possible, there is an easy middle ground: you could donate some hours and let us cover the rest. Either way, your in-kind donation makes you an official <strong>ASL Interpreter Sponsor</strong>, recognized with:
     </p>
     ${bulletList([
       "Your name and logo on the conference website",
