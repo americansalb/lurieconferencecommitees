@@ -25,10 +25,10 @@ export async function POST(req: Request) {
   const t = tierById(sponsor.tier);
   if (!t) return NextResponse.json({ error: "Unknown tier" }, { status: 400 });
 
-  // VIP courtesy discount: applies to any sponsorship level except exhibitor
-  // tables. Computed from the tier's list price (not the stored amount) so a
-  // repeated checkout never compounds the discount.
-  const applyDiscount = !!sponsor.discountPercent && sponsor.tier !== "exhibitor";
+  // VIP courtesy discount: applies to any paid sponsorship level, including the
+  // exhibitor table. Computed from the tier's list price (not the stored
+  // amount) so a repeated checkout never compounds the discount.
+  const applyDiscount = !!sponsor.discountPercent && t.amountCents > 0;
   const chargeCents = applyDiscount
     ? Math.round((t.amountCents * (100 - sponsor.discountPercent!)) / 100)
     : sponsor.amountCents;

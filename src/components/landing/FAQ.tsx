@@ -32,7 +32,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "How do I become a sponsor?",
-    a: "Visit our Sponsorship page to review the Silver, Gold, and Diamond tiers, as well as Food Sponsor, ASL Interpreter Sponsor, and Exhibitor Table options. All sponsorships are tax-deductible to the fullest extent allowed by law under IRS code 501(c)(3).",
+    a: "Visit our Sponsorship page to review the Silver, Gold, and Diamond tiers, as well as Food Sponsor, ASL Interpreter Sponsor, and Exhibitor Table options. There is also a $450 Supporter option for organizations that simply want their logo on the conference website and on-site. All of these are tax-deductible to the fullest extent allowed by law under IRS code 501(c)(3).",
   },
   {
     q: "Can I request accessibility accommodations?",

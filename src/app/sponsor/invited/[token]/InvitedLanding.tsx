@@ -16,10 +16,10 @@ function money(cents: number) {
 }
 
 // The discounted price label for a tier, or null when the discount does not
-// apply (no discount, exhibitor table, or a no-charge tier). Mirrors the
-// checkout rule so the funnel previews exactly what Stripe will charge.
+// apply (no discount, or a no-charge tier). Mirrors the checkout rule so the
+// funnel previews exactly what Stripe will charge.
 function discountedLabel(tier: SponsorTier, pct: number): string | null {
-  if (!pct || tier.id === "exhibitor" || tier.amountCents <= 0) return null;
+  if (!pct || tier.amountCents <= 0) return null;
   return money(Math.round((tier.amountCents * (100 - pct)) / 100));
 }
 
@@ -128,7 +128,7 @@ export default function InvitedLanding({ token, sponsor }: { token: string; spon
             <div className="leading-snug">
               <div className="font-bold text-[#3C2E10]">Your {pct}% partner discount is applied.</div>
               <div className="text-[12.5px] text-[#6b5a2e]">
-                Every sponsorship level below shows your discounted price (exhibitor tables excepted). It carries through to checkout.
+                Every level below shows your discounted price, and it carries through to checkout.
               </div>
             </div>
           </div>

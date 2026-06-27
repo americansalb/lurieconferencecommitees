@@ -24,8 +24,9 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
   const sponsor = await prisma.sponsor.findUnique({ where: { id: params.id } });
   if (!sponsor) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  // VIP courtesy: 20% off any sponsorship level (exhibitor tables excluded).
-  const discountPercent = sponsor.tier === "exhibitor" ? null : 20;
+  // VIP courtesy: 20% off any paid level, including the exhibitor table.
+  // Only a complimentary (already-free) table gets no discount.
+  const discountPercent = (sponsor.tier === "exhibitor" && sponsor.amountCents <= 0) ? null : 20;
   const dateLabel = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   const html = sponsorLetterEmail({
     contactName: sponsor.contactName,

@@ -1,5 +1,5 @@
 import { Award, Briefcase, ArrowRight, Users, Eye, HeartHandshake } from "lucide-react";
-import { TOKENS } from "./tokens";
+import { TOKENS, CONFERENCE } from "./tokens";
 
 // Confirmed exhibitors / sponsors shown on the landing page. Add entries here
 // as they come in; the "joined by" strip scales gracefully from one upward.
@@ -85,6 +85,24 @@ export default function SponsorsBlock() {
           >
             <Briefcase className="w-4 h-4" /> Become an Exhibitor
           </a>
+        </div>
+
+        {/* Entry-level acknowledgment option. */}
+        <div className="mt-10 max-w-2xl mx-auto text-center">
+          <div
+            className="inline-flex flex-wrap items-center justify-center gap-x-2 gap-y-1 rounded-2xl px-5 py-4 bg-white"
+            style={{ border: `1px solid ${TOKENS.hairline}`, boxShadow: "0 8px 22px -16px rgba(11,31,37,0.18)" }}
+          >
+            <span className="text-[13px]" style={{ color: TOKENS.muted }}>Just want your logo seen?</span>
+            <a href="/sponsor" className="text-[13px] font-bold" style={{ color: TOKENS.teal }}>
+              Become a Supporter for $450 &rarr;
+            </a>
+            <span className="text-[13px]" style={{ color: TOKENS.muted }}>your logo on the website and on-site.</span>
+          </div>
+          <p className="mt-5 text-[12.5px] leading-relaxed" style={{ color: TOKENS.mutedSoft }}>
+            Sponsorship, exhibitor, and supporter contributions are tax-deductible to the fullest extent
+            allowed by law under IRS code 501(c)(3). EINs {CONFERENCE.eins}.
+          </p>
         </div>
       </div>
     </section>

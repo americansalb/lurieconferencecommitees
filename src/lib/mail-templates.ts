@@ -722,7 +722,7 @@ export function sponsorLetterEmail({
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 22px 0;">
         <tr><td bgcolor="#FBF4E2" style="background-color:#FBF4E2;border:1px solid #EAD9AE;border-radius:10px;padding:16px 20px;">
           <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:${GOLD};font-weight:bold;padding-bottom:6px;">A personal courtesy</div>
-          <div style="font-family:Georgia,'Times New Roman',serif;font-size:14.5px;line-height:1.7;color:#3C2E10;">As one of a small number of organizations we are inviting directly, we are pleased to extend <strong>${discountPercent}% off any sponsorship level</strong> &mdash; exhibitor tables aside. It is applied automatically when you sponsor through the button below.</div>
+          <div style="font-family:Georgia,'Times New Roman',serif;font-size:14.5px;line-height:1.7;color:#3C2E10;">As one of a small number of organizations we are inviting directly, we are pleased to extend <strong>${discountPercent}% off any level</strong> &mdash; sponsorship or exhibitor table. It is applied automatically when you sponsor through the button below.</div>
         </td></tr>
       </table>` : "";
   const p = (html: string, mb = 18) =>

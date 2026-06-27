@@ -29,8 +29,8 @@ export const TIERS: SponsorTier[] = [
   {
     id: "supporter",
     name: "Supporter",
-    amountCents: 35000,
-    amountLabel: "$350",
+    amountCents: 45000,
+    amountLabel: "$450",
     ticketsIncluded: 0,
     tagline: "Show your support with logo recognition.",
     variant: "supporter",

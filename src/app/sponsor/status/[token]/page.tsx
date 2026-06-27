@@ -27,9 +27,10 @@ export default async function SponsorStatusPage({ params }: { params: { token: s
   const accent = tier?.accent || TEAL;
   const status = SPONSOR_STATUS_LABELS[sponsor.status] || SPONSOR_STATUS_LABELS.submitted;
   // VIP courtesy discount: show what they actually owe/paid, not the list price,
-  // matching the funnel and what Stripe charges. Excludes exhibitor tables.
+  // matching the funnel and what Stripe charges. Applies to any paid level
+  // (including the exhibitor table); a complimentary table shows no discount.
   const pct = sponsor.discountPercent || 0;
-  const applyDiscount = pct > 0 && sponsor.tier !== "exhibitor" && !!tier && tier.amountCents > 0;
+  const applyDiscount = pct > 0 && !!tier && tier.amountCents > 0 && sponsor.amountCents > 0;
   const fullLabel = tier?.amountLabel || `$${(sponsor.amountCents / 100).toFixed(0)}`;
   const amount = applyDiscount && tier
     ? `$${Math.round(Math.round((tier.amountCents * (100 - pct)) / 100) / 100).toLocaleString("en-US")}`
