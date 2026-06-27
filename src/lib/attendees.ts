@@ -33,8 +33,14 @@ export function buildAttendeeInvite(opts: {
     virtualDiscountedCents: virtual.finalCents || 0,
     personalCode: firstNameToCode(opts.firstName),
     mainSiteUrl: `${appUrl()}/register`,
+    // Used by the engraved alumni letter (ignored by the standard invite).
+    learnMoreUrl: appUrl(),
+    assetBase: appUrl(),
+    dateLabel: new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
   });
-  const subject = `${opts.firstName}, your invite to the 2026 Lurie Children's & AALB Conference`;
+  const subject = template === "alumni"
+    ? `${opts.firstName}, come back and see everyone in Chicago`
+    : `${opts.firstName}, your invite to the 2026 Lurie Children's & AALB Conference`;
   return { subject, html, template };
 }
 
