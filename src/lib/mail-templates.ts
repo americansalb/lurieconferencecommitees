@@ -970,7 +970,7 @@ export function sponsorFoodLetterEmail({
       The easiest next step is to tell us what you could provide. It takes a minute, it does not commit you to anything final, and it puts you on our Food Sponsor list right away. You are also always welcome to simply reply to this email.
     </p>
 
-    ${pledgeUrl ? button(pledgeUrl, "Pledge to feed the conference &rarr;") : button(site, "See the conference")}
+    ${pledgeUrl ? button(pledgeUrl, "Sponsor our food in kind &rarr;") : button(site, "See the conference")}
     <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:2px 0 0 0;">
       Or <a href="${site}" style="color:${BLUE};font-weight:600;text-decoration:none;">see the conference</a> first.
     </p>
@@ -985,7 +985,76 @@ export function sponsorFoodLetterEmail({
   `);
 }
 
-type SponsorFoodPledgeArgs = {
+// A warm letter to an ASL interpreting company asking them to donate
+// interpretation in kind and become an ASL Interpreter Sponsor. Parallels the
+// food letter: leads with the accessibility commitment, makes the in-kind ask
+// (donate, or donate some hours and we cover the rest), recognition, and a
+// pledge funnel CTA. No em dashes; both host institutions named.
+export function sponsorAslLetterEmail({
+  contactName, companyName, note, pledgeUrl, learnMoreUrl, unsubscribeUrl, assetBase,
+}: SponsorFoodLetterArgs) {
+  const site = (learnMoreUrl || ASSET_BASE).replace(/\/$/, "");
+  const postalAddress = process.env.MAIL_POSTAL_ADDRESS?.trim() || "Americans Against Language Barriers, Chicago, IL";
+  const cn = (contactName || "").trim();
+  const isPerson = !!cn && cn.toLowerCase() !== companyName.trim().toLowerCase();
+  const honorific = /^(dr|mr|mrs|ms|prof|rev|hon|sr|fr)\.?$/i;
+  const firstNameOf = (n: string) => { const t = n.replace(/,.*$/, "").trim().split(/\s+/); return honorific.test(t[0]) ? (t[1] || t[0]) : t[0]; };
+  const greeting = (isPerson ? firstNameOf(cn) : companyName.replace(/\s*\([^)]*\)\s*$/, "").trim()) || "there";
+  const notePara = note && note.trim()
+    ? `<p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 16px 0;">${escapeHtml(note.trim()).replace(/\n/g, "<br>")}</p>`
+    : "";
+  return shell(`
+    ${heroBanner()}
+    <h1 style="font-size:22px;font-weight:700;margin:0 0 14px 0;letter-spacing:-0.01em;">Dear ${escapeHtml(greeting)},</h1>
+
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
+      This August, Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers are co-hosting the 2nd Joint Conference on language access in American healthcare, two days devoted to a single idea: that no one should go unheard because of the language they speak. Lurie Children&rsquo;s is one of the nation&rsquo;s leading children&rsquo;s hospitals, caring for families across Chicago in dozens of languages, and Americans Against Language Barriers has trained roughly three thousand medical interpreters nationwide.
+    </p>
+
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 16px 0;">
+      A conference about being heard has to include the people for whom <strong>American Sign Language</strong> is that voice. We are committed to interpreting our sessions in ASL so that Deaf and hard-of-hearing attendees are full participants, not an afterthought. That commitment is only as real as the interpreters who make it happen, which is exactly why we are writing to <strong>${escapeHtml(companyName)}</strong>.
+    </p>
+
+    ${notePara}
+
+    ${sectionHeading("The ask")}
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 8px 0;">
+      What we are really hoping for is a <strong>donation of your interpreters&rsquo; time</strong>, ASL interpretation for a session, a day, or the full event. And if donating the whole thing is not possible, there is an easy middle ground: you could donate some hours and let us cover the rest. Either way, your in-kind donation makes you an official <strong>ASL Interpreter Sponsor</strong>, recognized with:
+    </p>
+    ${bulletList([
+      "Your name and logo on the conference website",
+      "Your name and logo on signage at the conference",
+      "An honorable mention during the sessions your interpreters cover",
+      "Our deep gratitude, and a genuinely accessible conference because of you",
+    ])}
+    <p style="font-size:14px;line-height:1.7;color:${MUTED};margin:8px 0 0 0;">
+      Your in-kind donation of interpreting services is <strong>tax-deductible</strong> as a charitable contribution to a 501(c)(3), and we are glad to provide a donation receipt for its value. Please consult your tax advisor.
+    </p>
+
+    ${sectionHeading("The conference at a glance")}
+    ${glanceCard(GLANCE_ROWS)}
+
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:16px 0 0 0;">
+      The easiest next step is to tell us what you could provide. It takes a minute, it does not commit you to anything final, and it puts you on our ASL Interpreter Sponsor list right away. You are also always welcome to simply reply to this email.
+    </p>
+
+    ${pledgeUrl ? button(pledgeUrl, "Sponsor ASL interpretation in kind &rarr;") : button(site, "See the conference")}
+    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:2px 0 0 0;">
+      Or <a href="${site}" style="color:${BLUE};font-weight:600;text-decoration:none;">see the conference</a> first.
+    </p>
+
+    ${signOff("With gratitude,")}
+
+    ${logoLockup(assetBase)}
+
+    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;padding-top:14px;border-top:1px solid #eef1f4;">
+      ${escapeHtml(postalAddress)}.${unsubscribeUrl ? ` You received this invitation to provide ASL interpretation for the conference. <a href="${unsubscribeUrl}" style="color:${MUTED};text-decoration:underline;">Unsubscribe</a>.` : ""}
+    </p>
+  `);
+}
+
+type SponsorInKindPledgeArgs = {
+  kind: "food" | "asl";
   contactName: string;
   companyName: string;
   // What they pledged to provide, and the chosen arrangement label.
@@ -994,32 +1063,44 @@ type SponsorFoodPledgeArgs = {
   assetBase?: string;
 };
 
-// Confirmation sent when a restaurant pledges food through the funnel. Warm,
-// short, and makes clear they are now a tracked Food Sponsor; the team will
-// reach out to coordinate logistics.
-export function sponsorFoodPledgeEmail({ contactName, companyName, provide, arrangementLabel, assetBase }: SponsorFoodPledgeArgs) {
+// Confirmation sent when a restaurant (food) or interpreting team (asl) pledges
+// in kind through the funnel. Warm, short, and makes clear they are now a
+// tracked sponsor; the team will reach out to coordinate logistics.
+export function sponsorInKindPledgeEmail({ kind, contactName, companyName, provide, arrangementLabel, assetBase }: SponsorInKindPledgeArgs) {
   const first = (contactName || "").split(" ")[0] || "there";
+  const isAsl = kind === "asl";
+  const sponsorLabel = isAsl ? "ASL Interpreter Sponsor" : "Food Sponsor";
+  const mission = isAsl
+    ? "helping us keep every session of the conference accessible in American Sign Language"
+    : "helping us hold the line on a fully plant-based, meat-free event";
+  const provideLabel = isAsl ? "Interpreting you can provide" : "What you can provide";
+  const recognitionLast = isAsl
+    ? "An honorable mention during the sessions your interpreters cover"
+    : "An honorable mention at the meal you provide";
+  const taxLine = isAsl
+    ? "Your in-kind donation of interpreting services is tax-deductible as a charitable contribution to a 501(c)(3)"
+    : "Your in-kind food donation is tax-deductible as a charitable contribution to a 501(c)(3)";
   return shell(`
     <h1 style="font-size:23px;font-weight:800;margin:0 0 12px 0;letter-spacing:-0.01em;">Thank you, ${escapeHtml(first)}.</h1>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
-      We are genuinely grateful. With your help, <strong>${escapeHtml(companyName)}</strong> is now an official <strong>Food Sponsor</strong> of the 2026 Lurie Children&rsquo;s and AALB Conference, and you are helping us hold the line on a fully plant-based, meat-free event.
+      We are genuinely grateful. With your help, <strong>${escapeHtml(companyName)}</strong> is now an official <strong>${sponsorLabel}</strong> of the 2026 Lurie Children&rsquo;s and AALB Conference, ${mission}.
     </p>
     ${sectionHeading("What we noted")}
     ${glanceCard([
-      { label: "What you can provide", value: escapeHtml(provide || "We will confirm together") },
+      { label: provideLabel, value: escapeHtml(provide || "We will confirm together") },
       { label: "Arrangement", value: escapeHtml(arrangementLabel) },
     ])}
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:16px 0 0 0;">
-      Our team will reach out shortly to coordinate the details, timing, quantities, and drop-off. Nothing here is final until we talk, so there is no pressure on the specifics yet.
+      Our team will reach out shortly to coordinate the details. Nothing here is final until we talk, so there is no pressure on the specifics yet.
     </p>
     ${sectionHeading("Your recognition")}
     ${bulletList([
       "Your name and logo on the conference website",
       "Your name and logo on signage at the conference",
-      "An honorable mention at the meal you provide",
+      recognitionLast,
     ])}
     <p style="font-size:14px;line-height:1.7;color:${MUTED};margin:14px 0 0 0;">
-      Your in-kind food donation is tax-deductible as a charitable contribution to a 501(c)(3), and we are glad to provide a donation receipt for its value. Please consult your tax advisor.
+      ${taxLine}, and we are glad to provide a donation receipt for its value. Please consult your tax advisor.
     </p>
     ${signOff("With gratitude,")}
     ${logoLockup(assetBase)}

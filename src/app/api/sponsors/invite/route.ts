@@ -3,8 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
-import { newSponsorToken, tierById, sponsorFromHeader, sponsorReplyTo, sponsorLetterReplyTo, sponsorInviteSubject, sponsorFoodSubject, sponsorUnsubHeaders, sponsorUnsubscribeUrl, isOfficialPartner } from "@/lib/sponsors";
-import { sponsorInviteEmail, sponsorLetterEmail, sponsorFoodLetterEmail } from "@/lib/mail-templates";
+import { newSponsorToken, tierById, sponsorFromHeader, sponsorReplyTo, sponsorLetterReplyTo, sponsorInviteSubject, sponsorFoodSubject, sponsorAslSubject, sponsorUnsubHeaders, sponsorUnsubscribeUrl, isOfficialPartner } from "@/lib/sponsors";
+import { sponsorInviteEmail, sponsorLetterEmail, sponsorFoodLetterEmail, sponsorAslLetterEmail } from "@/lib/mail-templates";
 
 // The formal letter is the standard sponsor invitation. Complimentary
 // exhibitor tables (a free table, not a sponsorship) keep the dedicated
@@ -61,6 +61,7 @@ export async function POST(req: Request) {
   const suggested = compTable ? null : (tier ? tierById(tier) : null);
   const tierId = compTable ? "exhibitor" : (suggested ? suggested.id : "undecided");
   const food = tierId === "food";
+  const asl = tierId === "asl";
   const amountCents = compTable ? 0 : (suggested ? suggested.amountCents : 0);
 
   const email = contactEmail.trim().toLowerCase();
@@ -111,6 +112,17 @@ export async function POST(req: Request) {
       assetBase: appUrl(),
     });
     subject = sponsorFoodSubject(sponsor.companyName);
+  } else if (asl) {
+    html = sponsorAslLetterEmail({
+      contactName: sponsor.contactName,
+      companyName: sponsor.companyName,
+      note: sponsor.inviteMessage,
+      pledgeUrl: `${appUrl()}/sponsor/asl/${token}`,
+      learnMoreUrl: appUrl(),
+      unsubscribeUrl: sponsorUnsubscribeUrl(token),
+      assetBase: appUrl(),
+    });
+    subject = sponsorAslSubject(sponsor.companyName);
   } else if (compTable) {
     html = sponsorInviteEmail({
       contactFirstName: sponsor.contactName.split(" ")[0],
@@ -174,6 +186,7 @@ async function bulkInvite(
   const suggested = compTable ? null : (body.tier ? tierById(body.tier) : null);
   const tierId = compTable ? "exhibitor" : (suggested ? suggested.id : "undecided");
   const food = tierId === "food";
+  const asl = tierId === "asl";
   const amountCents = compTable ? 0 : (suggested ? suggested.amountCents : 0);
   // Shared note is the fallback; a row's own Note column overrides it so each
   // invite can read as individually written.
@@ -220,6 +233,16 @@ async function bulkInvite(
             unsubscribeUrl: sponsorUnsubscribeUrl(c.token),
             assetBase: appUrl(),
           })
+        : asl
+        ? sponsorAslLetterEmail({
+            contactName: c.contactName,
+            companyName: c.companyName,
+            note: c.note,
+            pledgeUrl: `${appUrl()}/sponsor/asl/${c.token}`,
+            learnMoreUrl: appUrl(),
+            unsubscribeUrl: sponsorUnsubscribeUrl(c.token),
+            assetBase: appUrl(),
+          })
         : compTable
         ? sponsorInviteEmail({
             contactFirstName: c.contactName.split(" ")[0],
@@ -249,6 +272,8 @@ async function bulkInvite(
           batchId, recipientType: "sponsor", recipientId: c.id, to: c.contactEmail,
           subject: food
             ? sponsorFoodSubject(c.companyName)
+            : asl
+            ? sponsorAslSubject(c.companyName)
             : sponsorInviteSubject(c.companyName, { comp: compTable, partner: isOfficialPartner(c.companyName) }),
           html, scheduledFor: times[i], status: "pending",
         },

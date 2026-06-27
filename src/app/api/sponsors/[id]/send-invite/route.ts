@@ -3,8 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
-import { sponsorFromHeader, sponsorReplyTo, sponsorLetterReplyTo, sponsorInviteSubject, sponsorFoodSubject, sponsorUnsubHeaders, sponsorUnsubscribeUrl, isCompExhibitor, isFoodProspect, isOfficialPartner } from "@/lib/sponsors";
-import { sponsorInviteEmail, sponsorLetterEmail, sponsorFoodLetterEmail } from "@/lib/mail-templates";
+import { sponsorFromHeader, sponsorReplyTo, sponsorLetterReplyTo, sponsorInviteSubject, sponsorFoodSubject, sponsorAslSubject, sponsorUnsubHeaders, sponsorUnsubscribeUrl, isCompExhibitor, isFoodProspect, isAslProspect, isOfficialPartner } from "@/lib/sponsors";
+import { sponsorInviteEmail, sponsorLetterEmail, sponsorFoodLetterEmail, sponsorAslLetterEmail } from "@/lib/mail-templates";
 import { appUrl } from "@/lib/presenters";
 
 // Per-org "Send invite" button on the dashboard: send (or resend) the
@@ -23,6 +23,7 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
 
   const comp = isCompExhibitor(sponsor);
   const food = isFoodProspect(sponsor);
+  const asl = isAslProspect(sponsor);
   const partner = isOfficialPartner(sponsor.companyName);
   const landingUrl = `${appUrl()}/sponsor/invited/${sponsor.applicationToken}`;
 
@@ -44,6 +45,18 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
       assetBase: appUrl(),
     });
     subject = sponsorFoodSubject(sponsor.companyName);
+  } else if (asl) {
+    // ASL interpreting company: the in-kind interpretation ask.
+    html = sponsorAslLetterEmail({
+      contactName: sponsor.contactName,
+      companyName: sponsor.companyName,
+      note: sponsor.inviteMessage,
+      pledgeUrl: `${appUrl()}/sponsor/asl/${sponsor.applicationToken}`,
+      learnMoreUrl: appUrl(),
+      unsubscribeUrl: sponsorUnsubscribeUrl(sponsor.applicationToken),
+      assetBase: appUrl(),
+    });
+    subject = sponsorAslSubject(sponsor.companyName);
   } else if (comp) {
     html = sponsorInviteEmail({
       contactFirstName: sponsor.contactName.split(" ")[0],

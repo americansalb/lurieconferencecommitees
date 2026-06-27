@@ -238,6 +238,18 @@ export function sponsorFoodSubject(companyName: string): string {
   return `${co}: would you help feed the 2026 Lurie Children's & AALB Conference?`;
 }
 
+// An ASL-interpreting prospect: a sign-language interpreting company we are
+// asking to donate interpretation in kind. Tagged with the "asl" tier, so it
+// receives the dedicated ASL letter and its own pledge funnel.
+export function isAslProspect(s: { tier: string }): boolean {
+  return s.tier === "asl";
+}
+
+export function sponsorAslSubject(companyName: string): string {
+  const co = (companyName || "").trim() || "your team";
+  return `${co}: help make the 2026 Lurie Children's & AALB Conference accessible in ASL?`;
+}
+
 function extractAddress(s: string): string {
   const angle = s.match(/<([^>]+)>/);
   if (angle) return angle[1].trim();
