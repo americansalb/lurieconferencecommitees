@@ -479,6 +479,12 @@ model Sponsor {
   companyName           String
   contactName           String
   contactEmail          String
+  // Co-applicants merged into this profile: extra emails CC'd on every
+  // interaction; they can open the same portal link. See the merge endpoint.
+  additionalEmails      String[]       @default([])
+  // When this record was consolidated into another, points at the survivor.
+  // Merged records are hidden from the pipeline.
+  mergedIntoId          String?
   contactPhone          String?
   contactRole           String?
   website               String?

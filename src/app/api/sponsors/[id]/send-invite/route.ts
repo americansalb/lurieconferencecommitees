@@ -81,6 +81,7 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
       from: sponsorFromHeader(),
       // Replies to the letter reach both Kevin and the shared inbox.
       replyTo: comp ? sponsorReplyTo() : sponsorLetterReplyTo(),
+      cc: sponsor.additionalEmails,
       headers: sponsorUnsubHeaders(sponsor.applicationToken),
     });
   } catch (e) {

@@ -17,6 +17,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const sponsors = await prisma.sponsor.findMany({
+    where: { mergedIntoId: null },
     orderBy: { createdAt: "desc" },
     include: { logo: { select: { mime: true } } },
   });

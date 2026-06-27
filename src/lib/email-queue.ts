@@ -212,18 +212,21 @@ export async function runEmailQueue(): Promise<{ processed: number; sent: number
     });
     if (claim.count === 0) continue;
 
-    // Honor an unsubscribe and attach the one-click header for sponsor sends.
+    // Honor an unsubscribe, attach the one-click header, and CC any merged
+    // co-applicant emails for sponsor sends.
     let extraHeaders: Record<string, string> | undefined;
+    let extraCc: string[] | undefined;
     if (item.recipientType === "sponsor" && item.recipientId) {
       const sp = await prisma.sponsor.findUnique({
         where: { id: item.recipientId },
-        select: { applicationToken: true, unsubscribedAt: true },
+        select: { applicationToken: true, unsubscribedAt: true, additionalEmails: true },
       });
       if (sp?.unsubscribedAt) {
         await prisma.emailQueue.update({ where: { id: item.id }, data: { status: "skipped" } });
         continue;
       }
       if (sp?.applicationToken) extraHeaders = sponsorUnsubHeaders(sp.applicationToken);
+      if (sp?.additionalEmails?.length) extraCc = sp.additionalEmails;
     }
 
     try {
@@ -233,6 +236,7 @@ export async function runEmailQueue(): Promise<{ processed: number; sent: number
         html: item.html,
         text: item.textBody || undefined,
         ...queueEnvelope(item.recipientType),
+        cc: extraCc,
         headers: extraHeaders,
       });
       const resendId = (result as { id?: string })?.id || null;

@@ -89,6 +89,7 @@ export async function confirmSponsorPaid(
       }),
       from: sponsorFromHeader(),
       replyTo: sponsorReplyTo(),
+      cc: sponsor.additionalEmails,
     });
     // The confirmation is out: advance to "Confirmation sent" so a paid sponsor
     // who never got the email stays visibly stuck at "Paid".

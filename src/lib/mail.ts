@@ -7,6 +7,8 @@ type SendArgs = {
   // sent to Resend as an array so the Reply-To header carries all of them.
   replyTo?: string | string[];
   bcc?: string;
+  // One or more CC addresses (e.g. merged co-applicants). Empty/blank ignored.
+  cc?: string | string[];
   from?: string;
   // Extra SMTP headers (e.g. List-Unsubscribe / List-Unsubscribe-Post).
   headers?: Record<string, string>;
@@ -27,7 +29,7 @@ export function mailConfigDetail() {
   };
 }
 
-export async function sendMail({ to, subject, html, text, replyTo, bcc, from, headers }: SendArgs) {
+export async function sendMail({ to, subject, html, text, replyTo, bcc, cc, from, headers }: SendArgs) {
   const apiKey = process.env.RESEND_API_KEY?.trim();
   const defaultFrom = process.env.MAIL_FROM?.trim();
   const fromHeader = (from || defaultFrom || "").trim();
@@ -50,6 +52,8 @@ export async function sendMail({ to, subject, html, text, replyTo, bcc, from, he
       .filter(Boolean);
     if (list.length) body.reply_to = list.length > 1 ? list : list[0];
   }
+  const ccList = (Array.isArray(cc) ? cc : (cc ? [cc] : [])).map((s) => s.trim()).filter(Boolean);
+  if (ccList.length) body.cc = ccList;
   const finalBcc = bcc || process.env.MAIL_BCC;
   if (finalBcc) body.bcc = [finalBcc];
   if (headers && Object.keys(headers).length) body.headers = headers;

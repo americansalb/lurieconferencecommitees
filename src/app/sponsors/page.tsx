@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback, useRef } from "react";
 import {
   Award, Trash2, RefreshCw, Search, Filter, ExternalLink, Mail, Building2, Copy, Plus,
-  Clock, Pause, Play, Zap, SlidersHorizontal, Loader2, BadgeCheck, Send, FileText,
+  Clock, Pause, Play, Zap, SlidersHorizontal, Loader2, BadgeCheck, Send, FileText, Combine,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
@@ -75,6 +75,10 @@ export default function SponsorsAdminPage() {
   const [requestingLogoId, setRequestingLogoId] = useState<string | null>(null);
   const [sendingInviteId, setSendingInviteId] = useState<string | null>(null);
   const [sendingLetterId, setSendingLetterId] = useState<string | null>(null);
+  const [mergeFor, setMergeFor] = useState<Sponsor | null>(null);
+  const [mergeOtherId, setMergeOtherId] = useState("");
+  const [mergeName, setMergeName] = useState("");
+  const [merging, setMerging] = useState(false);
   const [loadingTargets, setLoadingTargets] = useState(false);
   const [actionNote, setActionNote] = useState<string | null>(null);
   // Auto-send: drip the pending invites out one at a time at random intervals.
@@ -313,6 +317,38 @@ export default function SponsorsAdminPage() {
       await load();
     } finally {
       setLoadingTargets(false);
+      setTimeout(() => setActionNote(null), 9000);
+    }
+  }
+
+  // Consolidate two co-applicant profiles into one (merge emails to CC, combine
+  // the company name, hide the folded-in record).
+  function openMerge(s: Sponsor) {
+    setMergeFor(s);
+    setMergeOtherId("");
+    setMergeName("");
+  }
+  async function doMerge() {
+    if (!mergeFor || !mergeOtherId) return;
+    setMerging(true);
+    try {
+      const res = await fetch(`/api/sponsors/${mergeFor.id}/merge`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ otherId: mergeOtherId, companyName: mergeName.trim() || undefined }),
+      });
+      const j = await res.json().catch(() => ({}));
+      setActionNote(
+        res.ok
+          ? `Merged. This profile now CCs ${j.mergedEmails?.length ?? 0} co-applicant email${(j.mergedEmails?.length ?? 0) === 1 ? "" : "s"} on every interaction.`
+          : `Could not merge. ${j.error || ""}`
+      );
+      setMergeFor(null);
+      setMergeOtherId("");
+      setMergeName("");
+      await load();
+    } finally {
+      setMerging(false);
       setTimeout(() => setActionNote(null), 9000);
     }
   }
@@ -673,6 +709,15 @@ export default function SponsorsAdminPage() {
                             </a>
                             {isAdmin && (
                               <button
+                                onClick={() => openMerge(s)}
+                                className="p-1.5 rounded hover:bg-indigo-50 text-slate-300 hover:text-indigo-600"
+                                title="Merge another sponsor into this one (co-applicants who applied together)"
+                              >
+                                <Combine className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                            {isAdmin && (
+                              <button
                                 onClick={() => remove(s.id)}
                                 className="p-1.5 rounded hover:bg-rose-50 text-slate-300 hover:text-rose-500"
                                 title="Delete (admin only)"
@@ -752,6 +797,52 @@ export default function SponsorsAdminPage() {
           {...confirmDialog}
           onCancel={() => setConfirmDialog(null)}
         />
+      )}
+      {mergeFor && (
+        <div className="fixed inset-0 z-[95] flex items-center justify-center bg-black/40 p-4" onClick={() => setMergeFor(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-2 text-slate-900">
+              <Combine className="w-5 h-5 text-indigo-600" />
+              <h3 className="text-lg font-bold">Merge into {mergeFor.companyName}</h3>
+            </div>
+            <p className="text-sm text-slate-500 mt-1.5 leading-relaxed">
+              Pick the co-applicant to fold in. Its email is kept and CC&rsquo;d on every interaction, both contacts can open the same portal link, paid amounts keep the larger of the two, and the folded-in record is hidden from the pipeline.
+            </p>
+            <label className="block mt-4 text-[11px] font-bold uppercase tracking-wide text-slate-500">Sponsor to merge in</label>
+            <select
+              value={mergeOtherId}
+              onChange={(e) => {
+                const oid = e.target.value;
+                setMergeOtherId(oid);
+                const o = sponsors.find((x) => x.id === oid);
+                setMergeName(o ? `${mergeFor.companyName} & ${o.companyName}` : "");
+              }}
+              className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-indigo-500"
+            >
+              <option value="">Select a sponsor…</option>
+              {sponsors.filter((x) => x.id !== mergeFor.id).map((x) => (
+                <option key={x.id} value={x.id}>{x.companyName} · {x.contactEmail}</option>
+              ))}
+            </select>
+            <label className="block mt-4 text-[11px] font-bold uppercase tracking-wide text-slate-500">Consolidated company name</label>
+            <input
+              value={mergeName}
+              onChange={(e) => setMergeName(e.target.value)}
+              placeholder="Company A & Company B"
+              className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-indigo-500"
+            />
+            <div className="mt-6 flex justify-end gap-2">
+              <button onClick={() => setMergeFor(null)} className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-900">Cancel</button>
+              <button
+                onClick={doMerge}
+                disabled={!mergeOtherId || merging}
+                className="px-4 py-2 text-sm font-bold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50 inline-flex items-center gap-1.5"
+              >
+                {merging ? <Loader2 className="w-4 h-4 animate-spin" /> : <Combine className="w-4 h-4" />} Merge profiles
+              </button>
+            </div>
+          </div>
+        </div>
       )}
       {actionNote && (
         <div className="fixed bottom-4 right-4 z-[90] max-w-sm rounded-xl bg-slate-900 text-white text-sm font-semibold px-4 py-3 shadow-2xl">

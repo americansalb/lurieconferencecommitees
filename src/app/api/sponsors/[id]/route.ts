@@ -74,6 +74,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         }),
         from: sponsorFromHeader(),
         replyTo: sponsorReplyTo(),
+        cc: updated.additionalEmails,
       });
       await prisma.sponsorEvent.create({ data: { sponsorId: updated.id, type: "acceptance_emailed" } }).catch(() => {});
     } catch (e) {
