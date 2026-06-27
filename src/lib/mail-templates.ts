@@ -463,10 +463,6 @@ export function attendeeAlumniInviteEmail({
   url,
   inviteMessage,
   discountPercent,
-  inPersonOriginalCents,
-  inPersonDiscountedCents,
-  virtualOriginalCents,
-  virtualDiscountedCents,
   personalCode,
   mainSiteUrl,
   learnMoreUrl,
@@ -478,8 +474,6 @@ export function attendeeAlumniInviteEmail({
   const site = learnMoreUrl || base;
   const first = (firstName || "there").trim();
   const today = dateLabel || new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
-  const d2 = (c: number) => `$${(c / 100).toFixed(2)}`;
-  const d0 = (c: number) => `$${(c / 100).toFixed(0)}`;
   const hasDiscount = discountPercent > 0;
 
   // The recipient's personal note, shown as a gold-ruled pull-quote when present.
@@ -496,24 +490,18 @@ export function attendeeAlumniInviteEmail({
         </tr>
       </table>` : "";
 
-  // The alumni rate, in the cream-and-gold panel so it sits inside the letter
-  // rather than looking like a pasted-in web card.
-  const rateCol = (label: string, disc: number, orig: number) => `
-        <td width="50%" valign="top" style="padding:0 10px;">
-          <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:${GOLD};font-weight:bold;">${label}</div>
-          <div style="font-family:Georgia,'Times New Roman',serif;font-size:24px;line-height:1.15;color:#3C2E10;padding-top:4px;">${d2(disc)}${hasDiscount && disc < orig ? ` <span style="font-size:13px;color:#9A8B6A;text-decoration:line-through;">${d0(orig)}</span>` : ""}</div>
-        </td>`;
-  const ratePanel = `
+  // The alumni courtesy, in the cream-and-gold panel. We state the discount
+  // only, never a dollar figure: the underlying rate can change (early-bird
+  // windows close, etc.), so a price printed here could be out of date by the
+  // time they register. The percentage off always holds.
+  const ratePanel = hasDiscount ? `
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 22px 0;">
-        <tr><td bgcolor="#FBF4E2" style="background-color:#FBF4E2;border:1px solid #EAD9AE;border-radius:10px;padding:18px 14px;">
-          <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:${GOLD};font-weight:bold;text-align:center;padding-bottom:12px;">${hasDiscount ? `Your alumni rate &middot; ${discountPercent}% off` : "Your alumni rate"}</div>
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-            ${rateCol("In person, Chicago", inPersonDiscountedCents, inPersonOriginalCents)}
-            ${rateCol("Live online", virtualDiscountedCents, virtualOriginalCents)}
-          </tr></table>
-          <div style="font-family:Georgia,'Times New Roman',serif;font-size:13px;line-height:1.6;color:#6B5A33;text-align:center;padding:12px 6px 0 6px;">Held for you and applied automatically, whichever you choose.</div>
+        <tr><td bgcolor="#FBF4E2" style="background-color:#FBF4E2;border:1px solid #EAD9AE;border-radius:10px;padding:20px 18px;text-align:center;">
+          <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:${GOLD};font-weight:bold;padding-bottom:8px;">Your alumni courtesy</div>
+          <div style="font-family:Georgia,'Times New Roman',serif;font-size:23px;line-height:1.25;color:#3C2E10;">${discountPercent}% off your registration</div>
+          <div style="font-family:Georgia,'Times New Roman',serif;font-size:13.5px;line-height:1.6;color:#6B5A33;padding:8px 6px 0 6px;">Good for an in-person seat in Chicago or live online attendance alike, applied automatically at checkout.</div>
         </td></tr>
-      </table>`;
+      </table>` : "";
 
   const codeBlock = (personalCode && hasDiscount) ? `
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 22px 0;">
