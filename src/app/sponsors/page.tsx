@@ -38,6 +38,7 @@ type Sponsor = {
   paidAt: string | null;
   applicationToken: string;
   createdAt: string;
+  clickedAt: string | null;
 };
 
 // The board: every sponsor lives in exactly one of these five buckets.
@@ -470,11 +471,12 @@ export default function SponsorsAdminPage() {
 
             {showQueue && <QueueSettingsModal onClose={() => setShowQueue(false)} onChanged={load} />}
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-5">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-5">
               <Stat label="Applications" value={sponsors.length.toString()} />
               <Stat label="Paid" value={sponsors.filter((s) => s.paid).length.toString()} accent="#059669" />
               <Stat label="Paid $" value={`$${totalDollars.toLocaleString("en-US")}`} accent="#0E5566" />
               <Stat label="Pipeline $" value={`$${pipelineDollars.toLocaleString("en-US")}`} accent="#0066B3" />
+              <Stat label="Clicked link" value={sponsors.filter((s) => s.clickedAt).length.toString()} accent="#7C3AED" />
             </div>
 
             {confirmationPending > 0 && (
@@ -661,6 +663,9 @@ export default function SponsorsAdminPage() {
                             </div>
                           </div>
                           <span className={`text-[10px] font-bold px-2 py-1 rounded-full border ${sl.color}`}>{sl.label}</span>
+                          {s.clickedAt && (
+                            <span className="text-[10px] font-bold px-2 py-1 rounded-full border border-violet-200 bg-violet-50 text-violet-700 shrink-0 hidden sm:inline" title={`Clicked the email link · ${new Date(s.clickedAt).toLocaleString()}`}>Clicked</span>
+                          )}
                           {isAdmin && (s.status === "prospect" || s.status === "invited") && (
                             <button
                               onClick={() => sendInvite(s.id)}

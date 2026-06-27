@@ -16,11 +16,21 @@ export async function GET() {
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const sponsors = await prisma.sponsor.findMany({
+  const raw = await prisma.sponsor.findMany({
     where: { mergedIntoId: null },
     orderBy: { createdAt: "desc" },
-    include: { logo: { select: { mime: true } } },
+    include: {
+      logo: { select: { mime: true } },
+      // Latest "they clicked the email link and loaded their page" signal.
+      events: {
+        where: { type: { in: ["invite_viewed", "inkind_pledge_viewed", "email_clicked"] } },
+        select: { createdAt: true },
+        orderBy: { createdAt: "desc" },
+        take: 1,
+      },
+    },
   });
+  const sponsors = raw.map(({ events, ...s }) => ({ ...s, clickedAt: events[0]?.createdAt ?? null }));
   return NextResponse.json({ sponsors });
 }
 
