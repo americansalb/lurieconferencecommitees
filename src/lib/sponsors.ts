@@ -9,6 +9,23 @@ export function sponsorStatusUrl(token: string) {
   return `${appUrl()}/sponsor/status/${token}`;
 }
 
+export function sponsorUnsubscribeUrl(token: string) {
+  return `${appUrl()}/api/sponsors/unsubscribe/${token}`;
+}
+
+// RFC 8058 one-click unsubscribe headers. Gmail and Yahoo treat a working
+// List-Unsubscribe (plus the one-click POST) as a strong deliverability and
+// trust signal — and increasingly require it for bulk senders. Always paired
+// with a visible unsubscribe link and a postal address in the body.
+export function sponsorUnsubHeaders(token: string): Record<string, string> {
+  const url = sponsorUnsubscribeUrl(token);
+  const mailto = (process.env.MAIL_REPLY_TO?.trim() || "contact@aalb.org");
+  return {
+    "List-Unsubscribe": `<${url}>, <mailto:${mailto}?subject=unsubscribe>`,
+    "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+  };
+}
+
 export type SponsorTier = {
   id: string;
   name: string;

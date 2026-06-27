@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
-import { newSponsorToken, tierById, sponsorFromHeader, sponsorReplyTo, sponsorLetterReplyTo, sponsorInviteSubject, isOfficialPartner } from "@/lib/sponsors";
+import { newSponsorToken, tierById, sponsorFromHeader, sponsorReplyTo, sponsorLetterReplyTo, sponsorInviteSubject, sponsorUnsubHeaders, sponsorUnsubscribeUrl, isOfficialPartner } from "@/lib/sponsors";
 import { sponsorInviteEmail, sponsorLetterEmail } from "@/lib/mail-templates";
 
 // The formal letter is the standard sponsor invitation. Complimentary
@@ -109,6 +109,7 @@ export async function POST(req: Request) {
       assetBase: appUrl(),
       compExhibitor: true,
       isPartner: partner,
+      unsubscribeUrl: sponsorUnsubscribeUrl(token),
     });
     subject = sponsorInviteSubject(sponsor.companyName, { comp: true });
   } else {
@@ -121,6 +122,7 @@ export async function POST(req: Request) {
       learnMoreUrl: appUrl(),
       discountPercent: null,
       isPartner: partner,
+      unsubscribeUrl: sponsorUnsubscribeUrl(token),
       dateLabel: letterDate(),
       assetBase: appUrl(),
     });
@@ -134,6 +136,7 @@ export async function POST(req: Request) {
       html,
       from: sponsorFromHeader(),
       replyTo: compTable ? sponsorReplyTo() : sponsorLetterReplyTo(),
+      headers: sponsorUnsubHeaders(token),
     });
     return NextResponse.json({ ok: true, sponsorId: sponsor.id, sent: true });
   } catch (e) {
@@ -203,6 +206,8 @@ async function bulkInvite(
             landingUrl,
             assetBase: appUrl(),
             compExhibitor: true,
+            isPartner: isOfficialPartner(c.companyName),
+            unsubscribeUrl: sponsorUnsubscribeUrl(c.token),
           })
         : sponsorLetterEmail({
             contactName: c.contactName,
@@ -212,6 +217,7 @@ async function bulkInvite(
             learnMoreUrl: appUrl(),
             discountPercent: null,
             isPartner: isOfficialPartner(c.companyName),
+            unsubscribeUrl: sponsorUnsubscribeUrl(c.token),
             dateLabel: letterDate(),
             assetBase: appUrl(),
           });

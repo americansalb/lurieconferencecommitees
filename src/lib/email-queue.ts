@@ -1,7 +1,7 @@
 import { prisma } from "./db";
 import { sendMail } from "./mail";
 import { attendeeFromHeader, attendeeReplyTo, attendeeBcc } from "./attendees";
-import { sponsorFromHeader, sponsorLetterReplyTo } from "./sponsors";
+import { sponsorFromHeader, sponsorLetterReplyTo, sponsorUnsubHeaders } from "./sponsors";
 
 // Default sending policy. Tunable via SystemSetting keys with the same names.
 export const DEFAULT_POLICY = {
@@ -212,6 +212,20 @@ export async function runEmailQueue(): Promise<{ processed: number; sent: number
     });
     if (claim.count === 0) continue;
 
+    // Honor an unsubscribe and attach the one-click header for sponsor sends.
+    let extraHeaders: Record<string, string> | undefined;
+    if (item.recipientType === "sponsor" && item.recipientId) {
+      const sp = await prisma.sponsor.findUnique({
+        where: { id: item.recipientId },
+        select: { applicationToken: true, unsubscribedAt: true },
+      });
+      if (sp?.unsubscribedAt) {
+        await prisma.emailQueue.update({ where: { id: item.id }, data: { status: "skipped" } });
+        continue;
+      }
+      if (sp?.applicationToken) extraHeaders = sponsorUnsubHeaders(sp.applicationToken);
+    }
+
     try {
       const result = await sendMail({
         to: item.to,
@@ -219,6 +233,7 @@ export async function runEmailQueue(): Promise<{ processed: number; sent: number
         html: item.html,
         text: item.textBody || undefined,
         ...queueEnvelope(item.recipientType),
+        headers: extraHeaders,
       });
       const resendId = (result as { id?: string })?.id || null;
       await prisma.emailQueue.update({

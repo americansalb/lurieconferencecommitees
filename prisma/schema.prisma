@@ -513,6 +513,9 @@ model Sponsor {
   invitedById           String?
   invitedAt             DateTime?
   lastSentAt            DateTime?
+  // Set when the recipient uses the one-click unsubscribe. Suppresses all
+  // further sends to this org and is honored before every send.
+  unsubscribedAt        DateTime?
 
   adminNotes            String?
   createdAt             DateTime       @default(now())

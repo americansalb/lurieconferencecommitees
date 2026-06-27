@@ -8,6 +8,8 @@ type SendArgs = {
   replyTo?: string | string[];
   bcc?: string;
   from?: string;
+  // Extra SMTP headers (e.g. List-Unsubscribe / List-Unsubscribe-Post).
+  headers?: Record<string, string>;
 };
 
 export function isMailConfigured() {
@@ -25,7 +27,7 @@ export function mailConfigDetail() {
   };
 }
 
-export async function sendMail({ to, subject, html, text, replyTo, bcc, from }: SendArgs) {
+export async function sendMail({ to, subject, html, text, replyTo, bcc, from, headers }: SendArgs) {
   const apiKey = process.env.RESEND_API_KEY?.trim();
   const defaultFrom = process.env.MAIL_FROM?.trim();
   const fromHeader = (from || defaultFrom || "").trim();
@@ -50,6 +52,7 @@ export async function sendMail({ to, subject, html, text, replyTo, bcc, from }: 
   }
   const finalBcc = bcc || process.env.MAIL_BCC;
   if (finalBcc) body.bcc = [finalBcc];
+  if (headers && Object.keys(headers).length) body.headers = headers;
 
   let res: Response;
   try {

@@ -597,11 +597,14 @@ type SponsorInviteArgs = {
   assetBase?: string;
   compExhibitor?: boolean;
   isPartner?: boolean;
+  // One-click unsubscribe URL for this recipient (CAN-SPAM footer link).
+  unsubscribeUrl?: string;
 };
 
 export function sponsorInviteEmail({
-  contactFirstName, companyName, suggestedTier, inviteMessage, landingUrl, assetBase, compExhibitor = false, isPartner = false,
+  contactFirstName, companyName, suggestedTier, inviteMessage, landingUrl, assetBase, compExhibitor = false, isPartner = false, unsubscribeUrl,
 }: SponsorInviteArgs) {
+  const postalAddress = process.env.MAIL_POSTAL_ADDRESS?.trim() || "Americans Against Language Barriers, Chicago, IL";
   const first = contactFirstName || "there";
   const site = assetBase || "https://conference.aalb.org";
   const ctaLabel = compExhibitor ? "Claim your table" : "See sponsorship levels";
@@ -659,6 +662,9 @@ export function sponsorInviteEmail({
     <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;padding-top:14px;border-top:1px solid #eef1f4;">
       All sponsorships are tax-deductible to the fullest extent allowed by law under IRS code 501(c)(3). EINs: 83-3016421 and 36-2170833. If this is the wrong contact at ${escapeHtml(companyName)}, please forward this along or simply reply.
     </p>
+    <p style="font-size:12px;line-height:1.6;color:${MUTED};margin:10px 0 0 0;">
+      ${escapeHtml(postalAddress)}.${unsubscribeUrl ? ` You received this invitation to sponsor the conference. <a href="${unsubscribeUrl}" style="color:${MUTED};text-decoration:underline;">Unsubscribe</a>.` : ""}
+    </p>
   `);
 }
 
@@ -680,6 +686,9 @@ type SponsorLetterArgs = {
   discountPercent?: number | null;
   // Acknowledge an existing official AALB partner (e.g. AMN) with a partner mark.
   isPartner?: boolean;
+  // One-click unsubscribe URL for this recipient. Renders the footer
+  // unsubscribe link required for CAN-SPAM and good deliverability.
+  unsubscribeUrl?: string;
   // Pre-formatted date string (e.g. "June 27, 2026"); computed by the caller.
   dateLabel: string;
   assetBase?: string;
@@ -694,8 +703,9 @@ type SponsorLetterArgs = {
 // under every gradient and a VML seal so it degrades gracefully in Outlook.
 // Use for the handful of strategic targets; use sponsorInviteEmail() for bulk.
 export function sponsorLetterEmail({
-  contactName, salutation, recipientTitle, companyName, reason, landingUrl, learnMoreUrl, discountPercent, isPartner = false, dateLabel, assetBase,
+  contactName, salutation, recipientTitle, companyName, reason, landingUrl, learnMoreUrl, discountPercent, isPartner = false, unsubscribeUrl, dateLabel, assetBase,
 }: SponsorLetterArgs) {
+  const postalAddress = process.env.MAIL_POSTAL_ADDRESS?.trim() || "Americans Against Language Barriers, Chicago, IL";
   const TEAL_DEEP = "#0C3B4B", INK = "#0B1F25", SOFT = "#5A6E76", GOLD_SOFT = "#F4E9CD", LINK = "#1E6FA2";
   const base = (assetBase || ASSET_BASE).replace(/\/$/, "");
   const site = learnMoreUrl || base;
@@ -872,6 +882,8 @@ export function sponsorLetterEmail({
       <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;line-height:18px;color:#9FB6BC;padding-top:8px;">August 15&ndash;16, 2026 &middot; Chicago, Illinois</div>
       <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;line-height:18px;color:#9FB6BC;">conference.aalb.org &middot; contact@aalb.org</div>
       <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;line-height:16px;letter-spacing:0.5px;color:#5F7E86;padding-top:8px;">501(c)(3) &middot; EINs 83-3016421 and 36-2170833</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;line-height:16px;color:#5F7E86;padding-top:10px;">${escapeHtml(postalAddress)}</div>
+      ${unsubscribeUrl ? `<div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;line-height:16px;color:#5F7E86;padding-top:4px;">You received this invitation to sponsor the conference. <a href="${unsubscribeUrl}" style="color:#9FB6BC;text-decoration:underline;">Unsubscribe</a>.</div>` : ""}
     </td></tr>
 
   </table>

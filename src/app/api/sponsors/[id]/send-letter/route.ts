@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
-import { sponsorFromHeader, sponsorLetterReplyTo, sponsorInviteSubject, isOfficialPartner } from "@/lib/sponsors";
+import { sponsorFromHeader, sponsorLetterReplyTo, sponsorInviteSubject, sponsorUnsubHeaders, sponsorUnsubscribeUrl, isOfficialPartner } from "@/lib/sponsors";
 import { sponsorLetterEmail } from "@/lib/mail-templates";
 import { appUrl } from "@/lib/presenters";
 
@@ -23,6 +23,9 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
 
   const sponsor = await prisma.sponsor.findUnique({ where: { id: params.id } });
   if (!sponsor) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (sponsor.unsubscribedAt) {
+    return NextResponse.json({ ok: false, sent: false, error: "This organization has unsubscribed." }, { status: 409 });
+  }
 
   // VIP courtesy: 20% off any paid level, including the exhibitor table.
   // Only a complimentary (already-free) table gets no discount.
@@ -37,6 +40,7 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
     learnMoreUrl: appUrl(),
     discountPercent,
     isPartner: isOfficialPartner(sponsor.companyName),
+    unsubscribeUrl: sponsorUnsubscribeUrl(sponsor.applicationToken),
     dateLabel,
     assetBase: appUrl(),
   });
@@ -49,6 +53,7 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
       from: sponsorFromHeader(),
       // Replies reach both Kevin (on the letter) and the shared inbox.
       replyTo: sponsorLetterReplyTo(),
+      headers: sponsorUnsubHeaders(sponsor.applicationToken),
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);

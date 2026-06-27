@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
-import { sponsorFromHeader, sponsorReplyTo, sponsorLetterReplyTo, sponsorInviteSubject, isCompExhibitor, isOfficialPartner } from "@/lib/sponsors";
+import { sponsorFromHeader, sponsorReplyTo, sponsorLetterReplyTo, sponsorInviteSubject, sponsorUnsubHeaders, sponsorUnsubscribeUrl, isCompExhibitor, isOfficialPartner } from "@/lib/sponsors";
 import { sponsorInviteEmail, sponsorLetterEmail } from "@/lib/mail-templates";
 import { appUrl } from "@/lib/presenters";
 
@@ -17,6 +17,9 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
 
   const sponsor = await prisma.sponsor.findUnique({ where: { id: params.id } });
   if (!sponsor) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (sponsor.unsubscribedAt) {
+    return NextResponse.json({ ok: false, sent: false, error: "This organization has unsubscribed." }, { status: 409 });
+  }
 
   const comp = isCompExhibitor(sponsor);
   const partner = isOfficialPartner(sponsor.companyName);
@@ -38,6 +41,7 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
       assetBase: appUrl(),
       compExhibitor: true,
       isPartner: partner,
+      unsubscribeUrl: sponsorUnsubscribeUrl(sponsor.applicationToken),
     });
     subject = sponsorInviteSubject(sponsor.companyName, { comp: true });
   } else {
@@ -50,6 +54,7 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
       learnMoreUrl: appUrl(),
       discountPercent: null,
       isPartner: partner,
+      unsubscribeUrl: sponsorUnsubscribeUrl(sponsor.applicationToken),
       dateLabel: new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
       assetBase: appUrl(),
     });
@@ -64,6 +69,7 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
       from: sponsorFromHeader(),
       // Replies to the letter reach both Kevin and the shared inbox.
       replyTo: comp ? sponsorReplyTo() : sponsorLetterReplyTo(),
+      headers: sponsorUnsubHeaders(sponsor.applicationToken),
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
