@@ -944,7 +944,7 @@ export function sponsorFoodLetterEmail({
 
     ${sectionHeading("The ask")}
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 8px 0;">
-      We would be honored to feature your food at the conference as an <strong>in-kind Food Sponsor</strong>: a donated or catered plant-based spread, whether a full meal or part of one, for our attendees. There is nothing to buy. In return, you would be recognized as an official Food Sponsor:
+      We would be honored to feature your plant-based food at the conference, whether a full meal or part of one, for our attendees. We are flexible on how it works: a donation, food we purchase from you, or a mix of both. Last year, for example, a partner donated fifty sandwiches and we purchased twenty more. Any in-kind contribution makes you an official <strong>Food Sponsor</strong>, recognized with:
     </p>
     ${bulletList([
       "Your name and logo on the conference website",
