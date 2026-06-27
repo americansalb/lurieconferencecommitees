@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import {
   Award, Trash2, RefreshCw, Search, Filter, ExternalLink, Mail, Building2, Copy, Plus,
-  Clock, Pause, Play, Zap, SlidersHorizontal, Loader2, BadgeCheck,
+  Clock, Pause, Play, Zap, SlidersHorizontal, Loader2, BadgeCheck, Send,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
@@ -56,6 +56,7 @@ export default function SponsorsAdminPage() {
   } | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [requestingLogoId, setRequestingLogoId] = useState<string | null>(null);
+  const [sendingInviteId, setSendingInviteId] = useState<string | null>(null);
   const [actionNote, setActionNote] = useState<string | null>(null);
 
   const role = (session?.user as { role?: string })?.role;
@@ -192,6 +193,27 @@ export default function SponsorsAdminPage() {
       );
     } finally {
       setRequestingLogoId(null);
+      setTimeout(() => setActionNote(null), 8000);
+    }
+  }
+
+  // Per-org send: fire the invitation to one prospect now and mark them invited.
+  async function sendInvite(id: string) {
+    const s = sponsors.find((x) => x.id === id);
+    setSendingInviteId(id);
+    setActionNote(null);
+    try {
+      const res = await fetch(`/api/sponsors/${id}/send-invite`, { method: "POST" });
+      const j = await res.json().catch(() => ({}));
+      const who = s?.companyName || "Sponsor";
+      setActionNote(
+        res.ok && j.ok
+          ? `${who}: invitation sent.`
+          : `${who}: could not send. ${j.error || "Unknown error."}`
+      );
+      await load();
+    } finally {
+      setSendingInviteId(null);
       setTimeout(() => setActionNote(null), 8000);
     }
   }
@@ -389,6 +411,17 @@ export default function SponsorsAdminPage() {
                             </div>
                           </div>
                           <span className={`text-[10px] font-bold px-2 py-1 rounded-full border ${sl.color}`}>{sl.label}</span>
+                          {isAdmin && (s.status === "prospect" || s.status === "invited") && (
+                            <button
+                              onClick={() => sendInvite(s.id)}
+                              disabled={sendingInviteId === s.id}
+                              className="text-[10px] font-bold px-2 py-1 rounded-full border border-teal-200 bg-teal-50 text-teal-700 hover:bg-teal-100 inline-flex items-center gap-1 shrink-0 disabled:opacity-50"
+                              title={s.status === "prospect" ? "Send the invitation email to this org now" : "Resend the invitation email"}
+                            >
+                              {sendingInviteId === s.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
+                              {s.status === "prospect" ? "Send invite" : "Resend"}
+                            </button>
+                          )}
                           {showPayAction && (
                             <button
                               onClick={() => confirmPayment(s.id)}

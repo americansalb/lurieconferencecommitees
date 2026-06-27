@@ -615,14 +615,13 @@ export function sponsorInviteEmail({
   return shell(`
     ${heroBanner()}
     <h1 style="font-size:22px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">Hi ${escapeHtml(first)},</h1>
+    ${inviteMessage
+      ? `<p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">${escapeHtml(inviteMessage).replace(/\n/g, "<br>")}</p>`
+      : `<p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">We&rsquo;d love for <strong>${escapeHtml(companyName)}</strong> to join us as a sponsor or exhibitor at the 2nd Joint Conference of Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers.</p>`}
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
-      We would love for <strong>${escapeHtml(companyName)}</strong> to become a sponsor or exhibitor at the 2nd Joint Conference of Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers (AALB), taking place August 15 and 16, 2026, in Chicago.
-    </p>
-    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 4px 0;">
-      This year&rsquo;s theme, <em>True Language Access: Yesterday, Today, and Tomorrow</em>, brings together healthcare professionals, medical interpreters, language service providers, advocates, and policymakers from across the country for two days of learning, networking, and dialogue on equitable healthcare communication.
+      The conference takes place <strong>August 15 and 16, 2026</strong> in Chicago. This year&rsquo;s theme, <em>True Language Access: Yesterday, Today, and Tomorrow</em>, brings together healthcare professionals, medical interpreters, language service providers, advocates, and policymakers from across the country for two days of learning, networking, and dialogue on equitable healthcare communication.
     </p>
     ${compCallout}
-    ${inviteMessage ? `<div style="font-size:14px;line-height:1.6;color:${TEXT};background:#f8fafc;border-left:3px solid ${BLUE};padding:14px 16px;border-radius:6px;margin:18px 0 0 0;">${escapeHtml(inviteMessage).replace(/\n/g, "<br>")}</div>` : ""}
 
     ${button(landingUrl, ctaLabel)}
 

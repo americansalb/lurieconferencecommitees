@@ -122,11 +122,13 @@ export async function POST(req: Request) {
 }
 
 async function bulkInvite(
-  body: { csv?: string; tier?: string; inviteMessage?: string; compExhibitor?: boolean },
+  body: { csv?: string; tier?: string; inviteMessage?: string; compExhibitor?: boolean; draftOnly?: boolean },
   invitedById: string | null,
   actorEmail: string | null,
 ) {
   const compTable = Boolean(body.compExhibitor);
+  // draftOnly = just load them into the dashboard as prospects, send nothing.
+  const draftOnly = Boolean(body.draftOnly);
   const suggested = compTable ? null : (body.tier ? tierById(body.tier) : null);
   const tierId = compTable ? "exhibitor" : (suggested ? suggested.id : "undecided");
   const amountCents = compTable ? 0 : (suggested ? suggested.amountCents : 0);
@@ -151,14 +153,14 @@ async function bulkInvite(
         companyName: r.companyName, contactName: r.contactName, contactEmail: r.contactEmail,
         contactPhone: r.contactPhone || null, website: r.website || null,
         tier: tierId, amountCents, inviteMessage: note, invitedById,
-        applicationToken: token, status: "queued",
+        applicationToken: token, status: draftOnly ? "prospect" : "queued",
       },
     });
-    await prisma.sponsorEvent.create({ data: { sponsorId: sp.id, type: "added_to_queue", actorEmail } });
+    await prisma.sponsorEvent.create({ data: { sponsorId: sp.id, type: draftOnly ? "added_as_prospect" : "added_to_queue", actorEmail } });
     created.push({ id: sp.id, token, companyName: r.companyName, contactName: r.contactName, contactEmail: r.contactEmail, note });
   }
 
-  if (created.length) {
+  if (created.length && !draftOnly) {
     const policy = await getPolicy();
     const times = await planSendTimes(created.length, policy);
     const batchId = `sponsor-invite-${Date.now()}`;
@@ -186,5 +188,5 @@ async function bulkInvite(
     }
   }
 
-  return NextResponse.json({ mode: "bulk", created: created.length, skipped, parseErrors: errors });
+  return NextResponse.json({ mode: "bulk", created: created.length, skipped, parseErrors: errors, draftOnly });
 }

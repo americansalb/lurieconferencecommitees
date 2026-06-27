@@ -80,10 +80,12 @@ export default function InviteSponsorComposer({
       const res = await fetch("/api/sponsors/invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ csv, tier: compExhibitor ? undefined : (bulkTier || undefined), inviteMessage, compExhibitor }),
+        // draftOnly: just add them to the dashboard. Nothing emails until you
+        // hit Send invite on each row.
+        body: JSON.stringify({ csv, tier: compExhibitor ? undefined : (bulkTier || undefined), inviteMessage, compExhibitor, draftOnly: true }),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Could not queue invites.");
+      if (!res.ok) throw new Error(json.error || "Could not add prospects.");
       setBulkResult(json as BulkResult);
     } catch (e) {
       setBulkError(e instanceof Error ? e.message : "Network error. Try again.");
@@ -110,7 +112,7 @@ export default function InviteSponsorComposer({
         <div className="px-5 pt-4">
           <div className="inline-flex items-center bg-slate-100 rounded-xl p-0.5">
             <TabBtn active={mode === "single"} onClick={() => setMode("single")} icon={<User className="w-3.5 h-3.5" />} label="One invite" />
-            <TabBtn active={mode === "bulk"} onClick={() => setMode("bulk")} icon={<Users className="w-3.5 h-3.5" />} label="Bulk (paced)" />
+            <TabBtn active={mode === "bulk"} onClick={() => setMode("bulk")} icon={<Users className="w-3.5 h-3.5" />} label="Add a list" />
           </div>
         </div>
 
@@ -141,8 +143,8 @@ export default function InviteSponsorComposer({
                 <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 flex items-start gap-2">
                   <Check className="w-4 h-4 mt-0.5 shrink-0" />
                   <div>
-                    <div className="font-semibold">{bulkResult.created} invite{bulkResult.created === 1 ? "" : "s"} queued.</div>
-                    <div className="mt-0.5 text-[13px]">They&rsquo;ll go out gradually on the shared sending schedule (so the domain stays healthy). {bulkResult.skipped.length > 0 ? `${bulkResult.skipped.length} skipped (already on the list).` : ""}</div>
+                    <div className="font-semibold">{bulkResult.created} added to your dashboard.</div>
+                    <div className="mt-0.5 text-[13px]">No emails were sent. Open the list and hit <b>Send invite</b> on each one when you&rsquo;re ready. {bulkResult.skipped.length > 0 ? `${bulkResult.skipped.length} skipped (already on the list).` : ""}</div>
                   </div>
                 </div>
                 {bulkResult.parseErrors.length > 0 && (
@@ -158,7 +160,7 @@ export default function InviteSponsorComposer({
             ) : (
               <>
                 <div className="text-[13px] text-slate-500">
-                  Paste one prospect per line, <b className="text-slate-700">Company, Contact, Email</b> (Phone, Website, Note optional). Add a <b className="text-slate-700">Note</b> column to give each org its own line, it goes into their email and onto their invitation page, so a bulk send still reads as personal. Tip: paste straight from a spreadsheet so commas inside your notes stay safe. Invites are <b className="text-slate-700">queued and sent gradually</b> to protect the sending domain.
+                  Paste one prospect per line, <b className="text-slate-700">Company, Contact, Email</b> (Phone, Website, Note optional). Add a <b className="text-slate-700">Note</b> column to give each org its own custom line in their email. This <b className="text-slate-700">only adds them to your dashboard</b>, nothing is emailed until you press <b className="text-slate-700">Send invite</b> on each one. Tip: paste straight from a spreadsheet so commas inside your notes stay safe.
                 </div>
                 <CompToggle checked={compExhibitor} onChange={setCompExhibitor} />
                 {!compExhibitor && (
@@ -259,7 +261,7 @@ export default function InviteSponsorComposer({
                 <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
                   <button onClick={onClose} className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-900">Cancel</button>
                   <button onClick={queueBulk} disabled={bulkSending || preview.rows.length === 0} className="px-5 py-2.5 rounded-lg font-bold text-white shadow-sm disabled:opacity-50 inline-flex items-center gap-2 text-sm bg-gradient-to-r from-[#0E5566] to-[#0066B3]">
-                    {bulkSending ? <><Loader2 className="w-4 h-4 animate-spin" /> Queuing…</> : <><Users className="w-4 h-4" /> {preview.rows.length ? `Queue ${preview.rows.length} invite${preview.rows.length === 1 ? "" : "s"}` : "Queue invites"}</>}
+                    {bulkSending ? <><Loader2 className="w-4 h-4 animate-spin" /> Adding…</> : <><Users className="w-4 h-4" /> {preview.rows.length ? `Add ${preview.rows.length} to dashboard` : "Add to dashboard"}</>}
                   </button>
                 </div>
               </>

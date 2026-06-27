@@ -152,6 +152,7 @@ export function fullBenefits(tierId: string): string[] {
 }
 
 export const SPONSOR_STATUS_LABELS: Record<string, { label: string; color: string }> = {
+  prospect: { label: "Prospect", color: "bg-slate-50 text-slate-400 border-slate-200" },
   queued: { label: "Queued", color: "bg-slate-100 text-slate-500 border-slate-200" },
   invited: { label: "Invited", color: "bg-indigo-50 text-indigo-700 border-indigo-200" },
   submitted: { label: "Submitted", color: "bg-slate-100 text-slate-700 border-slate-200" },
