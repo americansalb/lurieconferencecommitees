@@ -6,7 +6,7 @@ import { useEffect, useState, useCallback } from "react";
 import {
   Users, Send, Pause, Play, Loader2, Mail, Check,
   RefreshCw, Zap, FileText, UserPlus, Rocket, Eye, SlidersHorizontal,
-  ChevronDown, ChevronRight, Video,
+  ChevronDown, ChevronRight, Video, Shuffle,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
@@ -78,6 +78,7 @@ export default function AttendeesPage() {
   const [showQueue, setShowQueue] = useState(false);
   const [showQueueList, setShowQueueList] = useState(false);
   const [sendingEntryId, setSendingEntryId] = useState<string | null>(null);
+  const [shuffling, setShuffling] = useState(false);
 
   // Quick invite form
   const [single, setSingle] = useState({ firstName: "", lastName: "", email: "", affiliation: "" });
@@ -240,6 +241,22 @@ export default function AttendeesPage() {
     load();
   }
 
+  // Randomize the order of queued attendee invites without changing the
+  // schedule: same send times, different recipients in each slot.
+  async function shuffleQueue() {
+    setShuffling(true);
+    try {
+      await fetch("/api/admin/email-queue", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "shuffle", recipientType: "attendee" }),
+      });
+      await load();
+    } finally {
+      setShuffling(false);
+    }
+  }
+
   async function sendPortalLink(ids: string[]) {
     if (!ids.length) return;
     const res = await fetch("/api/attendees/portal-link", {
@@ -341,6 +358,16 @@ export default function AttendeesPage() {
                     >
                       <SlidersHorizontal className="w-3 h-3" /> Adjust
                     </button>
+                    {(queueStatus.counts.pending || 0) > 1 && (
+                      <button
+                        onClick={shuffleQueue}
+                        disabled={shuffling}
+                        className="text-xs font-bold px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5 bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100 disabled:opacity-50"
+                        title="Randomize the order of the queued invites. Same schedule, new order."
+                      >
+                        {shuffling ? <Loader2 className="w-3 h-3 animate-spin" /> : <Shuffle className="w-3 h-3" />} Shuffle
+                      </button>
+                    )}
                     <button
                       onClick={togglePause}
                       className={`text-xs font-bold px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5 ${

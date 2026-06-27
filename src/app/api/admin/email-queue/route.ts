@@ -117,6 +117,33 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, bursting: items.length, minutes, paused: await isPaused() });
   }
 
+  // Shuffle: keep the exact same set of scheduled send times (so pacing and the
+  // overall window are untouched) but randomly reassign which pending recipient
+  // gets which slot. Mixes up the order without re-queuing. Optionally scoped to
+  // one recipientType so the sponsor and attendee queues shuffle independently.
+  if (body?.action === "shuffle") {
+    const recipientType = typeof body?.recipientType === "string" ? body.recipientType : null;
+    const where = recipientType
+      ? { status: "pending", recipientType }
+      : { status: "pending" };
+    const items = await prisma.emailQueue.findMany({
+      where, select: { id: true, scheduledFor: true },
+    });
+    if (items.length < 2) return NextResponse.json({ ok: true, shuffled: items.length });
+    const times = items.map((i) => i.scheduledFor).sort((a, b) => a.getTime() - b.getTime());
+    const ids = items.map((i) => i.id);
+    // Fisher-Yates over the ids; times stay in order, so the schedule is the
+    // same but recipients are dealt into the slots at random.
+    for (let i = ids.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [ids[i], ids[j]] = [ids[j], ids[i]];
+    }
+    await prisma.$transaction(
+      ids.map((id, idx) => prisma.emailQueue.update({ where: { id }, data: { scheduledFor: times[idx] } })),
+    );
+    return NextResponse.json({ ok: true, shuffled: ids.length, paused: await isPaused() });
+  }
+
   // Specific entries to send right now (the "send this one" action), regardless
   // of their scheduled time. This is the only manual push left: invites should
   // always go out one or two at a time, never as a bulk blast. The old

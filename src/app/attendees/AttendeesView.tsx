@@ -1,11 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Search, Mail, Send, MapPin, Monitor, Check } from "lucide-react";
+import { Search, Mail, Send, MapPin, Monitor, Check, Eye } from "lucide-react";
 import {
   ATTENDEE_STEP_LABELS, ATTENDEE_SOURCE_LABELS, AttendeeStep,
   attendeeStep, attendeeStepMoment, attendeeSource,
 } from "@/lib/attendees";
+import { fmtElapsed, medianLabel } from "@/lib/engagement";
 
 export type Attendee = {
   id: string;
@@ -56,8 +57,22 @@ export default function AttendeesView({
   const [cardFilter, setCardFilter] = useState<string>("all");
   const [sourceFilter, setSourceFilter] = useState<"all" | "invited" | "organic">("all");
   const [modeFilter, setModeFilter] = useState<"all" | "in-person" | "virtual">("all");
+  const [clickedOnly, setClickedOnly] = useState(false);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  // Engagement: "delivered" is when the invite was sent (we have no SMTP
+  // delivery receipt), "clicked" is when they first loaded their invite link.
+  const deliveredOf = (a: Attendee) => a.invitedAt || a.lastSentAt;
+  const everSent = useMemo(() => attendees.filter((a) => deliveredOf(a)), [attendees]);
+  const clickedPeople = useMemo(() => attendees.filter((a) => a.viewedAt), [attendees]);
+  const clickLatencies = useMemo(() => clickedPeople
+    .map((a) => {
+      const d = deliveredOf(a);
+      return d && a.viewedAt ? new Date(a.viewedAt).getTime() - new Date(d).getTime() : NaN;
+    })
+    .filter((ms) => Number.isFinite(ms) && ms >= 0), [clickedPeople]);
+  const clickRate = everSent.length ? Math.round((clickedPeople.length / everSent.length) * 100) : 0;
 
   // One pass: tag every attendee with its precise step, then tally per card.
   const stepOf = useMemo(() => {
@@ -79,16 +94,28 @@ export default function AttendeesView({
 
   const activeCard = STEP_CARDS.find((c) => c.key === cardFilter) || null;
 
-  const filtered = useMemo(() => attendees.filter((a) => {
-    if (activeCard && !activeCard.steps.includes(stepOf.get(a.id)!)) return false;
-    if (sourceFilter !== "all" && attendeeSource(a) !== sourceFilter) return false;
-    if (modeFilter !== "all" && a.attendanceMode !== modeFilter) return false;
-    if (search) {
-      const s = search.toLowerCase();
-      if (![a.firstName, a.lastName, a.email, a.affiliation].some((v) => v?.toLowerCase().includes(s))) return false;
+  const filtered = useMemo(() => {
+    const list = attendees.filter((a) => {
+      // The Clicked view is an engagement report, not a funnel step: it gathers
+      // everyone who clicked, regardless of which card they sit in now.
+      if (clickedOnly) {
+        if (!a.viewedAt) return false;
+      } else if (activeCard && !activeCard.steps.includes(stepOf.get(a.id)!)) {
+        return false;
+      }
+      if (sourceFilter !== "all" && attendeeSource(a) !== sourceFilter) return false;
+      if (modeFilter !== "all" && a.attendanceMode !== modeFilter) return false;
+      if (search) {
+        const s = search.toLowerCase();
+        if (![a.firstName, a.lastName, a.email, a.affiliation].some((v) => v?.toLowerCase().includes(s))) return false;
+      }
+      return true;
+    });
+    if (clickedOnly) {
+      list.sort((a, b) => new Date(b.viewedAt || 0).getTime() - new Date(a.viewedAt || 0).getTime());
     }
-    return true;
-  }), [attendees, activeCard, sourceFilter, modeFilter, search, stepOf]);
+    return list;
+  }, [attendees, activeCard, sourceFilter, modeFilter, clickedOnly, search, stepOf]);
 
   const allShownSelected = filtered.length > 0 && filtered.every((a) => selected.has(a.id));
   function toggleAll() {
@@ -131,17 +158,41 @@ export default function AttendeesView({
           </div>
           <Segmented value={sourceFilter} onChange={(v) => setSourceFilter(v as typeof sourceFilter)} options={[["all", "All sources"], ["invited", "Invited"], ["organic", "Signed up"]]} />
           <Segmented value={modeFilter} onChange={(v) => setModeFilter(v as typeof modeFilter)} options={[["all", "All"], ["in-person", "In-person"], ["virtual", "Virtual"]]} />
+          <button
+            onClick={() => setClickedOnly((v) => !v)}
+            title="Show everyone who clicked their invite link, with delivered-vs-clicked timing"
+            className={`inline-flex items-center gap-1.5 text-xs font-semibold border rounded-lg px-3 py-2 transition-colors ${clickedOnly ? "border-violet-300 bg-violet-50 text-violet-700" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+          >
+            <Eye className="w-3.5 h-3.5" /> Clicked
+          </button>
         </div>
 
+        {/* Engagement report: delivered vs clicked, shown when Clicked is on */}
+        {clickedOnly && (
+          <div className="px-4 py-3 border-b border-violet-100 bg-violet-50/40 flex flex-wrap items-center gap-x-6 gap-y-2">
+            <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-violet-700">
+              <Eye className="w-3.5 h-3.5" /> Engagement
+            </div>
+            <EngStat label="Delivered" value={everSent.length.toString()} />
+            <EngStat label="Clicked" value={clickedPeople.length.toString()} accent="#7C3AED" />
+            <EngStat label="Click rate" value={`${clickRate}%`} accent="#7C3AED" />
+            <EngStat label="Median time to click" value={medianLabel(clickLatencies)} />
+            <span className="text-[11px] text-slate-400 ml-auto hidden sm:inline">
+              Delivered = when the invite was sent. Time to click is measured from that.
+            </span>
+          </div>
+        )}
+
         {/* Active-filter hint so it's obvious what the list is showing */}
-        {(activeCard || sourceFilter !== "all" || modeFilter !== "all" || search) && (
+        {(activeCard || sourceFilter !== "all" || modeFilter !== "all" || clickedOnly || search) && (
           <div className="px-4 py-2 bg-slate-50 border-b border-slate-100 text-[11px] text-slate-500 flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-slate-600">Showing:</span>
             {activeCard && <Pill>{activeCard.label} · {activeCard.sub}</Pill>}
             {sourceFilter !== "all" && <Pill>{sourceFilter === "invited" ? "Invited by us" : "Signed up themselves"}</Pill>}
             {modeFilter !== "all" && <Pill>{modeFilter === "virtual" ? "Virtual" : "In-person"}</Pill>}
+            {clickedOnly && <Pill>Clicked their link</Pill>}
             {search && <Pill>“{search}”</Pill>}
-            <button onClick={() => { setCardFilter("all"); setSourceFilter("all"); setModeFilter("all"); setSearch(""); }} className="ml-auto font-semibold text-slate-500 hover:text-slate-800">Clear all</button>
+            <button onClick={() => { setCardFilter("all"); setSourceFilter("all"); setModeFilter("all"); setClickedOnly(false); setSearch(""); }} className="ml-auto font-semibold text-slate-500 hover:text-slate-800">Clear all</button>
           </div>
         )}
 
@@ -192,6 +243,13 @@ export default function AttendeesView({
                       <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded text-slate-500 bg-slate-100">{ATTENDEE_SOURCE_LABELS[source]}</span>
                     </div>
                     <div className="text-xs text-slate-500 truncate">{a.email}{a.affiliation && ` · ${a.affiliation}`}</div>
+                    {clickedOnly && a.viewedAt && (
+                      <div className="mt-0.5 text-[11px] text-violet-700 truncate">
+                        {deliveredOf(a)
+                          ? <>Delivered {shortDate(deliveredOf(a))} · clicked {fmtElapsed(deliveredOf(a), a.viewedAt)} later · {new Date(a.viewedAt).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</>
+                          : <>Clicked {new Date(a.viewedAt).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</>}
+                      </div>
+                    )}
                   </div>
                   {a.attendanceMode && (
                     <span className="text-[11px] text-slate-500 hidden sm:inline-flex items-center gap-1">
@@ -228,6 +286,16 @@ function StatCard({ label, sub, value, accent, big, active, onClick }: { label: 
 
 function Pill({ children }: { children: React.ReactNode }) {
   return <span className="px-2 py-0.5 rounded-full bg-white border border-slate-200 font-semibold text-slate-600">{children}</span>;
+}
+
+// Compact inline stat for the engagement band (label over value, no card).
+function EngStat({ label, value, accent }: { label: string; value: string; accent?: string }) {
+  return (
+    <div className="leading-tight">
+      <div className="text-[10px] font-bold tracking-wider uppercase text-slate-400">{label}</div>
+      <div className="text-lg font-extrabold" style={{ color: accent || "#0f172a" }}>{value}</div>
+    </div>
+  );
 }
 
 function Segmented({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: [string, string][] }) {

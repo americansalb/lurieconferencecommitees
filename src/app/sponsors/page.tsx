@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback, useRef } from "react";
 import {
   Award, Trash2, RefreshCw, Search, Filter, ExternalLink, Mail, Building2, Copy, Plus,
-  Clock, Pause, Play, X, SlidersHorizontal, Loader2, BadgeCheck, Send, FileText, Combine, Eye,
+  Clock, Pause, Play, X, SlidersHorizontal, Loader2, BadgeCheck, Send, FileText, Combine, Eye, Shuffle,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
@@ -14,6 +14,7 @@ import { SPONSOR_STATUS_LABELS, TIERS } from "@/lib/sponsors";
 import { PROSPECT_TARGETS_TSV, FOOD_PROSPECT_TARGETS_TSV } from "@/lib/prospect-targets";
 import InviteSponsorComposer from "./InviteSponsorComposer";
 import QueueSettingsModal from "@/components/email/QueueSettingsModal";
+import { fmtElapsed, medianLabel } from "@/lib/engagement";
 
 type Sponsor = {
   id: string;
@@ -42,32 +43,6 @@ type Sponsor = {
   lastSentAt: string | null;
   clickedAt: string | null;
 };
-
-// Short, human "2h", "3d", "<1m" gap between two ISO timestamps.
-function fmtElapsed(fromIso: string | null, toIso: string | null): string | null {
-  if (!fromIso || !toIso) return null;
-  const ms = new Date(toIso).getTime() - new Date(fromIso).getTime();
-  if (!Number.isFinite(ms) || ms < 0) return null;
-  const mins = Math.round(ms / 60000);
-  if (mins < 1) return "<1m";
-  if (mins < 60) return `${mins}m`;
-  const hrs = Math.round(mins / 60);
-  if (hrs < 24) return `${hrs}h`;
-  const days = Math.round(hrs / 24);
-  return `${days}d`;
-}
-
-function medianLabel(values: number[]): string {
-  if (!values.length) return "—";
-  const sorted = [...values].sort((a, b) => a - b);
-  const mid = Math.floor(sorted.length / 2);
-  const ms = sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
-  const mins = Math.round(ms / 60000);
-  if (mins < 60) return `${mins}m`;
-  const hrs = mins / 60;
-  if (hrs < 24) return `${hrs.toFixed(hrs < 10 ? 1 : 0)}h`;
-  return `${(hrs / 24).toFixed(1)}d`;
-}
 
 // The board: every sponsor lives in exactly one of these five buckets.
 const PIPELINE_TABS: { key: string; label: string; statuses: string[] }[] = [
@@ -151,6 +126,21 @@ export default function SponsorsAdminPage() {
       const res = await fetch("/api/sponsors/unqueue", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
       const j = await res.json().catch(() => ({}));
       setActionNote(res.ok ? `${j.unqueued || 0} invite${j.unqueued === 1 ? "" : "s"} taken off the queue. Send them individually below.` : `Could not unqueue. ${j.error || ""}`);
+    } finally {
+      setFlushing(false);
+      load();
+      setTimeout(() => setActionNote(null), 10000);
+    }
+  }
+
+  // Randomize the order of the queued sponsor invites without changing the
+  // schedule: same send times, different recipients in each slot.
+  async function shuffleQueue() {
+    setFlushing(true);
+    try {
+      const res = await fetch("/api/admin/email-queue", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "shuffle", recipientType: "sponsor" }) });
+      const j = await res.json().catch(() => ({}));
+      setActionNote(res.ok ? `Queue shuffled (${j.shuffled || 0} invite${j.shuffled === 1 ? "" : "s"} reordered). Same schedule, new order.` : `Could not shuffle. ${j.error || ""}`);
     } finally {
       setFlushing(false);
       load();
@@ -594,6 +584,9 @@ export default function SponsorsAdminPage() {
                     </button>
                     <button onClick={togglePause} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50">
                       {queue?.paused ? <><Play className="w-3.5 h-3.5" /> Resume</> : <><Pause className="w-3.5 h-3.5" /> Pause</>}
+                    </button>
+                    <button onClick={shuffleQueue} disabled={flushing} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 disabled:opacity-50" title="Randomize the order of the queued invites. Same schedule, new order.">
+                      <Shuffle className="w-3.5 h-3.5" /> Shuffle
                     </button>
                     <button onClick={unqueueAll} disabled={flushing} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 hover:bg-rose-100 disabled:opacity-50" title="Cancel the background queue and send these manually, one or two at a time.">
                       {flushing ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />} Take off queue
