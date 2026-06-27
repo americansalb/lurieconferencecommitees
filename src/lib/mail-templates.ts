@@ -835,7 +835,7 @@ export function sponsorLetterEmail({
         </tr>
       </table>
 
-      ${p(`Americans Against Language Barriers, which presents the conference together with Lurie Children&rsquo;s, has trained roughly three thousand medical interpreters nationwide, and your support may be tax-deductible. To learn more or to confirm, the links below will take you there, or simply reply, and it reaches us directly at <a href="mailto:kevin@aalb.org" style="color:${LINK};text-decoration:none;">kevin@aalb.org</a>.`, 22)}
+      ${p(`Americans Against Language Barriers has trained roughly three thousand medical interpreters nationwide, and Lurie Children&rsquo;s, one of the nation&rsquo;s leading children&rsquo;s hospitals, cares for families across Chicago in dozens of languages every day. Together we present this conference, and your support may be tax-deductible. To learn more or to confirm, the links below will take you there, or simply reply, and it reaches us directly at <a href="mailto:kevin@aalb.org" style="color:${LINK};text-decoration:none;">kevin@aalb.org</a>.`, 22)}
 
       ${discountBlock}
 
@@ -929,15 +929,15 @@ export function sponsorFoodLetterEmail({
     <h1 style="font-size:22px;font-weight:700;margin:0 0 14px 0;letter-spacing:-0.01em;">Dear ${escapeHtml(greeting)},</h1>
 
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
-      This August, Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers are co-hosting the 2nd Joint Conference on language access in American healthcare, two days devoted to a single idea: that no one should go unheard because of the language they speak.
+      This August, Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers are co-hosting the 2nd Joint Conference on language access in American healthcare, two days devoted to a single idea: that no one should go unheard because of the language they speak. Lurie Children&rsquo;s is one of the nation&rsquo;s leading children&rsquo;s hospitals, caring for families across Chicago in dozens of languages, and Americans Against Language Barriers has trained roughly three thousand medical interpreters nationwide so families can be understood when it matters most.
     </p>
 
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
-      We made a deliberate choice this year. Every meal at the conference will be <strong>fully plant-based</strong>. It would ring hollow to spend two days insisting that no one should go unheard, and then serve animals who cannot speak for themselves at all, who face the most absolute language barrier of any of us. Asking a children&rsquo;s hospital to put on an entirely plant-based event took some convincing, and we are proud of where we landed: <strong>we will not serve meat.</strong>
+      This will be our <strong>third meat-free conference in a row</strong>, and we intend to keep that promise: every meal will be <strong>fully plant-based</strong>, with no meat served. It would ring hollow to spend two days insisting that no one should go unheard, and then serve animals who cannot speak for themselves at all, who face the most absolute language barrier of any of us. Bringing a major children&rsquo;s hospital on board for an entirely plant-based event means a great deal to us.
     </p>
 
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 16px 0;">
-      What we would love is for that food to come from a Chicago kitchen that does plant-based cooking with real care, which is exactly why we are writing to <strong>${escapeHtml(companyName)}</strong>.
+      A fully meat-free conference of this size is only possible with Chicago kitchens like yours willing to help feed it, which is exactly why we are writing to <strong>${escapeHtml(companyName)}</strong>. We would love for the food to come from people who do plant-based cooking with real care.
     </p>
 
     ${notePara}
