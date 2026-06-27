@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import {
   Award, Trash2, RefreshCw, Search, Filter, ExternalLink, Mail, Building2, Copy, Plus,
   Clock, Pause, Play, Zap, SlidersHorizontal, Loader2, BadgeCheck, Send,
@@ -49,6 +49,12 @@ const PIPELINE_TABS: { key: string; label: string; statuses: string[] }[] = [
   { key: "pending_invite", label: "Pending invite", statuses: ["prospect", "queued"] },
 ];
 
+function fmtCountdown(secs: number) {
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  return m > 0 ? `${m}m ${s}s` : `${s}s`;
+}
+
 export default function SponsorsAdminPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -69,6 +75,13 @@ export default function SponsorsAdminPage() {
   const [sendingInviteId, setSendingInviteId] = useState<string | null>(null);
   const [loadingTargets, setLoadingTargets] = useState(false);
   const [actionNote, setActionNote] = useState<string | null>(null);
+  // Auto-send: drip the pending invites out one at a time at random intervals.
+  const [autoSend, setAutoSend] = useState(false);
+  const [autoNextAt, setAutoNextAt] = useState<number | null>(null);
+  const [, setNowTick] = useState(0);
+  const autoOnRef = useRef(false);
+  const autoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sponsorsRef = useRef<Sponsor[]>([]);
 
   const role = (session?.user as { role?: string })?.role;
   const isAdmin = role === "admin" || role === "developer";
@@ -209,7 +222,8 @@ export default function SponsorsAdminPage() {
   }
 
   // Per-org send: fire the invitation to one prospect now and mark them invited.
-  async function sendInvite(id: string) {
+  // Returns whether it actually sent (the auto-drip uses this to stop on error).
+  async function sendInvite(id: string): Promise<boolean> {
     const s = sponsors.find((x) => x.id === id);
     setSendingInviteId(id);
     setActionNote(null);
@@ -217,12 +231,13 @@ export default function SponsorsAdminPage() {
       const res = await fetch(`/api/sponsors/${id}/send-invite`, { method: "POST" });
       const j = await res.json().catch(() => ({}));
       const who = s?.companyName || "Sponsor";
-      setActionNote(
-        res.ok && j.ok
-          ? `${who}: invitation sent.`
-          : `${who}: could not send. ${j.error || "Unknown error."}`
-      );
+      const ok = res.ok && j.ok;
+      setActionNote(ok ? `${who}: invitation sent.` : `${who}: could not send. ${j.error || "Unknown error."}`);
       await load();
+      return ok;
+    } catch {
+      setActionNote("Network error sending the invite.");
+      return false;
     } finally {
       setSendingInviteId(null);
       setTimeout(() => setActionNote(null), 8000);
@@ -252,6 +267,50 @@ export default function SponsorsAdminPage() {
     }
   }
 
+  // Keep a ref to the latest sponsors so the drip loop always sees fresh data.
+  useEffect(() => { sponsorsRef.current = sponsors; }, [sponsors]);
+  // Tick once a second so the countdown re-renders while auto-send is on.
+  useEffect(() => {
+    if (!autoSend) return;
+    const id = setInterval(() => setNowTick((t) => t + 1), 1000);
+    return () => clearInterval(id);
+  }, [autoSend]);
+  useEffect(() => () => { if (autoTimerRef.current) clearTimeout(autoTimerRef.current); }, []);
+
+  function pendingInvites() {
+    return sponsorsRef.current.filter((s) => s.status === "prospect");
+  }
+  function scheduleAuto() {
+    // Truly random gap, 61 to 499 seconds, so nothing goes out on a fixed beat.
+    const delayMs = Math.floor(61000 + Math.random() * (499000 - 61000));
+    setAutoNextAt(Date.now() + delayMs);
+    autoTimerRef.current = setTimeout(async () => {
+      if (!autoOnRef.current) return;
+      const next = pendingInvites()[0];
+      if (!next) { stopAuto("Auto-send finished, no pending invites left."); return; }
+      const ok = await sendInvite(next.id);
+      if (!ok) { stopAuto("Auto-send stopped, that invite did not send."); return; }
+      if (autoOnRef.current) scheduleAuto();
+    }, delayMs);
+  }
+  function startAuto() {
+    if (pendingInvites().length === 0) {
+      setActionNote("No pending invites to send.");
+      setTimeout(() => setActionNote(null), 5000);
+      return;
+    }
+    autoOnRef.current = true;
+    setAutoSend(true);
+    scheduleAuto();
+  }
+  function stopAuto(note?: string) {
+    autoOnRef.current = false;
+    setAutoSend(false);
+    setAutoNextAt(null);
+    if (autoTimerRef.current) { clearTimeout(autoTimerRef.current); autoTimerRef.current = null; }
+    if (note) { setActionNote(note); setTimeout(() => setActionNote(null), 6000); }
+  }
+
   if (status !== "authenticated") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -276,6 +335,7 @@ export default function SponsorsAdminPage() {
   const queuedCount = sponsors.filter((s) => s.status === "queued").length;
   // Paid but the confirmation email hasn't gone out yet: the ones to chase.
   const confirmationPending = sponsors.filter((s) => s.status === "paid").length;
+  const secsLeft = autoSend && autoNextAt ? Math.max(0, Math.round((autoNextAt - Date.now()) / 1000)) : null;
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">
@@ -394,6 +454,32 @@ export default function SponsorsAdminPage() {
                 </button>
               )}
             </div>
+
+            {filter === "pending_invite" && (
+              <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5">
+                <button
+                  type="button"
+                  onClick={() => (autoSend ? stopAuto() : startAuto())}
+                  role="switch"
+                  aria-checked={autoSend}
+                  title="Drip the pending invites out automatically, one at a time, at random intervals"
+                  className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${autoSend ? "bg-teal-600" : "bg-slate-300"}`}
+                >
+                  <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${autoSend ? "translate-x-[22px]" : "translate-x-0.5"}`} />
+                </button>
+                <div className="min-w-0">
+                  <div className="text-sm font-bold text-slate-800">
+                    Auto-send invites
+                    <span className="font-medium text-slate-500">
+                      {autoSend ? (secsLeft != null ? ` · ON, next in ${fmtCountdown(secsLeft)}` : " · sending…") : " · off"}
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-slate-400">
+                    Sends the next pending invite every 61 to 499 seconds, at random, so they never go out in a burst. Runs while this page stays open.
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
               <div className="p-4 border-b border-slate-100 flex items-center gap-2 flex-wrap">
