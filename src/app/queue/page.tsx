@@ -217,7 +217,9 @@ export default function EmailQueuePage() {
               {([["all", "All"], ["sponsor", "Sponsors"], ["attendee", "Attendees"], ["test", "Test"]] as const).map(([k, label]) => {
                 const count = k === "all" ? pending.length : (typeCounts[k] || 0);
                 const active = typeFilter === k;
-                if (k !== "all" && count === 0) return null;
+                // Always show Sponsors and Attendees (even at 0) so it's clear
+                // when a type simply has nothing pending; only hide Test at 0.
+                if (k === "test" && count === 0) return null;
                 return (
                   <button key={k} onClick={() => setTypeFilter(k)} className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold border transition-colors ${active ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"}`}>
                     {label}
