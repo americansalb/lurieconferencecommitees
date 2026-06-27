@@ -117,21 +117,23 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, bursting: items.length, minutes, paused: await isPaused() });
   }
 
-  const force = body?.force === true;
   // Specific entries to send right now (the "send this one" action), regardless
-  // of their scheduled time.
+  // of their scheduled time. This is the only manual push left: invites should
+  // always go out one or two at a time, never as a bulk blast. The old
+  // { force: true } "send everything now" path has been removed on purpose.
   const ids = Array.isArray(body?.ids)
     ? (body.ids as unknown[]).filter((x): x is string => typeof x === "string")
     : null;
-  const limit = ids && ids.length
-    ? Math.min(500, ids.length)
-    : Math.min(200, Math.max(1, parseInt(body?.limit, 10) || 100));
+  if (!ids || !ids.length) {
+    return NextResponse.json(
+      { error: "Pass specific ids to send. Bulk 'send everything now' is disabled; invites go out paced, a couple at a time." },
+      { status: 400 },
+    );
+  }
+  // Hard ceiling so even a hand-crafted request can only nudge a couple out.
+  const limit = Math.min(5, ids.length);
 
-  const where = ids && ids.length
-    ? { status: "pending", id: { in: ids } }
-    : force
-    ? { status: "pending" }
-    : { status: "pending", scheduledFor: { lte: new Date() } };
+  const where = { status: "pending", id: { in: ids } };
 
   const due = await prisma.emailQueue.findMany({
     where,
@@ -179,5 +181,5 @@ export async function POST(req: Request) {
     }
   }
 
-  return NextResponse.json({ processed: due.length, sent, failed, forced: force });
+  return NextResponse.json({ processed: due.length, sent, failed });
 }

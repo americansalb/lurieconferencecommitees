@@ -58,8 +58,6 @@ export default function AttendeesPage() {
   const [attendees, setAttendees] = useState<Attendee[]>([]);
   const [queueStatus, setQueueStatus] = useState<QueueStatus | null>(null);
   const [loading, setLoading] = useState(true);
-  const [flushing, setFlushing] = useState(false);
-  const [flushResult, setFlushResult] = useState<string | null>(null);
   // Attendees view: detail drawer + broadcast composer + portal-link sends.
   const [detailId, setDetailId] = useState<string | null>(null);
   const [composerIds, setComposerIds] = useState<string[] | null>(null);
@@ -232,37 +230,6 @@ export default function AttendeesPage() {
     }
   }
 
-  function flushQueueNow() {
-    setConfirmDialog({
-      title: "Send the whole queue now?",
-      message: "Every currently-queued invite goes out right away, ignoring the paced schedule. Use this only for small batches; large bursts hurt domain reputation.",
-      confirmLabel: "Send queue now",
-      onConfirm: () => { setConfirmDialog(null); void doFlushQueueNow(); },
-    });
-  }
-
-  async function doFlushQueueNow() {
-    setFlushing(true);
-    setFlushResult(null);
-    try {
-      const res = await fetch("/api/admin/email-queue", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ force: true }),
-      });
-      const json = await res.json();
-      if (res.ok) {
-        setFlushResult(`Sent ${json.sent}, failed ${json.failed} of ${json.processed} processed.`);
-      } else {
-        setFlushResult(json.error || "Flush failed.");
-      }
-      await load();
-    } finally {
-      setFlushing(false);
-      setTimeout(() => setFlushResult(null), 6000);
-    }
-  }
-
   async function togglePause() {
     if (!queueStatus) return;
     await fetch("/api/admin/email-queue", {
@@ -374,17 +341,6 @@ export default function AttendeesPage() {
                     >
                       <SlidersHorizontal className="w-3 h-3" /> Adjust
                     </button>
-                    {(queueStatus.counts.pending || 0) > 0 && (
-                      <button
-                        onClick={flushQueueNow}
-                        disabled={flushing}
-                        className="text-xs font-bold px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5 bg-teal-50 text-teal-700 border border-teal-200 hover:bg-teal-100 disabled:opacity-50"
-                        title="Send all currently queued invites immediately"
-                      >
-                        {flushing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Rocket className="w-3 h-3" />}
-                        Send queue now
-                      </button>
-                    )}
                     <button
                       onClick={togglePause}
                       className={`text-xs font-bold px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5 ${
@@ -397,9 +353,6 @@ export default function AttendeesPage() {
                     </button>
                   </div>
                 </div>
-                {flushResult && (
-                  <div className="mt-2 text-xs font-semibold text-teal-700">{flushResult}</div>
-                )}
                 <div className="mt-3 text-[11px] text-slate-400">
                   Pacing: max {queueStatus.policy.maxPerHour}/hr, {queueStatus.policy.maxPerDay}/day ·
                   {" "}{queueStatus.policy.minGapSeconds}–{queueStatus.policy.maxGapSeconds}s between sends ·

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback, useRef } from "react";
 import {
   Award, Trash2, RefreshCw, Search, Filter, ExternalLink, Mail, Building2, Copy, Plus,
-  Clock, Pause, Play, Zap, SlidersHorizontal, Loader2, BadgeCheck, Send, FileText, Combine, Eye,
+  Clock, Pause, Play, X, SlidersHorizontal, Loader2, BadgeCheck, Send, FileText, Combine, Eye,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
@@ -38,8 +38,36 @@ type Sponsor = {
   paidAt: string | null;
   applicationToken: string;
   createdAt: string;
+  invitedAt: string | null;
+  lastSentAt: string | null;
   clickedAt: string | null;
 };
+
+// Short, human "2h", "3d", "<1m" gap between two ISO timestamps.
+function fmtElapsed(fromIso: string | null, toIso: string | null): string | null {
+  if (!fromIso || !toIso) return null;
+  const ms = new Date(toIso).getTime() - new Date(fromIso).getTime();
+  if (!Number.isFinite(ms) || ms < 0) return null;
+  const mins = Math.round(ms / 60000);
+  if (mins < 1) return "<1m";
+  if (mins < 60) return `${mins}m`;
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return `${hrs}h`;
+  const days = Math.round(hrs / 24);
+  return `${days}d`;
+}
+
+function medianLabel(values: number[]): string {
+  if (!values.length) return "—";
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  const ms = sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+  const mins = Math.round(ms / 60000);
+  if (mins < 60) return `${mins}m`;
+  const hrs = mins / 60;
+  if (hrs < 24) return `${hrs.toFixed(hrs < 10 ? 1 : 0)}h`;
+  return `${(hrs / 24).toFixed(1)}d`;
+}
 
 // The board: every sponsor lives in exactly one of these five buckets.
 const PIPELINE_TABS: { key: string; label: string; statuses: string[] }[] = [
@@ -113,13 +141,20 @@ export default function SponsorsAdminPage() {
     }
   }, []);
 
-  async function sendNow() {
+  // Take everything back off the background queue: cancels the pending sends and
+  // flips those sponsors back to "prospect" so the per-row Send invite buttons
+  // return and you can send them one or two at a time again.
+  async function unqueueAll() {
+    if (!confirm("Take all queued invites off the background queue? Nothing already sent is affected. You'll send the rest manually, one at a time.")) return;
     setFlushing(true);
     try {
-      await fetch("/api/admin/email-queue", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ force: true }) });
+      const res = await fetch("/api/sponsors/unqueue", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
+      const j = await res.json().catch(() => ({}));
+      setActionNote(res.ok ? `${j.unqueued || 0} invite${j.unqueued === 1 ? "" : "s"} taken off the queue. Send them individually below.` : `Could not unqueue. ${j.error || ""}`);
     } finally {
       setFlushing(false);
       load();
+      setTimeout(() => setActionNote(null), 10000);
     }
   }
 
@@ -431,18 +466,41 @@ export default function SponsorsAdminPage() {
 
   const activeStatuses = (PIPELINE_TABS.find((t) => t.key === filter) || PIPELINE_TABS[PIPELINE_TABS.length - 1]).statuses;
   const filtered = sponsors.filter((s) => {
-    if (!activeStatuses.includes(s.status)) return false;
+    // The Clicked view is an engagement report, not a pipeline stage: it gathers
+    // every org that clicked, regardless of which bucket they're in now.
+    if (clickedOnly) {
+      if (!s.clickedAt) return false;
+    } else if (!activeStatuses.includes(s.status)) {
+      return false;
+    }
     if (tierFilter !== "all" && s.tier !== tierFilter) return false;
     if (foodFilter === "food" && s.tier !== "food") return false;
     if (foodFilter === "asl" && s.tier !== "asl") return false;
     if (foodFilter === "other" && (s.tier === "food" || s.tier === "asl")) return false;
-    if (clickedOnly && !s.clickedAt) return false;
     if (search) {
       const q = search.toLowerCase();
       if (![s.companyName, s.contactName, s.contactEmail, s.website].some((v) => v?.toLowerCase().includes(q))) return false;
     }
     return true;
   });
+  // Sort the clicked report by who clicked most recently.
+  if (clickedOnly) {
+    filtered.sort((a, b) => new Date(b.clickedAt || 0).getTime() - new Date(a.clickedAt || 0).getTime());
+  }
+
+  // Engagement: "delivered" is when the invite was sent (we have no SMTP delivery
+  // receipt), "clicked" is when they loaded their link. Time-to-click uses the
+  // first send time we have for each org.
+  const deliveredOf = (s: Sponsor) => s.invitedAt || s.lastSentAt;
+  const everSent = sponsors.filter((s) => deliveredOf(s));
+  const clickedSponsors = sponsors.filter((s) => s.clickedAt);
+  const clickLatencies = clickedSponsors
+    .map((s) => {
+      const d = deliveredOf(s);
+      return d && s.clickedAt ? new Date(s.clickedAt).getTime() - new Date(d).getTime() : NaN;
+    })
+    .filter((ms) => Number.isFinite(ms) && ms >= 0);
+  const clickRate = everSent.length ? Math.round((clickedSponsors.length / everSent.length) * 100) : 0;
 
   const totalDollars = sponsors.filter((s) => s.paid).reduce((sum, s) => sum + s.amountCents, 0) / 100;
   const pipelineDollars = sponsors.filter((s) => !s.paid && !s.donateFoodInstead && s.status !== "declined").reduce((sum, s) => sum + s.amountCents, 0) / 100;
@@ -500,7 +558,9 @@ export default function SponsorsAdminPage() {
               <Stat label="Paid" value={sponsors.filter((s) => s.paid).length.toString()} accent="#059669" />
               <Stat label="Paid $" value={`$${totalDollars.toLocaleString("en-US")}`} accent="#0E5566" />
               <Stat label="Pipeline $" value={`$${pipelineDollars.toLocaleString("en-US")}`} accent="#0066B3" />
-              <Stat label="Clicked link" value={sponsors.filter((s) => s.clickedAt).length.toString()} accent="#7C3AED" />
+              <button onClick={() => setClickedOnly(true)} className="text-left" title="See every org that clicked, with delivered-vs-clicked timing">
+                <Stat label="Clicked link" value={clickedSponsors.length.toString()} accent="#7C3AED" />
+              </button>
             </div>
 
             {confirmationPending > 0 && (
@@ -535,8 +595,8 @@ export default function SponsorsAdminPage() {
                     <button onClick={togglePause} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50">
                       {queue?.paused ? <><Play className="w-3.5 h-3.5" /> Resume</> : <><Pause className="w-3.5 h-3.5" /> Pause</>}
                     </button>
-                    <button onClick={sendNow} disabled={flushing} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-white bg-gradient-to-r from-[#0E5566] to-[#0066B3] disabled:opacity-50">
-                      {flushing ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />} Send now
+                    <button onClick={unqueueAll} disabled={flushing} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 hover:bg-rose-100 disabled:opacity-50" title="Cancel the background queue and send these manually, one or two at a time.">
+                      {flushing ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />} Take off queue
                     </button>
                   </div>
                 )}
@@ -658,6 +718,21 @@ export default function SponsorsAdminPage() {
                 </div>
               </div>
 
+              {clickedOnly && (
+                <div className="px-4 py-3 border-b border-violet-100 bg-violet-50/40 flex flex-wrap items-center gap-x-6 gap-y-2">
+                  <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-violet-700">
+                    <Eye className="w-3.5 h-3.5" /> Engagement
+                  </div>
+                  <EngStat label="Delivered" value={everSent.length.toString()} />
+                  <EngStat label="Clicked" value={clickedSponsors.length.toString()} accent="#7C3AED" />
+                  <EngStat label="Click rate" value={`${clickRate}%`} accent="#7C3AED" />
+                  <EngStat label="Median time to click" value={medianLabel(clickLatencies)} />
+                  <span className="text-[11px] text-slate-400 ml-auto hidden sm:inline">
+                    Delivered = when the invite was sent. Time to click is measured from that.
+                  </span>
+                </div>
+              )}
+
               {filtered.length === 0 ? (
                 <div className="p-10 text-center text-sm text-slate-400">
                   {filter === "pending_invite"
@@ -688,6 +763,13 @@ export default function SponsorsAdminPage() {
                               {s.contactName} &middot; <a className="hover:text-slate-700" href={`mailto:${s.contactEmail}`}>{s.contactEmail}</a>
                               {s.contactPhone && <> &middot; {s.contactPhone}</>}
                             </div>
+                            {clickedOnly && s.clickedAt && (
+                              <div className="mt-1 text-[11px] text-violet-700 truncate">
+                                {(s.invitedAt || s.lastSentAt)
+                                  ? <>Delivered {new Date(s.invitedAt || s.lastSentAt!).toLocaleDateString("en-US", { month: "short", day: "numeric" })} &middot; clicked {fmtElapsed(s.invitedAt || s.lastSentAt, s.clickedAt)} later &middot; {new Date(s.clickedAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</>
+                                  : <>Clicked {new Date(s.clickedAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</>}
+                              </div>
+                            )}
                           </div>
                           <div className="text-right shrink-0 hidden sm:block">
                             <div className="text-xs font-bold text-slate-900">
@@ -948,6 +1030,16 @@ function Stat({ label, value, accent }: { label: string; value: string; accent?:
     <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-sm">
       <div className="text-[10px] font-bold tracking-wider uppercase text-slate-400">{label}</div>
       <div className="text-2xl font-extrabold mt-1" style={{ color: accent || "#0f172a" }}>{value}</div>
+    </div>
+  );
+}
+
+// Compact inline stat for the engagement band (label over value, no card).
+function EngStat({ label, value, accent }: { label: string; value: string; accent?: string }) {
+  return (
+    <div className="leading-tight">
+      <div className="text-[10px] font-bold tracking-wider uppercase text-slate-400">{label}</div>
+      <div className="text-lg font-extrabold" style={{ color: accent || "#0f172a" }}>{value}</div>
     </div>
   );
 }
