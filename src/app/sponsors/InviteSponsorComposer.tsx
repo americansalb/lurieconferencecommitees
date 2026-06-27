@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { X, Loader2, Send, AlertCircle, Check, Sparkles, User, Users } from "lucide-react";
 import { TIERS } from "@/lib/sponsors";
+import { buildSponsorInviteRows } from "@/lib/imports";
 
 type BulkResult = { created: number; skipped: { email: string; reason: string }[]; parseErrors: string[] };
 
@@ -34,6 +35,14 @@ export default function InviteSponsorComposer({
   // Shared
   const [inviteMessage, setInviteMessage] = useState("");
   const [compExhibitor, setCompExhibitor] = useState(false);
+
+  // Live preview of the pasted list, using the same parser the server uses to
+  // queue, so the counts and per-row "custom vs default" badges match exactly.
+  const preview = useMemo(
+    () => (csv.trim() ? buildSponsorInviteRows(csv) : { rows: [], errors: [] }),
+    [csv],
+  );
+  const personalizedCount = preview.rows.filter((r) => r.note && r.note.trim()).length;
 
   async function send() {
     if (!companyName.trim() || !contactName.trim() || !contactEmail.trim()) {
@@ -148,7 +157,7 @@ export default function InviteSponsorComposer({
             ) : (
               <>
                 <div className="text-[13px] text-slate-500">
-                  Paste one prospect per line, <b className="text-slate-700">Company, Contact name, Email</b> (Phone and Website optional). A header row is fine. Invites are <b className="text-slate-700">queued and sent gradually</b> on the same paced schedule as attendee invites.
+                  Paste one prospect per line, <b className="text-slate-700">Company, Contact, Email</b> (Phone, Website, Note optional). Add a <b className="text-slate-700">Note</b> column to give each org its own line, it goes into their email and onto their invitation page, so a bulk send still reads as personal. Tip: paste straight from a spreadsheet so commas inside your notes stay safe. Invites are <b className="text-slate-700">queued and sent gradually</b> to protect the sending domain.
                 </div>
                 <CompToggle checked={compExhibitor} onChange={setCompExhibitor} />
                 {!compExhibitor && (
@@ -164,16 +173,80 @@ export default function InviteSponsorComposer({
                   <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Prospect list</span>
                   <textarea
                     value={csv} onChange={(e) => setCsv(e.target.value)} rows={8}
-                    placeholder={"Company, Contact name, Email, Phone, Website\nMaya Bridge Language Services, Jace Norton, mgmt@mayabridge.org\nAMN Language Services, Jennifer Lutz, jennifer.lutz@amnhealthcare.com"}
+                    placeholder={"Company, Contact, Email, Phone, Website, Note\nLanguageLine Solutions, Sara Kim, sara@example.com, , languageline.com, Loved having you exhibit before, we'd be honored to host you again.\nCyraCom, Dana Lee, dana@example.com, , cyracom.com, Your hospital-interpreting work is exactly what our clinicians need to see."}
                     className="mt-1 w-full px-3 py-2.5 text-[13px] font-mono border border-slate-200 rounded-lg outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10"
                   />
                 </label>
-                <MessageField value={inviteMessage} onChange={setInviteMessage} contactName="" />
+
+                {csv.trim() && (
+                  <div className="rounded-xl border border-slate-200 overflow-hidden">
+                    <div className="flex flex-wrap items-center gap-2 px-3 py-2 bg-slate-50 border-b border-slate-200 text-[12px]">
+                      <span className="font-bold text-slate-700">{preview.rows.length} ready</span>
+                      {personalizedCount > 0 && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-800 font-semibold">
+                          <Sparkles className="w-3 h-3" /> {personalizedCount} personalized
+                        </span>
+                      )}
+                      {preview.rows.length - personalizedCount > 0 && (
+                        <span className="text-slate-500">{preview.rows.length - personalizedCount} use the default note</span>
+                      )}
+                      {preview.errors.length > 0 && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-700 font-semibold">
+                          <AlertCircle className="w-3 h-3" /> {preview.errors.length} skipped
+                        </span>
+                      )}
+                    </div>
+                    {preview.rows.length > 0 && (
+                      <div className="max-h-44 overflow-y-auto divide-y divide-slate-100">
+                        {preview.rows.slice(0, 50).map((r, i) => {
+                          const hasNote = Boolean(r.note && r.note.trim());
+                          return (
+                            <div key={i} className="px-3 py-2 flex items-start gap-2">
+                              <div className="flex-1 min-w-0">
+                                <div className="text-[13px] font-semibold text-slate-800 truncate">
+                                  {r.companyName} <span className="font-normal text-slate-300">·</span> <span className="font-normal text-slate-500">{r.contactName}</span>
+                                </div>
+                                <div className="text-[11px] text-slate-400 truncate">{r.contactEmail}</div>
+                                {hasNote && (
+                                  <div className="mt-1 text-[11.5px] text-slate-600 italic line-clamp-2">&ldquo;{r.note!.trim()}&rdquo;</div>
+                                )}
+                              </div>
+                              {hasNote ? (
+                                <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-amber-700">
+                                  <Sparkles className="w-3 h-3" /> Custom
+                                </span>
+                              ) : (
+                                <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-slate-300">Default</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                        {preview.rows.length > 50 && (
+                          <div className="px-3 py-2 text-[11px] text-slate-400">&hellip;and {preview.rows.length - 50} more</div>
+                        )}
+                      </div>
+                    )}
+                    {preview.errors.length > 0 && (
+                      <div className="px-3 py-2 bg-rose-50/60 border-t border-rose-100 text-[11px] text-rose-600 space-y-0.5">
+                        {preview.errors.slice(0, 4).map((e, i) => <div key={i}>{e}</div>)}
+                        {preview.errors.length > 4 && <div>&hellip;and {preview.errors.length - 4} more</div>}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <MessageField
+                  value={inviteMessage}
+                  onChange={setInviteMessage}
+                  contactName=""
+                  label="Default note (optional)"
+                  hint="Used only for prospects without their own Note in the list above. A row's Note always wins."
+                />
                 {bulkError && <ResultBanner ok={false} message={bulkError} />}
                 <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
                   <button onClick={onClose} className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-900">Cancel</button>
-                  <button onClick={queueBulk} disabled={bulkSending} className="px-5 py-2.5 rounded-lg font-bold text-white shadow-sm disabled:opacity-50 inline-flex items-center gap-2 text-sm bg-gradient-to-r from-[#0E5566] to-[#0066B3]">
-                    {bulkSending ? <><Loader2 className="w-4 h-4 animate-spin" /> Queuing…</> : <><Users className="w-4 h-4" /> Queue invites</>}
+                  <button onClick={queueBulk} disabled={bulkSending || preview.rows.length === 0} className="px-5 py-2.5 rounded-lg font-bold text-white shadow-sm disabled:opacity-50 inline-flex items-center gap-2 text-sm bg-gradient-to-r from-[#0E5566] to-[#0066B3]">
+                    {bulkSending ? <><Loader2 className="w-4 h-4 animate-spin" /> Queuing…</> : <><Users className="w-4 h-4" /> {preview.rows.length ? `Queue ${preview.rows.length} invite${preview.rows.length === 1 ? "" : "s"}` : "Queue invites"}</>}
                   </button>
                 </div>
               </>
@@ -202,16 +275,22 @@ function ResultBanner({ ok, message }: { ok: boolean; message: string }) {
   );
 }
 
-function MessageField({ value, onChange, contactName }: { value: string; onChange: (v: string) => void; contactName: string }) {
+function MessageField({
+  value, onChange, contactName,
+  label = "Personal note (optional)",
+  hint = "Appears at the top of the invitation page in a highlighted callout.",
+}: {
+  value: string; onChange: (v: string) => void; contactName: string; label?: string; hint?: string;
+}) {
   return (
     <label className="block">
-      <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Personal note (optional)</span>
+      <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">{label}</span>
       <textarea
         value={value} onChange={(e) => onChange(e.target.value)} rows={3}
         placeholder={`Hi ${contactName.split(" ")[0] || "[name]"}, I wanted to personally reach out about sponsoring our conference because…`}
         className="mt-1 w-full px-3 py-2.5 text-sm border border-slate-200 rounded-lg outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10"
       />
-      <span className="text-[10px] text-slate-400 mt-1 block">Appears at the top of the invitation page in a highlighted callout.</span>
+      <span className="text-[10px] text-slate-400 mt-1 block">{hint}</span>
     </label>
   );
 }

@@ -211,6 +211,65 @@ export function buildRecords(type: ImportType, text: string): ParsedImport {
   return { type, records, errors };
 }
 
+export type SponsorInviteRow = {
+  companyName: string;
+  contactName: string;
+  contactEmail: string;
+  contactPhone?: string;
+  website?: string;
+  note?: string;
+};
+
+// Parse a pasted sponsor/exhibitor prospect list into rows. Maps columns by
+// header when present (Company / Contact / Email / Phone / Website / Note),
+// else falls back to that order. The optional Note column is the per-row
+// personal line, so a bulk paste can feel individually written rather than
+// blasted. Shared by the invite API (to queue) and the composer (live preview)
+// so the two never disagree about what will be sent.
+export function buildSponsorInviteRows(text: string): { rows: SponsorInviteRow[]; errors: string[] } {
+  const errors: string[] = [];
+  const out: SponsorInviteRow[] = [];
+  const all = parseTable(text);
+  if (!all.length) return { rows: out, errors };
+
+  const headerish = /email|company|organization|contact|note|message/i.test(all[0].join(" "));
+  const header = headerish ? all[0] : null;
+  const find = (re: RegExp, exclude: number[] = []) => {
+    if (!header) return -1;
+    for (let i = 0; i < header.length; i++) if (!exclude.includes(i) && re.test((header[i] || "").trim())) return i;
+    return -1;
+  };
+
+  let idx: { company: number; contact: number; email: number; phone: number; website: number; note: number };
+  if (header) {
+    const company = find(/company|organization|^org/i);
+    const email = find(/email/i);
+    const contact = find(/contact|first ?name|^name$|representative/i, [company, email]);
+    const note = find(/note|message|why|personal|pitch|hook/i, [company, email, contact]);
+    idx = { company, contact, email, phone: find(/phone/i), website: find(/website|url|^site/i), note };
+  } else {
+    idx = { company: 0, contact: 1, email: 2, phone: 3, website: 4, note: 5 };
+  }
+
+  const data = header ? all.slice(1) : all;
+  data.forEach((r, n) => {
+    const email = (r[idx.email] ?? "").trim().toLowerCase();
+    const company = (idx.company >= 0 ? (r[idx.company] ?? "") : "").trim();
+    const contact = (idx.contact >= 0 ? (r[idx.contact] ?? "") : "").trim();
+    if (!isEmail(email)) { errors.push(`Row ${n + 1}: "${r[idx.email] ?? ""}" is not a valid email, skipped.`); return; }
+    if (!company) { errors.push(`Row ${n + 1} (${email}): missing company, skipped.`); return; }
+    out.push({
+      companyName: company,
+      contactName: contact || company,
+      contactEmail: email,
+      contactPhone: (idx.phone >= 0 ? (r[idx.phone] ?? "").trim() : "") || undefined,
+      website: (idx.website >= 0 ? (r[idx.website] ?? "").trim() : "") || undefined,
+      note: (idx.note >= 0 ? (r[idx.note] ?? "").trim() : "") || undefined,
+    });
+  });
+  return { rows: out, errors };
+}
+
 // Best-effort parse of the varied timestamp formats in these exports
 // ("2026-03-09T15:37:48.000000Z", "2024-09-27 15:54:05"). Returns null on junk.
 export function parseTimestamp(raw: string | null | undefined): Date | null {

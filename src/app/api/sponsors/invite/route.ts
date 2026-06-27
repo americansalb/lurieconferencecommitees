@@ -7,7 +7,7 @@ import { newSponsorToken, tierById, sponsorFromHeader, sponsorReplyTo } from "@/
 import { sponsorInviteEmail } from "@/lib/mail-templates";
 import { appUrl } from "@/lib/presenters";
 import { getPolicy, planSendTimes } from "@/lib/email-queue";
-import { parseTable } from "@/lib/imports";
+import { buildSponsorInviteRows } from "@/lib/imports";
 
 function isEmail(s: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((s || "").trim());
@@ -130,10 +130,12 @@ async function bulkInvite(
   const suggested = compTable ? null : (body.tier ? tierById(body.tier) : null);
   const tierId = compTable ? "exhibitor" : (suggested ? suggested.id : "undecided");
   const amountCents = compTable ? 0 : (suggested ? suggested.amountCents : 0);
-  const inviteMessage = body.inviteMessage?.trim() || null;
-  const { rows, errors } = parseSponsorInviteCsv(body.csv || "");
+  // Shared note is the fallback; a row's own Note column overrides it so each
+  // invite can read as individually written.
+  const defaultNote = body.inviteMessage?.trim() || null;
+  const { rows, errors } = buildSponsorInviteRows(body.csv || "");
 
-  const created: { id: string; token: string; companyName: string; contactName: string; contactEmail: string }[] = [];
+  const created: { id: string; token: string; companyName: string; contactName: string; contactEmail: string; note: string | null }[] = [];
   const skipped: { email: string; reason: string }[] = [];
   const seen = new Set<string>();
 
@@ -142,17 +144,18 @@ async function bulkInvite(
     seen.add(r.contactEmail);
     const existing = await prisma.sponsor.findFirst({ where: { contactEmail: r.contactEmail, companyName: r.companyName } });
     if (existing) { skipped.push({ email: r.contactEmail, reason: "already a record" }); continue; }
+    const note = r.note?.trim() || defaultNote;
     const token = newSponsorToken();
     const sp = await prisma.sponsor.create({
       data: {
         companyName: r.companyName, contactName: r.contactName, contactEmail: r.contactEmail,
         contactPhone: r.contactPhone || null, website: r.website || null,
-        tier: tierId, amountCents, inviteMessage, invitedById,
+        tier: tierId, amountCents, inviteMessage: note, invitedById,
         applicationToken: token, status: "queued",
       },
     });
     await prisma.sponsorEvent.create({ data: { sponsorId: sp.id, type: "added_to_queue", actorEmail } });
-    created.push({ id: sp.id, token, companyName: r.companyName, contactName: r.contactName, contactEmail: r.contactEmail });
+    created.push({ id: sp.id, token, companyName: r.companyName, contactName: r.contactName, contactEmail: r.contactEmail, note });
   }
 
   if (created.length) {
@@ -166,7 +169,7 @@ async function bulkInvite(
         contactFirstName: c.contactName.split(" ")[0],
         companyName: c.companyName,
         suggestedTier: suggested ?? null,
-        inviteMessage,
+        inviteMessage: c.note,
         landingUrl,
         assetBase: appUrl(),
         compExhibitor: compTable,
@@ -184,50 +187,4 @@ async function bulkInvite(
   }
 
   return NextResponse.json({ mode: "bulk", created: created.length, skipped, parseErrors: errors });
-}
-
-type SponsorRow = { companyName: string; contactName: string; contactEmail: string; contactPhone?: string; website?: string };
-
-// Parse a pasted prospect list. Maps columns by header when present
-// (Company / Contact / Email / Phone / Website), else falls back to that order.
-function parseSponsorInviteCsv(text: string): { rows: SponsorRow[]; errors: string[] } {
-  const errors: string[] = [];
-  const out: SponsorRow[] = [];
-  const all = parseTable(text);
-  if (!all.length) return { rows: out, errors };
-
-  const headerish = /email|company|organization|contact/i.test(all[0].join(" "));
-  const header = headerish ? all[0] : null;
-  const find = (re: RegExp, exclude: number[] = []) => {
-    if (!header) return -1;
-    for (let i = 0; i < header.length; i++) if (!exclude.includes(i) && re.test((header[i] || "").trim())) return i;
-    return -1;
-  };
-
-  let idx: { company: number; contact: number; email: number; phone: number; website: number };
-  if (header) {
-    const company = find(/company|organization|^org/i);
-    const email = find(/email/i);
-    const contact = find(/contact|first ?name|^name$|representative/i, [company, email]);
-    idx = { company, contact, email, phone: find(/phone/i), website: find(/website|url|^site/i) };
-  } else {
-    idx = { company: 0, contact: 1, email: 2, phone: 3, website: 4 };
-  }
-
-  const data = header ? all.slice(1) : all;
-  data.forEach((r, n) => {
-    const email = (r[idx.email] ?? "").trim().toLowerCase();
-    const company = (idx.company >= 0 ? (r[idx.company] ?? "") : "").trim();
-    const contact = (idx.contact >= 0 ? (r[idx.contact] ?? "") : "").trim();
-    if (!isEmail(email)) { errors.push(`Row ${n + 1}: "${r[idx.email] ?? ""}" is not a valid email, skipped.`); return; }
-    if (!company) { errors.push(`Row ${n + 1} (${email}): missing company, skipped.`); return; }
-    out.push({
-      companyName: company,
-      contactName: contact || company,
-      contactEmail: email,
-      contactPhone: (idx.phone >= 0 ? (r[idx.phone] ?? "").trim() : "") || undefined,
-      website: (idx.website >= 0 ? (r[idx.website] ?? "").trim() : "") || undefined,
-    });
-  });
-  return { rows: out, errors };
 }
