@@ -51,13 +51,17 @@ The app serves `conference.aalb.org` as the public landing for everything confer
 DATABASE_URL=postgres://…
 NEXTAUTH_SECRET=<random 32-byte string>
 
-# Gmail / Google Workspace mailbox that sends invitations
-GMAIL_USER=contact@aalb.org
-GMAIL_APP_PASSWORD=<16-char app password>
+# Email is sent through Resend (see src/lib/mail.ts). The MAIL_FROM domain
+# must be a verified domain in Resend — see docs/deliverability.md.
+RESEND_API_KEY=re_…
 MAIL_FROM=Lurie Children's & AALB Conference <contact@aalb.org>
-MAIL_REPLY_TO=contact@aalb.org      # optional
+MAIL_REPLY_TO=contact@aalb.org      # optional, default Reply-To
 MAIL_BCC=contact@aalb.org           # optional, BCCs every confirmation to that mailbox
+MAIL_POSTAL_ADDRESS=Americans Against Language Barriers, Chicago, IL   # CAN-SPAM footer
 ```
+
+Sponsor/attendee deliverability (SPF, DKIM, DMARC, one-click unsubscribe,
+postal address, pacing) is documented in [docs/deliverability.md](docs/deliverability.md).
 
 The app falls back to `RENDER_EXTERNAL_URL` (which Render injects automatically) for building presenter portal links, so you only need to set the URL vars below when you want to override, e.g. when `conference.aalb.org` goes live:
 
