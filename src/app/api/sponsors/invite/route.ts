@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
-import { newSponsorToken, tierById, sponsorFromHeader, sponsorReplyTo } from "@/lib/sponsors";
+import { newSponsorToken, tierById, sponsorFromHeader, sponsorReplyTo, isOfficialPartner } from "@/lib/sponsors";
 import { sponsorInviteEmail } from "@/lib/mail-templates";
 import { appUrl } from "@/lib/presenters";
 import { getPolicy, planSendTimes } from "@/lib/email-queue";
@@ -49,6 +49,7 @@ export async function POST(req: Request) {
   // A complimentary exhibitor table is the exhibitor tier at $0. Otherwise the
   // tier is optional: "undecided" means the invitee picks on the landing page.
   const compTable = Boolean(compExhibitor);
+  const partner = isOfficialPartner(companyName);
   const suggested = compTable ? null : (tier ? tierById(tier) : null);
   const tierId = compTable ? "exhibitor" : (suggested ? suggested.id : "undecided");
   const amountCents = compTable ? 0 : (suggested ? suggested.amountCents : 0);
@@ -96,12 +97,15 @@ export async function POST(req: Request) {
     landingUrl,
     assetBase: appUrl(),
     compExhibitor: compTable,
+    isPartner: partner,
   });
 
   try {
     await sendMail({
       to: sponsor.contactEmail,
-      subject: compTable
+      subject: partner
+        ? `Our official partner: an invitation to the 2026 Lurie Children's and AALB Conference`
+        : compTable
         ? `You're invited: a complimentary exhibitor table at the 2026 Lurie Children's and AALB Conference`
         : `Invitation to Sponsor the 2026 Lurie Children's and AALB Conference`,
       html,

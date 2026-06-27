@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
-import { tierById, sponsorFromHeader, sponsorReplyTo, isCompExhibitor } from "@/lib/sponsors";
+import { tierById, sponsorFromHeader, sponsorReplyTo, isCompExhibitor, isOfficialPartner } from "@/lib/sponsors";
 import { sponsorInviteEmail } from "@/lib/mail-templates";
 import { appUrl } from "@/lib/presenters";
 
@@ -19,6 +19,7 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
   if (!sponsor) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const comp = isCompExhibitor(sponsor);
+  const partner = isOfficialPartner(sponsor.companyName);
   const suggested = comp
     ? null
     : sponsor.tier && sponsor.tier !== "undecided"
@@ -33,12 +34,15 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
     landingUrl,
     assetBase: appUrl(),
     compExhibitor: comp,
+    isPartner: partner,
   });
 
   try {
     await sendMail({
       to: sponsor.contactEmail,
-      subject: comp
+      subject: partner
+        ? `Our official partner: an invitation to the 2026 Lurie Children's and AALB Conference`
+        : comp
         ? `You're invited: a complimentary exhibitor table at the 2026 Lurie Children's and AALB Conference`
         : `Invitation to Sponsor the 2026 Lurie Children's and AALB Conference`,
       html,

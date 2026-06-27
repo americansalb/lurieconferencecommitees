@@ -1,3 +1,5 @@
+import { SPEAKERS } from "@/components/landing/speakers-data";
+
 type InviteArgs = {
   name: string;
   url: string;
@@ -594,63 +596,61 @@ type SponsorInviteArgs = {
   landingUrl: string;
   assetBase?: string;
   compExhibitor?: boolean;
+  isPartner?: boolean;
 };
 
 export function sponsorInviteEmail({
-  contactFirstName, companyName, suggestedTier, inviteMessage, landingUrl, assetBase, compExhibitor = false,
+  contactFirstName, companyName, suggestedTier, inviteMessage, landingUrl, assetBase, compExhibitor = false, isPartner = false,
 }: SponsorInviteArgs) {
   const first = contactFirstName || "there";
-  const ctaLabel = compExhibitor ? "Claim your complimentary table" : "Browse levels and apply";
+  const site = assetBase || "https://conference.aalb.org";
+  const ctaLabel = compExhibitor ? "Claim your table" : "See sponsorship levels";
   const tierLine = compExhibitor
-    ? `Your exhibitor table is on us, there is nothing to pay. Just confirm a couple of details (who will staff your table and, if you&rsquo;d like, your logo) and you&rsquo;re all set.`
+    ? `Your exhibitor table is on us, there is nothing to pay. Just confirm a couple of details and you&rsquo;re all set.`
     : suggestedTier
-    ? `We thought the <strong>${escapeHtml(suggestedTier.name)}</strong> level (${escapeHtml(suggestedTier.amountLabel)}, ${suggestedTier.ticketsIncluded} ticket${suggestedTier.ticketsIncluded === 1 ? "" : "s"} included) might be a natural fit, but please choose whichever level works best for ${escapeHtml(companyName)}.`
-    : `On the invitation page you&rsquo;ll find every sponsorship level we offer, from Exhibitor Tables to Diamond, and you can choose whichever one is the right fit for ${escapeHtml(companyName)}.`;
+    ? `We thought the <strong>${escapeHtml(suggestedTier.name)}</strong> level (${escapeHtml(suggestedTier.amountLabel)}, ${suggestedTier.ticketsIncluded} ticket${suggestedTier.ticketsIncluded === 1 ? "" : "s"} included) might be a natural fit, but please choose whichever works best for ${escapeHtml(companyName)}.`
+    : "";
   const compCallout = compExhibitor
     ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:18px 0 0 0;"><tr><td style="background:#f7f3ea;border-left:3px solid ${GOLD};padding:16px 18px;border-radius:6px;">
         <div style="font-size:11px;letter-spacing:0.14em;font-weight:700;color:${GOLD};text-transform:uppercase;">Our gift to you</div>
         <div style="font-size:15px;line-height:1.6;color:${TEXT};margin-top:5px;">We&rsquo;d like to offer <strong>${escapeHtml(companyName)}</strong> a <strong>complimentary exhibitor table</strong>, at no charge. Claim it below and tell us who will staff it.</div>
       </td></tr></table>`
     : "";
+  const speakerCells = SPEAKERS.map((s) => `<td width="50%" style="vertical-align:top;padding:7px 10px 7px 0;">
+        <div style="border-left:2px solid ${GOLD};padding-left:11px;">
+          <div style="font-size:14px;font-weight:700;color:${TEXT};line-height:1.3;">${escapeHtml(s.name)}${s.credentials ? `<span style="color:${MUTED};font-weight:600;">, ${escapeHtml(s.credentials)}</span>` : ""}</div>
+          <div style="font-size:12.5px;font-weight:600;color:${TEAL};line-height:1.4;margin-top:2px;">${escapeHtml(s.title)}</div>
+          <div style="font-size:12.5px;color:${MUTED};line-height:1.4;">${escapeHtml(s.org)}</div>
+        </div>
+      </td>`);
+  let speakerRows = "";
+  for (let i = 0; i < speakerCells.length; i += 2) {
+    speakerRows += `<tr>${speakerCells[i]}${speakerCells[i + 1] || `<td width="50%"></td>`}</tr>`;
+  }
   return shell(`
     ${heroBanner()}
-    <h1 style="font-size:22px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">Hi ${escapeHtml(first)},</h1>
+    <h1 style="font-size:22px;font-weight:700;margin:0 0 14px 0;letter-spacing:-0.01em;">Hi ${escapeHtml(first)},</h1>
+    ${isPartner ? `<div style="display:inline-block;font-size:11px;letter-spacing:0.12em;font-weight:700;color:${TEAL};background:#e6eef0;border:1px solid #cfe0e4;border-radius:999px;padding:5px 13px;margin:0 0 14px 0;text-transform:uppercase;">Official AALB Partner</div><br>` : ""}
     ${inviteMessage
       ? `<p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">${escapeHtml(inviteMessage).replace(/\n/g, "<br>")}</p>`
-      : `<p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">We&rsquo;d love for <strong>${escapeHtml(companyName)}</strong> to join us as a sponsor or exhibitor at the 2nd Joint Conference of Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers.</p>`}
-    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
-      The conference takes place <strong>August 15 and 16, 2026</strong> in Chicago. This year&rsquo;s theme, <em>True Language Access: Yesterday, Today, and Tomorrow</em>, brings together healthcare professionals, medical interpreters, language service providers, advocates, and policymakers from across the country for two days of learning, networking, and dialogue on equitable healthcare communication.
+      : `<p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">We&rsquo;d love for <strong>${escapeHtml(companyName)}</strong> to join us as a sponsor or exhibitor at the 2nd Joint Conference of Lurie Children&rsquo;s and AALB.</p>`}
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 16px 0;">
+      The conference is <strong>August 15 and 16, 2026</strong> in Chicago. This year&rsquo;s theme is <em>True Language Access: Yesterday, Today, and Tomorrow</em>. You can see the full program, venue, and details at <a href="${site}" style="color:${BLUE};font-weight:600;text-decoration:none;">conference.aalb.org</a>.
     </p>
     ${compCallout}
 
+    ${sectionHeading("Featured Speakers")}
+    <p style="font-size:14px;line-height:1.6;color:${MUTED};margin:0 0 12px 0;">You&rsquo;d be joining a program that already features:</p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${speakerRows}</table>
+    <p style="font-size:13.5px;line-height:1.6;margin:14px 0 0 0;"><a href="${site}/#speakers" style="color:${BLUE};font-weight:600;text-decoration:none;">See the full lineup at conference.aalb.org &rarr;</a></p>
+
+    ${tierLine ? `<p style="font-size:14.5px;line-height:1.7;color:${TEXT};margin:20px 0 0 0;">${tierLine}</p>` : `<div style="height:8px;line-height:8px;">&nbsp;</div>`}
+
     ${button(landingUrl, ctaLabel)}
 
-    ${sectionHeading("Conference at a Glance")}
-    ${glanceCard(GLANCE_ROWS)}
-
-    ${sectionHeading("Why Sponsor?")}
-    <p style="font-size:14.5px;line-height:1.6;color:${TEXT};margin:0 0 6px 0;">Sponsoring the Lurie Children&rsquo;s &amp; AALB Conference is a meaningful opportunity to:</p>
-    ${bulletList([
-      "Gain visibility with a highly engaged audience of healthcare and language access professionals",
-      "Demonstrate your organization&rsquo;s commitment to health equity and language access",
-      "Connect directly with decision-makers, interpreters, educators, and advocates",
-      "Showcase your products, services, or programs as an exhibitor",
-      "Align your brand with two nationally recognized institutions: Lurie Children&rsquo;s and Americans Against Language Barriers",
-    ])}
-
-    ${sectionHeading("About Our Hosts")}
-    <p style="font-size:14.5px;line-height:1.7;color:${TEXT};margin:0 0 12px 0;">
-      <strong>Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago</strong> is one of the nation&rsquo;s top-ranked pediatric healthcare institutions, with a nationally recognized Language Services Department committed to compassionate, inclusive care.
+    <p style="font-size:14.5px;line-height:1.7;color:${TEXT};margin:16px 0 0 0;">
+      If you have any questions or want to talk it through, just reply to this email and it reaches me directly. We&rsquo;d be glad to find a fit that works for ${escapeHtml(companyName)}.
     </p>
-    <p style="font-size:14.5px;line-height:1.7;color:${TEXT};margin:0 0 4px 0;">
-      <strong>Americans Against Language Barriers (AALB)</strong> is an Illinois-based 501(c)(3) nonprofit dedicated to improving the quality of life and healthcare outcomes of patients with limited English proficiency.
-    </p>
-
-    ${sectionHeading("Get Involved")}
-    <p style="font-size:14.5px;line-height:1.7;color:${TEXT};margin:0 0 4px 0;">
-      ${tierLine} Sponsorship opportunities are limited, so we encourage you to reach out at your earliest convenience.
-    </p>
-    ${button(landingUrl, ctaLabel)}
 
     ${signOff()}
 

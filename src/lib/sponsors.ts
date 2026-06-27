@@ -170,6 +170,14 @@ export function isCompExhibitor(s: { tier: string; amountCents: number; donateFo
   return s.tier === "exhibitor" && s.amountCents === 0 && !s.donateFoodInstead;
 }
 
+// Organizations that are already official AALB partners. Their invitation
+// acknowledges the partnership in the subject and body rather than pitching
+// them as if we have no relationship.
+const OFFICIAL_PARTNERS = new Set(["amn healthcare language services"]);
+export function isOfficialPartner(companyName: string): boolean {
+  return OFFICIAL_PARTNERS.has((companyName || "").trim().toLowerCase());
+}
+
 export const SPONSOR_FROM_NAME_DEFAULT = "Iris Lafitte, AALB Operations Manager";
 
 function extractAddress(s: string): string {
