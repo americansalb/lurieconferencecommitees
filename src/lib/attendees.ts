@@ -38,6 +38,7 @@ export function buildAttendeeInvite(opts: {
     learnMoreUrl: appUrl(),
     assetBase: appUrl(),
     dateLabel: new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
+    unsubscribeUrl: attendeeUnsubscribeUrl(opts.inviteToken),
   });
   // Alumni sends rotate through several subject lines (A/B), assigned by token
   // so the choice is stable across resends and measurable on the dashboard.
@@ -81,6 +82,23 @@ export function attendeeReplyTo(): string | undefined {
     process.env.MAIL_REPLY_TO?.trim() ||
     "contact@aalb.org"
   );
+}
+
+export function attendeeUnsubscribeUrl(token: string) {
+  return `${appUrl()}/api/attendees/unsubscribe/${token}`;
+}
+
+// RFC 8058 one-click unsubscribe headers for attendee mail, matching the
+// sponsor side. Gmail and Yahoo treat a working List-Unsubscribe (plus the
+// one-click POST) as a strong trust signal and increasingly require it for
+// bulk senders. Always paired with a visible unsubscribe link in the body.
+export function attendeeUnsubHeaders(token: string): Record<string, string> {
+  const url = attendeeUnsubscribeUrl(token);
+  const mailto = process.env.MAIL_REPLY_TO?.trim() || "contact@aalb.org";
+  return {
+    "List-Unsubscribe": `<${url}>, <mailto:${mailto}?subject=unsubscribe>`,
+    "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+  };
 }
 
 // Optional archive copy of each invite. We deliberately do NOT hard-code a

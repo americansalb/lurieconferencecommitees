@@ -21,7 +21,7 @@ export async function GET() {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const count = await prisma.attendee.count({
-    where: { paid: false, isTest: false, status: { in: RESENDABLE } },
+    where: { paid: false, isTest: false, unsubscribedAt: null, status: { in: RESENDABLE } },
   });
   return NextResponse.json({ count });
 }
@@ -34,7 +34,7 @@ export async function POST() {
   const adminEmail = session?.user?.email || null;
 
   const targets = await prisma.attendee.findMany({
-    where: { paid: false, isTest: false, status: { in: RESENDABLE } },
+    where: { paid: false, isTest: false, unsubscribedAt: null, status: { in: RESENDABLE } },
     orderBy: { invitedAt: "asc" },
   });
   if (!targets.length) return NextResponse.json({ queued: 0 });

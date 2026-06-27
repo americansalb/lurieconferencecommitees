@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { attendeeFromHeader, attendeeReplyTo, attendeeBcc, buildAttendeeInvite } from "@/lib/attendees";
+import { attendeeFromHeader, attendeeReplyTo, attendeeBcc, attendeeUnsubHeaders, buildAttendeeInvite } from "@/lib/attendees";
 import { ensureFirstNameCode } from "@/lib/discounts";
 import { sendMail } from "@/lib/mail";
 
@@ -15,6 +15,9 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
 
   const attendee = await prisma.attendee.findUnique({ where: { id: params.id } });
   if (!attendee) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (attendee.unsubscribedAt) {
+    return NextResponse.json({ ok: false, error: "This person has unsubscribed." }, { status: 409 });
+  }
 
   await ensureFirstNameCode(attendee.firstName, attendee.discountPercent, adminEmail).catch((e) => console.error("[attendees] ensure code failed", e));
 
@@ -34,6 +37,7 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
       from: attendeeFromHeader(),
       replyTo: attendeeReplyTo(),
       bcc: attendeeBcc(),
+      headers: attendeeUnsubHeaders(attendee.inviteToken),
     });
     await prisma.emailQueue.create({
       data: { batchId: "attendee-resend", recipientType: "attendee", recipientId: attendee.id, to: attendee.email, subject, html, scheduledFor: new Date(), status: "sent", sentAt: new Date() },

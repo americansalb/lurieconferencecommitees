@@ -1,6 +1,6 @@
 import { prisma } from "./db";
 import { sendMail } from "./mail";
-import { attendeeFromHeader, attendeeReplyTo, attendeeBcc } from "./attendees";
+import { attendeeFromHeader, attendeeReplyTo, attendeeBcc, attendeeUnsubHeaders } from "./attendees";
 import { sponsorFromHeader, sponsorLetterReplyTo, sponsorUnsubHeaders } from "./sponsors";
 
 // Default sending policy. Tunable via SystemSetting keys with the same names.
@@ -227,6 +227,16 @@ export async function runEmailQueue(): Promise<{ processed: number; sent: number
       }
       if (sp?.applicationToken) extraHeaders = sponsorUnsubHeaders(sp.applicationToken);
       if (sp?.additionalEmails?.length) extraCc = sp.additionalEmails;
+    } else if (item.recipientType === "attendee" && item.recipientId) {
+      const at = await prisma.attendee.findUnique({
+        where: { id: item.recipientId },
+        select: { inviteToken: true, unsubscribedAt: true },
+      });
+      if (at?.unsubscribedAt) {
+        await prisma.emailQueue.update({ where: { id: item.id }, data: { status: "skipped" } });
+        continue;
+      }
+      if (at?.inviteToken) extraHeaders = attendeeUnsubHeaders(at.inviteToken);
     }
 
     try {

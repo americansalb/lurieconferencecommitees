@@ -420,6 +420,10 @@ model Attendee {
   // skews the numbers.
   isTest               Boolean         @default(false)
 
+  // Set when the recipient uses one-click unsubscribe. Suppresses all further
+  // sends to this person and is honored before every send.
+  unsubscribedAt       DateTime?
+
   adminNotes           String?
   createdAt            DateTime        @default(now())
   updatedAt            DateTime?       @updatedAt

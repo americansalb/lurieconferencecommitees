@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { newAttendeeToken, parseAttendeeCsv, parseEmailList, nameFromEmail, attendeeFromHeader, attendeeReplyTo, attendeeBcc, buildAttendeeInvite } from "@/lib/attendees";
+import { newAttendeeToken, parseAttendeeCsv, parseEmailList, nameFromEmail, attendeeFromHeader, attendeeReplyTo, attendeeBcc, attendeeUnsubHeaders, buildAttendeeInvite } from "@/lib/attendees";
 import { pickAlumniSubject } from "@/lib/subject-variants";
 import { ensureFirstNameCode } from "@/lib/discounts";
 import { getPolicy, planSendTimes } from "@/lib/email-queue";
@@ -109,6 +109,7 @@ export async function POST(req: Request) {
         from: attendeeFromHeader(),
         replyTo: attendeeReplyTo(),
         bcc: attendeeBcc(),
+        headers: attendeeUnsubHeaders(token),
       });
       // Archive the exact email so it can be viewed later from the dashboard.
       await prisma.emailQueue.create({
@@ -177,7 +178,7 @@ export async function POST(req: Request) {
         inviteMessage: inviteMessage?.trim() || null, template,
       });
       try {
-        await sendMail({ to: email, subject, html, from: attendeeFromHeader(), replyTo: attendeeReplyTo(), bcc: attendeeBcc() });
+        await sendMail({ to: email, subject, html, from: attendeeFromHeader(), replyTo: attendeeReplyTo(), bcc: attendeeBcc(), headers: attendeeUnsubHeaders(att.inviteToken) });
         // Tagged recipientType "test" so it lands under the Test bucket in the
         // queue and analytics, never mixed into attendee numbers.
         await prisma.emailQueue.create({
