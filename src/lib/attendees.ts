@@ -39,7 +39,7 @@ export function buildAttendeeInvite(opts: {
     dateLabel: new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
   });
   const subject = template === "alumni"
-    ? `${opts.firstName}, you're invited to Chicago on August 15 to join AALB & Lurie Children's`
+    ? `${opts.firstName}, you're invited to Chicago on August 15 to join AALB & Lurie Children's for our 2026 Conference`
     : `${opts.firstName}, your invite to the 2026 Lurie Children's & AALB Conference`;
   return { subject, html, template };
 }
