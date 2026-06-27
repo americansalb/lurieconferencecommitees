@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback, useRef } from "react";
 import {
   Award, Trash2, RefreshCw, Search, Filter, ExternalLink, Mail, Building2, Copy, Plus,
-  Clock, Pause, Play, Zap, SlidersHorizontal, Loader2, BadgeCheck, Send, FileText, Combine,
+  Clock, Pause, Play, Zap, SlidersHorizontal, Loader2, BadgeCheck, Send, FileText, Combine, Eye,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
@@ -64,6 +64,7 @@ export default function SponsorsAdminPage() {
   const [filter, setFilter] = useState<string>("pending_invite");
   const [tierFilter, setTierFilter] = useState<string>("all");
   const [foodFilter, setFoodFilter] = useState<string>("all");
+  const [clickedOnly, setClickedOnly] = useState(false);
   const [search, setSearch] = useState("");
   const [showInvite, setShowInvite] = useState(false);
   const [showQueue, setShowQueue] = useState(false);
@@ -413,6 +414,7 @@ export default function SponsorsAdminPage() {
     if (foodFilter === "food" && s.tier !== "food") return false;
     if (foodFilter === "asl" && s.tier !== "asl") return false;
     if (foodFilter === "other" && (s.tier === "food" || s.tier === "asl")) return false;
+    if (clickedOnly && !s.clickedAt) return false;
     if (search) {
       const q = search.toLowerCase();
       if (![s.companyName, s.contactName, s.contactEmail, s.website].some((v) => v?.toLowerCase().includes(q))) return false;
@@ -616,6 +618,13 @@ export default function SponsorsAdminPage() {
                     <option value="asl">ASL sponsors</option>
                     <option value="other">Everyone else</option>
                   </select>
+                  <button
+                    onClick={() => setClickedOnly((v) => !v)}
+                    title="Show only sponsors who clicked the email link"
+                    className={`inline-flex items-center gap-1.5 text-sm font-semibold border rounded-lg px-3 py-2 transition-colors ${clickedOnly ? "border-violet-300 bg-violet-50 text-violet-700" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+                  >
+                    <Eye className="w-3.5 h-3.5" /> Clicked
+                  </button>
                 </div>
               </div>
 
