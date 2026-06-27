@@ -9,6 +9,19 @@ import {
 import { TIERS, fullBenefits, tierById, SponsorTier } from "@/lib/sponsors";
 
 const TEAL = "#0E5566";
+const GOLD = "#C9A14B";
+
+function money(cents: number) {
+  return `$${Math.round(cents / 100).toLocaleString("en-US")}`;
+}
+
+// The discounted price label for a tier, or null when the discount does not
+// apply (no discount, exhibitor table, or a no-charge tier). Mirrors the
+// checkout rule so the funnel previews exactly what Stripe will charge.
+function discountedLabel(tier: SponsorTier, pct: number): string | null {
+  if (!pct || tier.id === "exhibitor" || tier.amountCents <= 0) return null;
+  return money(Math.round((tier.amountCents * (100 - pct)) / 100));
+}
 
 type SponsorView = {
   companyName: string;
@@ -18,6 +31,7 @@ type SponsorView = {
   paid: boolean;
   donateFoodInstead: boolean;
   status: string;
+  discountPercent: number;
 };
 
 type Step = "choose" | "details" | "done";
@@ -32,6 +46,7 @@ export default function InvitedLanding({ token, sponsor }: { token: string; spon
   const [doneMode, setDoneMode] = useState<"food" | "paid">("paid");
 
   const firstName = sponsor.contactName.split(" ")[0];
+  const pct = sponsor.discountPercent || 0;
 
   async function pickTier(tier: SponsorTier) {
     setSelected(tier);
@@ -103,14 +118,31 @@ export default function InvitedLanding({ token, sponsor }: { token: string; spon
           </div>
         )}
 
+        {pct > 0 && !sponsor.paid && step !== "done" && (
+          <div className="mt-5 rounded-xl px-4 py-3 flex items-center gap-3 text-sm shadow-sm"
+            style={{ background: "#FBF4E2", border: `1px solid #EAD9AE` }}>
+            <span className="inline-flex items-center justify-center w-9 h-9 rounded-full shrink-0 text-[13px] font-extrabold"
+              style={{ background: GOLD, color: "#3C2E10" }}>
+              -{pct}%
+            </span>
+            <div className="leading-snug">
+              <div className="font-bold text-[#3C2E10]">Your {pct}% partner discount is applied.</div>
+              <div className="text-[12.5px] text-[#6b5a2e]">
+                Every sponsorship level below shows your discounted price (exhibitor tables excepted). It carries through to checkout.
+              </div>
+            </div>
+          </div>
+        )}
+
         {sponsor.paid ? (
           <PaidConfirmation companyName={sponsor.companyName} accent={selected?.accent || TEAL} />
         ) : step === "choose" ? (
-          <ChooseTier onPick={pickTier} />
+          <ChooseTier onPick={pickTier} pct={pct} />
         ) : step === "details" && selected ? (
           <Details
             tier={selected}
             companyName={sponsor.companyName}
+            pct={pct}
             donateFoodInstead={donateFoodInstead}
             setDonateFoodInstead={setDonateFoodInstead}
             busy={busy}
@@ -149,7 +181,7 @@ function Hero({ firstName, companyName, accent }: { firstName: string; companyNa
   );
 }
 
-function ChooseTier({ onPick }: { onPick: (t: SponsorTier) => void }) {
+function ChooseTier({ onPick, pct }: { onPick: (t: SponsorTier) => void; pct: number }) {
   const mainTiers = TIERS.filter((t) => ["silver", "gold", "diamond"].includes(t.id));
   const specialty = TIERS.filter((t) => ["food", "asl"].includes(t.id));
   const exhibitor = TIERS.find((t) => t.id === "exhibitor")!;
@@ -163,7 +195,7 @@ function ChooseTier({ onPick }: { onPick: (t: SponsorTier) => void }) {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
         {mainTiers.map((tier, i) => (
-          <TierCard key={tier.id} tier={tier} onPick={onPick} featured={i === 2} />
+          <TierCard key={tier.id} tier={tier} onPick={onPick} pct={pct} featured={i === 2} />
         ))}
       </div>
 
@@ -173,23 +205,25 @@ function ChooseTier({ onPick }: { onPick: (t: SponsorTier) => void }) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
         {specialty.map((tier) => (
-          <TierCard key={tier.id} tier={tier} onPick={onPick} />
+          <TierCard key={tier.id} tier={tier} onPick={onPick} pct={pct} />
         ))}
       </div>
-      <TierCard tier={exhibitor} onPick={onPick} compact />
+      <TierCard tier={exhibitor} onPick={onPick} pct={pct} compact />
     </div>
   );
 }
 
 function TierCard({
-  tier, onPick, featured, compact,
+  tier, onPick, pct, featured, compact,
 }: {
   tier: SponsorTier;
   onPick: (t: SponsorTier) => void;
+  pct: number;
   featured?: boolean;
   compact?: boolean;
 }) {
   const benefits = fullBenefits(tier.id).slice(0, compact ? 3 : 4);
+  const disc = discountedLabel(tier, pct);
   return (
     <button
       onClick={() => onPick(tier)}
@@ -206,9 +240,19 @@ function TierCard({
             <div className="text-[10px] font-bold tracking-widest uppercase" style={{ color: tier.accent }}>
               {tier.name}
             </div>
-            <div className="mt-1 text-2xl font-extrabold text-slate-900 tracking-tight">
-              {tier.amountLabel}
-            </div>
+            {disc ? (
+              <div className="mt-1">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-extrabold text-slate-900 tracking-tight">{disc}</span>
+                  <span className="text-sm text-slate-400 line-through">{tier.amountLabel}</span>
+                </div>
+                <div className="text-[10px] font-bold uppercase tracking-wide" style={{ color: GOLD }}>{pct}% off</div>
+              </div>
+            ) : (
+              <div className="mt-1 text-2xl font-extrabold text-slate-900 tracking-tight">
+                {tier.amountLabel}
+              </div>
+            )}
           </div>
           {tier.ticketsIncluded > 0 && (
             <span className="text-[10px] font-bold px-2 py-1 rounded-full whitespace-nowrap"
@@ -235,10 +279,11 @@ function TierCard({
 }
 
 function Details({
-  tier, companyName, donateFoodInstead, setDonateFoodInstead, busy, error, onChange, onAccept,
+  tier, companyName, pct, donateFoodInstead, setDonateFoodInstead, busy, error, onChange, onAccept,
 }: {
   tier: SponsorTier;
   companyName: string;
+  pct: number;
   donateFoodInstead: boolean;
   setDonateFoodInstead: (v: boolean) => void;
   busy: boolean;
@@ -248,9 +293,11 @@ function Details({
 }) {
   const benefits = fullBenefits(tier.id);
   const usesAlternative = tier.id === "food" && donateFoodInstead;
+  const disc = discountedLabel(tier, pct);
+  const payLabel = disc || tier.amountLabel;
   const ctaLabel = usesAlternative
     ? "Confirm food donation"
-    : `Accept and pay ${tier.amountLabel}`;
+    : `Accept and pay ${payLabel}`;
   const ctaIcon = usesAlternative ? <Heart className="w-4 h-4" /> : <CreditCard className="w-4 h-4" />;
 
   return (
@@ -265,9 +312,15 @@ function Details({
             {tier.name}
           </div>
           <div className="mt-1 flex items-baseline gap-3 flex-wrap">
-            <span className="text-4xl font-extrabold text-slate-900 tracking-tight">{tier.amountLabel}</span>
+            <span className="text-4xl font-extrabold text-slate-900 tracking-tight">{payLabel}</span>
+            {disc && <span className="text-lg text-slate-400 line-through">{tier.amountLabel}</span>}
             <span className="text-sm text-slate-500">includes {tier.ticketsIncluded} conference ticket{tier.ticketsIncluded === 1 ? "" : "s"}</span>
           </div>
+          {disc && (
+            <div className="mt-1 text-xs font-bold uppercase tracking-wide" style={{ color: GOLD }}>
+              {pct}% partner discount applied
+            </div>
+          )}
           <p className="mt-2 text-slate-600">{tier.tagline}</p>
 
           <h3 className="mt-6 text-xs font-bold text-slate-900 uppercase tracking-wide">What&rsquo;s included for {companyName}</h3>

@@ -33,6 +33,7 @@ export default async function SponsorInvitedPage({ params }: { params: { token: 
         paid: sponsor.paid,
         donateFoodInstead: sponsor.donateFoodInstead,
         status: sponsor.status,
+        discountPercent: sponsor.discountPercent ?? 0,
       }}
     />
   );
