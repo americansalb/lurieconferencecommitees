@@ -26,7 +26,14 @@ export default async function SponsorStatusPage({ params }: { params: { token: s
   const TEAL = "#0E5566";
   const accent = tier?.accent || TEAL;
   const status = SPONSOR_STATUS_LABELS[sponsor.status] || SPONSOR_STATUS_LABELS.submitted;
-  const amount = tier?.amountLabel || `$${(sponsor.amountCents / 100).toFixed(0)}`;
+  // VIP courtesy discount: show what they actually owe/paid, not the list price,
+  // matching the funnel and what Stripe charges. Excludes exhibitor tables.
+  const pct = sponsor.discountPercent || 0;
+  const applyDiscount = pct > 0 && sponsor.tier !== "exhibitor" && !!tier && tier.amountCents > 0;
+  const fullLabel = tier?.amountLabel || `$${(sponsor.amountCents / 100).toFixed(0)}`;
+  const amount = applyDiscount && tier
+    ? `$${Math.round(Math.round((tier.amountCents * (100 - pct)) / 100) / 100).toLocaleString("en-US")}`
+    : fullLabel;
 
   // Accepted, unpaid exhibitors complete their table details, agree to the
   // terms, and pay through a full-screen wizard (matches the apply funnel)
@@ -67,6 +74,12 @@ export default async function SponsorStatusPage({ params }: { params: { token: s
           <div className="mt-2 flex items-center gap-2 flex-wrap">
             <span className="text-sm font-semibold text-slate-700">{tier?.name || sponsor.tier}</span>
             <span className="text-sm text-slate-500">&middot; {amount}</span>
+            {applyDiscount && (
+              <>
+                <span className="text-xs text-slate-400 line-through">{fullLabel}</span>
+                <span className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: "#FBF4E2", color: "#9A7B2E" }}>{pct}% partner discount</span>
+              </>
+            )}
             <span className={`text-[10px] font-bold px-2 py-1 rounded-full border ${status.color}`}>{status.label}</span>
           </div>
 

@@ -697,9 +697,21 @@ export function sponsorLetterEmail({
   const TEAL_DEEP = "#0C3B4B", INK = "#0B1F25", SOFT = "#5A6E76", GOLD_SOFT = "#F4E9CD", LINK = "#1E6FA2";
   const base = (assetBase || ASSET_BASE).replace(/\/$/, "");
   const site = learnMoreUrl || base;
-  const greeting = (salutation || "").trim() || contactName.split(" ")[0] || "there";
-  const reasonParas = (reason || "").trim()
-    ? (reason as string).trim().split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean)
+  // Greeting: a person's first name when we have one, otherwise the full
+  // organization name (sans a trailing "(ABBR)"), so org-only sends read
+  // "Dear American Society for Deaf Children:" and never "Dear American:".
+  const cn = (contactName || "").trim();
+  const isPerson = !!cn && cn.toLowerCase() !== companyName.trim().toLowerCase() && cn.split(/\s+/).length <= 3;
+  const greeting = (salutation || "").trim()
+    || (isPerson ? cn.split(" ")[0] : companyName.replace(/\s*\([^)]*\)\s*$/, "").trim())
+    || "there";
+  // Drop a note's trailing "We'd love to have you…" sentence so the personal
+  // paragraph doesn't duplicate the letter's own closing invitation.
+  const trimClose = (t: string) =>
+    t.replace(/\s*(?:We(?:’|')?d|We would)\s+(?:love|be glad|be honored|be delighted|be grateful|welcome)\b[^.?!]*[.?!]\s*$/i, "").trim();
+  const reasonRaw = (reason || "").trim();
+  const reasonParas = reasonRaw
+    ? trimClose(reasonRaw).split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean)
     : ["We write to you because few organizations commit so fully to this work, and your support would place that commitment in front of the very audience carrying the field forward."];
   const sig = (img: string, name: string, title: string) => `
         <img src="${base}/sig/${img}" alt="${escapeHtml(name)}" height="40" style="height:40px;width:auto;display:block;margin:0 0 4px 0;">
