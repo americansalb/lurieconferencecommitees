@@ -21,15 +21,25 @@ export const metadata: Metadata = {
     title: "2026 Lurie Children's and AALB Conference",
     description:
       "True Language Access: Yesterday, Today, and Tomorrow. August 15 and 16, 2026, Chicago.",
+    url: "/",
     type: "website",
     locale: "en_US",
     siteName: "Lurie Children's and AALB Conference",
+    images: [
+      {
+        url: "/og/conference-og.png",
+        width: 1200,
+        height: 630,
+        alt: "2026 Lurie Children's and AALB Conference. True Language Access: Yesterday, Today, and Tomorrow. August 15–16, 2026, Chicago.",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "2026 Lurie Children's and AALB Conference",
     description:
       "True Language Access: Yesterday, Today, and Tomorrow. August 15 and 16, 2026, Chicago.",
+    images: ["/og/conference-og.png"],
   },
 };
 
