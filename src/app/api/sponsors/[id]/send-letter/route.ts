@@ -31,6 +31,9 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
     companyName: sponsor.companyName,
     reason: sponsor.inviteMessage,
     landingUrl: `${appUrl()}/sponsor/invited/${sponsor.applicationToken}`,
+    learnMoreUrl: appUrl(),
+    // VIP courtesy: 20% off any sponsorship level (exhibitor tables excluded).
+    discountPercent: sponsor.tier === "exhibitor" ? null : 20,
     dateLabel,
     assetBase: appUrl(),
   });

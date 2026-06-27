@@ -51,6 +51,8 @@ export async function GET(
         reason:
           "We write to you because few organizations have done more to make the immigrant experience visible and human. The families you have spent a career bringing into focus are the same families our interpreters serve, one conversation at a time, and your support would put that shared commitment in front of the people working to change how this country listens.",
         landingUrl: `${base}/sponsor`,
+        learnMoreUrl: base,
+        discountPercent: 20,
         dateLabel: "June 27, 2026",
         assetBase: base,
       });
