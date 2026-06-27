@@ -701,9 +701,16 @@ export function sponsorLetterEmail({
   // organization name (sans a trailing "(ABBR)"), so org-only sends read
   // "Dear American Society for Deaf Children:" and never "Dear American:".
   const cn = (contactName || "").trim();
-  const isPerson = !!cn && cn.toLowerCase() !== companyName.trim().toLowerCase() && cn.split(/\s+/).length <= 3;
+  const isPerson = !!cn && cn.toLowerCase() !== companyName.trim().toLowerCase();
+  const honorific = /^(dr|mr|mrs|ms|prof|rev|hon|sr|fr)\.?$/i;
+  const firstNameOf = (n: string) => {
+    // "Dr. Fornessa T. Randal, Executive Director" -> "Fornessa";
+    // "John Quattrocchi, President & Co-Owner" -> "John".
+    const toks = n.replace(/,.*$/, "").trim().split(/\s+/);
+    return honorific.test(toks[0]) ? (toks[1] || toks[0]) : toks[0];
+  };
   const greeting = (salutation || "").trim()
-    || (isPerson ? cn.split(" ")[0] : companyName.replace(/\s*\([^)]*\)\s*$/, "").trim())
+    || (isPerson ? firstNameOf(cn) : companyName.replace(/\s*\([^)]*\)\s*$/, "").trim())
     || "there";
   // Drop a note's trailing "We'd love to have you…" sentence so the personal
   // paragraph doesn't duplicate the letter's own closing invitation.
