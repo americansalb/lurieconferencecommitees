@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
-import { sponsorFromHeader, sponsorLetterReplyTo, isOfficialPartner } from "@/lib/sponsors";
+import { sponsorFromHeader, sponsorLetterReplyTo, sponsorInviteSubject, isOfficialPartner } from "@/lib/sponsors";
 import { sponsorLetterEmail } from "@/lib/mail-templates";
 import { appUrl } from "@/lib/presenters";
 
@@ -44,7 +44,7 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
   try {
     await sendMail({
       to: sponsor.contactEmail,
-      subject: `An invitation to sponsor the 2026 Lurie Children's and AALB Conference`,
+      subject: sponsorInviteSubject(sponsor.companyName, { partner: isOfficialPartner(sponsor.companyName) }),
       html,
       from: sponsorFromHeader(),
       // Replies reach both Kevin (on the letter) and the shared inbox.

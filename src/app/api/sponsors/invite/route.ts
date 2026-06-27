@@ -3,15 +3,13 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
-import { newSponsorToken, tierById, sponsorFromHeader, sponsorReplyTo, sponsorLetterReplyTo, isOfficialPartner } from "@/lib/sponsors";
+import { newSponsorToken, tierById, sponsorFromHeader, sponsorReplyTo, sponsorLetterReplyTo, sponsorInviteSubject, isOfficialPartner } from "@/lib/sponsors";
 import { sponsorInviteEmail, sponsorLetterEmail } from "@/lib/mail-templates";
 
 // The formal letter is the standard sponsor invitation. Complimentary
 // exhibitor tables (a free table, not a sponsorship) keep the dedicated
 // "claim your table" email. The 20% VIP courtesy is never added here; it is
 // applied only via the dedicated send-letter action.
-const LETTER_SUBJECT = "An invitation to sponsor the 2026 Lurie Children's and AALB Conference";
-const COMP_SUBJECT = "You're invited: a complimentary exhibitor table at the 2026 Lurie Children's and AALB Conference";
 function letterDate() {
   return new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
 }
@@ -112,7 +110,7 @@ export async function POST(req: Request) {
       compExhibitor: true,
       isPartner: partner,
     });
-    subject = COMP_SUBJECT;
+    subject = sponsorInviteSubject(sponsor.companyName, { comp: true });
   } else {
     html = sponsorLetterEmail({
       contactName: sponsor.contactName,
@@ -126,9 +124,7 @@ export async function POST(req: Request) {
       dateLabel: letterDate(),
       assetBase: appUrl(),
     });
-    subject = partner
-      ? `Our official partner: ${LETTER_SUBJECT}`
-      : LETTER_SUBJECT;
+    subject = sponsorInviteSubject(sponsor.companyName, { partner });
   }
 
   try {
@@ -222,7 +218,7 @@ async function bulkInvite(
       await prisma.emailQueue.create({
         data: {
           batchId, recipientType: "sponsor", recipientId: c.id, to: c.contactEmail,
-          subject: compTable ? COMP_SUBJECT : LETTER_SUBJECT,
+          subject: sponsorInviteSubject(c.companyName, { comp: compTable, partner: isOfficialPartner(c.companyName) }),
           html, scheduledFor: times[i], status: "pending",
         },
       });

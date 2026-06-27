@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
-import { sponsorFromHeader, sponsorReplyTo, sponsorLetterReplyTo, isCompExhibitor, isOfficialPartner } from "@/lib/sponsors";
+import { sponsorFromHeader, sponsorReplyTo, sponsorLetterReplyTo, sponsorInviteSubject, isCompExhibitor, isOfficialPartner } from "@/lib/sponsors";
 import { sponsorInviteEmail, sponsorLetterEmail } from "@/lib/mail-templates";
 import { appUrl } from "@/lib/presenters";
 
@@ -39,7 +39,7 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
       compExhibitor: true,
       isPartner: partner,
     });
-    subject = `You're invited: a complimentary exhibitor table at the 2026 Lurie Children's and AALB Conference`;
+    subject = sponsorInviteSubject(sponsor.companyName, { comp: true });
   } else {
     html = sponsorLetterEmail({
       contactName: sponsor.contactName,
@@ -53,9 +53,7 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
       dateLabel: new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
       assetBase: appUrl(),
     });
-    subject = partner
-      ? `Our official partner: an invitation to sponsor the 2026 Lurie Children's and AALB Conference`
-      : `An invitation to sponsor the 2026 Lurie Children's and AALB Conference`;
+    subject = sponsorInviteSubject(sponsor.companyName, { partner });
   }
 
   try {

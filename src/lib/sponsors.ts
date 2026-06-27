@@ -193,7 +193,19 @@ export function isOfficialPartner(companyName: string): boolean {
   return OFFICIAL_PARTNERS.has((companyName || "").trim().toLowerCase());
 }
 
-export const SPONSOR_FROM_NAME_DEFAULT = "Iris Lafitte, AALB Operations Manager";
+export const SPONSOR_FROM_NAME_DEFAULT = "Iris Lafitte, Lurie Children's & AALB Conference";
+
+// Subject lines lead with the organization's own name (so it catches their eye
+// in a crowded inbox) and frame it as a personal invitation, not a blast.
+export function sponsorInviteSubject(
+  companyName: string,
+  opts: { partner?: boolean; comp?: boolean } = {},
+): string {
+  const co = (companyName || "").trim() || "your organization";
+  if (opts.comp) return `${co}: a complimentary exhibitor table at the 2026 Lurie Children's & AALB Conference`;
+  if (opts.partner) return `${co}, our official partner: a personal invitation to the 2026 Lurie Children's & AALB Conference`;
+  return `${co}: a personal invitation to the 2026 Lurie Children's & AALB Conference`;
+}
 
 function extractAddress(s: string): string {
   const angle = s.match(/<([^>]+)>/);
