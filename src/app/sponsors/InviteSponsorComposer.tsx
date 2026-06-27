@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { X, Loader2, Send, AlertCircle, Check, Sparkles, User, Users } from "lucide-react";
 import { TIERS } from "@/lib/sponsors";
 import { buildSponsorInviteRows } from "@/lib/imports";
+import { PROSPECT_TARGETS_TSV } from "@/lib/prospect-targets";
 
 type BulkResult = { created: number; skipped: { email: string; reason: string }[]; parseErrors: string[] };
 
@@ -169,14 +170,26 @@ export default function InviteSponsorComposer({
                     </select>
                   </label>
                 )}
-                <label className="block">
-                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Prospect list</span>
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Prospect list</span>
+                    <button
+                      type="button"
+                      onClick={() => setCsv((prev) => {
+                        const rowsOnly = PROSPECT_TARGETS_TSV.split("\n").slice(1).join("\n");
+                        return prev.trim() ? prev.replace(/\s*$/, "") + "\n" + rowsOnly : PROSPECT_TARGETS_TSV;
+                      })}
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-teal-700 hover:text-teal-900"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" /> Load suggested targets
+                    </button>
+                  </div>
                   <textarea
                     value={csv} onChange={(e) => setCsv(e.target.value)} rows={8}
-                    placeholder={"Company, Contact, Email, Phone, Website, Note\nLanguageLine Solutions, Sara Kim, sara@example.com, , languageline.com, Loved having you exhibit before, we'd be honored to host you again.\nCyraCom, Dana Lee, dana@example.com, , cyracom.com, Your hospital-interpreting work is exactly what our clinicians need to see."}
-                    className="mt-1 w-full px-3 py-2.5 text-[13px] font-mono border border-slate-200 rounded-lg outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10"
+                    placeholder={"Company, Contact, Email, Phone, Website, Note\nCyraCom, Dana Lee, dana@example.com, , cyracom.com, Your hospital-interpreting work is exactly what our clinicians need to see.\nMasterWord Services, Pat Rivera, pat@example.com, , masterword.com, We'd love to host MasterWord as an exhibitor this year."}
+                    className="w-full px-3 py-2.5 text-[13px] font-mono border border-slate-200 rounded-lg outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10"
                   />
-                </label>
+                </div>
 
                 {csv.trim() && (
                   <div className="rounded-xl border border-slate-200 overflow-hidden">
