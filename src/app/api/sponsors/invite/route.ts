@@ -122,6 +122,7 @@ export async function POST(req: Request) {
       landingUrl,
       learnMoreUrl: appUrl(),
       discountPercent: null,
+      isPartner: partner,
       dateLabel: letterDate(),
       assetBase: appUrl(),
     });
@@ -214,6 +215,7 @@ async function bulkInvite(
             landingUrl,
             learnMoreUrl: appUrl(),
             discountPercent: null,
+            isPartner: isOfficialPartner(c.companyName),
             dateLabel: letterDate(),
             assetBase: appUrl(),
           });

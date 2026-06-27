@@ -678,6 +678,8 @@ type SponsorLetterArgs = {
   learnMoreUrl?: string;
   // When set, renders the "personal courtesy" discount panel (e.g. 20).
   discountPercent?: number | null;
+  // Acknowledge an existing official AALB partner (e.g. AMN) with a partner mark.
+  isPartner?: boolean;
   // Pre-formatted date string (e.g. "June 27, 2026"); computed by the caller.
   dateLabel: string;
   assetBase?: string;
@@ -692,7 +694,7 @@ type SponsorLetterArgs = {
 // under every gradient and a VML seal so it degrades gracefully in Outlook.
 // Use for the handful of strategic targets; use sponsorInviteEmail() for bulk.
 export function sponsorLetterEmail({
-  contactName, salutation, recipientTitle, companyName, reason, landingUrl, learnMoreUrl, discountPercent, dateLabel, assetBase,
+  contactName, salutation, recipientTitle, companyName, reason, landingUrl, learnMoreUrl, discountPercent, isPartner = false, dateLabel, assetBase,
 }: SponsorLetterArgs) {
   const TEAL_DEEP = "#0C3B4B", INK = "#0B1F25", SOFT = "#5A6E76", GOLD_SOFT = "#F4E9CD", LINK = "#1E6FA2";
   const base = (assetBase || ASSET_BASE).replace(/\/$/, "");
@@ -795,6 +797,7 @@ export function sponsorLetterEmail({
     <tr><td style="height:3px;line-height:3px;font-size:0;background-color:${GOLD};background-image:linear-gradient(90deg,#9C7A2E 0%,#F4E9CD 50%,#9C7A2E 100%);">&nbsp;</td></tr>
 
     <tr><td class="sl-body" style="padding:40px 52px 36px 52px;background-color:#FBF8F1;">
+      ${isPartner ? `<div style="margin:0 0 18px 0;"><span style="display:inline-block;font-family:Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;font-weight:bold;color:${TEAL};background:#EAF1F2;border:1px solid #CFE0E4;border-radius:999px;padding:6px 14px;">Our Official Partner</span></div>` : ""}
       <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2.5px;text-transform:uppercase;color:${SOFT};">${escapeHtml(dateLabel)}</div>
 
       <div style="padding:20px 0 18px 0;">

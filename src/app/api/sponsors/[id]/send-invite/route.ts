@@ -49,6 +49,7 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
       landingUrl,
       learnMoreUrl: appUrl(),
       discountPercent: null,
+      isPartner: partner,
       dateLabel: new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
       assetBase: appUrl(),
     });

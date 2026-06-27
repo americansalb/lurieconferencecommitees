@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
-import { sponsorFromHeader, sponsorLetterReplyTo } from "@/lib/sponsors";
+import { sponsorFromHeader, sponsorLetterReplyTo, isOfficialPartner } from "@/lib/sponsors";
 import { sponsorLetterEmail } from "@/lib/mail-templates";
 import { appUrl } from "@/lib/presenters";
 
@@ -36,6 +36,7 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
     landingUrl: `${appUrl()}/sponsor/invited/${sponsor.applicationToken}`,
     learnMoreUrl: appUrl(),
     discountPercent,
+    isPartner: isOfficialPartner(sponsor.companyName),
     dateLabel,
     assetBase: appUrl(),
   });
