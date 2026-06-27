@@ -893,6 +893,88 @@ export function sponsorLetterEmail({
 </html>`;
 }
 
+type SponsorFoodLetterArgs = {
+  contactName: string;
+  companyName: string;
+  // A personalized line about this restaurant (cuisine, story, specialty).
+  note?: string | null;
+  // Conference home, for the "see the conference" button.
+  learnMoreUrl?: string;
+  // One-click unsubscribe URL (deliverability / CAN-SPAM).
+  unsubscribeUrl?: string;
+  assetBase?: string;
+};
+
+// A warm, detailed letter to a vegan/vegetarian restaurant or caterer asking
+// them to provide a plant-based meal as an in-kind Food Sponsor. Leads with the
+// conference's deliberate all-plant-based commitment (no meat will be served),
+// makes the in-kind ask, and lays out the Food Sponsor recognition. Reply-first:
+// the next step is a short conversation, with a link to the conference. No em
+// dashes; both host institutions are named on the tax line.
+export function sponsorFoodLetterEmail({
+  contactName, companyName, note, learnMoreUrl, unsubscribeUrl, assetBase,
+}: SponsorFoodLetterArgs) {
+  const site = (learnMoreUrl || ASSET_BASE).replace(/\/$/, "");
+  const postalAddress = process.env.MAIL_POSTAL_ADDRESS?.trim() || "Americans Against Language Barriers, Chicago, IL";
+  const cn = (contactName || "").trim();
+  const isPerson = !!cn && cn.toLowerCase() !== companyName.trim().toLowerCase();
+  const honorific = /^(dr|mr|mrs|ms|prof|rev|hon|sr|fr|chef)\.?$/i;
+  const firstNameOf = (n: string) => { const t = n.replace(/,.*$/, "").trim().split(/\s+/); return honorific.test(t[0]) ? (t[1] || t[0]) : t[0]; };
+  const greeting = (isPerson ? firstNameOf(cn) : companyName.replace(/\s*\([^)]*\)\s*$/, "").trim()) || "there";
+  const notePara = note && note.trim()
+    ? `<p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 16px 0;">${escapeHtml(note.trim()).replace(/\n/g, "<br>")}</p>`
+    : "";
+  return shell(`
+    ${heroBanner()}
+    <h1 style="font-size:22px;font-weight:700;margin:0 0 14px 0;letter-spacing:-0.01em;">Dear ${escapeHtml(greeting)},</h1>
+
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
+      This August, Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers are co-hosting the 2nd Joint Conference on language access in American healthcare, two days devoted to a single idea: that no one should go unheard because of the language they speak.
+    </p>
+
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
+      We made a deliberate choice this year. Every meal at the conference will be <strong>fully plant-based</strong>. It would ring hollow to spend two days insisting that no one should go unheard, and then serve animals who cannot speak for themselves at all, who face the most absolute language barrier of any of us. Asking a children&rsquo;s hospital to put on an entirely plant-based event took some convincing, and we are proud of where we landed: <strong>we will not serve meat.</strong>
+    </p>
+
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 16px 0;">
+      What we would love is for that food to come from a Chicago kitchen that does plant-based cooking with real care, which is exactly why we are writing to <strong>${escapeHtml(companyName)}</strong>.
+    </p>
+
+    ${notePara}
+
+    ${sectionHeading("The ask")}
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 8px 0;">
+      We would be honored to feature your food at the conference as an <strong>in-kind Food Sponsor</strong>: a donated or catered plant-based spread, whether a full meal or part of one, for our attendees. There is nothing to buy. In return, you would be recognized as an official Food Sponsor:
+    </p>
+    ${bulletList([
+      "Your name and logo on the conference website",
+      "Your name and logo on signage at the conference",
+      "An honorable mention at the meal you provide, before a national audience of interpreters, clinicians, and advocates",
+      "Our deep gratitude, and a room full of people tasting your cooking",
+    ])}
+    <p style="font-size:14px;line-height:1.7;color:${MUTED};margin:8px 0 0 0;">
+      Donated food may be tax-deductible. The conference is presented jointly by Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers, both 501(c)(3) nonprofits (EINs 83-3016421 and 36-2170833). Please consult your tax advisor.
+    </p>
+
+    ${sectionHeading("The conference at a glance")}
+    ${glanceCard(GLANCE_ROWS)}
+
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:16px 0 0 0;">
+      If this resonates, the easiest next step is a short conversation about what you could provide and what works for your kitchen. Simply reply to this email and it reaches us directly.
+    </p>
+
+    ${button(site, "See the conference")}
+
+    ${signOff("With gratitude,")}
+
+    ${logoLockup(assetBase)}
+
+    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;padding-top:14px;border-top:1px solid #eef1f4;">
+      ${escapeHtml(postalAddress)}.${unsubscribeUrl ? ` You received this invitation to provide food for the conference. <a href="${unsubscribeUrl}" style="color:${MUTED};text-decoration:underline;">Unsubscribe</a>.` : ""}
+    </p>
+  `);
+}
+
 type SponsorApplicationArgs = {
   firstName: string;
   companyName: string;

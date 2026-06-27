@@ -175,3 +175,49 @@ export const PROSPECT_TARGETS_TSV =
   ["Company", "Contact", "Email", "Website", "Note"].join("\t") +
   "\n" +
   TARGETS.map((r) => r.join("\t")).join("\n");
+
+// ───────────────────────────────────────────────────────────────────────────
+// FOOD SPONSORS — Chicago vegan/vegetarian restaurants & caterers.
+//
+// The conference is fully plant-based (no meat served), so these are asked to
+// donate or cater a meal in kind, and receive the dedicated food letter. Loaded
+// with the "food" tier from the "Load food prospects" button.
+//
+// EMAILS ARE BLANK ON PURPOSE. This session's network policy blocked opening
+// restaurant websites, so emails could not be verified. Every restaurant below
+// is real and currently operating (identity/cuisine/details cross-checked via
+// search; closures were screened out), but the contact email must be confirmed
+// on each restaurant's own Contact/Catering page before sending. See
+// docs/food-sponsor-prospects.md for the page to check per restaurant and the
+// (unverified) candidate addresses search surfaced. FOOD_PROSPECT_TARGETS_TSV
+// only includes rows whose Email has been filled in, so loading is safe.
+// ───────────────────────────────────────────────────────────────────────────
+const FOOD_TARGETS: Target[] = [
+  ["The Chicago Diner", "", "", "https://veggiediner.com", "Meat-free since 1983, the Chicago Diner is practically the city's plant-based institution, from the Radical Reuben to those famous vegan shakes. A conference that has committed to an all-plant-based table would be proud to serve food from a kitchen that helped define vegetarian Chicago. We'd be honored to talk with you about catering a meal."],
+  ["Handlebar", "", "", "https://www.handlebarchicago.com", "For two decades Handlebar has shown Wicker Park that vegetarian comfort food can be the main event, with a sustainability ethic in how you source. That spirit fits a conference that chose to keep meat off the table entirely. We'd love to explore having you cater part of the weekend."],
+  ["Soul Veg City", "", "", "https://soulvegcity.com", "For more than forty years your Chatham kitchen has shown that soul food can be fully plant-based and deeply satisfying. As we put on an all-vegan conference, your by-the-pound spread would feed our attendees beautifully and tell a Chicago story worth telling. We'd be honored to talk catering."],
+  ["Kale My Name", "", "", "https://www.kalemyname.com", "Kale My Name's globe-spanning vegan menu, from Mediterranean to Colombian to Balkan, mirrors the many cultures our conference brings together around language access. Your award-winning plant-based cooking would be a perfect fit for our all-vegan table. We'd love to talk about catering a meal."],
+  ["Alice & Friends' Vegan Kitchen", "", "", "https://aliceandfriendsvegankitchen.com", "Alice & Friends has spent years serving Edgewater vegan comfort food drawn from cuisines all over the world, which is exactly the spirit of a conference built around reaching every community. As we keep our table fully plant-based, we'd be honored to feature your cooking. Could we talk about catering?"],
+  ["Amitabul", "", "", "https://amitabulvegan.com", "Amitabul's Korean Buddhist cooking, rooted in dishes once made for monks, is plant-based in the most intentional sense, and unlike anything else in Chicago. For an all-vegan conference centered on cultural and language access, your food would mean a great deal. We'd love to talk about catering a meal."],
+  ["Arya Bhavan", "", "", "https://aryabhavan.com", "Since going fully vegan in 2013, Arya Bhavan has been a Devon Avenue anchor for whole-food, plant-based Indian cooking. A conference that has committed to an entirely meat-free table, and that celebrates Chicago's many cultures, would be honored to serve your food. Could we talk about catering?"],
+  ["Penelope's Vegan Taqueria", "", "", "https://penelopesvegantaqueria.com", "As Chicago's first fully plant-based taqueria, Penelope's makes exactly the kind of food a room full of people loves to share, and it happens to be entirely vegan. For our all-plant-based conference, a taco spread from your kitchen would be a joy. We'd love to talk about catering."],
+  ["Urban Vegan", "", "", "https://www.urbanveganthai.com", "Urban Vegan proves that Thai food loses nothing when it goes fully plant-based, which is the very case our all-vegan conference hopes to make. Your cooking would be a warm, flavorful fit for our attendees. Could we talk about catering a meal?"],
+  ["Veggie House", "", "", "https://www.veggiehouseusa.com", "Veggie House brings fully plant-based Chinese cooking to the heart of Chinatown, mock-meat classics and all. As we put on an entirely vegan conference that celebrates Chicago's cultural breadth, your food would be a natural fit. We'd love to talk about catering."],
+  ["Healthy Substance", "", "", "https://www.healthysubstance.com", "Healthy Substance shows Pilsen that Mexican food can be fully plant-based without losing its soul, exactly the spirit of our all-vegan conference. Your cooking would feed our attendees well and represent the neighborhood proudly. Could we talk about catering a meal?"],
+  ["Fancy Plants Catering", "", "", "https://fancyplantscatering.com", "Fancy Plants is built for exactly what we need: a 100% vegan caterer with hundreds of multi-course dinners and festival services behind it. For our all-plant-based conference, your themed menus would be a tremendous fit. We'd love to talk about catering a meal."],
+  ["Soul Vegan", "", "", "https://soulvegan.com", "Soul Vegan calls itself Chicago's leader in sustainable soul food, and you cater plant-based events at real scale. For a conference that has committed to keeping meat off the table, that capacity is exactly what we're looking for. We'd be honored to talk catering."],
+  ["Vegan Now 2 Go", "", "", "https://vegannow2go.com", "Vegan Now 2 Go carries decades of family plant-based recipes and a full bakery and catering kitchen behind the counter. For our all-vegan conference, your deli spreads and desserts would feed our attendees wonderfully. Could we talk about catering?"],
+  ["Can't Believe It's Not Meat", "", "", "https://cantbelieveitsnotmeat.com", "Chef Laricia Baker Chandler built Can't Believe It's Not Meat into a vegan kitchen that caters corporate events and big gatherings, which is just what our all-plant-based conference needs. Your woman-owned, community-rooted story fits our mission, too. We'd love to talk about catering."],
+  ["Vegan World Café", "", "", "https://veganworldcafe.com", "Vegan World Café is, at heart, a plant-based soul-food catering company, run by chefs who have spent decades cooking vegan. For our all-vegan conference, catering is exactly the conversation we'd love to have with you. Could we find a time to talk?"],
+  ["Pie, Pie My Darling", "", "", "https://www.piepiemydarling.net", "Pie, Pie My Darling has been fully vegan since 2014, and your cakes and pastries would be a beautiful sweet note for our all-plant-based conference. We know desserts are pre-order pickup, and we'd gladly work around that. Could we talk about a dessert sponsorship?"],
+  ["PLANTA Queen", "", "", "https://www.plantarestaurants.com", "PLANTA Queen shows that fully plant-based dining can be genuinely upscale, which is a message our all-vegan conference would be proud to carry. For a marquee meal or private-dining moment, your kitchen would be a standout. We'd love to explore what's possible."],
+  ["Majani", "", "", "https://majani.biz", "Majani's award-winning, Black-owned plant-based soul food has a story our conference would be honored to help tell. We understand the restaurant is on hiatus while you build the Vegan Village, and that catering continues, which is exactly what we'd hope to talk with you about."],
+  ["Bloom Plant Based Kitchen", "", "", "https://bloompb.com", "Bloom earned a Michelin Bib Gourmand for fully vegan, gluten-free cooking, proof that plant-based can stand with the best. For our all-vegan conference, your kitchen would be a remarkable fit. We'd love to explore catering or a featured meal."],
+];
+
+// Only rows whose Email has been filled in are loadable (the rest are awaiting
+// email verification, see the note above). Loaded with the "food" tier.
+export const FOOD_PROSPECT_TARGETS_TSV =
+  ["Company", "Contact", "Email", "Website", "Note"].join("\t") +
+  "\n" +
+  FOOD_TARGETS.filter((r) => r[2].trim()).map((r) => r.join("\t")).join("\n");

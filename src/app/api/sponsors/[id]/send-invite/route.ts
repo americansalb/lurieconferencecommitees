@@ -3,8 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
-import { sponsorFromHeader, sponsorReplyTo, sponsorLetterReplyTo, sponsorInviteSubject, sponsorUnsubHeaders, sponsorUnsubscribeUrl, isCompExhibitor, isOfficialPartner } from "@/lib/sponsors";
-import { sponsorInviteEmail, sponsorLetterEmail } from "@/lib/mail-templates";
+import { sponsorFromHeader, sponsorReplyTo, sponsorLetterReplyTo, sponsorInviteSubject, sponsorFoodSubject, sponsorUnsubHeaders, sponsorUnsubscribeUrl, isCompExhibitor, isFoodProspect, isOfficialPartner } from "@/lib/sponsors";
+import { sponsorInviteEmail, sponsorLetterEmail, sponsorFoodLetterEmail } from "@/lib/mail-templates";
 import { appUrl } from "@/lib/presenters";
 
 // Per-org "Send invite" button on the dashboard: send (or resend) the
@@ -22,6 +22,7 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
   }
 
   const comp = isCompExhibitor(sponsor);
+  const food = isFoodProspect(sponsor);
   const partner = isOfficialPartner(sponsor.companyName);
   const landingUrl = `${appUrl()}/sponsor/invited/${sponsor.applicationToken}`;
 
@@ -31,7 +32,18 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
   // VIP courtesy is added only via the separate send-letter action.
   let html: string;
   let subject: string;
-  if (comp) {
+  if (food) {
+    // Restaurant/caterer: the in-kind plant-based meal ask.
+    html = sponsorFoodLetterEmail({
+      contactName: sponsor.contactName,
+      companyName: sponsor.companyName,
+      note: sponsor.inviteMessage,
+      learnMoreUrl: appUrl(),
+      unsubscribeUrl: sponsorUnsubscribeUrl(sponsor.applicationToken),
+      assetBase: appUrl(),
+    });
+    subject = sponsorFoodSubject(sponsor.companyName);
+  } else if (comp) {
     html = sponsorInviteEmail({
       contactFirstName: sponsor.contactName.split(" ")[0],
       companyName: sponsor.companyName,

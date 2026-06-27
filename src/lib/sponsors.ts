@@ -224,6 +224,20 @@ export function sponsorInviteSubject(
   return `${co}: a personal invitation to the 2026 Lurie Children's & AALB Conference`;
 }
 
+// A food-sponsor prospect: a restaurant or caterer we are asking to provide an
+// in-kind plant-based meal (the conference is fully vegetarian/vegan, no meat
+// served). Tagged with the "food" tier, so it receives the dedicated food
+// letter and can be filtered apart from the rest of the pipeline.
+export function isFoodProspect(s: { tier: string }): boolean {
+  return s.tier === "food";
+}
+
+// Subject for the restaurant/caterer outreach: warm, specific, asks for help.
+export function sponsorFoodSubject(companyName: string): string {
+  const co = (companyName || "").trim() || "your kitchen";
+  return `${co}: would you help feed the 2026 Lurie Children's & AALB Conference?`;
+}
+
 function extractAddress(s: string): string {
   const angle = s.match(/<([^>]+)>/);
   if (angle) return angle[1].trim();

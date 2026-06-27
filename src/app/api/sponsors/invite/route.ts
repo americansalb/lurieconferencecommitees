@@ -3,8 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
-import { newSponsorToken, tierById, sponsorFromHeader, sponsorReplyTo, sponsorLetterReplyTo, sponsorInviteSubject, sponsorUnsubHeaders, sponsorUnsubscribeUrl, isOfficialPartner } from "@/lib/sponsors";
-import { sponsorInviteEmail, sponsorLetterEmail } from "@/lib/mail-templates";
+import { newSponsorToken, tierById, sponsorFromHeader, sponsorReplyTo, sponsorLetterReplyTo, sponsorInviteSubject, sponsorFoodSubject, sponsorUnsubHeaders, sponsorUnsubscribeUrl, isOfficialPartner } from "@/lib/sponsors";
+import { sponsorInviteEmail, sponsorLetterEmail, sponsorFoodLetterEmail } from "@/lib/mail-templates";
 
 // The formal letter is the standard sponsor invitation. Complimentary
 // exhibitor tables (a free table, not a sponsorship) keep the dedicated
@@ -60,6 +60,7 @@ export async function POST(req: Request) {
   const partner = isOfficialPartner(companyName);
   const suggested = compTable ? null : (tier ? tierById(tier) : null);
   const tierId = compTable ? "exhibitor" : (suggested ? suggested.id : "undecided");
+  const food = tierId === "food";
   const amountCents = compTable ? 0 : (suggested ? suggested.amountCents : 0);
 
   const email = contactEmail.trim().toLowerCase();
@@ -99,7 +100,17 @@ export async function POST(req: Request) {
   const landingUrl = `${appUrl()}/sponsor/invited/${token}`;
   let html: string;
   let subject: string;
-  if (compTable) {
+  if (food) {
+    html = sponsorFoodLetterEmail({
+      contactName: sponsor.contactName,
+      companyName: sponsor.companyName,
+      note: sponsor.inviteMessage,
+      learnMoreUrl: appUrl(),
+      unsubscribeUrl: sponsorUnsubscribeUrl(token),
+      assetBase: appUrl(),
+    });
+    subject = sponsorFoodSubject(sponsor.companyName);
+  } else if (compTable) {
     html = sponsorInviteEmail({
       contactFirstName: sponsor.contactName.split(" ")[0],
       companyName: sponsor.companyName,
@@ -161,6 +172,7 @@ async function bulkInvite(
   const draftOnly = Boolean(body.draftOnly);
   const suggested = compTable ? null : (body.tier ? tierById(body.tier) : null);
   const tierId = compTable ? "exhibitor" : (suggested ? suggested.id : "undecided");
+  const food = tierId === "food";
   const amountCents = compTable ? 0 : (suggested ? suggested.amountCents : 0);
   // Shared note is the fallback; a row's own Note column overrides it so each
   // invite can read as individually written.
@@ -197,7 +209,16 @@ async function bulkInvite(
     for (let i = 0; i < created.length; i++) {
       const c = created[i];
       const landingUrl = `${appUrl()}/sponsor/invited/${c.token}`;
-      const html = compTable
+      const html = food
+        ? sponsorFoodLetterEmail({
+            contactName: c.contactName,
+            companyName: c.companyName,
+            note: c.note,
+            learnMoreUrl: appUrl(),
+            unsubscribeUrl: sponsorUnsubscribeUrl(c.token),
+            assetBase: appUrl(),
+          })
+        : compTable
         ? sponsorInviteEmail({
             contactFirstName: c.contactName.split(" ")[0],
             companyName: c.companyName,
@@ -224,7 +245,9 @@ async function bulkInvite(
       await prisma.emailQueue.create({
         data: {
           batchId, recipientType: "sponsor", recipientId: c.id, to: c.contactEmail,
-          subject: sponsorInviteSubject(c.companyName, { comp: compTable, partner: isOfficialPartner(c.companyName) }),
+          subject: food
+            ? sponsorFoodSubject(c.companyName)
+            : sponsorInviteSubject(c.companyName, { comp: compTable, partner: isOfficialPartner(c.companyName) }),
           html, scheduledFor: times[i], status: "pending",
         },
       });

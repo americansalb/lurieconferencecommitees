@@ -11,7 +11,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
 import MobileNav from "@/components/layout/MobileNav";
 import { SPONSOR_STATUS_LABELS, TIERS } from "@/lib/sponsors";
-import { PROSPECT_TARGETS_TSV } from "@/lib/prospect-targets";
+import { PROSPECT_TARGETS_TSV, FOOD_PROSPECT_TARGETS_TSV } from "@/lib/prospect-targets";
 import InviteSponsorComposer from "./InviteSponsorComposer";
 import QueueSettingsModal from "@/components/email/QueueSettingsModal";
 
@@ -62,6 +62,7 @@ export default function SponsorsAdminPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("pending_invite");
   const [tierFilter, setTierFilter] = useState<string>("all");
+  const [foodFilter, setFoodFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [showInvite, setShowInvite] = useState(false);
   const [showQueue, setShowQueue] = useState(false);
@@ -289,6 +290,33 @@ export default function SponsorsAdminPage() {
     }
   }
 
+  // One click: load the vegan/vegetarian food-sponsor restaurants (tier "food",
+  // so they get the plant-based food letter). Only rows with a verified email
+  // are loadable; the rest wait in prospect-targets.ts until their email is set.
+  async function loadFoodTargets() {
+    setLoadingTargets(true);
+    setActionNote(null);
+    try {
+      const res = await fetch("/api/sponsors/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ csv: FOOD_PROSPECT_TARGETS_TSV, tier: "food", draftOnly: true }),
+      });
+      const j = await res.json().catch(() => ({}));
+      setActionNote(
+        res.ok
+          ? (j.created ?? 0) === 0
+            ? "No food prospects with a verified email yet. Add emails in prospect-targets.ts (see docs/food-sponsor-prospects.md)."
+            : `${j.created} food prospect${j.created === 1 ? "" : "s"} added to Pending invite${j.skipped?.length ? `, ${j.skipped.length} already there` : ""}.`
+          : `Could not load. ${j.error || ""}`
+      );
+      await load();
+    } finally {
+      setLoadingTargets(false);
+      setTimeout(() => setActionNote(null), 9000);
+    }
+  }
+
   // Keep a ref to the latest sponsors so the drip loop always sees fresh data.
   useEffect(() => { sponsorsRef.current = sponsors; }, [sponsors]);
   // Tick once a second so the countdown re-renders while auto-send is on.
@@ -345,6 +373,8 @@ export default function SponsorsAdminPage() {
   const filtered = sponsors.filter((s) => {
     if (!activeStatuses.includes(s.status)) return false;
     if (tierFilter !== "all" && s.tier !== tierFilter) return false;
+    if (foodFilter === "food" && s.tier !== "food") return false;
+    if (foodFilter === "nonfood" && s.tier === "food") return false;
     if (search) {
       const q = search.toLowerCase();
       if (![s.companyName, s.contactName, s.contactEmail, s.website].some((v) => v?.toLowerCase().includes(q))) return false;
@@ -475,6 +505,16 @@ export default function SponsorsAdminPage() {
                   {loadingTargets ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />} Load suggested targets
                 </button>
               )}
+              {filter === "pending_invite" && isAdmin && (
+                <button
+                  onClick={loadFoodTargets}
+                  disabled={loadingTargets}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white bg-gradient-to-r from-emerald-700 to-green-600 disabled:opacity-50"
+                  title="Add the vegan/vegetarian food-sponsor restaurants (with verified emails) to Pending invite. No emails are sent."
+                >
+                  {loadingTargets ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />} Load food prospects
+                </button>
+              )}
             </div>
 
             {filter === "pending_invite" && (
@@ -525,6 +565,16 @@ export default function SponsorsAdminPage() {
                     {TIERS.map((t) => (
                       <option key={t.id} value={t.id}>{t.name}</option>
                     ))}
+                  </select>
+                  <select
+                    value={foodFilter}
+                    onChange={(e) => setFoodFilter(e.target.value)}
+                    className="text-sm border border-slate-200 rounded-lg px-2 py-2 outline-none focus:border-teal-500"
+                    title="Filter food sponsors (restaurants/caterers) apart from everyone else"
+                  >
+                    <option value="all">Food &amp; non-food</option>
+                    <option value="food">Food sponsors</option>
+                    <option value="nonfood">Non-food</option>
                   </select>
                 </div>
               </div>
