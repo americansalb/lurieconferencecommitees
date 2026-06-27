@@ -6,6 +6,7 @@ import { sendMail } from "@/lib/mail";
 import { newSponsorToken, tierById, sponsorFromHeader, sponsorReplyTo, sponsorStatusUrl } from "@/lib/sponsors";
 import { sponsorApplicationReceivedEmail, sponsorAdminNotificationEmail } from "@/lib/mail-templates";
 import { saveLogoFromDataUrl } from "@/lib/sponsor-logo";
+import { isCountedClick } from "@/lib/engagement";
 
 function isEmail(s: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((s || "").trim());
@@ -30,7 +31,12 @@ export async function GET() {
       },
     },
   });
-  const sponsors = raw.map(({ events, ...s }) => ({ ...s, clickedAt: events[0]?.createdAt ?? null }));
+  // Only count a click that lands at least ~45s after the send; faster is us
+  // testing the email right after it goes out.
+  const sponsors = raw.map(({ events, ...s }) => {
+    const rawClick = events[0]?.createdAt ?? null;
+    return { ...s, clickedAt: isCountedClick(s.invitedAt || s.lastSentAt, rawClick) ? rawClick : null };
+  });
   return NextResponse.json({ sponsors });
 }
 

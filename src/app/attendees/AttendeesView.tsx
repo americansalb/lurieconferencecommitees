@@ -6,7 +6,7 @@ import {
   ATTENDEE_STEP_LABELS, ATTENDEE_SOURCE_LABELS, AttendeeStep,
   attendeeStep, attendeeStepMoment, attendeeSource,
 } from "@/lib/attendees";
-import { fmtElapsed, medianLabel } from "@/lib/engagement";
+import { fmtElapsed, medianLabel, countedClickAt } from "@/lib/engagement";
 import { ALUMNI_SUBJECT_VARIANTS } from "@/lib/subject-variants";
 
 export type Attendee = {
@@ -66,13 +66,16 @@ export default function AttendeesView({
 
   // Engagement: "delivered" is when the invite was sent (we have no SMTP
   // delivery receipt), "clicked" is when they first loaded their invite link.
+  // A click under ~45s after the send is discounted as our own test open.
   const deliveredOf = (a: Attendee) => a.invitedAt || a.lastSentAt;
+  const clickAt = (a: Attendee) => countedClickAt(deliveredOf(a), a.viewedAt);
   const everSent = useMemo(() => attendees.filter((a) => deliveredOf(a)), [attendees]);
-  const clickedPeople = useMemo(() => attendees.filter((a) => a.viewedAt), [attendees]);
+  const clickedPeople = useMemo(() => attendees.filter((a) => clickAt(a)), [attendees]);
   const clickLatencies = useMemo(() => clickedPeople
     .map((a) => {
       const d = deliveredOf(a);
-      return d && a.viewedAt ? new Date(a.viewedAt).getTime() - new Date(d).getTime() : NaN;
+      const c = clickAt(a);
+      return d && c ? new Date(c).getTime() - new Date(d).getTime() : NaN;
     })
     .filter((ms) => Number.isFinite(ms) && ms >= 0), [clickedPeople]);
   const clickRate = everSent.length ? Math.round((clickedPeople.length / everSent.length) * 100) : 0;
@@ -88,7 +91,7 @@ export default function AttendeesView({
       const r = byId.get(a.subjectVariant);
       if (!r) continue;
       r.sent++;
-      if (a.viewedAt) r.clicked++;
+      if (clickAt(a)) r.clicked++;
     }
     return rows;
   }, [attendees]);
@@ -119,7 +122,7 @@ export default function AttendeesView({
       // The Clicked view is an engagement report, not a funnel step: it gathers
       // everyone who clicked, regardless of which card they sit in now.
       if (clickedOnly) {
-        if (!a.viewedAt) return false;
+        if (!clickAt(a)) return false;
       } else if (activeCard && !activeCard.steps.includes(stepOf.get(a.id)!)) {
         return false;
       }
@@ -132,7 +135,7 @@ export default function AttendeesView({
       return true;
     });
     if (clickedOnly) {
-      list.sort((a, b) => new Date(b.viewedAt || 0).getTime() - new Date(a.viewedAt || 0).getTime());
+      list.sort((a, b) => new Date(clickAt(b) || 0).getTime() - new Date(clickAt(a) || 0).getTime());
     }
     return list;
   }, [attendees, activeCard, sourceFilter, modeFilter, clickedOnly, search, stepOf]);
@@ -283,11 +286,11 @@ export default function AttendeesView({
                       <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded text-slate-500 bg-slate-100">{ATTENDEE_SOURCE_LABELS[source]}</span>
                     </div>
                     <div className="text-xs text-slate-500 truncate">{a.email}{a.affiliation && ` · ${a.affiliation}`}</div>
-                    {clickedOnly && a.viewedAt && (
+                    {clickedOnly && clickAt(a) && (
                       <div className="mt-0.5 text-[11px] text-violet-700 truncate">
                         {deliveredOf(a)
-                          ? <>Delivered {shortDate(deliveredOf(a))} · clicked {fmtElapsed(deliveredOf(a), a.viewedAt)} later · {new Date(a.viewedAt).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</>
-                          : <>Clicked {new Date(a.viewedAt).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</>}
+                          ? <>Delivered {shortDate(deliveredOf(a))} · clicked {fmtElapsed(deliveredOf(a), clickAt(a))} later · {new Date(clickAt(a)!).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</>
+                          : <>Clicked {new Date(clickAt(a)!).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</>}
                       </div>
                     )}
                   </div>

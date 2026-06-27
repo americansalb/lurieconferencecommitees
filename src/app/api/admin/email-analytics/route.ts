@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { pickAlumniSubject, ALUMNI_SUBJECT_VARIANTS } from "@/lib/subject-variants";
+import { isCountedClick } from "@/lib/engagement";
 
 function isAdmin(role?: string) {
   return role === "admin" || role === "developer";
@@ -93,14 +94,24 @@ export async function GET() {
     };
   }
 
-  const attRows = attendees.map((a) => ({
-    delivered: (a.invitedAt || a.lastSentAt) ? new Date(a.invitedAt || a.lastSentAt!).getTime() : null,
-    clickedAt: a.viewedAt ? new Date(a.viewedAt).getTime() : null,
-  }));
-  const spoRows = sponsorsRaw.map((s) => ({
-    delivered: (s.invitedAt || s.lastSentAt) ? new Date(s.invitedAt || s.lastSentAt!).getTime() : null,
-    clickedAt: s.events[0]?.createdAt ? new Date(s.events[0].createdAt).getTime() : null,
-  }));
+  // A click only counts if it lands >= 45s after the send (else it's us testing).
+  const attRows = attendees.map((a) => {
+    const delivered = a.invitedAt || a.lastSentAt;
+    const counted = isCountedClick(delivered, a.viewedAt) ? a.viewedAt : null;
+    return {
+      delivered: delivered ? new Date(delivered).getTime() : null,
+      clickedAt: counted ? new Date(counted).getTime() : null,
+    };
+  });
+  const spoRows = sponsorsRaw.map((s) => {
+    const delivered = s.invitedAt || s.lastSentAt;
+    const rawClick = s.events[0]?.createdAt || null;
+    const counted = isCountedClick(delivered, rawClick) ? rawClick : null;
+    return {
+      delivered: delivered ? new Date(delivered).getTime() : null,
+      clickedAt: counted ? new Date(counted).getTime() : null,
+    };
+  });
 
   const engagement = {
     attendees: engagementOf(attRows),
@@ -127,7 +138,7 @@ export async function GET() {
     const r = abMap.get(id);
     if (!r) continue;
     r.sent++;
-    if (a.viewedAt) r.clicked++;
+    if (isCountedClick(a.invitedAt || a.lastSentAt, a.viewedAt)) r.clicked++;
   }
   const ab = Array.from(abMap.values());
 
