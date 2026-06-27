@@ -191,6 +191,9 @@ export default function InKindPledge(props: Props) {
             <p className="mt-3 text-[12px] text-center text-slate-400">
               {c.recognition.charAt(0).toUpperCase() + c.recognition.slice(1)} are tax-deductible to a 501(c)(3) (EINs 83-3016421 and 36-2170833). A donation receipt is available.
             </p>
+            <p className="mt-2 text-[12px] text-center text-slate-400">
+              Would you rather sponsor financially instead? <a href={`/sponsor/invited/${props.token}?pay=1`} className="font-semibold text-slate-500 underline hover:text-slate-700">See the paid levels</a>.
+            </p>
           </div>
         )}
       </div>
