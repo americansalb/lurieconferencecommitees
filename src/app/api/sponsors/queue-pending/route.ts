@@ -3,16 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getPolicy, planSendTimes } from "@/lib/email-queue";
-import {
-  isFoodProspect, isAslProspect, isCompExhibitor, isOfficialPartner,
-  sponsorInviteSubject, sponsorFoodSubject, sponsorAslSubject, sponsorUnsubscribeUrl,
-} from "@/lib/sponsors";
-import { sponsorLetterEmail, sponsorFoodLetterEmail, sponsorAslLetterEmail, sponsorInviteEmail } from "@/lib/mail-templates";
+import { renderSponsorInvite } from "@/lib/sponsor-invite";
 import { appUrl } from "@/lib/presenters";
-
-function letterDate() {
-  return new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
-}
 
 // Push every "Pending invite" prospect into the paced server queue so the Render
 // cron sends them in the background, with no page kept open. Each prospect gets
@@ -38,26 +30,7 @@ export async function POST() {
 
   for (let i = 0; i < prospects.length; i++) {
     const s = prospects[i];
-    const token = s.applicationToken;
-    const landingUrl = `${base}/sponsor/invited/${token}`;
-    const unsub = sponsorUnsubscribeUrl(token);
-    const partner = isOfficialPartner(s.companyName);
-
-    let html: string;
-    let subject: string;
-    if (isFoodProspect(s)) {
-      html = sponsorFoodLetterEmail({ contactName: s.contactName, companyName: s.companyName, note: s.inviteMessage, pledgeUrl: `${base}/sponsor/food/${token}`, learnMoreUrl: base, unsubscribeUrl: unsub, assetBase: base });
-      subject = sponsorFoodSubject(s.companyName);
-    } else if (isAslProspect(s)) {
-      html = sponsorAslLetterEmail({ contactName: s.contactName, companyName: s.companyName, note: s.inviteMessage, pledgeUrl: `${base}/sponsor/asl/${token}`, learnMoreUrl: base, unsubscribeUrl: unsub, assetBase: base });
-      subject = sponsorAslSubject(s.companyName);
-    } else if (isCompExhibitor(s)) {
-      html = sponsorInviteEmail({ contactFirstName: s.contactName.split(" ")[0], companyName: s.companyName, suggestedTier: null, inviteMessage: s.inviteMessage, landingUrl, assetBase: base, compExhibitor: true, isPartner: partner, unsubscribeUrl: unsub });
-      subject = sponsorInviteSubject(s.companyName, { comp: true });
-    } else {
-      html = sponsorLetterEmail({ contactName: s.contactName, recipientTitle: s.contactRole, companyName: s.companyName, reason: s.inviteMessage, landingUrl, learnMoreUrl: base, discountPercent: null, isPartner: partner, unsubscribeUrl: unsub, dateLabel: letterDate(), assetBase: base });
-      subject = sponsorInviteSubject(s.companyName, { partner });
-    }
+    const { subject, html } = renderSponsorInvite(s, base);
 
     await prisma.emailQueue.create({
       data: { batchId, recipientType: "sponsor", recipientId: s.id, to: s.contactEmail, subject, html, scheduledFor: times[i], status: "pending" },

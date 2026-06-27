@@ -144,6 +144,22 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, shuffled: ids.length, paused: await isPaused() });
   }
 
+  // Cancel specific pending entries (the per-row "cancel" on the queue page).
+  // Only affects rows that are still pending; sent/sending are left alone.
+  if (body?.action === "cancel") {
+    const cancelIds = Array.isArray(body?.ids)
+      ? (body.ids as unknown[]).filter((x): x is string => typeof x === "string")
+      : null;
+    if (!cancelIds || !cancelIds.length) {
+      return NextResponse.json({ error: "Pass ids to cancel." }, { status: 400 });
+    }
+    const r = await prisma.emailQueue.updateMany({
+      where: { status: "pending", id: { in: cancelIds } },
+      data: { status: "canceled" },
+    });
+    return NextResponse.json({ ok: true, canceled: r.count });
+  }
+
   // Specific entries to send right now (the "send this one" action), regardless
   // of their scheduled time. This is the only manual push left: invites should
   // always go out one or two at a time, never as a bulk blast. The old
