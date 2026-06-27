@@ -79,6 +79,7 @@ export default function AttendeesPage() {
   const [showQueueList, setShowQueueList] = useState(false);
   const [sendingEntryId, setSendingEntryId] = useState<string | null>(null);
   const [shuffling, setShuffling] = useState(false);
+  const [refreshNote, setRefreshNote] = useState<string | null>(null);
 
   // Quick invite form
   const [single, setSingle] = useState({ firstName: "", lastName: "", email: "", affiliation: "" });
@@ -267,6 +268,25 @@ export default function AttendeesPage() {
     load();
   }
 
+  // Re-render the pending queued invites with the latest template. The queue
+  // freezes each email's HTML at enqueue time, so anything queued before a
+  // template change keeps the old design until this is run.
+  async function refreshQueue() {
+    setShuffling(true);
+    setRefreshNote(null);
+    try {
+      const res = await fetch("/api/attendees/refresh-queue", { method: "POST" });
+      const j = await res.json().catch(() => ({}));
+      setRefreshNote(res.ok
+        ? `Refreshed ${j.refreshed || 0} queued invite${j.refreshed === 1 ? "" : "s"} to the latest template.`
+        : (j.error || "Could not refresh the queue."));
+      await load();
+    } finally {
+      setShuffling(false);
+      setTimeout(() => setRefreshNote(null), 8000);
+    }
+  }
+
   // Randomize the order of queued attendee invites without changing the
   // schedule: same send times, different recipients in each slot.
   async function shuffleQueue() {
@@ -384,6 +404,16 @@ export default function AttendeesPage() {
                     >
                       <SlidersHorizontal className="w-3 h-3" /> Adjust
                     </button>
+                    {(queueStatus.counts.pending || 0) > 0 && (
+                      <button
+                        onClick={refreshQueue}
+                        disabled={shuffling}
+                        className="text-xs font-bold px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5 bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100 disabled:opacity-50"
+                        title="Re-render the queued invites with the latest email template. Use after changing the email design."
+                      >
+                        {shuffling ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />} Refresh template
+                      </button>
+                    )}
                     {(queueStatus.counts.pending || 0) > 1 && (
                       <button
                         onClick={shuffleQueue}
@@ -412,6 +442,9 @@ export default function AttendeesPage() {
                   {" "}{queueStatus.policy.sendStartHour}:00–{queueStatus.policy.sendEndHour}:00 {queueStatus.policy.sendTimezone}.
                   {" "}Quick invites send immediately and skip these limits.
                 </div>
+                {refreshNote && (
+                  <div className="mt-2 text-xs font-semibold text-teal-700">{refreshNote}</div>
+                )}
 
                 {(queueStatus.pending?.length || 0) > 0 && (
                   <div className="mt-3 pt-3 border-t border-slate-100">
