@@ -3,8 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
-import { tierById, sponsorFromHeader, sponsorReplyTo, isCompExhibitor, isOfficialPartner } from "@/lib/sponsors";
-import { sponsorInviteEmail } from "@/lib/mail-templates";
+import { sponsorFromHeader, sponsorReplyTo, isCompExhibitor, isOfficialPartner } from "@/lib/sponsors";
+import { sponsorInviteEmail, sponsorLetterEmail } from "@/lib/mail-templates";
 import { appUrl } from "@/lib/presenters";
 
 // Per-org "Send invite" button on the dashboard: send (or resend) the
@@ -20,34 +20,51 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
 
   const comp = isCompExhibitor(sponsor);
   const partner = isOfficialPartner(sponsor.companyName);
-  const suggested = comp
-    ? null
-    : sponsor.tier && sponsor.tier !== "undecided"
-    ? tierById(sponsor.tier) ?? null
-    : null;
   const landingUrl = `${appUrl()}/sponsor/invited/${sponsor.applicationToken}`;
-  const html = sponsorInviteEmail({
-    contactFirstName: sponsor.contactName.split(" ")[0],
-    companyName: sponsor.companyName,
-    suggestedTier: suggested,
-    inviteMessage: sponsor.inviteMessage,
-    landingUrl,
-    assetBase: appUrl(),
-    compExhibitor: comp,
-    isPartner: partner,
-  });
+
+  // The formal letter is the standard invitation for every sponsor prospect.
+  // A complimentary exhibitor table is a different ask (a free table, not a
+  // sponsorship), so it keeps the dedicated "claim your table" email. The 20%
+  // VIP courtesy is added only via the separate send-letter action.
+  let html: string;
+  let subject: string;
+  if (comp) {
+    html = sponsorInviteEmail({
+      contactFirstName: sponsor.contactName.split(" ")[0],
+      companyName: sponsor.companyName,
+      suggestedTier: null,
+      inviteMessage: sponsor.inviteMessage,
+      landingUrl,
+      assetBase: appUrl(),
+      compExhibitor: true,
+      isPartner: partner,
+    });
+    subject = `You're invited: a complimentary exhibitor table at the 2026 Lurie Children's and AALB Conference`;
+  } else {
+    html = sponsorLetterEmail({
+      contactName: sponsor.contactName,
+      recipientTitle: sponsor.contactRole || null,
+      companyName: sponsor.companyName,
+      reason: sponsor.inviteMessage,
+      landingUrl,
+      learnMoreUrl: appUrl(),
+      discountPercent: null,
+      dateLabel: new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
+      assetBase: appUrl(),
+    });
+    subject = partner
+      ? `Our official partner: an invitation to sponsor the 2026 Lurie Children's and AALB Conference`
+      : `An invitation to sponsor the 2026 Lurie Children's and AALB Conference`;
+  }
 
   try {
     await sendMail({
       to: sponsor.contactEmail,
-      subject: partner
-        ? `Our official partner: an invitation to the 2026 Lurie Children's and AALB Conference`
-        : comp
-        ? `You're invited: a complimentary exhibitor table at the 2026 Lurie Children's and AALB Conference`
-        : `Invitation to Sponsor the 2026 Lurie Children's and AALB Conference`,
+      subject,
       html,
       from: sponsorFromHeader(),
-      replyTo: sponsorReplyTo(),
+      // Replies reach Kevin directly, matching the letter's own text.
+      replyTo: comp ? sponsorReplyTo() : "kevin@aalb.org",
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);

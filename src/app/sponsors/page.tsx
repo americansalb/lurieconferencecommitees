@@ -245,9 +245,9 @@ export default function SponsorsAdminPage() {
     }
   }
 
-  // Per-org "Send letter": fire the formal, founder-signed letter to one
-  // marquee prospect. Reuses their saved Personal note as the personalized
-  // paragraph; replies go to Kevin. Admin only.
+  // Per-org "Send + 20% offer": the same letter as the standard invite, but
+  // with the 20% VIP courtesy discount that auto-applies at checkout. For the
+  // handful of prospects you want to give the deal. Admin only.
   async function sendLetter(id: string) {
     const s = sponsors.find((x) => x.id === id);
     setSendingLetterId(id);
@@ -256,7 +256,7 @@ export default function SponsorsAdminPage() {
       const res = await fetch(`/api/sponsors/${id}/send-letter`, { method: "POST" });
       const j = await res.json().catch(() => ({}));
       const who = s?.companyName || "Sponsor";
-      setActionNote(res.ok && j.ok ? `${who}: personal letter sent.` : `${who}: could not send. ${j.error || "Unknown error."}`);
+      setActionNote(res.ok && j.ok ? `${who}: letter sent with the 20% offer.` : `${who}: could not send. ${j.error || "Unknown error."}`);
       await load();
     } catch {
       setActionNote("Network error sending the letter.");
@@ -589,10 +589,10 @@ export default function SponsorsAdminPage() {
                               onClick={() => sendLetter(s.id)}
                               disabled={sendingLetterId === s.id}
                               className="text-[10px] font-bold px-2 py-1 rounded-full border border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100 inline-flex items-center gap-1 shrink-0 disabled:opacity-50"
-                              title="Send the formal, founder-signed letter (uses this org's personal note). For marquee prospects."
+                              title="Send the same letter with the 20% VIP courtesy discount, applied automatically at checkout. For hand-picked prospects."
                             >
                               {sendingLetterId === s.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <FileText className="w-3 h-3" />}
-                              Send letter
+                              Send + 20% offer
                             </button>
                           )}
                           {showPayAction && (

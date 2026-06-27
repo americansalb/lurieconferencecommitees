@@ -4,7 +4,17 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
 import { newSponsorToken, tierById, sponsorFromHeader, sponsorReplyTo, isOfficialPartner } from "@/lib/sponsors";
-import { sponsorInviteEmail } from "@/lib/mail-templates";
+import { sponsorInviteEmail, sponsorLetterEmail } from "@/lib/mail-templates";
+
+// The formal letter is the standard sponsor invitation. Complimentary
+// exhibitor tables (a free table, not a sponsorship) keep the dedicated
+// "claim your table" email. The 20% VIP courtesy is never added here; it is
+// applied only via the dedicated send-letter action.
+const LETTER_SUBJECT = "An invitation to sponsor the 2026 Lurie Children's and AALB Conference";
+const COMP_SUBJECT = "You're invited: a complimentary exhibitor table at the 2026 Lurie Children's and AALB Conference";
+function letterDate() {
+  return new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+}
 import { appUrl } from "@/lib/presenters";
 import { getPolicy, planSendTimes } from "@/lib/email-queue";
 import { buildSponsorInviteRows } from "@/lib/imports";
@@ -89,28 +99,44 @@ export async function POST(req: Request) {
   });
 
   const landingUrl = `${appUrl()}/sponsor/invited/${token}`;
-  const html = sponsorInviteEmail({
-    contactFirstName: sponsor.contactName.split(" ")[0],
-    companyName: sponsor.companyName,
-    suggestedTier: suggested ?? null,
-    inviteMessage: sponsor.inviteMessage,
-    landingUrl,
-    assetBase: appUrl(),
-    compExhibitor: compTable,
-    isPartner: partner,
-  });
+  let html: string;
+  let subject: string;
+  if (compTable) {
+    html = sponsorInviteEmail({
+      contactFirstName: sponsor.contactName.split(" ")[0],
+      companyName: sponsor.companyName,
+      suggestedTier: null,
+      inviteMessage: sponsor.inviteMessage,
+      landingUrl,
+      assetBase: appUrl(),
+      compExhibitor: true,
+      isPartner: partner,
+    });
+    subject = COMP_SUBJECT;
+  } else {
+    html = sponsorLetterEmail({
+      contactName: sponsor.contactName,
+      recipientTitle: sponsor.contactRole || null,
+      companyName: sponsor.companyName,
+      reason: sponsor.inviteMessage,
+      landingUrl,
+      learnMoreUrl: appUrl(),
+      discountPercent: null,
+      dateLabel: letterDate(),
+      assetBase: appUrl(),
+    });
+    subject = partner
+      ? `Our official partner: ${LETTER_SUBJECT}`
+      : LETTER_SUBJECT;
+  }
 
   try {
     await sendMail({
       to: sponsor.contactEmail,
-      subject: partner
-        ? `Our official partner: an invitation to the 2026 Lurie Children's and AALB Conference`
-        : compTable
-        ? `You're invited: a complimentary exhibitor table at the 2026 Lurie Children's and AALB Conference`
-        : `Invitation to Sponsor the 2026 Lurie Children's and AALB Conference`,
+      subject,
       html,
       from: sponsorFromHeader(),
-      replyTo: sponsorReplyTo(),
+      replyTo: compTable ? sponsorReplyTo() : "kevin@aalb.org",
     });
     return NextResponse.json({ ok: true, sponsorId: sponsor.id, sent: true });
   } catch (e) {
@@ -171,21 +197,30 @@ async function bulkInvite(
     for (let i = 0; i < created.length; i++) {
       const c = created[i];
       const landingUrl = `${appUrl()}/sponsor/invited/${c.token}`;
-      const html = sponsorInviteEmail({
-        contactFirstName: c.contactName.split(" ")[0],
-        companyName: c.companyName,
-        suggestedTier: suggested ?? null,
-        inviteMessage: c.note,
-        landingUrl,
-        assetBase: appUrl(),
-        compExhibitor: compTable,
-      });
+      const html = compTable
+        ? sponsorInviteEmail({
+            contactFirstName: c.contactName.split(" ")[0],
+            companyName: c.companyName,
+            suggestedTier: null,
+            inviteMessage: c.note,
+            landingUrl,
+            assetBase: appUrl(),
+            compExhibitor: true,
+          })
+        : sponsorLetterEmail({
+            contactName: c.contactName,
+            companyName: c.companyName,
+            reason: c.note,
+            landingUrl,
+            learnMoreUrl: appUrl(),
+            discountPercent: null,
+            dateLabel: letterDate(),
+            assetBase: appUrl(),
+          });
       await prisma.emailQueue.create({
         data: {
           batchId, recipientType: "sponsor", recipientId: c.id, to: c.contactEmail,
-          subject: compTable
-            ? `You're invited: a complimentary exhibitor table at the 2026 Lurie Children's and AALB Conference`
-            : `Invitation to Sponsor the 2026 Lurie Children's and AALB Conference`,
+          subject: compTable ? COMP_SUBJECT : LETTER_SUBJECT,
           html, scheduledFor: times[i], status: "pending",
         },
       });
