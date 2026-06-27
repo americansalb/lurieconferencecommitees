@@ -23,6 +23,18 @@ const TARGETS: Target[] = [
   ["American Translators Association", "Chelsey Sleeter", "sponsorship@atanet.org", "https://www.atanet.org", "The ATA's healthcare-interpreting community overlaps heavily with our attendees; come connect with them as our guest."],
   ["Registry of Interpreters for the Deaf", "", "communications@rid.org", "https://rid.org", "For our Deaf-access track, RID's presence would be invaluable; we'd welcome you with a complimentary table."],
   ["Tarjimly", "", "yassin@tarjim.ly", "https://www.tarjimly.org", "Your refugee-interpreting mission is the heart of what we do; we'd be honored to offer you a complimentary table."],
+
+  // Pediatric / children's angle (this is a children's-hospital conference).
+  // Web-verified contacts only; the big children's brands (Abbott, Enfamil,
+  // Medela, WTTW, Ronald McDonald House) are relationship/form-only and live
+  // in the separate creative-targets file for manual outreach, not here.
+  ["American Academy of Pediatrics", "", "ksamp@aap.org", "https://www.aap.org", "As the home of American pediatrics and practically our neighbor in Itasca, the AAP belongs at a children's-hospital conference on language access; we'd be honored to have you partner or exhibit."],
+  ["Sesame Workshop", "", "Partnerships@sesame.org", "https://sesameworkshop.org", "Your multilingual work for immigrant and refugee children is the spirit of this conference; hosted by a children's hospital, we'd love Sesame Workshop as a partner, families would light up."],
+  ["Reach Out and Read", "", "info@reachoutandread.org", "https://reachoutandread.org", "You put books into well-child visits in dozens of languages, and we put language access at the center of pediatric care; a natural partnership, and we'd love you in the room."],
+  ["Lee & Low Books", "", "sales@leeandlow.com", "https://www.leeandlow.com", "As the leading bilingual children's book publisher, you'd be a perfect exhibitor at a children's-hospital language-access conference and a hit with our attendees who serve multilingual families."],
+  ["Children's Hospital Association", "", "memberservices@childrenshospitals.org", "https://www.childrenshospitals.org", "Lurie Children's is one of your members, and language access is a shared priority across every children's hospital you represent; we'd welcome CHA as a partner."],
+  ["La Rabida Children's Hospital", "Anne Mullen", "amullen@larabida.org", "https://larabida.org", "As a fellow Chicago children's hospital serving so many Medicaid and multilingual families, you're a natural ally; we'd love La Rabida to exhibit or join us as a community partner."],
+  ["Family Voices", "Ian Whitney", "iwhitney@familyvoices.org", "https://familyvoices.org", "Family-centered care for children with special health needs runs straight through language access; we'd be honored to have Family Voices as a partner at our children's-hospital conference."],
 ];
 
 // Tab-delimited (TSV) with a header row, so buildSponsorInviteRows maps columns
