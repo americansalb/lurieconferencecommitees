@@ -355,6 +355,28 @@ export default function SponsorsAdminPage() {
     }
   }
 
+  // Hand the pending invites to the server queue so the Render cron sends them
+  // in the background, paced, with no page kept open.
+  async function queuePending() {
+    setLoadingTargets(true);
+    setActionNote(null);
+    try {
+      const res = await fetch("/api/sponsors/queue-pending", { method: "POST" });
+      const j = await res.json().catch(() => ({}));
+      setActionNote(
+        res.ok
+          ? (j.queued
+              ? `${j.queued} invite${j.queued === 1 ? "" : "s"} scheduled to send in the background. You can safely close this page.`
+              : "No pending invites to schedule.")
+          : `Could not schedule. ${j.error || ""}`
+      );
+      await load();
+    } finally {
+      setLoadingTargets(false);
+      setTimeout(() => setActionNote(null), 10000);
+    }
+  }
+
   // Keep a ref to the latest sponsors so the drip loop always sees fresh data.
   useEffect(() => { sponsorsRef.current = sponsors; }, [sponsors]);
   // Tick once a second so the countdown re-renders while auto-send is on.
@@ -578,9 +600,17 @@ export default function SponsorsAdminPage() {
                     </span>
                   </div>
                   <div className="text-[11px] text-slate-400">
-                    Sends the next pending invite every 61 to 499 seconds, at random, so they never go out in a burst. Runs while this page stays open.
+                    Sends the next pending invite every 61 to 499 seconds, at random, so they never go out in a burst. This drip only runs while the page is open. To send with the page closed, schedule them in the background instead.
                   </div>
                 </div>
+                <button
+                  onClick={queuePending}
+                  disabled={loadingTargets}
+                  className="ml-auto inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white bg-gradient-to-r from-[#0E5566] to-[#0066B3] disabled:opacity-50 shrink-0"
+                  title="Schedule every pending invite to send in the background, paced by the server. No page needed."
+                >
+                  {loadingTargets ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Clock className="w-3.5 h-3.5" />} Send in background
+                </button>
               </div>
             )}
 
