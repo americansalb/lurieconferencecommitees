@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
-import { sponsorFromHeader } from "@/lib/sponsors";
+import { sponsorFromHeader, sponsorLetterReplyTo } from "@/lib/sponsors";
 import { sponsorLetterEmail } from "@/lib/mail-templates";
 import { appUrl } from "@/lib/presenters";
 
@@ -45,8 +45,8 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
       subject: `An invitation to sponsor the 2026 Lurie Children's and AALB Conference`,
       html,
       from: sponsorFromHeader(),
-      // Replies to the letter reach Kevin directly, mirroring the signature.
-      replyTo: "kevin@aalb.org",
+      // Replies reach both Kevin (on the letter) and the shared inbox.
+      replyTo: sponsorLetterReplyTo(),
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);

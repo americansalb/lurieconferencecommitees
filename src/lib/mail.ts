@@ -3,7 +3,9 @@ type SendArgs = {
   subject: string;
   html: string;
   text?: string;
-  replyTo?: string;
+  // One address, several comma-separated, or an array. Multiple addresses are
+  // sent to Resend as an array so the Reply-To header carries all of them.
+  replyTo?: string | string[];
   bcc?: string;
   from?: string;
 };
@@ -40,7 +42,12 @@ export async function sendMail({ to, subject, html, text, replyTo, bcc, from }: 
     text: text || stripHtml(html),
   };
   const finalReplyTo = replyTo || process.env.MAIL_REPLY_TO;
-  if (finalReplyTo) body.reply_to = finalReplyTo;
+  if (finalReplyTo) {
+    const list = (Array.isArray(finalReplyTo) ? finalReplyTo : String(finalReplyTo).split(","))
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (list.length) body.reply_to = list.length > 1 ? list : list[0];
+  }
   const finalBcc = bcc || process.env.MAIL_BCC;
   if (finalBcc) body.bcc = [finalBcc];
 

@@ -202,3 +202,12 @@ export function sponsorReplyTo(): string | undefined {
     undefined
   );
 }
+
+// Replies to a sponsor invitation reach BOTH the founder (whose name is on the
+// letter) and the shared inbox, so nothing falls through a single person's
+// mailbox. Combines kevin@aalb.org with the configured contact address,
+// de-duplicated, as a comma-separated Reply-To.
+export function sponsorLetterReplyTo(): string {
+  const base = sponsorReplyTo() || "contact@aalb.org";
+  return Array.from(new Set(["kevin@aalb.org", base.trim()].filter(Boolean))).join(", ");
+}

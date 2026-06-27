@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
-import { sponsorFromHeader, sponsorReplyTo, isCompExhibitor, isOfficialPartner } from "@/lib/sponsors";
+import { sponsorFromHeader, sponsorReplyTo, sponsorLetterReplyTo, isCompExhibitor, isOfficialPartner } from "@/lib/sponsors";
 import { sponsorInviteEmail, sponsorLetterEmail } from "@/lib/mail-templates";
 import { appUrl } from "@/lib/presenters";
 
@@ -63,8 +63,8 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
       subject,
       html,
       from: sponsorFromHeader(),
-      // Replies reach Kevin directly, matching the letter's own text.
-      replyTo: comp ? sponsorReplyTo() : "kevin@aalb.org",
+      // Replies to the letter reach both Kevin and the shared inbox.
+      replyTo: comp ? sponsorReplyTo() : sponsorLetterReplyTo(),
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);

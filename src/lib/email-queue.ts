@@ -1,7 +1,7 @@
 import { prisma } from "./db";
 import { sendMail } from "./mail";
 import { attendeeFromHeader, attendeeReplyTo, attendeeBcc } from "./attendees";
-import { sponsorFromHeader, sponsorReplyTo } from "./sponsors";
+import { sponsorFromHeader, sponsorLetterReplyTo } from "./sponsors";
 
 // Default sending policy. Tunable via SystemSetting keys with the same names.
 export const DEFAULT_POLICY = {
@@ -249,7 +249,7 @@ export async function runEmailQueue(): Promise<{ processed: number; sent: number
 // place that actually delivers a queued message (cron + admin flush).
 export function queueEnvelope(recipientType: string): { from?: string; replyTo?: string; bcc?: string } {
   if (recipientType === "attendee") return { from: attendeeFromHeader(), replyTo: attendeeReplyTo(), bcc: attendeeBcc() };
-  if (recipientType === "sponsor") return { from: sponsorFromHeader(), replyTo: sponsorReplyTo() };
+  if (recipientType === "sponsor") return { from: sponsorFromHeader(), replyTo: sponsorLetterReplyTo() };
   return {};
 }
 

@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
-import { newSponsorToken, tierById, sponsorFromHeader, sponsorReplyTo, isOfficialPartner } from "@/lib/sponsors";
+import { newSponsorToken, tierById, sponsorFromHeader, sponsorReplyTo, sponsorLetterReplyTo, isOfficialPartner } from "@/lib/sponsors";
 import { sponsorInviteEmail, sponsorLetterEmail } from "@/lib/mail-templates";
 
 // The formal letter is the standard sponsor invitation. Complimentary
@@ -136,7 +136,7 @@ export async function POST(req: Request) {
       subject,
       html,
       from: sponsorFromHeader(),
-      replyTo: compTable ? sponsorReplyTo() : "kevin@aalb.org",
+      replyTo: compTable ? sponsorReplyTo() : sponsorLetterReplyTo(),
     });
     return NextResponse.json({ ok: true, sponsorId: sponsor.id, sent: true });
   } catch (e) {
