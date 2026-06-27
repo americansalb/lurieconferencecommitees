@@ -210,7 +210,7 @@ export function isOfficialPartner(companyName: string): boolean {
   return OFFICIAL_PARTNERS.has((companyName || "").trim().toLowerCase());
 }
 
-export const SPONSOR_FROM_NAME_DEFAULT = "Iris Lafitte, Lurie Children's & AALB Conference";
+export const SPONSOR_FROM_NAME_DEFAULT = "AALB & Lurie Children's";
 
 // Subject lines lead with the organization's own name (so it catches their eye
 // in a crowded inbox) and frame it as a personal invitation, not a blast.

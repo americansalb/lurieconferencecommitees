@@ -43,7 +43,7 @@ export function buildAttendeeInvite(opts: {
 // Resend-verified domain so deliverability isn't affected. Replies route to
 // ATTENDEE_REPLY_TO (default: Iris's address derived from ATTENDEE_REPLY_TO
 // env, or whatever MAIL_REPLY_TO is set to).
-export const ATTENDEE_FROM_NAME_DEFAULT = "Iris Lafitte, AALB Operations Manager";
+export const ATTENDEE_FROM_NAME_DEFAULT = "Iris Laffitte, AALB Operations Manager";
 
 function extractAddress(s: string): string {
   const angle = s.match(/<([^>]+)>/);

@@ -660,7 +660,7 @@ export function sponsorInviteEmail({
     ${logoLockup(assetBase)}
 
     <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;padding-top:14px;border-top:1px solid #eef1f4;">
-      All sponsorships are tax-deductible to the fullest extent allowed by law under IRS code 501(c)(3). EINs: 83-3016421 and 36-2170833. If this is the wrong contact at ${escapeHtml(companyName)}, please forward this along or simply reply.
+      Americans Against Language Barriers is a 501(c)(3) nonprofit (EINs: 83-3016421 and 36-2170833); sponsorships may be tax-deductible depending on the benefits received &mdash; consult your tax advisor. If this is the wrong contact at ${escapeHtml(companyName)}, please forward this along or simply reply.
     </p>
     <p style="font-size:12px;line-height:1.6;color:${MUTED};margin:10px 0 0 0;">
       ${escapeHtml(postalAddress)}.${unsubscribeUrl ? ` You received this invitation to sponsor the conference. <a href="${unsubscribeUrl}" style="color:${MUTED};text-decoration:underline;">Unsubscribe</a>.` : ""}
@@ -835,7 +835,7 @@ export function sponsorLetterEmail({
         </tr>
       </table>
 
-      ${p(`Americans Against Language Barriers is a 501(c)(3) nonprofit that has trained roughly three thousand medical interpreters nationwide, and sponsorship is tax-deductible to the fullest extent allowed by law. To learn more or to confirm, the links below will take you there &mdash; or simply reply, and it reaches us directly at <a href="mailto:kevin@aalb.org" style="color:${LINK};text-decoration:none;">kevin@aalb.org</a>.`, 22)}
+      ${p(`Americans Against Language Barriers is a 501(c)(3) nonprofit that has trained roughly three thousand medical interpreters nationwide, and your support may be tax-deductible. To learn more or to confirm, the links below will take you there &mdash; or simply reply, and it reaches us directly at <a href="mailto:kevin@aalb.org" style="color:${LINK};text-decoration:none;">kevin@aalb.org</a>.`, 22)}
 
       ${discountBlock}
 
@@ -918,7 +918,7 @@ export function sponsorApplicationReceivedEmail({
     </p>
     ${donatesFoodInstead ? "" : `${button(statusUrl, "Review and complete payment")}`}
     <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;">
-      All sponsorship payments are tax-deductible to the fullest extent allowed by law under IRS code 501(c)(3). EINs: 83-3016421 and 36-2170833.
+      Americans Against Language Barriers is a 501(c)(3) nonprofit (EINs: 83-3016421 and 36-2170833). Your payment may be tax-deductible as a business expense, or as a charitable contribution to the extent it exceeds the value of any benefits received. Please consult your tax advisor.
     </p>
     <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:8px 0 0 0;">
       If you have any questions, simply reply to this email.
@@ -992,7 +992,7 @@ export function sponsorAcceptedEmail({
     ${logoLockup(assetBase)}
 
     <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;padding-top:14px;border-top:1px solid #eef1f4;">
-      All sponsorship payments are tax-deductible to the fullest extent allowed by law under IRS code 501(c)(3). EINs: 83-3016421 and 36-2170833.
+      Americans Against Language Barriers is a 501(c)(3) nonprofit (EINs: 83-3016421 and 36-2170833). Your payment may be tax-deductible as a business expense, or as a charitable contribution to the extent it exceeds the value of any benefits received. Please consult your tax advisor.
     </p>
   `);
 }
@@ -1085,7 +1085,7 @@ export function sponsorPaidEmail({
     <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;padding-top:14px;border-top:1px solid #eef1f4;">
       ${isComplimentary
         ? "Hosted by Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers, a 501(c)(3) nonprofit. EINs: 83-3016421 and 36-2170833."
-        : "Your payment is tax-deductible to the fullest extent allowed by law under IRS code 501(c)(3). EINs: 83-3016421 and 36-2170833. Keep this email as your receipt."}
+        : "Americans Against Language Barriers is a 501(c)(3) nonprofit (EINs: 83-3016421 and 36-2170833). Your payment may be tax-deductible as a business expense, or as a charitable contribution to the extent it exceeds the value of any benefits received; consult your tax advisor. Keep this email as your receipt."}
     </p>
   `);
 }

@@ -351,7 +351,7 @@ export default function SponsorFunnel() {
           <div className="mt-7">
             <PrimaryButton onClick={submit} loading={submitting}>Submit application</PrimaryButton>
           </div>
-          <Hint>Tax-deductible under IRS code 501(c)(3). EINs 83-3016421 and 36-2170833.</Hint>
+          <Hint>A 501(c)(3) nonprofit (EINs 83-3016421 and 36-2170833). Your payment may be tax-deductible as a business expense, or as a charitable contribution beyond the value of any benefits received. Consult your tax advisor.</Hint>
         </StepFrame>
       )}
     </WizardShell>
@@ -405,7 +405,7 @@ function Browse({ onPick }: { onPick: (t: SponsorTier) => void }) {
         <div className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[12px]" style={{ color: C.mutedSoft }}>
           <span className="inline-flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" />August 15 and 16, 2026</span>
           <span className="inline-flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5" />Lurie Children&rsquo;s, Chicago</span>
-          <span className="inline-flex items-center gap-1.5"><Award className="w-3.5 h-3.5" />Tax-deductible under IRC 501(c)(3)</span>
+          <span className="inline-flex items-center gap-1.5"><Award className="w-3.5 h-3.5" />501(c)(3) &middot; may be tax-deductible</span>
         </div>
         <div className="mt-6">
           <a href="/2026-sponsorship-prospectus.pdf" target="_blank" rel="noopener noreferrer"
@@ -419,7 +419,7 @@ function Browse({ onPick }: { onPick: (t: SponsorTier) => void }) {
 
       <TierGroup
         title="Sponsorship levels"
-        sub="All sponsorships are tax-deductible under IRS code 501(c)(3)."
+        sub="The $450 Supporter level (logo only) is generally fully tax-deductible; higher levels include tickets, so deductibility depends on the benefits received. Consult your tax advisor."
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {mainTiers.map((tier, i) => (
@@ -453,7 +453,7 @@ function Browse({ onPick }: { onPick: (t: SponsorTier) => void }) {
           <Reason icon={Heart} title="Meaningful impact" body="Support initiatives that directly improve patient outcomes in healthcare settings where language barriers create real risk." />
           <Reason icon={Users} title="Professional audience" body="Connect with interpreters, translators, healthcare administrators, language service providers, regulators, and policy leaders." />
           <Reason icon={Building2} title="Brand visibility" body="Recognition on the conference website, social media, on-site signage, the program, and pre and post conference emails." />
-          <Reason icon={Award} title="Tax-deductible" body="All contributions are fully deductible under IRS code 501(c)(3). EINs: 83-3016421 and 36-2170833." />
+          <Reason icon={Award} title="Tax-deductible" body="We're a 501(c)(3) (EINs 83-3016421 and 36-2170833). The $450 logo-only Supporter level is generally fully deductible; for levels that include tickets or a table, your payment may be deductible as a business expense, or as a charitable contribution beyond the value of those benefits. Consult your tax advisor." />
         </div>
       </div>
 
@@ -671,7 +671,7 @@ function Done({
                   Pay {tier.amountLabel} now
                 </PrimaryButton>
                 <p className="text-[11px] text-center mt-3" style={{ color: C.mutedSoft }}>
-                  Payment processed by Stripe. Tax-deductible under IRS code 501(c)(3).
+                  Payment processed by Stripe. We&rsquo;re a 501(c)(3); your payment may be tax-deductible &mdash; consult your tax advisor.
                 </p>
                 <InlineError message={error} />
               </div>

@@ -190,7 +190,7 @@ function ChooseTier({ onPick, pct }: { onPick: (t: SponsorTier) => void; pct: nu
     <div className="mt-2">
       <div className="text-center mb-5">
         <h2 className="text-lg font-extrabold text-slate-900">Pick the level that&rsquo;s right for you.</h2>
-        <p className="text-sm text-slate-500 mt-1">All sponsorships are tax-deductible under IRS code 501(c)(3).</p>
+        <p className="text-sm text-slate-500 mt-1">The $450 Supporter level (logo only) is generally fully tax-deductible; higher levels include tickets, so deductibility depends on the benefits received. Consult your tax advisor.</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
@@ -368,7 +368,7 @@ function Details({
           </button>
 
           <p className="text-[11px] text-slate-400 mt-3 text-center">
-            Tax-deductible under IRS code 501(c)(3). EINs: 83-3016421 and 36-2170833.
+            A 501(c)(3) nonprofit (EINs: 83-3016421 and 36-2170833); your payment may be tax-deductible &mdash; consult your tax advisor.
             {!usesAlternative && " Payment processed by Stripe."}
             {" "}Need to pay by check or invoice? Reply to the email instead.
           </p>
