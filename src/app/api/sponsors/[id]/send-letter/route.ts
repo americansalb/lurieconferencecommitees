@@ -24,6 +24,8 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
   const sponsor = await prisma.sponsor.findUnique({ where: { id: params.id } });
   if (!sponsor) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+  // VIP courtesy: 20% off any sponsorship level (exhibitor tables excluded).
+  const discountPercent = sponsor.tier === "exhibitor" ? null : 20;
   const dateLabel = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   const html = sponsorLetterEmail({
     contactName: sponsor.contactName,
@@ -32,8 +34,7 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
     reason: sponsor.inviteMessage,
     landingUrl: `${appUrl()}/sponsor/invited/${sponsor.applicationToken}`,
     learnMoreUrl: appUrl(),
-    // VIP courtesy: 20% off any sponsorship level (exhibitor tables excluded).
-    discountPercent: sponsor.tier === "exhibitor" ? null : 20,
+    discountPercent,
     dateLabel,
     assetBase: appUrl(),
   });
@@ -61,6 +62,8 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
       status: sponsor.status === "prospect" || sponsor.status === "queued" ? "invited" : sponsor.status,
       invitedAt: sponsor.invitedAt ?? new Date(),
       lastSentAt: new Date(),
+      // Persist eligibility so the discount auto-applies when they check out.
+      discountPercent,
     },
   });
   await prisma.sponsorEvent.create({

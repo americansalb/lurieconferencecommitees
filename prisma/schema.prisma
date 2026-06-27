@@ -507,6 +507,9 @@ model Sponsor {
   applicationToken      String         @unique
 
   inviteMessage         String?
+  // VIP courtesy: when set (e.g. 20), checkout applies this percentage off the
+  // chosen sponsorship level. Excludes exhibitor tables; applied at checkout.
+  discountPercent       Int?
   invitedById           String?
   invitedAt             DateTime?
   lastSentAt            DateTime?

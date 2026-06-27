@@ -25,11 +25,22 @@ export async function POST(req: Request) {
   const t = tierById(sponsor.tier);
   if (!t) return NextResponse.json({ error: "Unknown tier" }, { status: 400 });
 
+  // VIP courtesy discount: applies to any sponsorship level except exhibitor
+  // tables. Computed from the tier's list price (not the stored amount) so a
+  // repeated checkout never compounds the discount.
+  const applyDiscount = !!sponsor.discountPercent && sponsor.tier !== "exhibitor";
+  const chargeCents = applyDiscount
+    ? Math.round((t.amountCents * (100 - sponsor.discountPercent!)) / 100)
+    : sponsor.amountCents;
+  const discountNote = applyDiscount
+    ? ` A ${sponsor.discountPercent}% partner courtesy has been applied to the ${t.amountLabel} level.`
+    : "";
+
   const session = await createCheckoutSession({
-    amountCents: sponsor.amountCents,
+    amountCents: chargeCents,
     customerEmail: sponsor.contactEmail,
     productName: `Conference 2026: ${t.name}`,
-    productDescription: `Sponsorship of the 2026 Lurie Children's & AALB Conference at the ${t.name} level. Tax-deductible under IRS code 501(c)(3). ${t.ticketsIncluded} conference ticket${t.ticketsIncluded === 1 ? "" : "s"} included.`,
+    productDescription: `Sponsorship of the 2026 Lurie Children's & AALB Conference at the ${t.name} level. Tax-deductible under IRS code 501(c)(3). ${t.ticketsIncluded} conference ticket${t.ticketsIncluded === 1 ? "" : "s"} included.${discountNote}`,
     successUrl: `${appUrl()}/sponsor/success/${token}?cs={CHECKOUT_SESSION_ID}`,
     cancelUrl: `${appUrl()}/sponsor/status/${token}`,
     metadata: {
@@ -44,9 +55,17 @@ export async function POST(req: Request) {
     where: { id: sponsor.id },
     data: {
       stripeSessionId: session.id,
+      // Record the actual amount due so the confirmation email and revenue
+      // reporting reflect the discounted price, not the list price.
+      amountCents: chargeCents,
       status: (sponsor.status === "submitted" || sponsor.status === "invited") ? "awaiting_payment" : sponsor.status,
     },
   });
+  if (applyDiscount) {
+    await prisma.sponsorEvent.create({
+      data: { sponsorId: sponsor.id, type: "discount_applied", meta: `${sponsor.discountPercent}% -> ${chargeCents}` },
+    }).catch(() => {});
+  }
   await prisma.sponsorEvent.create({
     data: { sponsorId: sponsor.id, type: "checkout_started", meta: session.id },
   });
