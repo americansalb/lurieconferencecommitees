@@ -6,6 +6,16 @@ the dedicated food letter (`sponsorFoodLetterEmail`) and the "food" tier, and
 can be filtered apart from the rest of the pipeline (the **Food / Non-food**
 dropdown on the Sponsors page).
 
+## Status
+
+**28 of 29 restaurants now have an email filled in and will load** via "Load
+food prospects." The emails are **search-sourced** (domain-matched or
+business-name-matched addresses found in search listings) but were **not
+confirmed on the live page** (the network policy blocks opening restaurant
+sites), so give each a quick confirm before enabling Auto-send. Bloom was
+removed (permanently closed Feb 2026). Only **Vegan Now 2 Go** still lacks a
+strong email. The table below is the original research reference.
+
 ## ⚠️ Emails need verifying (one-time, ~20 min)
 
 This environment's network policy blocked opening any restaurant website, so the
