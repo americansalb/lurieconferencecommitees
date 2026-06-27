@@ -18,11 +18,11 @@ const TARGETS: Target[] = [
   ["Wordly", "", "contact@wordly.ai", "https://www.wordly.ai", "We'd love to explore Wordly powering live AI translation for the conference itself, plus an exhibitor table; a perfect showcase for where this is all heading."],
   ["Jeenie", "", "support@jeenie.com", "https://jeenie.com", "Jeenie's on-demand interpreting energy fits our forward-looking track; we'd love an exhibitor presence from you."],
   ["Gallaudet University", "", "sponsorship@gallaudet.edu", "https://gallaudet.edu", "Your programs are a natural draw for our access-focused audience; an exhibitor table introduces them to future partners and students."],
-  ["CCHI", "", "admin@cchicertification.org", "https://cchicertification.org", "So many of our attendees hold your certification; CCHI belongs in the room, and we'd be glad to offer you a complimentary partner table."],
-  ["IMIA", "", "outreach@imiaweb.org", "https://www.imiaweb.org", "Our certified-interpreter audience is your membership; we'd love to give IMIA a complimentary presence among them."],
+  ["CCHI", "", "admin@cchicertification.org", "https://cchicertification.org", "So many of our attendees hold your certification, so CCHI belongs in this room; we'd love to talk about having you exhibit."],
+  ["IMIA", "", "outreach@imiaweb.org", "https://www.imiaweb.org", "Our certified-interpreter audience is your membership; we'd love to explore having IMIA exhibit or partner with us."],
   ["American Translators Association", "Chelsey Sleeter", "sponsorship@atanet.org", "https://www.atanet.org", "The ATA's healthcare-interpreting community overlaps heavily with our attendees; come connect with them as our guest."],
-  ["Registry of Interpreters for the Deaf", "", "communications@rid.org", "https://rid.org", "For our Deaf-access track, RID's presence would be invaluable; we'd welcome you with a complimentary table."],
-  ["Tarjimly", "", "yassin@tarjim.ly", "https://www.tarjimly.org", "Your refugee-interpreting mission is the heart of what we do; we'd be honored to offer you a complimentary table."],
+  ["Registry of Interpreters for the Deaf", "", "communications@rid.org", "https://rid.org", "For our Deaf-access track, RID's presence would be invaluable; we'd love to discuss having you join us."],
+  ["Tarjimly", "", "yassin@tarjim.ly", "https://www.tarjimly.org", "Your refugee-interpreting mission is close to ours; we'd love to explore having Tarjimly exhibit or partner with us."],
 
   // Pediatric / children's angle (this is a children's-hospital conference).
   // Web-verified contacts only; the big children's brands (Abbott, Enfamil,
