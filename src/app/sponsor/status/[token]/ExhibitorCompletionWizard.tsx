@@ -141,7 +141,7 @@ export default function ExhibitorCompletionWizard({
         <StepFrame stepKey="pay">
           <Question
             title={free ? <>Claim your complimentary table.</> : <>Ready to confirm.</>}
-            sub={free ? <>No payment needed, this table is on us. Confirm the details below and you&rsquo;re set.</> : <>Pay by card to secure your table. We&rsquo;re a 501(c)(3); your payment may be tax-deductible &mdash; consult your tax advisor.</>}
+            sub={free ? <>No payment needed, this table is on us. Confirm the details below and you&rsquo;re set.</> : <>Pay by card to secure your table. We&rsquo;re a 501(c)(3); your payment may be tax-deductible, so consult your tax advisor.</>}
           />
 
           <div className="rounded-2xl border bg-white overflow-hidden" style={{ borderColor: C.hairline }}>

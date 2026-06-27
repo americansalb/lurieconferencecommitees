@@ -671,7 +671,7 @@ function Done({
                   Pay {tier.amountLabel} now
                 </PrimaryButton>
                 <p className="text-[11px] text-center mt-3" style={{ color: C.mutedSoft }}>
-                  Payment processed by Stripe. We&rsquo;re a 501(c)(3); your payment may be tax-deductible &mdash; consult your tax advisor.
+                  Payment processed by Stripe. We&rsquo;re a 501(c)(3); your payment may be tax-deductible, so consult your tax advisor.
                 </p>
                 <InlineError message={error} />
               </div>

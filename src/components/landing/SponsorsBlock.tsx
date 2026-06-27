@@ -100,11 +100,12 @@ export default function SponsorsBlock() {
             <span className="text-[13px]" style={{ color: TOKENS.muted }}>your logo on the website and on-site.</span>
           </div>
           <p className="mt-5 text-[12.5px] leading-relaxed" style={{ color: TOKENS.mutedSoft }}>
-            Americans Against Language Barriers is a 501(c)(3) nonprofit (EINs {CONFERENCE.eins}). The
-            $450 Supporter level is logo recognition only, with no tickets or other benefits, so it is
-            generally fully tax-deductible. For sponsorship and exhibitor levels that include tickets or a
-            table, your payment may be deductible as a business expense, or as a charitable contribution to
-            the extent it exceeds the value of those benefits. Please consult your tax advisor.
+            The conference is presented jointly by Lurie Children&rsquo;s and Americans Against Language
+            Barriers, both 501(c)(3) nonprofits (EINs {CONFERENCE.eins}). The $450 Supporter level is logo
+            recognition only, with no tickets or other benefits, so it is generally fully tax-deductible. For
+            sponsorship and exhibitor levels that include tickets or a table, your payment may be deductible as
+            a business expense, or as a charitable contribution to the extent it exceeds the value of those
+            benefits. Please consult your tax advisor.
           </p>
         </div>
       </div>

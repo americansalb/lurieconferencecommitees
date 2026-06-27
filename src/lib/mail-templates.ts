@@ -660,7 +660,7 @@ export function sponsorInviteEmail({
     ${logoLockup(assetBase)}
 
     <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;padding-top:14px;border-top:1px solid #eef1f4;">
-      Americans Against Language Barriers is a 501(c)(3) nonprofit (EINs: 83-3016421 and 36-2170833); sponsorships may be tax-deductible depending on the benefits received &mdash; consult your tax advisor. If this is the wrong contact at ${escapeHtml(companyName)}, please forward this along or simply reply.
+      The conference is presented jointly by Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers, both 501(c)(3) nonprofits (EINs: 83-3016421 and 36-2170833); sponsorships may be tax-deductible depending on the benefits received, so please consult your tax advisor. If this is the wrong contact at ${escapeHtml(companyName)}, please forward this along or simply reply.
     </p>
     <p style="font-size:12px;line-height:1.6;color:${MUTED};margin:10px 0 0 0;">
       ${escapeHtml(postalAddress)}.${unsubscribeUrl ? ` You received this invitation to sponsor the conference. <a href="${unsubscribeUrl}" style="color:${MUTED};text-decoration:underline;">Unsubscribe</a>.` : ""}
@@ -741,7 +741,7 @@ export function sponsorLetterEmail({
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 22px 0;">
         <tr><td bgcolor="#FBF4E2" style="background-color:#FBF4E2;border:1px solid #EAD9AE;border-radius:10px;padding:16px 20px;">
           <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:${GOLD};font-weight:bold;padding-bottom:6px;">A personal courtesy</div>
-          <div style="font-family:Georgia,'Times New Roman',serif;font-size:14.5px;line-height:1.7;color:#3C2E10;">As one of a small number of organizations we are inviting directly, we are pleased to extend <strong>${discountPercent}% off any level</strong> &mdash; sponsorship or exhibitor table. It is applied automatically when you sponsor through the button below.</div>
+          <div style="font-family:Georgia,'Times New Roman',serif;font-size:14.5px;line-height:1.7;color:#3C2E10;">As one of a small number of organizations we are inviting directly, we are pleased to extend <strong>${discountPercent}% off any level</strong>, sponsorship or exhibitor table alike. It is applied automatically when you sponsor through the button below.</div>
         </td></tr>
       </table>` : "";
   const p = (html: string, mb = 18) =>
@@ -772,7 +772,7 @@ export function sponsorLetterEmail({
 </style>
 </head>
 <body style="margin:0;padding:0;width:100%;background-color:#ECE6D7;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
-<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#ECE6D7;">An invitation to stand with us as a sponsor of the Second Joint Conference on language access in American healthcare &mdash; August 15 and 16, 2026, in Chicago.</div>
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#ECE6D7;">An invitation to stand with us as a sponsor of the Second Joint Conference on language access in American healthcare, August 15 and 16, 2026, in Chicago.</div>
 
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#ECE6D7;background-image:linear-gradient(180deg,#F0EBDD 0%,#E6DECB 100%);">
 <tr><td align="center" style="padding:34px 14px 44px 14px;">
@@ -835,7 +835,7 @@ export function sponsorLetterEmail({
         </tr>
       </table>
 
-      ${p(`Americans Against Language Barriers is a 501(c)(3) nonprofit that has trained roughly three thousand medical interpreters nationwide, and your support may be tax-deductible. To learn more or to confirm, the links below will take you there &mdash; or simply reply, and it reaches us directly at <a href="mailto:kevin@aalb.org" style="color:${LINK};text-decoration:none;">kevin@aalb.org</a>.`, 22)}
+      ${p(`Americans Against Language Barriers, which presents the conference together with Lurie Children&rsquo;s, has trained roughly three thousand medical interpreters nationwide, and your support may be tax-deductible. To learn more or to confirm, the links below will take you there, or simply reply, and it reaches us directly at <a href="mailto:kevin@aalb.org" style="color:${LINK};text-decoration:none;">kevin@aalb.org</a>.`, 22)}
 
       ${discountBlock}
 
@@ -918,7 +918,7 @@ export function sponsorApplicationReceivedEmail({
     </p>
     ${donatesFoodInstead ? "" : `${button(statusUrl, "Review and complete payment")}`}
     <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;">
-      Americans Against Language Barriers is a 501(c)(3) nonprofit (EINs: 83-3016421 and 36-2170833). Your payment may be tax-deductible as a business expense, or as a charitable contribution to the extent it exceeds the value of any benefits received. Please consult your tax advisor.
+      The conference is presented jointly by Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers, both 501(c)(3) nonprofits (EINs: 83-3016421 and 36-2170833). Your payment may be tax-deductible as a business expense, or as a charitable contribution to the extent it exceeds the value of any benefits received. Please consult your tax advisor.
     </p>
     <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:8px 0 0 0;">
       If you have any questions, simply reply to this email.
@@ -992,7 +992,7 @@ export function sponsorAcceptedEmail({
     ${logoLockup(assetBase)}
 
     <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;padding-top:14px;border-top:1px solid #eef1f4;">
-      Americans Against Language Barriers is a 501(c)(3) nonprofit (EINs: 83-3016421 and 36-2170833). Your payment may be tax-deductible as a business expense, or as a charitable contribution to the extent it exceeds the value of any benefits received. Please consult your tax advisor.
+      The conference is presented jointly by Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers, both 501(c)(3) nonprofits (EINs: 83-3016421 and 36-2170833). Your payment may be tax-deductible as a business expense, or as a charitable contribution to the extent it exceeds the value of any benefits received. Please consult your tax advisor.
     </p>
   `);
 }
@@ -1085,7 +1085,7 @@ export function sponsorPaidEmail({
     <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;padding-top:14px;border-top:1px solid #eef1f4;">
       ${isComplimentary
         ? "Hosted by Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers, a 501(c)(3) nonprofit. EINs: 83-3016421 and 36-2170833."
-        : "Americans Against Language Barriers is a 501(c)(3) nonprofit (EINs: 83-3016421 and 36-2170833). Your payment may be tax-deductible as a business expense, or as a charitable contribution to the extent it exceeds the value of any benefits received; consult your tax advisor. Keep this email as your receipt."}
+        : "The conference is presented jointly by Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers, both 501(c)(3) nonprofits (EINs: 83-3016421 and 36-2170833). Your payment may be tax-deductible as a business expense, or as a charitable contribution to the extent it exceeds the value of any benefits received; consult your tax advisor. Keep this email as your receipt."}
     </p>
   `);
 }

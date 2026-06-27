@@ -135,7 +135,7 @@ export default async function SponsorStatusPage({ params }: { params: { token: s
           </div>
 
           <p className="mt-6 text-[11px] text-slate-400">
-            A 501(c)(3) nonprofit (EINs: 83-3016421 and 36-2170833). Your payment may be tax-deductible &mdash; consult your tax advisor.
+            A 501(c)(3) nonprofit (EINs: 83-3016421 and 36-2170833). Your payment may be tax-deductible, so consult your tax advisor.
           </p>
         </div>
       </div>

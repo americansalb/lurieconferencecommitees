@@ -40,7 +40,7 @@ export async function POST(req: Request) {
     amountCents: chargeCents,
     customerEmail: sponsor.contactEmail,
     productName: `Conference 2026: ${t.name}`,
-    productDescription: `Sponsorship of the 2026 Lurie Children's & AALB Conference at the ${t.name} level.${t.ticketsIncluded > 0 ? ` Includes ${t.ticketsIncluded} conference ticket${t.ticketsIncluded === 1 ? "" : "s"}.` : " Logo recognition only, no tickets included."} Americans Against Language Barriers is a 501(c)(3) nonprofit;${t.ticketsIncluded > 0 ? " your payment may be tax-deductible (consult your tax advisor)." : " as a logo-only contribution this level is generally fully tax-deductible (consult your tax advisor)."}${discountNote}`,
+    productDescription: `Sponsorship of the 2026 Lurie Children's & AALB Conference at the ${t.name} level.${t.ticketsIncluded > 0 ? ` Includes ${t.ticketsIncluded} conference ticket${t.ticketsIncluded === 1 ? "" : "s"}.` : " Logo recognition only, no tickets included."} Presented jointly by Lurie Children's and Americans Against Language Barriers, both 501(c)(3) nonprofits;${t.ticketsIncluded > 0 ? " your payment may be tax-deductible (consult your tax advisor)." : " as a logo-only contribution this level is generally fully tax-deductible (consult your tax advisor)."}${discountNote}`,
     successUrl: `${appUrl()}/sponsor/success/${token}?cs={CHECKOUT_SESSION_ID}`,
     cancelUrl: `${appUrl()}/sponsor/status/${token}`,
     metadata: {
