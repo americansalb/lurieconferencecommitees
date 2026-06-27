@@ -32,7 +32,7 @@ export const ALUMNI_SUBJECT_VARIANTS: SubjectVariant[] = [
   {
     id: "cohort",
     label: "Cohort",
-    make: (f) => `${f}, your cohort is heading to Chicago on August 15`,
+    make: (f) => `${f}, reconnect with your AALB cohort in Chicago this August`,
   },
   {
     id: "direct",
