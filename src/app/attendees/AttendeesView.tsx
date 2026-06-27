@@ -7,6 +7,7 @@ import {
   attendeeStep, attendeeStepMoment, attendeeSource,
 } from "@/lib/attendees";
 import { fmtElapsed, medianLabel } from "@/lib/engagement";
+import { ALUMNI_SUBJECT_VARIANTS } from "@/lib/subject-variants";
 
 export type Attendee = {
   id: string;
@@ -25,6 +26,8 @@ export type Attendee = {
   viewedAt: string | null;
   confirmedAt: string | null;
   createdAt: string;
+  inviteTemplate?: string | null;
+  subjectVariant?: string | null;
 };
 
 // The funnel, left to right, in plain language. Each card owns one or more of
@@ -73,6 +76,23 @@ export default function AttendeesView({
     })
     .filter((ms) => Number.isFinite(ms) && ms >= 0), [clickedPeople]);
   const clickRate = everSent.length ? Math.round((clickedPeople.length / everSent.length) * 100) : 0;
+
+  // Subject-line A/B (alumni only): sent vs clicked per variant, so we can see
+  // which line actually earns opens.
+  const abRows = useMemo(() => {
+    const rows = ALUMNI_SUBJECT_VARIANTS.map((v) => ({ id: v.id, label: v.label, example: v.make("Alex"), sent: 0, clicked: 0 }));
+    const byId = new Map(rows.map((r) => [r.id, r]));
+    for (const a of attendees) {
+      if (a.inviteTemplate !== "alumni" || !a.subjectVariant) continue;
+      if (!(a.invitedAt || a.lastSentAt)) continue;
+      const r = byId.get(a.subjectVariant);
+      if (!r) continue;
+      r.sent++;
+      if (a.viewedAt) r.clicked++;
+    }
+    return rows;
+  }, [attendees]);
+  const abSent = abRows.reduce((n, r) => n + r.sent, 0);
 
   // One pass: tag every attendee with its precise step, then tally per card.
   const stepOf = useMemo(() => {
@@ -180,6 +200,26 @@ export default function AttendeesView({
             <span className="text-[11px] text-slate-400 ml-auto hidden sm:inline">
               Delivered = when the invite was sent. Time to click is measured from that.
             </span>
+          </div>
+        )}
+
+        {/* Subject-line A/B (alumni): click rate per subject line */}
+        {clickedOnly && abSent > 0 && (
+          <div className="px-4 py-3 border-b border-slate-100 bg-white">
+            <div className="text-[11px] font-bold uppercase tracking-wide text-slate-500 mb-2">Alumni subject lines &middot; click rate</div>
+            <div className="space-y-1">
+              {abRows.filter((r) => r.sent > 0).sort((a, b) => (b.clicked / b.sent) - (a.clicked / a.sent)).map((r) => {
+                const rate = r.sent ? Math.round((r.clicked / r.sent) * 100) : 0;
+                return (
+                  <div key={r.id} className="flex items-center gap-3 text-xs py-0.5">
+                    <span className="w-16 shrink-0 font-bold text-slate-700">{r.label}</span>
+                    <span className="flex-1 min-w-0 text-slate-500 truncate" title={r.example}>{r.example.replace(/^Alex,\s*/, "")}</span>
+                    <span className="shrink-0 text-slate-400 tabular-nums">{r.clicked}/{r.sent}</span>
+                    <span className="w-10 shrink-0 text-right font-bold tabular-nums" style={{ color: "#7C3AED" }}>{rate}%</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 

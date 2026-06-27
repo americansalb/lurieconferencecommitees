@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { newAttendeeToken, parseAttendeeCsv, attendeeFromHeader, attendeeReplyTo, attendeeBcc, buildAttendeeInvite } from "@/lib/attendees";
+import { newAttendeeToken, parseAttendeeCsv, parseEmailList, nameFromEmail, attendeeFromHeader, attendeeReplyTo, attendeeBcc, buildAttendeeInvite } from "@/lib/attendees";
+import { pickAlumniSubject } from "@/lib/subject-variants";
 import { ensureFirstNameCode } from "@/lib/discounts";
 import { getPolicy, planSendTimes } from "@/lib/email-queue";
 import { sendMail } from "@/lib/mail";
@@ -21,9 +22,15 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const attendees = await prisma.attendee.findMany({
+  const rows = await prisma.attendee.findMany({
     orderBy: { createdAt: "desc" },
   });
+  // Attach the alumni A/B subject variant (derived from the token) so the
+  // dashboard can report click rate per subject line.
+  const attendees = rows.map((a) => ({
+    ...a,
+    subjectVariant: a.inviteTemplate === "alumni" ? pickAlumniSubject("", a.inviteToken).id : null,
+  }));
 
   const queueCounts = await prisma.emailQueue.groupBy({
     by: ["status"],
@@ -124,6 +131,74 @@ export async function POST(req: Request) {
         { status: 502 }
       );
     }
+  }
+
+  // Emails-only mode: paste a list of addresses (comma / space / newline
+  // separated) with no names, for a quick deliverability test. Sends each one
+  // immediately so the seed mailboxes get it right away; capped so a giant
+  // paste can't turn into a blast. Re-sending to an address already on the list
+  // just resends to it, so you can test the same inbox repeatedly.
+  if (typeof payload.emails === "string" && payload.emails.trim()) {
+    if (!template) {
+      return NextResponse.json({ error: "Choose a template (Standard or AALB alumni) before sending the test." }, { status: 400 });
+    }
+    const { emails, invalid } = parseEmailList(payload.emails);
+    if (!emails.length) {
+      return NextResponse.json({ error: "No valid email addresses found.", invalid }, { status: 400 });
+    }
+    const CAP = 25;
+    const batch = emails.slice(0, CAP);
+    const results: { email: string; sent: boolean; error?: string }[] = [];
+    for (const email of batch) {
+      const existing = await prisma.attendee.findUnique({ where: { email } });
+      let att = existing;
+      if (!att) {
+        const { firstName, lastName } = nameFromEmail(email);
+        const token = newAttendeeToken();
+        att = await prisma.attendee.create({
+          data: {
+            email, firstName, lastName,
+            discountPercent: pct,
+            inviteToken: token,
+            inviteMessage: inviteMessage?.trim() || null,
+            inviteTemplate: template,
+            invitedById: invitedById || null,
+            status: "queued",
+          },
+        });
+        await prisma.attendeeEvent.create({ data: { attendeeId: att.id, type: "added_to_queue", meta: "delivery test", actorEmail: adminEmail } }).catch(() => {});
+        await ensureFirstNameCode(att.firstName, pct, adminEmail).catch((e) => console.error("[attendees] ensure code failed", e));
+      }
+      const { subject, html } = buildAttendeeInvite({
+        firstName: att.firstName, inviteToken: att.inviteToken, discountPercent: pct,
+        inviteMessage: inviteMessage?.trim() || null, template,
+      });
+      try {
+        await sendMail({ to: email, subject, html, from: attendeeFromHeader(), replyTo: attendeeReplyTo(), bcc: attendeeBcc() });
+        await prisma.emailQueue.create({
+          data: { batchId: "attendee-delivery-test", recipientType: "attendee", recipientId: att.id, to: email, subject, html, scheduledFor: new Date(), status: "sent", sentAt: new Date() },
+        }).catch(() => {});
+        await prisma.attendee.update({
+          where: { id: att.id },
+          data: { status: att.status === "queued" ? "invited" : att.status, invitedAt: att.invitedAt ?? new Date(), lastSentAt: new Date() },
+        });
+        await prisma.attendeeEvent.create({ data: { attendeeId: att.id, type: "invite_sent_immediate", meta: "delivery test", actorEmail: adminEmail } }).catch(() => {});
+        results.push({ email, sent: true });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        await prisma.attendeeEvent.create({ data: { attendeeId: att.id, type: "invite_send_failed", meta: msg.slice(0, 300), actorEmail: adminEmail } }).catch(() => {});
+        results.push({ email, sent: false, error: msg });
+      }
+    }
+    const sent = results.filter((r) => r.sent).length;
+    return NextResponse.json({
+      mode: "emails",
+      sent,
+      failed: results.length - sent,
+      results,
+      invalid,
+      skippedOverCap: emails.length > CAP ? emails.length - CAP : 0,
+    });
   }
 
   // Bulk paste-CSV mode: queue with pacing.

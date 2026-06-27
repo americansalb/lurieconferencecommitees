@@ -2,6 +2,7 @@ import { randomBytes } from "crypto";
 import { appUrl } from "./presenters";
 import { attendeeInviteEmail, attendeeAlumniInviteEmail } from "./mail-templates";
 import { firstNameToCode } from "./codes";
+import { pickAlumniSubject } from "./subject-variants";
 
 export type AttendeeTemplate = "standard" | "alumni";
 export const ATTENDEE_TEMPLATES: { id: AttendeeTemplate; label: string; description: string }[] = [
@@ -17,7 +18,7 @@ export function buildAttendeeInvite(opts: {
   discountPercent: number;
   inviteMessage?: string | null;
   template?: string | null;
-}): { subject: string; html: string; template: AttendeeTemplate } {
+}): { subject: string; html: string; template: AttendeeTemplate; subjectVariant: string | null } {
   const template: AttendeeTemplate = opts.template === "alumni" ? "alumni" : "standard";
   const inPerson = computePrice("in-person", opts.discountPercent);
   const virtual = computePrice("virtual", opts.discountPercent);
@@ -38,10 +39,18 @@ export function buildAttendeeInvite(opts: {
     assetBase: appUrl(),
     dateLabel: new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
   });
-  const subject = template === "alumni"
-    ? `${opts.firstName}, you're invited to Chicago on August 15 to join AALB & Lurie Children's for our 2026 Conference`
-    : `${opts.firstName}, your invite to the 2026 Lurie Children's & AALB Conference`;
-  return { subject, html, template };
+  // Alumni sends rotate through several subject lines (A/B), assigned by token
+  // so the choice is stable across resends and measurable on the dashboard.
+  let subject: string;
+  let subjectVariant: string | null = null;
+  if (template === "alumni") {
+    const picked = pickAlumniSubject(opts.firstName, opts.inviteToken);
+    subject = picked.subject;
+    subjectVariant = picked.id;
+  } else {
+    subject = `${opts.firstName}, your invite to the 2026 Lurie Children's & AALB Conference`;
+  }
+  return { subject, html, template, subjectVariant };
 }
 
 // "Personalized" envelope for attendee invitations. The display name appears
@@ -259,6 +268,38 @@ export function parseAttendeeCsv(input: string): { rows: CsvParseRow[]; errors: 
     });
   }
   return { rows, errors };
+}
+
+// Pull a list of email addresses out of a free-form blob: commas, semicolons,
+// spaces, tabs, and newlines all count as separators. Used by the "emails only"
+// delivery-test mode, where you just paste addresses with no names. Dedupes
+// (case-insensitively) and reports anything that wasn't a valid address.
+export function parseEmailList(input: string): { emails: string[]; invalid: string[] } {
+  const tokens = (input || "").split(/[\s,;]+/).map((t) => t.trim()).filter(Boolean);
+  const emails: string[] = [];
+  const invalid: string[] = [];
+  const seen = new Set<string>();
+  for (const t of tokens) {
+    const e = t.toLowerCase();
+    if (!isEmail(e)) { invalid.push(t); continue; }
+    if (seen.has(e)) continue;
+    seen.add(e);
+    emails.push(e);
+  }
+  return { emails, invalid };
+}
+
+// Derive a presentable first/last name from an email local part, so an
+// addresses-only paste still produces a sensible greeting. "jane.doe@x.com" ->
+// {Jane, Doe}; "test-a8557d@..." -> {Test, ""}. A delivery test mostly hits
+// seed mailboxes, so this just needs to read cleanly, not be exact.
+export function nameFromEmail(email: string): { firstName: string; lastName: string } {
+  const local = (email.split("@")[0] || "").replace(/\+.*$/, "");
+  const parts = local.split(/[._\-]+/).filter(Boolean);
+  const cap = (s: string) => (s ? s[0].toUpperCase() + s.slice(1).toLowerCase() : "");
+  const first = cap(parts[0] || "Friend");
+  const last = parts.length > 1 ? cap(parts[parts.length - 1]) : "";
+  return { firstName: first || "Friend", lastName: last };
 }
 
 function parseCsvLine(line: string): string[] {

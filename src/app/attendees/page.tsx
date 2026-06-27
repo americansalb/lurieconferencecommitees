@@ -87,8 +87,10 @@ export default function AttendeesPage() {
 
   // Bulk invite
   const [csv, setCsv] = useState("");
+  const [bulkMode, setBulkMode] = useState<"csv" | "emails">("csv");
   const [bulkSending, setBulkSending] = useState(false);
   const [bulkResult, setBulkResult] = useState<{ created: number; skipped: { email: string; reason: string }[]; parseErrors: string[] } | null>(null);
+  const [emailsResult, setEmailsResult] = useState<{ sent: number; failed: number; results: { email: string; sent: boolean; error?: string }[]; invalid: string[]; skippedOverCap: number; error?: string } | null>(null);
 
   const role = (session?.user as { role?: string })?.role;
   const isAdmin = role === "admin" || role === "developer";
@@ -177,6 +179,30 @@ export default function AttendeesPage() {
     setBulkSending(false);
     setBulkResult(json);
     if (json.created > 0) {
+      setCsv("");
+      load();
+    }
+  }
+
+  // Emails-only delivery test: paste addresses separated by commas/spaces/lines,
+  // no names. Sends each one right away so seed inboxes get it immediately.
+  async function sendDeliveryTest() {
+    if (!csv.trim()) return;
+    if (!template) {
+      setEmailsResult({ sent: 0, failed: 0, results: [], invalid: [], skippedOverCap: 0, error: "Choose a template first: Standard or AALB alumni." });
+      return;
+    }
+    setBulkSending(true);
+    setEmailsResult(null);
+    const res = await fetch("/api/attendees", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ emails: csv, inviteMessage, discountPercent, template }),
+    });
+    const json = await res.json();
+    setBulkSending(false);
+    setEmailsResult(json);
+    if (json.sent > 0) {
       setCsv("");
       load();
     }
@@ -644,41 +670,65 @@ export default function AttendeesPage() {
 
                 {inviteSubTab === "bulk" && (
                   <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-3">
                       <FileText className="w-4 h-4 text-teal-700" />
-                      <h2 className="text-base font-extrabold text-slate-900">Bulk invite (paste CSV)</h2>
+                      <h2 className="text-base font-extrabold text-slate-900">Bulk invite</h2>
                     </div>
-                    <p className="text-xs text-slate-500 mb-4">
-                      Format: <code className="px-1.5 py-0.5 rounded bg-slate-100">FirstName,LastName,Email,Affiliation,Notes</code>.
-                      Last two columns optional. Header row auto-detected. Each invite is paced randomly during business hours
-                      to protect domain reputation.
-                    </p>
+
+                    {/* Mode toggle: full CSV list vs a quick emails-only delivery test */}
+                    <div className="inline-flex rounded-lg border border-slate-200 overflow-hidden text-xs mb-3">
+                      {([["csv", "Full list (CSV)"], ["emails", "Emails only (delivery test)"]] as const).map(([v, label], i) => (
+                        <button
+                          key={v}
+                          onClick={() => { setBulkMode(v); setBulkResult(null); setEmailsResult(null); }}
+                          className={`px-3 py-2 font-semibold transition-colors ${bulkMode === v ? "bg-slate-800 text-white" : "bg-white text-slate-500 hover:bg-slate-50"} ${i > 0 ? "border-l border-slate-200" : ""}`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {bulkMode === "csv" ? (
+                      <p className="text-xs text-slate-500 mb-4">
+                        Format: <code className="px-1.5 py-0.5 rounded bg-slate-100">FirstName,LastName,Email,Affiliation,Notes</code>.
+                        Last two columns optional. Header row auto-detected. Each invite is paced randomly during business hours
+                        to protect domain reputation.
+                      </p>
+                    ) : (
+                      <p className="text-xs text-slate-500 mb-4">
+                        Paste email addresses only, separated by commas, spaces, or new lines. Names are filled in from the
+                        address. Each one sends <strong>immediately</strong> (no pacing), so use this for seed/test inboxes, not a
+                        real campaign. Up to 25 per click. Re-sending to the same address just resends it.
+                      </p>
+                    )}
 
                     <label className="block mb-4">
-                      <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Invitee list</span>
+                      <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">{bulkMode === "csv" ? "Invitee list" : "Email addresses"}</span>
                       <textarea
                         value={csv}
                         onChange={(e) => setCsv(e.target.value)}
-                        rows={8}
-                        placeholder={`Jane,Doe,jane@example.com,Example Org,met at conf 2025\nJohn,Smith,john@school.edu`}
+                        rows={bulkMode === "csv" ? 8 : 5}
+                        placeholder={bulkMode === "csv"
+                          ? `Jane,Doe,jane@example.com,Example Org,met at conf 2025\nJohn,Smith,john@school.edu`
+                          : `test-a8557d@test.mailgenius.com, you@inbox.com\nanother@example.com`}
                         className="mt-1 w-full px-3 py-2.5 text-sm font-mono border border-slate-200 rounded-lg outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10"
                       />
                     </label>
 
                     <div className="flex items-center justify-end gap-3">
                       <button
-                        onClick={sendBulk}
+                        onClick={bulkMode === "csv" ? sendBulk : sendDeliveryTest}
                         disabled={bulkSending || !csv.trim() || !template}
                         title={!template ? "Choose an email template first" : undefined}
                         className="px-5 py-2.5 rounded-xl font-bold text-white shadow-md disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5"
                         style={{ background: "#0E5566" }}
                       >
                         {bulkSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                        Queue invites
+                        {bulkMode === "csv" ? "Queue invites" : "Send delivery test"}
                       </button>
                     </div>
 
-                    {bulkResult && (
+                    {bulkMode === "csv" && bulkResult && (
                       <div className="mt-5 rounded-lg border p-4 text-sm" style={{ background: bulkResult.created > 0 ? "#ecfdf5" : "#fff7ed", borderColor: bulkResult.created > 0 ? "#a7f3d0" : "#fed7aa" }}>
                         <div className="font-bold mb-1" style={{ color: bulkResult.created > 0 ? "#065f46" : "#9a3412" }}>
                           {bulkResult.created > 0 ? `Queued ${bulkResult.created} invite${bulkResult.created === 1 ? "" : "s"}` : "Nothing queued"}
@@ -692,6 +742,31 @@ export default function AttendeesPage() {
                           <ul className="text-xs text-rose-700 mt-1 list-disc pl-4">
                             {bulkResult.parseErrors.map((e, i) => <li key={i}>{e}</li>)}
                           </ul>
+                        )}
+                      </div>
+                    )}
+
+                    {bulkMode === "emails" && emailsResult && (
+                      <div className="mt-5 rounded-lg border p-4 text-sm" style={{ background: emailsResult.sent > 0 ? "#ecfdf5" : "#fff7ed", borderColor: emailsResult.sent > 0 ? "#a7f3d0" : "#fed7aa" }}>
+                        {emailsResult.error ? (
+                          <div className="font-bold text-rose-700">{emailsResult.error}</div>
+                        ) : (
+                          <>
+                            <div className="font-bold mb-1" style={{ color: emailsResult.sent > 0 ? "#065f46" : "#9a3412" }}>
+                              Sent {emailsResult.sent}{emailsResult.failed ? `, ${emailsResult.failed} failed` : ""}
+                            </div>
+                            {emailsResult.results.some((r) => !r.sent) && (
+                              <ul className="text-xs text-rose-700 mt-1 list-disc pl-4">
+                                {emailsResult.results.filter((r) => !r.sent).map((r, i) => <li key={i}>{r.email}: {r.error || "failed"}</li>)}
+                              </ul>
+                            )}
+                            {emailsResult.invalid.length > 0 && (
+                              <div className="text-xs text-slate-600 mt-1">Not valid: {emailsResult.invalid.join(", ")}</div>
+                            )}
+                            {emailsResult.skippedOverCap > 0 && (
+                              <div className="text-xs text-slate-600 mt-1">{emailsResult.skippedOverCap} more were over the 25-per-send cap; send again to do the rest.</div>
+                            )}
+                          </>
                         )}
                       </div>
                     )}
