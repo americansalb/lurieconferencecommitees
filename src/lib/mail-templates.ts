@@ -491,8 +491,8 @@ export function attendeeAlumniInviteEmail({
       </table>` : "";
 
   // The alumni courtesy, in the cream-and-gold panel. We state the discount
-  // only, never a dollar figure: the underlying rate can change (early-bird
-  // windows close, etc.), so a price printed here could be out of date by the
+  // only, never a dollar figure: the underlying rate can change (the Standard
+  // window closes, Late pricing applies), so a price printed here could be out of date by the
   // time they register. The percentage off always holds.
   const ratePanel = hasDiscount ? `
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 22px 0;">

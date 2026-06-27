@@ -2,8 +2,11 @@
 // full Pricing section, so the hero never drifts out of sync with the
 // pricing table.
 
+// The Early Bird window (ended April 15, 2026) is intentionally omitted: it has
+// closed, applies to no one, and showing it only makes current registrants feel
+// they missed a deal. The story now is simply locking the Standard rate before
+// it steps up to Late.
 export const SCHEDULE = [
-  { id: "early",    label: "Early Bird", end: "2026-04-15T23:59:59-05:00" },
   { id: "standard", label: "Standard",   end: "2026-07-15T23:59:59-05:00" },
   { id: "late",     label: "Late",       end: "2026-08-15T23:59:59-05:00" },
 ] as const;
@@ -11,7 +14,6 @@ export const SCHEDULE = [
 export type TierId = typeof SCHEDULE[number]["id"];
 
 export const PRICES: Record<TierId, { virtual: number; inPerson: number }> = {
-  early:    { virtual:  95, inPerson: 195 },
   standard: { virtual: 105, inPerson: 210 },
   late:     { virtual: 115, inPerson: 225 },
 };
