@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback, useRef } from "react";
 import {
   Award, Trash2, RefreshCw, Search, Filter, ExternalLink, Mail, Building2, Copy, Plus,
-  Clock, Pause, Play, Zap, SlidersHorizontal, Loader2, BadgeCheck, Send,
+  Clock, Pause, Play, Zap, SlidersHorizontal, Loader2, BadgeCheck, Send, FileText,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
@@ -73,6 +73,7 @@ export default function SponsorsAdminPage() {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [requestingLogoId, setRequestingLogoId] = useState<string | null>(null);
   const [sendingInviteId, setSendingInviteId] = useState<string | null>(null);
+  const [sendingLetterId, setSendingLetterId] = useState<string | null>(null);
   const [loadingTargets, setLoadingTargets] = useState(false);
   const [actionNote, setActionNote] = useState<string | null>(null);
   // Auto-send: drip the pending invites out one at a time at random intervals.
@@ -240,6 +241,27 @@ export default function SponsorsAdminPage() {
       return false;
     } finally {
       setSendingInviteId(null);
+      setTimeout(() => setActionNote(null), 8000);
+    }
+  }
+
+  // Per-org "Send letter": fire the formal, founder-signed letter to one
+  // marquee prospect. Reuses their saved Personal note as the personalized
+  // paragraph; replies go to Kevin. Admin only.
+  async function sendLetter(id: string) {
+    const s = sponsors.find((x) => x.id === id);
+    setSendingLetterId(id);
+    setActionNote(null);
+    try {
+      const res = await fetch(`/api/sponsors/${id}/send-letter`, { method: "POST" });
+      const j = await res.json().catch(() => ({}));
+      const who = s?.companyName || "Sponsor";
+      setActionNote(res.ok && j.ok ? `${who}: personal letter sent.` : `${who}: could not send. ${j.error || "Unknown error."}`);
+      await load();
+    } catch {
+      setActionNote("Network error sending the letter.");
+    } finally {
+      setSendingLetterId(null);
       setTimeout(() => setActionNote(null), 8000);
     }
   }
@@ -560,6 +582,17 @@ export default function SponsorsAdminPage() {
                             >
                               {sendingInviteId === s.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
                               {s.status === "prospect" ? "Send invite" : "Resend"}
+                            </button>
+                          )}
+                          {isAdmin && (s.status === "prospect" || s.status === "invited") && (
+                            <button
+                              onClick={() => sendLetter(s.id)}
+                              disabled={sendingLetterId === s.id}
+                              className="text-[10px] font-bold px-2 py-1 rounded-full border border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100 inline-flex items-center gap-1 shrink-0 disabled:opacity-50"
+                              title="Send the formal, founder-signed letter (uses this org's personal note). For marquee prospects."
+                            >
+                              {sendingLetterId === s.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <FileText className="w-3 h-3" />}
+                              Send letter
                             </button>
                           )}
                           {showPayAction && (

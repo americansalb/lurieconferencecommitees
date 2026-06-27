@@ -633,7 +633,7 @@ export function sponsorInviteEmail({
     ${isPartner ? `<div style="display:inline-block;font-size:11px;letter-spacing:0.12em;font-weight:700;color:${TEAL};background:#e6eef0;border:1px solid #cfe0e4;border-radius:999px;padding:5px 13px;margin:0 0 14px 0;text-transform:uppercase;">Official AALB Partner</div><br>` : ""}
     ${inviteMessage
       ? `<p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">${escapeHtml(inviteMessage).replace(/\n/g, "<br>")}</p>`
-      : `<p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">We&rsquo;d love for <strong>${escapeHtml(companyName)}</strong> to join us as a sponsor or exhibitor at the 2nd Joint Conference of Lurie Children&rsquo;s and AALB.</p>`}
+      : `<p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">We would be honored to have <strong>${escapeHtml(companyName)}</strong> stand with us as a sponsor or exhibitor at the 2nd Joint Conference of Lurie Children&rsquo;s and AALB, two days devoted to language access in American healthcare.</p>`}
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 16px 0;">
       The conference is <strong>August 15 and 16, 2026</strong> in Chicago. This year&rsquo;s theme is <em>True Language Access: Yesterday, Today, and Tomorrow</em>. You can see the full program, venue, and details at <a href="${site}" style="color:${BLUE};font-weight:600;text-decoration:none;">conference.aalb.org</a>.
     </p>
@@ -658,6 +658,88 @@ export function sponsorInviteEmail({
 
     <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;padding-top:14px;border-top:1px solid #eef1f4;">
       All sponsorships are tax-deductible to the fullest extent allowed by law under IRS code 501(c)(3). EINs: 83-3016421 and 36-2170833. If this is the wrong contact at ${escapeHtml(companyName)}, please forward this along or simply reply.
+    </p>
+  `);
+}
+
+// The two-name signature block used on the formal sponsor letter: Kevin signs
+// for AALB, Zachary for Lurie Children's, mirroring the founder-signed speaker
+// invitations. Kept separate from the marketing signOff() above on purpose,
+// the letter is meant to read as personal correspondence, not an email blast.
+function letterSignatures() {
+  return `
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:26px 0 18px 0;">With deep respect,</p>
+    <p style="font-size:15px;line-height:1.55;color:${TEXT};margin:0;">
+      <strong>Kevin Thakkar</strong><br/>
+      <span style="color:${MUTED};">Founder &amp; Executive Director, Americans Against Language Barriers</span>
+    </p>
+    <p style="font-size:15px;line-height:1.55;color:${TEXT};margin:14px 0 0 0;">
+      <strong>Zachary Paul Romansky</strong><br/>
+      <span style="color:${MUTED};">Lurie Children&rsquo;s Language Services Department</span>
+    </p>`;
+}
+
+type SponsorLetterArgs = {
+  contactName: string;
+  // A formal address line, e.g. "Mr. Vargas". Falls back to the first name.
+  salutation?: string | null;
+  recipientTitle?: string | null;
+  companyName: string;
+  // The personalized "We write to you because…" paragraph(s). Blank lines
+  // split into separate paragraphs. This is where the per-org inviteMessage
+  // goes; without one, a sincere sponsor-appropriate default is used.
+  reason?: string | null;
+  landingUrl: string;
+  // Pre-formatted date string (e.g. "June 27, 2026"); computed by the caller
+  // so the template stays free of Date logic.
+  dateLabel: string;
+  assetBase?: string;
+};
+
+// A formal, founder-signed letter for marquee sponsor prospects, written in
+// the voice of the speaker/keynote invitations rather than the marketing
+// invite above. No hero banner, no speaker grid, no big button, the weight
+// comes from the words and the signatures. Use for the handful of strategic
+// targets where a personal letter earns a reply; use sponsorInviteEmail() for
+// the bulk list.
+export function sponsorLetterEmail({
+  contactName, salutation, recipientTitle, companyName, reason, landingUrl, dateLabel, assetBase,
+}: SponsorLetterArgs) {
+  const greeting = (salutation || "").trim() || contactName.split(" ")[0] || "there";
+  const reasonParas = (reason || "").trim()
+    ? (reason as string).trim().split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean)
+    : [
+        `We write to you because the work organizations like <strong>${escapeHtml(companyName)}</strong> do sits at the center of this conversation, and your support would place that commitment in front of the very audience carrying this field forward.`,
+      ];
+  const para = (html: string, mt = 16) =>
+    `<p style="font-size:15px;line-height:1.75;color:${TEXT};margin:0 0 ${mt}px 0;">${html}</p>`;
+
+  return shell(`
+    <p style="font-size:13.5px;color:${MUTED};margin:0 0 22px 0;">${escapeHtml(dateLabel)}</p>
+
+    <p style="font-size:15px;line-height:1.5;color:${TEXT};margin:0 0 4px 0;"><strong>${escapeHtml(contactName)}</strong></p>
+    ${recipientTitle ? `<p style="font-size:14px;line-height:1.5;color:${MUTED};margin:0 0 2px 0;">${escapeHtml(recipientTitle)}</p>` : ""}
+    <p style="font-size:14px;line-height:1.5;color:${MUTED};margin:0 0 22px 0;">${escapeHtml(companyName)}</p>
+
+    <p style="font-size:15px;line-height:1.75;color:${TEXT};margin:0 0 18px 0;">Dear ${escapeHtml(greeting)}:</p>
+
+    ${para(`On behalf of Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers, it is our privilege to invite <strong>${escapeHtml(companyName)}</strong> to stand with us as a sponsor of our Second Joint Conference on language access in American healthcare, August 15 and 16, 2026, in Chicago.`)}
+
+    ${para(`Over two days, the conference brings together interpreters, clinicians, researchers, educators, and patient advocates from across the country, in person at Lurie Children&rsquo;s and streamed to a national virtual audience, under a single theme: <em>True Language Access: Yesterday, Today, and Tomorrow</em>.`)}
+
+    ${reasonParas.map((p) => para(p)).join("\n    ")}
+
+    ${para(`Americans Against Language Barriers is a 501(c)(3) nonprofit that has trained roughly three thousand medical interpreters nationwide, and sponsorship is tax-deductible to the fullest extent allowed by law. You can review the levels at <a href="${landingUrl}" style="color:${BLUE};font-weight:600;text-decoration:none;">conference.aalb.org/sponsor</a>, or simply reply, it reaches us directly at <a href="mailto:kevin@aalb.org" style="color:${BLUE};text-decoration:none;">kevin@aalb.org</a>.`)}
+
+    ${para(`It would be an honor to have ${escapeHtml(companyName)} alongside us. Thank you for considering it.`, 0)}
+
+    ${letterSignatures()}
+
+    ${logoLockup(assetBase)}
+
+    <p style="font-size:12px;line-height:1.7;color:${MUTED};margin:18px 0 0 0;padding-top:14px;border-top:1px solid #eef1f4;text-align:center;">
+      2026 Lurie Children&rsquo;s &amp; AALB Conference &middot; August 15&ndash;16, 2026 &middot; Chicago, Illinois<br/>
+      conference.aalb.org &middot; contact@aalb.org &middot; 501(c)(3) &middot; EINs 83-3016421 and 36-2170833
     </p>
   `);
 }

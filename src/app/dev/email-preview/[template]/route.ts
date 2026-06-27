@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   sponsorInviteEmail,
+  sponsorLetterEmail,
   sponsorAcceptedEmail,
   proposalCallEmail,
   bookingInviteEmail,
@@ -38,6 +39,19 @@ export async function GET(
         },
         inviteMessage: null,
         landingUrl: `${base}/sponsor`,
+        assetBase: base,
+      });
+      break;
+    case "sponsor-letter":
+      html = sponsorLetterEmail({
+        contactName: "Jose Antonio Vargas",
+        salutation: "Mr. Vargas",
+        recipientTitle: "Founder and Chief Executive Officer",
+        companyName: "Define American",
+        reason:
+          "We write to you because few organizations have done more to make the immigrant experience visible and human. The families you have spent a career bringing into focus are the same families our interpreters serve, one conversation at a time, and your support would put that shared commitment in front of the people working to change how this country listens.",
+        landingUrl: `${base}/sponsor`,
+        dateLabel: "June 27, 2026",
         assetBase: base,
       });
       break;
