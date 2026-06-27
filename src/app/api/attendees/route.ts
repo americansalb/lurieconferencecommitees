@@ -23,6 +23,7 @@ export async function GET() {
   }
 
   const rows = await prisma.attendee.findMany({
+    where: { isTest: false },
     orderBy: { createdAt: "desc" },
   });
   // Attach the alumni A/B subject variant (derived from the token) so the
@@ -155,6 +156,8 @@ export async function POST(req: Request) {
       if (!att) {
         const { firstName, lastName } = nameFromEmail(email);
         const token = newAttendeeToken();
+        // isTest keeps these out of the pipeline and metrics; skip the
+        // first-name discount code so the codes table isn't polluted either.
         att = await prisma.attendee.create({
           data: {
             email, firstName, lastName,
@@ -164,10 +167,10 @@ export async function POST(req: Request) {
             inviteTemplate: template,
             invitedById: invitedById || null,
             status: "queued",
+            isTest: true,
           },
         });
         await prisma.attendeeEvent.create({ data: { attendeeId: att.id, type: "added_to_queue", meta: "delivery test", actorEmail: adminEmail } }).catch(() => {});
-        await ensureFirstNameCode(att.firstName, pct, adminEmail).catch((e) => console.error("[attendees] ensure code failed", e));
       }
       const { subject, html } = buildAttendeeInvite({
         firstName: att.firstName, inviteToken: att.inviteToken, discountPercent: pct,
@@ -175,8 +178,10 @@ export async function POST(req: Request) {
       });
       try {
         await sendMail({ to: email, subject, html, from: attendeeFromHeader(), replyTo: attendeeReplyTo(), bcc: attendeeBcc() });
+        // Tagged recipientType "test" so it lands under the Test bucket in the
+        // queue and analytics, never mixed into attendee numbers.
         await prisma.emailQueue.create({
-          data: { batchId: "attendee-delivery-test", recipientType: "attendee", recipientId: att.id, to: email, subject, html, scheduledFor: new Date(), status: "sent", sentAt: new Date() },
+          data: { batchId: "attendee-delivery-test", recipientType: "test", recipientId: att.id, to: email, subject, html, scheduledFor: new Date(), status: "sent", sentAt: new Date() },
         }).catch(() => {});
         await prisma.attendee.update({
           where: { id: att.id },

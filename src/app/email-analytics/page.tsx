@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { BarChart3, RefreshCw, Award, Ticket, AlertTriangle } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
@@ -27,6 +27,7 @@ export default function EmailAnalyticsPage() {
   const router = useRouter();
   const [data, setData] = useState<Analytics | null>(null);
   const [loading, setLoading] = useState(true);
+  const backfilled = useRef(false);
 
   useEffect(() => {
     if (status === "unauthenticated") router.replace("/login");
@@ -35,6 +36,12 @@ export default function EmailAnalyticsPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
+      // Once per session, retag any pre-tagging delivery-test records so they
+      // drop out of the real numbers. Idempotent and cheap thereafter.
+      if (!backfilled.current) {
+        backfilled.current = true;
+        await fetch("/api/admin/backfill-test-tags", { method: "POST" }).catch(() => {});
+      }
       const r = await fetch("/api/admin/email-analytics");
       if (r.ok) setData(await r.json());
     } finally {

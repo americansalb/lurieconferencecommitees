@@ -415,6 +415,11 @@ model Attendee {
   confirmedAt          DateTime?
   declinedAt           DateTime?
 
+  // Created by the emails-only deliverability test, not a real invitee. Kept
+  // out of the attendee pipeline and all email metrics so test traffic never
+  // skews the numbers.
+  isTest               Boolean         @default(false)
+
   adminNotes           String?
   createdAt            DateTime        @default(now())
   updatedAt            DateTime?       @updatedAt

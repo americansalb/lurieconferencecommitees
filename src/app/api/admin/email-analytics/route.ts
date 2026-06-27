@@ -41,6 +41,7 @@ export async function GET() {
       select: { to: true, subject: true, lastError: true, recipientType: true, attempts: true, scheduledFor: true },
     }),
     prisma.attendee.findMany({
+      where: { isTest: false },
       select: { invitedAt: true, lastSentAt: true, viewedAt: true, paid: true, status: true, inviteTemplate: true, inviteToken: true },
     }),
     prisma.sponsor.findMany({
