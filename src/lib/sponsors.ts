@@ -232,10 +232,11 @@ export function isFoodProspect(s: { tier: string }): boolean {
   return s.tier === "food";
 }
 
-// Subject for the restaurant/caterer outreach: warm, specific, asks for help.
+// Subject for the restaurant/caterer outreach: a confident invitation to be a
+// Food Sponsor, not a plea for food.
 export function sponsorFoodSubject(companyName: string): string {
-  const co = (companyName || "").trim() || "your kitchen";
-  return `${co}: would you help feed the 2026 Lurie Children's & AALB Conference?`;
+  const co = (companyName || "").trim() || "Your kitchen";
+  return `${co}: an invitation to be a Food Sponsor of the 2026 Lurie Children's & AALB Conference`;
 }
 
 // An ASL-interpreting prospect: a sign-language interpreting company we are
@@ -246,8 +247,8 @@ export function isAslProspect(s: { tier: string }): boolean {
 }
 
 export function sponsorAslSubject(companyName: string): string {
-  const co = (companyName || "").trim() || "your team";
-  return `${co}: help make the 2026 Lurie Children's & AALB Conference accessible in ASL?`;
+  const co = (companyName || "").trim() || "Your team";
+  return `${co}: an invitation to be an ASL Interpreter Sponsor of the 2026 Lurie Children's & AALB Conference`;
 }
 
 function extractAddress(s: string): string {
