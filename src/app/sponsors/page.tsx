@@ -11,6 +11,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
 import MobileNav from "@/components/layout/MobileNav";
 import { SPONSOR_STATUS_LABELS, TIERS } from "@/lib/sponsors";
+import { PROSPECT_TARGETS_TSV } from "@/lib/prospect-targets";
 import InviteSponsorComposer from "./InviteSponsorComposer";
 import QueueSettingsModal from "@/components/email/QueueSettingsModal";
 
@@ -39,12 +40,21 @@ type Sponsor = {
   createdAt: string;
 };
 
+// The board: every sponsor lives in exactly one of these five buckets.
+const PIPELINE_TABS: { key: string; label: string; statuses: string[] }[] = [
+  { key: "paid", label: "Paid", statuses: ["paid", "confirmed"] },
+  { key: "awaiting_payment", label: "Awaiting payment", statuses: ["awaiting_payment"] },
+  { key: "in_discussion", label: "In discussion", statuses: ["in_conversation", "submitted"] },
+  { key: "invited", label: "Invited", statuses: ["invited"] },
+  { key: "pending_invite", label: "Pending invite", statuses: ["prospect", "queued"] },
+];
+
 export default function SponsorsAdminPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<string>("all");
+  const [filter, setFilter] = useState<string>("pending_invite");
   const [tierFilter, setTierFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [showInvite, setShowInvite] = useState(false);
@@ -57,6 +67,7 @@ export default function SponsorsAdminPage() {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [requestingLogoId, setRequestingLogoId] = useState<string | null>(null);
   const [sendingInviteId, setSendingInviteId] = useState<string | null>(null);
+  const [loadingTargets, setLoadingTargets] = useState(false);
   const [actionNote, setActionNote] = useState<string | null>(null);
 
   const role = (session?.user as { role?: string })?.role;
@@ -218,6 +229,29 @@ export default function SponsorsAdminPage() {
     }
   }
 
+  // One click: load the curated prospect list into Pending invite. No emails.
+  async function loadTargets() {
+    setLoadingTargets(true);
+    setActionNote(null);
+    try {
+      const res = await fetch("/api/sponsors/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ csv: PROSPECT_TARGETS_TSV, draftOnly: true }),
+      });
+      const j = await res.json().catch(() => ({}));
+      setActionNote(
+        res.ok
+          ? `${j.created ?? 0} added to Pending invite${j.skipped?.length ? `, ${j.skipped.length} already there` : ""}.`
+          : `Could not load. ${j.error || ""}`
+      );
+      await load();
+    } finally {
+      setLoadingTargets(false);
+      setTimeout(() => setActionNote(null), 8000);
+    }
+  }
+
   if (status !== "authenticated") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -226,8 +260,9 @@ export default function SponsorsAdminPage() {
     );
   }
 
+  const activeStatuses = (PIPELINE_TABS.find((t) => t.key === filter) || PIPELINE_TABS[PIPELINE_TABS.length - 1]).statuses;
   const filtered = sponsors.filter((s) => {
-    if (filter !== "all" && s.status !== filter) return false;
+    if (!activeStatuses.includes(s.status)) return false;
     if (tierFilter !== "all" && s.tier !== tierFilter) return false;
     if (search) {
       const q = search.toLowerCase();
@@ -333,6 +368,33 @@ export default function SponsorsAdminPage() {
               </div>
             )}
 
+            <div className="flex flex-wrap items-center gap-1.5 mb-4">
+              {PIPELINE_TABS.map((t) => {
+                const count = sponsors.filter((s) => t.statuses.includes(s.status)).length;
+                const active = filter === t.key;
+                return (
+                  <button
+                    key={t.key}
+                    onClick={() => setFilter(t.key)}
+                    className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-bold border transition-colors ${active ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"}`}
+                  >
+                    {t.label}
+                    <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full ${active ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"}`}>{count}</span>
+                  </button>
+                );
+              })}
+              {filter === "pending_invite" && isAdmin && (
+                <button
+                  onClick={loadTargets}
+                  disabled={loadingTargets}
+                  className="ml-auto inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white bg-gradient-to-r from-[#0E5566] to-[#0066B3] disabled:opacity-50"
+                  title="Add the curated prospect list to Pending invite. No emails are sent."
+                >
+                  {loadingTargets ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />} Load suggested targets
+                </button>
+              )}
+            </div>
+
             <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
               <div className="p-4 border-b border-slate-100 flex items-center gap-2 flex-wrap">
                 <div className="relative flex-1 min-w-[180px]">
@@ -346,16 +408,6 @@ export default function SponsorsAdminPage() {
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Filter className="w-3.5 h-3.5 text-slate-400" />
-                  <select
-                    value={filter}
-                    onChange={(e) => setFilter(e.target.value)}
-                    className="text-sm border border-slate-200 rounded-lg px-2 py-2 outline-none focus:border-teal-500"
-                  >
-                    <option value="all">All statuses</option>
-                    {Object.entries(SPONSOR_STATUS_LABELS).map(([k, v]) => (
-                      <option key={k} value={k}>{v.label}</option>
-                    ))}
-                  </select>
                   <select
                     value={tierFilter}
                     onChange={(e) => setTierFilter(e.target.value)}
@@ -371,9 +423,11 @@ export default function SponsorsAdminPage() {
 
               {filtered.length === 0 ? (
                 <div className="p-10 text-center text-sm text-slate-400">
-                  {sponsors.length === 0
-                    ? <>No sponsor applications yet. Share <code className="px-1.5 py-0.5 bg-slate-100 rounded">/sponsor</code> to start collecting them.</>
-                    : "No matches."}
+                  {filter === "pending_invite"
+                    ? <>No pending invites yet.{isAdmin && <> <button onClick={loadTargets} disabled={loadingTargets} className="font-bold text-teal-700 underline hover:text-teal-900 disabled:opacity-50">Load suggested targets</button> to add a starter list.</>}</>
+                    : sponsors.length === 0
+                      ? <>No sponsor applications yet. Share <code className="px-1.5 py-0.5 bg-slate-100 rounded">/sponsor</code> to start collecting them.</>
+                      : "No matches."}
                 </div>
               ) : (
                 <ul className="divide-y divide-slate-100">
