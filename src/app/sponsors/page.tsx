@@ -463,14 +463,16 @@ export default function SponsorsAdminPage() {
   // single source of truth, even if the status field later drifts. Every place
   // that means "paid" uses this, so the card and the tab can never disagree.
   const isClosed = (s: Sponsor) => s.paid === true;
-  // A live deal: an org actually in conversation or owing payment, with real
-  // money attached. Cold prospects, queued, and merely-invited orgs are NOT
-  // pipeline, and in-kind (food/ASL) carries no dollar value.
-  const ACTIVE_DEAL_STATUSES = ["submitted", "in_conversation", "awaiting_payment"];
-  const isActiveDeal = (s: Sponsor) =>
-    !isClosed(s) &&
-    ACTIVE_DEAL_STATUSES.includes(s.status) &&
-    !s.donateFoodInstead && s.tier !== "food" && s.tier !== "asl";
+  // A live lead: an org actually in conversation or owing payment. Cold
+  // prospects, queued, and merely-invited orgs are NOT engaged. This is exactly
+  // the "In discussion" + "Awaiting payment" tabs, so the Engaged card and those
+  // tabs always reconcile.
+  const ENGAGED_STATUSES = ["submitted", "in_conversation", "awaiting_payment"];
+  const isEngaged = (s: Sponsor) => !isClosed(s) && ENGAGED_STATUSES.includes(s.status);
+  // Of the engaged, the ones carrying real dollars: in-kind (food/ASL) and
+  // donate-instead sponsors contribute no pipeline value.
+  const hasDealDollars = (s: Sponsor) =>
+    isEngaged(s) && !s.donateFoodInstead && s.tier !== "food" && s.tier !== "asl";
   const countable = sponsors.filter((s) => !isTestSponsor(s));
 
   // The single bucket a sponsor belongs to, used by BOTH the tab counts and the
@@ -520,11 +522,11 @@ export default function SponsorsAdminPage() {
   const clickRate = everSent.length ? Math.round((clickedSponsors.length / everSent.length) * 100) : 0;
 
   const paidCount = countable.filter(isClosed).length;
-  const engagedCount = countable.filter(isActiveDeal).length;
-  // Revenue actually collected, and the realistic value of live deals (not cold
-  // outreach). Both ignore the test record and in-kind sponsors.
+  const engagedCount = countable.filter(isEngaged).length;
+  // Revenue actually collected, and the realistic dollar value of live deals
+  // (not cold outreach). Both ignore the test record and in-kind sponsors.
   const totalDollars = countable.filter(isClosed).reduce((sum, s) => sum + s.amountCents, 0) / 100;
-  const pipelineDollars = countable.filter(isActiveDeal).reduce((sum, s) => sum + s.amountCents, 0) / 100;
+  const pipelineDollars = countable.filter(hasDealDollars).reduce((sum, s) => sum + s.amountCents, 0) / 100;
   const queuedCount = countable.filter((s) => s.status === "queued").length;
   // Paid but the confirmation email hasn't gone out yet: the ones to chase.
   const confirmationPending = countable.filter((s) => s.status === "paid").length;
@@ -576,9 +578,7 @@ export default function SponsorsAdminPage() {
 
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 mb-5">
               <Stat label="Prospects" value={countable.length.toLocaleString("en-US")} />
-              <button onClick={() => setFilter("in_discussion")} className="text-left" title="Orgs in conversation or awaiting payment">
-                <Stat label="Engaged" value={engagedCount.toString()} accent="#0284c7" />
-              </button>
+              <Stat label="Engaged" value={engagedCount.toString()} accent="#0284c7" />
               <Stat label="Paid" value={paidCount.toString()} accent="#059669" />
               <Stat label="Paid $" value={`$${totalDollars.toLocaleString("en-US")}`} accent="#0E5566" />
               <Stat label="Pipeline $" value={`$${pipelineDollars.toLocaleString("en-US")}`} accent="#0066B3" />
