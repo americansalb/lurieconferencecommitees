@@ -454,13 +454,40 @@ export default function SponsorsAdminPage() {
     );
   }
 
-  const activeStatuses = (PIPELINE_TABS.find((t) => t.key === filter) || PIPELINE_TABS[PIPELINE_TABS.length - 1]).statuses;
-  const filtered = sponsors.filter((s) => {
+  // Stats and buckets run over "countable" sponsors only: drop the MailGenius
+  // deliverability-test record so it never inflates the numbers. (Merged records
+  // are already excluded server-side via mergedIntoId.)
+  const isTestSponsor = (s: Sponsor) => /mailgenius/i.test(s.contactEmail || "");
+  // A sponsor is closed/paid the moment money is received. paid is set on real
+  // payment and on a manual move to "paid", and is never unset, so it is the
+  // single source of truth, even if the status field later drifts. Every place
+  // that means "paid" uses this, so the card and the tab can never disagree.
+  const isClosed = (s: Sponsor) => s.paid === true;
+  // A live deal: an org actually in conversation or owing payment, with real
+  // money attached. Cold prospects, queued, and merely-invited orgs are NOT
+  // pipeline, and in-kind (food/ASL) carries no dollar value.
+  const ACTIVE_DEAL_STATUSES = ["submitted", "in_conversation", "awaiting_payment"];
+  const isActiveDeal = (s: Sponsor) =>
+    !isClosed(s) &&
+    ACTIVE_DEAL_STATUSES.includes(s.status) &&
+    !s.donateFoodInstead && s.tier !== "food" && s.tier !== "asl";
+  const countable = sponsors.filter((s) => !isTestSponsor(s));
+
+  // The single bucket a sponsor belongs to, used by BOTH the tab counts and the
+  // list filter so they always agree: paid sponsors live only under "Paid",
+  // everyone else falls into their status's tab.
+  const bucketOf = (s: Sponsor): string | null => {
+    if (isClosed(s)) return "paid";
+    const tab = PIPELINE_TABS.find((t) => t.key !== "paid" && t.statuses.includes(s.status));
+    return tab ? tab.key : null;
+  };
+
+  const filtered = countable.filter((s) => {
     // The Clicked view is an engagement report, not a pipeline stage: it gathers
     // every org that clicked, regardless of which bucket they're in now.
     if (clickedOnly) {
       if (!s.clickedAt) return false;
-    } else if (!activeStatuses.includes(s.status)) {
+    } else if (bucketOf(s) !== filter) {
       return false;
     }
     if (tierFilter !== "all" && s.tier !== tierFilter) return false;
@@ -482,8 +509,8 @@ export default function SponsorsAdminPage() {
   // receipt), "clicked" is when they loaded their link. Time-to-click uses the
   // first send time we have for each org.
   const deliveredOf = (s: Sponsor) => s.invitedAt || s.lastSentAt;
-  const everSent = sponsors.filter((s) => deliveredOf(s));
-  const clickedSponsors = sponsors.filter((s) => s.clickedAt);
+  const everSent = countable.filter((s) => deliveredOf(s));
+  const clickedSponsors = countable.filter((s) => s.clickedAt);
   const clickLatencies = clickedSponsors
     .map((s) => {
       const d = deliveredOf(s);
@@ -492,11 +519,15 @@ export default function SponsorsAdminPage() {
     .filter((ms) => Number.isFinite(ms) && ms >= 0);
   const clickRate = everSent.length ? Math.round((clickedSponsors.length / everSent.length) * 100) : 0;
 
-  const totalDollars = sponsors.filter((s) => s.paid).reduce((sum, s) => sum + s.amountCents, 0) / 100;
-  const pipelineDollars = sponsors.filter((s) => !s.paid && !s.donateFoodInstead && s.status !== "declined").reduce((sum, s) => sum + s.amountCents, 0) / 100;
-  const queuedCount = sponsors.filter((s) => s.status === "queued").length;
+  const paidCount = countable.filter(isClosed).length;
+  const engagedCount = countable.filter(isActiveDeal).length;
+  // Revenue actually collected, and the realistic value of live deals (not cold
+  // outreach). Both ignore the test record and in-kind sponsors.
+  const totalDollars = countable.filter(isClosed).reduce((sum, s) => sum + s.amountCents, 0) / 100;
+  const pipelineDollars = countable.filter(isActiveDeal).reduce((sum, s) => sum + s.amountCents, 0) / 100;
+  const queuedCount = countable.filter((s) => s.status === "queued").length;
   // Paid but the confirmation email hasn't gone out yet: the ones to chase.
-  const confirmationPending = sponsors.filter((s) => s.status === "paid").length;
+  const confirmationPending = countable.filter((s) => s.status === "paid").length;
   const secsLeft = autoSend && autoNextAt ? Math.max(0, Math.round((autoNextAt - Date.now()) / 1000)) : null;
 
   return (
@@ -512,7 +543,7 @@ export default function SponsorsAdminPage() {
               </div>
               <div className="flex-1">
                 <h1 className="text-xl font-extrabold text-slate-900">Sponsors &amp; Exhibitors</h1>
-                <p className="text-xs text-slate-500">Applications, pipeline, and confirmed sponsorships</p>
+                <p className="text-xs text-slate-500">Outreach, pipeline, and confirmed sponsorships</p>
               </div>
               <a
                 href="/sponsor"
@@ -543,13 +574,16 @@ export default function SponsorsAdminPage() {
 
             {showQueue && <QueueSettingsModal onClose={() => setShowQueue(false)} onChanged={load} />}
 
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-5">
-              <Stat label="Applications" value={sponsors.length.toString()} />
-              <Stat label="Paid" value={sponsors.filter((s) => s.paid).length.toString()} accent="#059669" />
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 mb-5">
+              <Stat label="Prospects" value={countable.length.toLocaleString("en-US")} />
+              <button onClick={() => setFilter("in_discussion")} className="text-left" title="Orgs in conversation or awaiting payment">
+                <Stat label="Engaged" value={engagedCount.toString()} accent="#0284c7" />
+              </button>
+              <Stat label="Paid" value={paidCount.toString()} accent="#059669" />
               <Stat label="Paid $" value={`$${totalDollars.toLocaleString("en-US")}`} accent="#0E5566" />
               <Stat label="Pipeline $" value={`$${pipelineDollars.toLocaleString("en-US")}`} accent="#0066B3" />
               <button onClick={() => setClickedOnly(true)} className="text-left" title="See every org that clicked, with delivered-vs-clicked timing">
-                <Stat label="Clicked link" value={clickedSponsors.length.toString()} accent="#7C3AED" />
+                <Stat label="Clicked" value={clickedSponsors.length.toString()} accent="#7C3AED" />
               </button>
             </div>
 
@@ -598,7 +632,7 @@ export default function SponsorsAdminPage() {
 
             <div className="flex flex-wrap items-center gap-1.5 mb-4">
               {PIPELINE_TABS.map((t) => {
-                const count = sponsors.filter((s) => t.statuses.includes(s.status)).length;
+                const count = countable.filter((s) => bucketOf(s) === t.key).length;
                 const active = filter === t.key;
                 return (
                   <button
@@ -730,8 +764,8 @@ export default function SponsorsAdminPage() {
                 <div className="p-10 text-center text-sm text-slate-400">
                   {filter === "pending_invite"
                     ? <>No pending invites yet.{isAdmin && <> <button onClick={loadTargets} disabled={loadingTargets} className="font-bold text-teal-700 underline hover:text-teal-900 disabled:opacity-50">Load suggested targets</button> to add a starter list.</>}</>
-                    : sponsors.length === 0
-                      ? <>No sponsor applications yet. Share <code className="px-1.5 py-0.5 bg-slate-100 rounded">/sponsor</code> to start collecting them.</>
+                    : countable.length === 0
+                      ? <>No sponsors yet. Share <code className="px-1.5 py-0.5 bg-slate-100 rounded">/sponsor</code> to start collecting them.</>
                       : "No matches."}
                 </div>
               ) : (
