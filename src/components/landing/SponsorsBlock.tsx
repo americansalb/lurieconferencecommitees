@@ -10,7 +10,7 @@ import { TOKENS, CONFERENCE } from "./tokens";
 // card falls back to the partner's name so nothing renders broken.
 const PARTNERS: { name: string; logo: string; role?: string; url?: string }[] = [
   { name: "LanguageLine Solutions", logo: "/partners/languageline.png", role: "Exhibitor", url: "https://www.languageline.com" },
-  { name: "CommunityHealth", logo: "/partners/communityhealth.png", role: "Exhibitor", url: "https://www.communityhealth.org" },
+  { name: "CommunityHealth", logo: "/partners/communityhealth.webp", role: "Exhibitor", url: "https://www.communityhealth.org" },
 ];
 
 const BENEFITS = [
