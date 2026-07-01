@@ -1,10 +1,16 @@
+"use client";
+
+import { useState } from "react";
 import { Award, Briefcase, ArrowRight, Users, Eye, HeartHandshake } from "lucide-react";
 import { TOKENS, CONFERENCE } from "./tokens";
 
 // Confirmed exhibitors / sponsors shown on the landing page. Add entries here
 // as they come in; the "joined by" strip scales gracefully from one upward.
+// Drop each logo file in /public/partners/. If a logo file is missing, the
+// card falls back to the partner's name so nothing renders broken.
 const PARTNERS: { name: string; logo: string; role?: string; url?: string }[] = [
   { name: "LanguageLine Solutions", logo: "/partners/languageline.png", role: "Exhibitor", url: "https://www.languageline.com" },
+  { name: "CommunityHealth", logo: "/partners/communityhealth.png", role: "Exhibitor", url: "https://www.communityhealth.org" },
 ];
 
 const BENEFITS = [
@@ -114,6 +120,10 @@ export default function SponsorsBlock() {
 }
 
 function PartnerLogo({ partner }: { partner: { name: string; logo: string; role?: string; url?: string } }) {
+  // If the logo file hasn't been added yet, show the partner's name instead of
+  // a broken image, so a confirmed exhibitor can be listed before their art
+  // lands.
+  const [logoFailed, setLogoFailed] = useState(false);
   const inner = (
     <div
       className="rounded-[22px] p-[1.5px]"
@@ -123,11 +133,17 @@ function PartnerLogo({ partner }: { partner: { name: string; logo: string; role?
       }}
     >
       <div
-        className="bg-white rounded-[20px] flex flex-col items-center px-12 py-9"
+        className="bg-white rounded-[20px] flex flex-col items-center justify-center px-12 py-9"
         style={{ minWidth: 300 }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={partner.logo} alt={partner.name} className="h-16 sm:h-[78px] w-auto max-w-[340px] object-contain" />
+        {logoFailed ? (
+          <div className="h-16 sm:h-[78px] flex items-center text-2xl sm:text-[28px] font-extrabold tracking-tight text-center" style={{ color: TOKENS.ink }}>
+            {partner.name}
+          </div>
+        ) : (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img src={partner.logo} alt={partner.name} onError={() => setLogoFailed(true)} className="h-16 sm:h-[78px] w-auto max-w-[340px] object-contain" />
+        )}
         {partner.role && (
           <>
             <span className="mt-5 mb-3.5 block h-px w-10 rounded-full" style={{ background: TOKENS.gold, opacity: 0.55 }} />
