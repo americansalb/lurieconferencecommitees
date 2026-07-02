@@ -21,14 +21,29 @@ type PendingItem = {
   attempts: number;
 };
 
+type RecentItem = {
+  id: string;
+  to: string;
+  subject: string;
+  recipientType: string;
+  status: string;
+  sentAt: string | null;
+  updatedAt: string | null;
+  attempts: number;
+  lastError: string | null;
+  resendId: string | null;
+};
+
 type QueueData = {
   counts: Record<string, number>;
   nextScheduledFor: string | null;
+  nextSend?: { at: string | null; reason: string };
   sentLast24h: number;
   sentLastHour: number;
   policy: { maxPerHour: number; maxPerDay: number; minGapSeconds: number; maxGapSeconds: number; sendStartHour: number; sendEndHour: number; sendTimezone: string };
   paused: boolean;
   pending: PendingItem[];
+  recent?: RecentItem[];
 };
 
 const TYPE_META: Record<string, { label: string; cls: string; Icon: typeof Award }> = {
@@ -42,6 +57,35 @@ function fmtTime(iso: string | null) {
   return new Date(iso).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 }
 
+function isOverdue(iso: string | null) {
+  return !!iso && new Date(iso).getTime() <= Date.now();
+}
+
+// The sent-log status pills.
+const STATUS_META: Record<string, { label: string; cls: string }> = {
+  sent: { label: "Sent", cls: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  failed: { label: "Failed", cls: "bg-rose-50 text-rose-700 border-rose-200" },
+  canceled: { label: "Canceled", cls: "bg-slate-100 text-slate-500 border-slate-200" },
+  skipped: { label: "Skipped", cls: "bg-amber-50 text-amber-700 border-amber-200" },
+};
+
+// Why the next send waits, shown under the "Next send" stat so a past-looking
+// time reads honestly ("Due now", "outside send window", etc.).
+const NEXT_REASON_HINT: Record<string, string> = {
+  due: "overdue · sends on next tick",
+  pacing: "next paced slot",
+  hourlyCap: "hourly cap reached",
+  dailyCap: "daily cap reached",
+  window: "outside send window",
+};
+
+function nextSendText(ns: { at: string | null; reason: string } | undefined, paused: boolean) {
+  if (paused) return "Paused";
+  if (!ns || !ns.at) return "—";
+  if (ns.reason === "due") return "Due now";
+  return fmtTime(ns.at);
+}
+
 export default function EmailQueuePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -50,6 +94,7 @@ export default function EmailQueuePage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [rowBusy, setRowBusy] = useState<string | null>(null);
   const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [view, setView] = useState<"queued" | "sent">("queued");
   const [showSettings, setShowSettings] = useState(false);
   const [note, setNote] = useState<string | null>(null);
 
@@ -149,8 +194,16 @@ export default function EmailQueuePage() {
   }
 
   const pending = data?.pending || [];
+  const recent = data?.recent || [];
   const typeCounts = pending.reduce<Record<string, number>>((acc, p) => ((acc[p.recipientType] = (acc[p.recipientType] || 0) + 1), acc), {});
   const shown = typeFilter === "all" ? pending : pending.filter((p) => p.recipientType === typeFilter);
+  const overdueCount = pending.filter((p) => isOverdue(p.scheduledFor)).length;
+  // The effective drip gap, mirroring runEmailQueue: the greater of the min gap
+  // and the rate implied by the hourly cap. This is why past-due items don't all
+  // fire at once.
+  const effGapSec = data ? Math.max(data.policy.minGapSeconds, Math.ceil(3600 / Math.max(1, data.policy.maxPerHour))) : 0;
+  const paceLabel = effGapSec >= 60 ? `${Math.round(effGapSec / 60)} min` : `${effGapSec}s`;
+  const nextHint = data?.paused ? undefined : NEXT_REASON_HINT[data?.nextSend?.reason || ""];
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">
@@ -179,7 +232,12 @@ export default function EmailQueuePage() {
               <Stat label="Pending" value={(data?.counts?.pending || 0).toString()} accent="#0066B3" />
               <Stat label="Sent (24h)" value={(data?.sentLast24h || 0).toString()} accent="#059669" />
               <Stat label="Sent (1h)" value={(data?.sentLastHour || 0).toString()} />
-              <Stat label="Next send" value={data?.paused ? "Paused" : fmtTime(data?.nextScheduledFor || null)} accent={data?.paused ? "#D97706" : undefined} />
+              <Stat
+                label="Next send"
+                value={nextSendText(data?.nextSend, !!data?.paused)}
+                hint={nextHint}
+                accent={data?.paused ? "#D97706" : data?.nextSend?.reason === "due" ? "#059669" : undefined}
+              />
             </div>
 
             {/* Controls */}
@@ -212,62 +270,116 @@ export default function EmailQueuePage() {
               {note && <div className="mt-2 text-xs font-semibold text-teal-700">{note}</div>}
             </div>
 
-            {/* Type filter */}
-            <div className="flex items-center gap-1.5 mb-3 flex-wrap">
-              {([["all", "All"], ["sponsor", "Sponsors"], ["attendee", "Attendees"], ["test", "Test"]] as const).map(([k, label]) => {
-                const count = k === "all" ? pending.length : (typeCounts[k] || 0);
-                const active = typeFilter === k;
-                // Always show Sponsors and Attendees (even at 0) so it's clear
-                // when a type simply has nothing pending; only hide Test at 0.
-                if (k === "test" && count === 0) return null;
-                return (
-                  <button key={k} onClick={() => setTypeFilter(k)} className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold border transition-colors ${active ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"}`}>
-                    {label}
-                    <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full ${active ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"}`}>{count}</span>
-                  </button>
-                );
-              })}
-            </div>
+            {/* Past-due explainer: answers "why is the next send in the past?" */}
+            {view === "queued" && !data?.paused && overdueCount > 0 && (
+              <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-[13px] text-amber-800">
+                <strong>{overdueCount}</strong> {overdueCount === 1 ? "item is" : "items are"} past due. That&rsquo;s normal: the queue deliberately drips out about one every <strong>{paceLabel}</strong> during {data?.policy.sendStartHour}:00–{data?.policy.sendEndHour}:00 {(data?.policy.sendTimezone || "").replace("America/", "")}, so these go out on the next ticks. They aren&rsquo;t stuck.
+              </div>
+            )}
 
-            {/* Pending list */}
-            <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-              {shown.length === 0 ? (
-                <div className="p-10 text-center text-sm text-slate-400">
-                  {pending.length === 0 ? "The queue is empty. Nothing waiting to send." : "No items of this type."}
-                </div>
-              ) : (
-                <ul className="divide-y divide-slate-100">
-                  {shown.map((p, i) => {
-                    const meta = TYPE_META[p.recipientType] || TYPE_META.test;
+            {/* View toggle: what's waiting vs what already went out */}
+            <div className="flex items-center gap-1.5 mb-3 flex-wrap">
+              <button onClick={() => setView("queued")} className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-sm font-bold border transition-colors ${view === "queued" ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"}`}>
+                Queued
+                <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full ${view === "queued" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"}`}>{pending.length}</span>
+              </button>
+              <button onClick={() => setView("sent")} className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-sm font-bold border transition-colors ${view === "sent" ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"}`}>
+                Sent log
+                <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full ${view === "sent" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"}`}>{recent.length}</span>
+              </button>
+              {view === "queued" && (
+                <div className="ml-auto flex items-center gap-1.5 flex-wrap">
+                  {([["all", "All"], ["sponsor", "Sponsors"], ["attendee", "Attendees"], ["test", "Test"]] as const).map(([k, label]) => {
+                    const count = k === "all" ? pending.length : (typeCounts[k] || 0);
+                    const active = typeFilter === k;
+                    if (k === "test" && count === 0) return null;
                     return (
-                      <li key={p.id} className="flex items-center gap-3 px-4 py-3 group">
-                        <span className="text-[11px] font-bold text-slate-300 w-6 shrink-0 text-right tabular-nums">{i + 1}</span>
-                        <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full border shrink-0 ${meta.cls}`}>
-                          <meta.Icon className="w-3 h-3" /> {meta.label}
-                        </span>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-semibold text-slate-800 truncate">{p.subject}</div>
-                          <div className="text-xs text-slate-500 truncate">{p.to}{p.attempts > 0 && <span className="text-rose-500"> · {p.attempts} attempt{p.attempts === 1 ? "" : "s"}</span>}</div>
-                        </div>
-                        <div className="text-[11px] text-slate-400 shrink-0 hidden sm:block tabular-nums">{fmtTime(p.scheduledFor)}</div>
-                        {isAdmin && (
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            <button onClick={() => sendOne(p.id)} disabled={rowBusy === p.id} className="text-[10px] font-bold px-2 py-1 rounded-full border border-teal-200 bg-teal-50 text-teal-700 hover:bg-teal-100 inline-flex items-center gap-1 disabled:opacity-50" title="Send this one now">
-                              {rowBusy === p.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />} Send
-                            </button>
-                            <button onClick={() => cancelOne(p.id)} disabled={rowBusy === p.id} className="text-[10px] font-bold px-2 py-1 rounded-full border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 inline-flex items-center gap-1 disabled:opacity-50" title="Cancel this send">
-                              <X className="w-3 h-3" /> Cancel
-                            </button>
-                          </div>
-                        )}
-                      </li>
+                      <button key={k} onClick={() => setTypeFilter(k)} className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-colors ${active ? "bg-slate-700 text-white border-slate-700" : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"}`}>
+                        {label}
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${active ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"}`}>{count}</span>
+                      </button>
                     );
                   })}
-                </ul>
+                </div>
               )}
             </div>
-            {pending.length >= 500 && (
-              <div className="mt-2 text-[11px] text-slate-400">Showing the first 500 pending items.</div>
+
+            {/* Queued list */}
+            {view === "queued" ? (
+              <>
+                <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                  {shown.length === 0 ? (
+                    <div className="p-10 text-center text-sm text-slate-400">
+                      {pending.length === 0 ? "The queue is empty. Nothing waiting to send." : "No items of this type."}
+                    </div>
+                  ) : (
+                    <ul className="divide-y divide-slate-100">
+                      {shown.map((p, i) => {
+                        const meta = TYPE_META[p.recipientType] || TYPE_META.test;
+                        const overdue = isOverdue(p.scheduledFor);
+                        return (
+                          <li key={p.id} className="flex items-center gap-3 px-4 py-3 group">
+                            <span className="text-[11px] font-bold text-slate-300 w-6 shrink-0 text-right tabular-nums">{i + 1}</span>
+                            <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full border shrink-0 ${meta.cls}`}>
+                              <meta.Icon className="w-3 h-3" /> {meta.label}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-semibold text-slate-800 truncate">{p.subject}</div>
+                              <div className="text-xs text-slate-500 truncate">{p.to}{p.attempts > 0 && <span className="text-rose-500"> · {p.attempts} attempt{p.attempts === 1 ? "" : "s"}</span>}</div>
+                            </div>
+                            <div className="text-[11px] shrink-0 hidden sm:block tabular-nums">
+                              {overdue ? <span className="text-amber-600 font-bold">Due now</span> : <span className="text-slate-400">{fmtTime(p.scheduledFor)}</span>}
+                            </div>
+                            {isAdmin && (
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <button onClick={() => sendOne(p.id)} disabled={rowBusy === p.id} className="text-[10px] font-bold px-2 py-1 rounded-full border border-teal-200 bg-teal-50 text-teal-700 hover:bg-teal-100 inline-flex items-center gap-1 disabled:opacity-50" title="Send this one now">
+                                  {rowBusy === p.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />} Send
+                                </button>
+                                <button onClick={() => cancelOne(p.id)} disabled={rowBusy === p.id} className="text-[10px] font-bold px-2 py-1 rounded-full border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 inline-flex items-center gap-1 disabled:opacity-50" title="Cancel this send">
+                                  <X className="w-3 h-3" /> Cancel
+                                </button>
+                              </div>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+                {pending.length >= 500 && (
+                  <div className="mt-2 text-[11px] text-slate-400">Showing the first 500 pending items.</div>
+                )}
+              </>
+            ) : (
+              /* Sent log */
+              <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                {recent.length === 0 ? (
+                  <div className="p-10 text-center text-sm text-slate-400">Nothing has been sent yet.</div>
+                ) : (
+                  <ul className="divide-y divide-slate-100">
+                    {recent.map((r) => {
+                      const meta = TYPE_META[r.recipientType] || TYPE_META.test;
+                      const sm = STATUS_META[r.status] || { label: r.status, cls: "bg-slate-100 text-slate-500 border-slate-200" };
+                      return (
+                        <li key={r.id} className="flex items-center gap-3 px-4 py-3">
+                          <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full border shrink-0 ${meta.cls}`}>
+                            <meta.Icon className="w-3 h-3" /> {meta.label}
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-semibold text-slate-800 truncate">{r.subject}</div>
+                            <div className="text-xs text-slate-500 truncate">
+                              {r.to}
+                              {r.status === "failed" && r.lastError && <span className="text-rose-500"> · {r.lastError}</span>}
+                            </div>
+                          </div>
+                          <span className={`text-[10px] font-bold px-2 py-1 rounded-full border shrink-0 ${sm.cls}`}>{sm.label}</span>
+                          <div className="text-[11px] text-slate-400 shrink-0 hidden sm:block tabular-nums">{fmtTime(r.sentAt || r.updatedAt)}</div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -277,11 +389,12 @@ export default function EmailQueuePage() {
   );
 }
 
-function Stat({ label, value, accent }: { label: string; value: string; accent?: string }) {
+function Stat({ label, value, accent, hint }: { label: string; value: string; accent?: string; hint?: string }) {
   return (
     <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-sm">
       <div className="text-[10px] font-bold tracking-wider uppercase text-slate-400">{label}</div>
-      <div className="text-2xl font-extrabold mt-1" style={{ color: accent || "#0f172a" }}>{value}</div>
+      <div className="text-2xl font-extrabold mt-1 truncate" style={{ color: accent || "#0f172a" }}>{value}</div>
+      {hint && <div className="text-[10px] text-slate-400 mt-0.5 truncate">{hint}</div>}
     </div>
   );
 }

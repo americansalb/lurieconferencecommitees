@@ -160,6 +160,57 @@ export async function planSendTimes(count: number, policy: SendPolicy): Promise<
   return results;
 }
 
+// The honest "next send" moment. A backed-up queue has items whose scheduledFor
+// is already in the past, so showing that raw time reads as "the next send is in
+// the past." What actually gates the next release is: the paced gap since the
+// last send, the rolling hourly/daily caps, and the business-hours window. This
+// returns the earliest a message can really leave, plus WHY it waits, so the UI
+// can say "Due now" / "next paced slot" / "outside send window" honestly.
+export async function estimateNextSend(): Promise<{ at: string | null; reason: string }> {
+  if (await isPaused()) return { at: null, reason: "paused" };
+  const policy = await getPolicy();
+  const now = Date.now();
+
+  const earliest = await prisma.emailQueue.findFirst({
+    where: { status: "pending" },
+    orderBy: { scheduledFor: "asc" },
+    select: { scheduledFor: true },
+  });
+  if (!earliest) return { at: null, reason: "empty" };
+
+  const effGapMs = Math.max(policy.minGapSeconds, Math.ceil(3600 / Math.max(1, policy.maxPerHour))) * 1000;
+  const [hourWin, dayWin] = await Promise.all([
+    prisma.emailQueue.findMany({ where: { status: "sent", sentAt: { gte: new Date(now - 3600_000) } }, orderBy: { sentAt: "asc" }, select: { sentAt: true } }),
+    prisma.emailQueue.findMany({ where: { status: "sent", sentAt: { gte: new Date(now - 24 * 3600_000) } }, orderBy: { sentAt: "asc" }, select: { sentAt: true } }),
+  ]);
+
+  // Start from "now, or the item's own scheduled time if that's still ahead."
+  let candidate = Math.max(now, earliest.scheduledFor.getTime());
+  let reason = earliest.scheduledFor.getTime() > now ? "scheduled" : "due";
+
+  // Paced gap since the last delivery.
+  const lastSent = dayWin.length ? dayWin[dayWin.length - 1].sentAt : null;
+  if (lastSent) {
+    const gapReady = lastSent.getTime() + effGapMs;
+    if (gapReady > candidate) { candidate = gapReady; reason = "pacing"; }
+  }
+  // Rolling caps: if we're at the ceiling, the next slot opens when the oldest
+  // send in the window ages out.
+  if (hourWin.length >= policy.maxPerHour && hourWin[0].sentAt) {
+    const freeAt = hourWin[0].sentAt.getTime() + 3600_000;
+    if (freeAt > candidate) { candidate = freeAt; reason = "hourlyCap"; }
+  }
+  if (dayWin.length >= policy.maxPerDay && dayWin[0].sentAt) {
+    const freeAt = dayWin[0].sentAt.getTime() + 24 * 3600_000;
+    if (freeAt > candidate) { candidate = freeAt; reason = "dailyCap"; }
+  }
+  // Finally, roll forward into the next business-hours window if needed.
+  const clamped = clampToBusinessHours(new Date(candidate), policy);
+  if (clamped.getTime() > candidate) { candidate = clamped.getTime(); reason = "window"; }
+
+  return { at: new Date(candidate).toISOString(), reason };
+}
+
 // Drains due items from the email queue: claims each atomically, sends via
 // Resend with the right envelope, advances the recipient, and retries or gives
 // up on failure. Shared by the cron(s) so queued invites actually go out.
