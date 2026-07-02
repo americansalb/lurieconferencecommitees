@@ -53,16 +53,6 @@ export const SPEAKERS: Speaker[] = [
     photo: "/speakers/michael-mule.webp",
   },
   {
-    // Confirmed at the organization level; swap in the presenter's name and
-    // headshot once The Joint Commission tells us who is coming.
-    slug: "the-joint-commission",
-    name: "The Joint Commission",
-    title: "Speaker to be announced",
-    org: "The nation's leading healthcare accreditor",
-    bio: "The Joint Commission is the nation's oldest and largest standards-setting and accrediting body in health care. Its standards have made effective communication a condition of safe, quality care, requiring hospitals to provide language services for patients who communicate in languages other than English, and its Roadmap for Hospitals helped set the national bar for culturally and linguistically appropriate care. Presenter details will be announced soon.",
-    photo: "/speakers/the-joint-commission.webp",
-  },
-  {
     slug: "patricia-alonzo",
     name: "Patricia A. Alonzo",
     credentials: "EdD",
