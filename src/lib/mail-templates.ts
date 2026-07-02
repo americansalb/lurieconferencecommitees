@@ -1479,7 +1479,16 @@ export function sponsorInKindAcceptanceEmail({
           ], "#3C2E10")}
         </td></tr>
       </table>
-      <div style="font-family:Georgia,'Times New Roman',serif;font-size:13px;line-height:1.7;color:${SOFT};padding:0 0 6px 0;">${taxLine}, and we are glad to provide a donation receipt for its value. Please consult your tax advisor.</div>
+      <div style="font-family:Georgia,'Times New Roman',serif;font-size:13px;line-height:1.7;color:${SOFT};padding:0 0 6px 0;">${taxLine}. Once your gift is complete, we will send you a formal written acknowledgment for your records, which you can keep for your tax deduction. Please consult your tax advisor.</div>
+
+      ${eyebrow("Please be our guest")}
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 8px 0;">
+        <tr><td bgcolor="#F2F6F6" style="background-color:#F2F6F6;border:1px solid #D9E6E8;border-left:3px solid ${TEAL};border-radius:10px;padding:16px 20px;">
+          <div style="font-family:Georgia,'Times New Roman',serif;font-size:15px;line-height:1.75;color:${INK};">
+            And this is our favorite part: your sponsorship includes a <strong>complimentary ticket</strong> to the conference, and we would genuinely love to have you there, whether in person in Chicago or online. It is entirely optional, but the seat is yours and you would be most welcome. Just tell us on your sponsor page whether you can join, and who the ticket is for.
+          </div>
+        </td></tr>
+      </table>
 
       ${p(`There is no rush on any of this, and nothing here is set in stone. Reply anytime, straight to us at <a href="mailto:kevin@aalb.org" style="color:${LINK};text-decoration:none;">kevin@aalb.org</a>, and we will sort out the details together.`, 22)}
 

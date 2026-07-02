@@ -7,6 +7,20 @@ type Field =
   | { key: string; label: string; type: "text" | "textarea"; placeholder?: string; hint?: string }
   | { key: string; label: string; type: "select"; options: { value: string; label: string }[] };
 
+// The complimentary-ticket / attendance questions, shown to every in-kind
+// sponsor first: the sponsorship includes a seat, so we invite them to claim it.
+const ATTEND_FIELDS: Field[] = [
+  { key: "attend", label: "Will you join us at the conference?", type: "select", options: [
+    { value: "", label: "Let us know…" },
+    { value: "Yes, in person", label: "Yes — in person in Chicago" },
+    { value: "Yes, online", label: "Yes — online" },
+    { value: "Not sure yet", label: "Not sure yet" },
+    { value: "Can't attend this year", label: "Can't make it this year" },
+  ] },
+  { key: "attendeeName", label: "Who is the ticket for?", type: "text", placeholder: "Name for your complimentary ticket" },
+  { key: "attendeeEmail", label: "Their email", type: "text", placeholder: "Where we'll send the ticket" },
+];
+
 // The coordination questions, per kind. Food and ASL sponsors see different
 // fields; the answers are saved as a flat string map on the sponsor record.
 const FOOD_FIELDS: Field[] = [
@@ -49,7 +63,8 @@ export default function LogisticsForm({
   kind: "food" | "asl";
   initial: Record<string, string> | null;
 }) {
-  const fields = kind === "asl" ? ASL_FIELDS : FOOD_FIELDS;
+  const detailFields = kind === "asl" ? ASL_FIELDS : FOOD_FIELDS;
+  const fields = [...ATTEND_FIELDS, ...detailFields];
   const seed = () => {
     const o: Record<string, string> = {};
     for (const f of fields) o[f.key] = initial?.[f.key] || "";
@@ -86,50 +101,61 @@ export default function LogisticsForm({
     }
   }
 
+  const renderField = (f: Field) => (
+    <label key={f.key} className="block">
+      <span className="text-[11px] font-bold uppercase tracking-wide text-slate-500">{f.label}</span>
+      {f.type === "textarea" ? (
+        <textarea
+          value={values[f.key]}
+          onChange={(e) => set(f.key, e.target.value)}
+          placeholder={f.placeholder}
+          rows={2}
+          className="mt-1 w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 resize-y"
+        />
+      ) : f.type === "select" ? (
+        <select
+          value={values[f.key]}
+          onChange={(e) => set(f.key, e.target.value)}
+          className="mt-1 w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-teal-500 bg-white"
+        >
+          {f.options.map((o) => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
+      ) : (
+        <input
+          type="text"
+          value={values[f.key]}
+          onChange={(e) => set(f.key, e.target.value)}
+          placeholder={f.placeholder}
+          className="mt-1 w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10"
+        />
+      )}
+      {"hint" in f && f.hint ? <span className="mt-1 block text-[11px] text-slate-400">{f.hint}</span> : null}
+    </label>
+  );
+
   return (
     <div>
-      <div className="text-sm font-semibold text-slate-700">
+      <div className="text-sm font-semibold text-slate-700">Your seat at the conference</div>
+      <p className="text-xs text-slate-500 mt-0.5">
+        Your sponsorship includes a complimentary ticket — we&rsquo;d love to have you there, in person or online. Entirely optional.
+      </p>
+      <div className="mt-3 grid grid-cols-1 gap-3">
+        {ATTEND_FIELDS.map(renderField)}
+      </div>
+
+      <div className="mt-5 pt-4 border-t border-slate-200/70 text-sm font-semibold text-slate-700">
         {kind === "asl" ? "Interpretation details" : "Food details"}
       </div>
       <p className="text-xs text-slate-500 mt-0.5">
         Fill in whatever you can now; you can come back and update it anytime.
       </p>
       <div className="mt-3 grid grid-cols-1 gap-3">
-        {fields.map((f) => (
-          <label key={f.key} className="block">
-            <span className="text-[11px] font-bold uppercase tracking-wide text-slate-500">{f.label}</span>
-            {f.type === "textarea" ? (
-              <textarea
-                value={values[f.key]}
-                onChange={(e) => set(f.key, e.target.value)}
-                placeholder={f.placeholder}
-                rows={2}
-                className="mt-1 w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 resize-y"
-              />
-            ) : f.type === "select" ? (
-              <select
-                value={values[f.key]}
-                onChange={(e) => set(f.key, e.target.value)}
-                className="mt-1 w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-teal-500 bg-white"
-              >
-                {f.options.map((o) => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
-                ))}
-              </select>
-            ) : (
-              <input
-                type="text"
-                value={values[f.key]}
-                onChange={(e) => set(f.key, e.target.value)}
-                placeholder={f.placeholder}
-                className="mt-1 w-full px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10"
-              />
-            )}
-            {"hint" in f && f.hint ? <span className="mt-1 block text-[11px] text-slate-400">{f.hint}</span> : null}
-          </label>
-        ))}
+        {detailFields.map(renderField)}
       </div>
-      <div className="mt-3 flex items-center gap-3">
+
+      <div className="mt-4 flex items-center gap-3">
         <button
           onClick={save}
           disabled={busy || !dirty}

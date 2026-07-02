@@ -60,6 +60,7 @@ const PIPELINE_TABS: { key: string; label: string; statuses: string[] }[] = [
 // Human labels for the in-kind logistics fields the sponsor fills in on their
 // portal, so the dashboard can show their answers compactly.
 const LOGISTICS_LABELS: Record<string, string> = {
+  attend: "Attending", attendeeName: "Ticket for", attendeeEmail: "Ticket email",
   provide: "Providing", day: "Day", meal: "Meal", fulfillment: "Fulfillment",
   window: "Window", dayOfContact: "Day-of contact", allergens: "Allergens",
   setup: "Setup", coverage: "Coverage", interpreters: "Interpreters",
