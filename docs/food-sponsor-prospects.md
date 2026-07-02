@@ -8,13 +8,37 @@ dropdown on the Sponsors page).
 
 ## Status
 
-**28 of 29 restaurants now have an email filled in and will load** via "Load
-food prospects." The emails are **search-sourced** (domain-matched or
-business-name-matched addresses found in search listings) but were **not
-confirmed on the live page** (the network policy blocks opening restaurant
-sites), so give each a quick confirm before enabling Auto-send. Bloom was
-removed (permanently closed Feb 2026). Only **Vegan Now 2 Go** still lacks a
-strong email. The table below is the original research reference.
+**50 restaurants now have an email filled in and will load** via "Load food
+prospects" (the original 28 plus 22 added in the 2026 round-2 expansion). The
+emails are **search-sourced** (domain-matched or business-name-matched
+addresses found in search listings) but were **not confirmed on the live page**
+(the network policy blocks opening restaurant sites), so give each a quick
+confirm before enabling Auto-send. Bloom was removed (permanently closed Feb
+2026). The table below is the original research reference.
+
+### Round-2 expansion (2026)
+
+A second sweep roughly doubled the list, with a deliberate push into the
+region's deepest plant-based catering pool: **pure-vegetarian Indian caterers**
+(Devon Avenue plus the Naperville/Warrenville/Schaumburg suburbs), alongside
+vegan caterers, vegan bakeries/coffee for dessert and breakfast sponsorships,
+near-venue spots, and suburban kitchens. Every candidate was re-verified as
+**currently open and meat-free**; the second pass rejected four that turned out
+to serve meat or had closed (Madhura Cafe, Idly Vada Bistro, Shimla Peppers,
+Mindful Baking).
+
+**Vegan ask for vegetarian kitchens.** The conference is fully vegan, but many
+of the new prospects are *vegetarian* (not vegan), so a lacto-vegetarian kitchen
+could send ghee, paneer, or yogurt by default. Each vegetarian row's note now
+makes a **gentle, explicit ask for a dairy-free / vegan version**, framed as an
+easy, familiar lift rather than a demand (e.g. Govinda's temple kitchen: "we
+would simply ask for a spread set without ghee, paneer, or dairy, which your
+cooks can prepare with grace"). The existing Handlebar and Annapurna rows were
+updated the same way. The Chicago Diner row is left as-is (already confirmed).
+
+The **form-only** additions below have no email published by the business, so
+they are worked by hand through the linked catering/contact form or phone
+(email left blank in `FOOD_TARGETS` so they do not auto-load).
 
 ## ⚠️ Emails need verifying (one-time, ~20 min)
 
@@ -72,3 +96,30 @@ large-event catering with the clearest contact paths).
 
 > Chicago saw a wave of vegan closures in 2025–2026, so re-check "open" status
 > near the send date regardless.
+
+---
+
+## Round-2 form-only kitchens (no published email, work by hand)
+
+Real, currently-open, meat-free kitchens where research found no business-published
+email. Contact via the linked form/phone. Vegetarian rows carry the gentle vegan ask in
+their note. If you later find a published address, move the row into `FOOD_TARGETS` with
+the email filled in so it auto-loads.
+
+| Restaurant | Area | Cuisine | Form / phone | Note |
+|---|---|---|---|---|
+| The Vegan Palace | Streamwood, IL | Vegan Mexican | https://www.facebook.com/p/The-Vegan-Palace-100064067645975/ | The Vegan Palace brings a fully plant-based take on Mexican cooking to Streamwood, with tacos, burritos, and more, all vegan, seven days a week. A conference that has committed to an all-vegan table would love to bring that kind of flavor to our guests. We would be glad to talk with you about catering or donating a meal. |
+| Chicago Not Dogs | Chicago, IL | Vegan Chicago-style (Italian beef, hot dogs) | https://www.chicagonotdogs.com/ | Chicago Not Dogs makes heart-healthy, 100 percent vegan versions of Chicago classics, from plant based Italian beef to Chicago style hot dogs. Now a roving kitchen after the XMarket food hall closed, they still bring their menu to events around the city. A hometown, all-vegan spin on Chicago food would be a fun fit for our table. Could we talk about catering? |
+| Conscious Plates | Woodlawn, Chicago, IL | Alkaline vegan (whole-food, plant-based) | https://www.consciousplates.com/ | Conscious Plates is Chef Latrell Garnett's alkaline, whole food vegan kitchen in Woodlawn, where every dish is plant based and made without soy, wheat or starch. A conference committed to an all-plant-based table would value a partner rooted so deeply in food as healing. We would love to talk about catering, once we confirm the best time to reach you. |
+| Your Organic Inner G | Ashburn, Chicago, IL | Vegan / organic plant-based (globally inspired healthy) | https://www.yourorganicinnerg.fun/ | Your Organic Inner G brought a fully plant-based, organic kitchen to Ashburn in 2024, a warm neighborhood spot focused on healthy, feel-good vegan cooking. A conference that has committed to an entirely meat-free table would be happy to bring your food to the room. We would love to talk with you about catering or donating a meal. |
+| Mindful Indulgences | Chicago, IL | Vegan chocolate / artisan confections | https://www.facebook.com/MindfulIndulgencesLLC/ | Mindful Indulgences crafts organic, fair-trade vegan chocolate truffles right here in Chicago, proof that plant-based confections can be every bit as elegant as the classics. A conference that has committed to an all-vegan table would love to close a meal with your chocolates. We would be glad to talk about a dessert donation or a small catering order. |
+| Upton's Naturals | Chicago, IL vegan food manufacturer | Vegan seitan and jackfruit food maker | https://uptonsnaturals.com/contact-info/ | Upton's Naturals has made Chicago a home for approachable vegan food since 2006, crafting the seitan and jackfruit that restaurants and home cooks across the country rely on. The company has long donated product to plant based causes. Our conference has committed to an entirely plant based table, and your foods would help feed it. Could we talk about donating product or foodservice support? |
+| The Black Vegan | 2300 S Kedzie Ave, Chicago, IL 60623, Little Village | Vegan soul food and comfort | https://www.shopblackvegan.com/catering | The Black Vegan brings serious flavor to Chicago's Little Village, from portabella gyros to jackfruit sliders and crispy vegan wings, all fully plant based. Our conference has committed to an entirely meat free table, and your bold, soul forward cooking would fit it beautifully. Could we talk about catering a meal for our guests? |
+| Govinda's of Naperville | Naperville, IL | Vegetarian Indian / Chinese (temple kitchen) | https://www.iskconnaperville.org/new-temple-project/govindas-catering/ | Govinda's, the vegetarian kitchen at Naperville's Radha Shyamasundara Temple, serves North and South Indian and Chinese dishes with real devotion and caters weddings and events, all of it meat-free. Since our conference is fully vegan, we would simply ask for a spread set without ghee, paneer, or dairy, which your cooks can prepare with grace. We would love to talk about catering. |
+| Blind Faith Cafe | Evanston, IL | Vegetarian American / global | https://www.blindfaithcafe.com/catering-services | Blind Faith has been Evanston's vegetarian anchor since 1979, a certified green kitchen serving globally inspired plates and catering everything from small dinners to weddings for hundreds. Our conference is fully vegan, so we would simply ask for your plant-based dishes, the ones without dairy or eggs, which your kitchen handles with ease. We would love to talk about a meal. |
+| Shree Restaurant (Naperville) | Naperville | Pure-vegetarian Gujarati and Rajasthani Indian | https://shreerestaurants.com/contact.html | Shree Restaurant is a pure vegetarian Gujarati and Rajasthani kitchen in Naperville, serving thalis and homestyle specialties with a caterer's touch. Because our table is fully vegan, we would be hoping for dishes prepared without ghee or dairy, an easy adaptation for your cooks. Could we talk about catering or donating a meal? |
+| Honest | Naperville | Pure-vegetarian Gujarati and Jain Indian | https://honestrestaurantsusa.com/contact-us.php | Honest is a pure vegetarian favorite in Naperville, loved for Gujarati and Jain cooking, from pav bhaji to spring dosa and pani puri. Since our table is entirely vegan, we would simply ask for a menu shaped without dairy or ghee, an easy turn for a kitchen already rooted in Jain cooking. Could we talk about catering a meal? |
+| Sukhadia's Sweets and Snacks | West Ridge | Vegetarian Indian sweets, farsan and chaat | https://www.sukhadiasweetschicago.com/catering | For decades Sukhadia's has been a beloved all-vegetarian sweets and snacks shop on Devon Avenue, turning out farsan, chaat, and mithai passed down through generations. Many of your snacks are already vegan, and since our table is fully plant-based, we would simply ask for the dairy-free ones. Could we talk about catering a spread or donating dessert? |
+| Good Foods Vegan/Vegetarian Deli | South Shore, Chicago, IL | Vegan/vegetarian deli (raw and cooked, organic) | https://krea-tek.net/goodfoods/ | Good Foods is a longtime South Shore deli where everything is meat-free, an easygoing counter of raw and cooked organic plates, sandwiches, and salads. Since our conference table is fully vegan, we would be hoping for the dairy-free side of your menu, which is already much of what you do. We would love to talk about catering a meal. |
+| Vanam Indian Vegetarian | 337 W Golf Rd, Schaumburg, IL 60195, NW suburb | Pure-vegetarian South Indian | https://vanamil.com/catering-services/ | Vanam is a pure vegetarian South Indian kitchen near Woodfield, turning out fresh dosas, thalis, and chaat made daily. Since everything at our conference is fully vegan, we would just ask for the dairy-free side of your menu, an easy and familiar request for a kitchen like yours. We would be glad to talk about catering a meal. |
+| Udupi Palace | 2543 W Devon Ave, Chicago, IL 60659, Little India | Pure-vegetarian South Indian | https://udupichicago.com/contact-us/ | Udupi Palace has anchored Devon Avenue since 1993 as a pure vegetarian South Indian kitchen, famous for its crisp dosas and generous thalis. Our whole conference table is vegan, so we would simply be hoping for a spread made without ghee or dairy, which we know your cooks do beautifully every day. We would love to talk with you about catering from Chicago's Little India. |
