@@ -251,6 +251,15 @@ export function sponsorAslSubject(companyName: string): string {
   return `${co}: an invitation to be an ASL Interpreter Sponsor of the 2026 Lurie Children's & AALB Conference`;
 }
 
+// Subject for the in-kind acceptance / welcome letter, sent when an admin
+// accepts a pledged Food or ASL sponsor from the dashboard. Leads with the good
+// news and the organization's own name.
+export function sponsorInKindAcceptanceSubject(companyName: string, kind: "food" | "asl"): string {
+  const co = (companyName || "").trim() || "Your organization";
+  const role = kind === "asl" ? "ASL Interpreter Sponsor" : "Food Sponsor";
+  return `It's official: ${co} is a ${role} of the 2026 Lurie Children's & AALB Conference`;
+}
+
 function extractAddress(s: string): string {
   const angle = s.match(/<([^>]+)>/);
   if (angle) return angle[1].trim();

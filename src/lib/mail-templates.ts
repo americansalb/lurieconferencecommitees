@@ -1260,6 +1260,114 @@ export function sponsorInKindPledgeEmail({ kind, contactName, companyName, provi
   `);
 }
 
+type SponsorInKindAcceptanceArgs = {
+  kind: "food" | "asl";
+  contactName: string;
+  companyName: string;
+  // The pledge summary we hold (from sponsor.message), reflected back so the
+  // letter names exactly what they offered. Optional.
+  pledge?: string | null;
+  // The sponsor portal, where they upload their logo and add their website.
+  materialsUrl: string;
+  // One-click unsubscribe URL (deliverability / CAN-SPAM).
+  unsubscribeUrl?: string;
+  assetBase?: string;
+};
+
+// The formal welcome / onboarding letter, sent when an admin clicks "Accept" on
+// an in-kind Food or ASL sponsor who has pledged. As warm and branded as the
+// pledge acknowledgement, but action-oriented: it makes the sponsorship
+// official, then asks for the three things we need to feature them and
+// coordinate: their logo, their website, and the logistics of what they are
+// providing. Logo and website funnel to the portal button; logistics are
+// reply-first. No em dashes; both host institutions named on the tax line.
+export function sponsorInKindAcceptanceEmail({
+  kind, contactName, companyName, pledge, materialsUrl, unsubscribeUrl, assetBase,
+}: SponsorInKindAcceptanceArgs) {
+  const first = (contactName || "").trim().split(/\s+/)[0] || "there";
+  const isAsl = kind === "asl";
+  const sponsorLabel = isAsl ? "ASL Interpreter Sponsor" : "Food Sponsor";
+  const mission = isAsl
+    ? "helping us keep every session of the conference accessible in American Sign Language"
+    : "helping us hold the line on a fully plant-based, meat-free conference, where every meal honors the same promise these two days are about";
+  const pledgeLabel = isAsl ? "Interpreting you are providing" : "What you are providing";
+  const logistics = isAsl
+    ? [
+        "Which sessions, day, or hours your interpreters can cover. We expect about 70 to 80 attendees in person, plus a virtual audience, across Saturday, August 15 and Sunday, August 16.",
+        "How many interpreters you will send, and any team or relay preferences for the longer sessions.",
+        "Whether coverage is on site or remote (VRI), and any equipment, platform, or sightline needs.",
+        "A day-of contact and cell number, so our team can reach yours quickly.",
+        "Anything you would like from us in advance, such as the agenda, slides, or a glossary, so your interpreters can prepare.",
+      ]
+    : [
+        "What you will provide and roughly how many servings. We expect about 70 to 80 attendees in person, so even part of a meal goes a long way.",
+        "Which day and meal it is for: Saturday, August 15 (9:30 AM to 6:30 PM) or Sunday, August 16 (9:00 AM to 4:00 PM).",
+        "Whether you will deliver to Lurie Children&rsquo;s or we should arrange pickup, and the drop-off window that works for you.",
+        "A day-of contact and cell number, so our team can reach yours on the day.",
+        "Ingredient and allergen notes for each dish (nuts, gluten, soy, and so on), so we can serve everyone safely.",
+        "Any setup needs, such as serving equipment, warming, power, or table space.",
+      ];
+  const recognitionLast = isAsl
+    ? "An honorable mention during the sessions your interpreters cover"
+    : "An honorable mention at the meal you provide, before a national audience of interpreters, clinicians, and advocates";
+  const taxLine = isAsl
+    ? "Your in-kind donation of interpreting services is tax-deductible as a charitable contribution to a 501(c)(3)"
+    : "Your in-kind food donation is tax-deductible as a charitable contribution to a 501(c)(3)";
+  const pledgeCard = pledge && pledge.trim()
+    ? glanceCard([{ label: pledgeLabel, value: escapeHtml(pledge.trim()) }])
+    : "";
+  const postalAddress = process.env.MAIL_POSTAL_ADDRESS?.trim() || "Americans Against Language Barriers, Chicago, IL";
+  return shell(`
+    ${heroBanner()}
+    <h1 style="font-size:23px;font-weight:800;margin:0 0 12px 0;letter-spacing:-0.01em;">It&rsquo;s official, ${escapeHtml(first)}.</h1>
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
+      We are delighted to welcome <strong>${escapeHtml(companyName)}</strong> as a confirmed <strong>${sponsorLabel}</strong> of the 2026 Lurie Children&rsquo;s and AALB Conference. Thank you for ${mission}. It genuinely means a great deal to have you with us.
+    </p>
+    ${pledgeCard}
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:14px 0 0 0;">
+      So that we can feature you properly and get the details right, there are just a few things we would love from you.
+    </p>
+
+    ${sectionHeading("1. Your logo, for the website")}
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 4px 0;">
+      We would love to add <strong>${escapeHtml(companyName)}</strong> to the conference website and to our on-site signage. You can upload your logo from your sponsor page in about a minute. A vector file (SVG or PDF), or a PNG at least 1000px wide, keeps it crisp in print and on screen.
+    </p>
+    ${button(materialsUrl, "Upload your logo &rarr;")}
+
+    ${sectionHeading("2. A link to your website")}
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 4px 0;">
+      So we can link your name straight to your site, please add your website on that same sponsor page, or simply reply to this email with the address.
+    </p>
+
+    ${sectionHeading("3. A few logistics")}
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 8px 0;">
+      Whenever it is convenient, just reply to this email and let us know:
+    </p>
+    ${bulletList(logistics)}
+
+    ${sectionHeading("Your recognition")}
+    ${bulletList([
+      "Your name and logo on the conference website",
+      "Your name and logo on signage at the conference",
+      recognitionLast,
+    ])}
+    <p style="font-size:14px;line-height:1.7;color:${MUTED};margin:8px 0 0 0;">
+      ${taxLine}, and we are glad to provide a donation receipt for its value. Please consult your tax advisor.
+    </p>
+
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:18px 0 0 0;">
+      There is no rush on any of this, and nothing here is set in stone. Reply anytime and we will sort out the details together.
+    </p>
+
+    ${signOff("With gratitude,")}
+    ${logoLockup(assetBase)}
+
+    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;padding-top:14px;border-top:1px solid #eef1f4;">
+      ${escapeHtml(postalAddress)}.${unsubscribeUrl ? ` <a href="${unsubscribeUrl}" style="color:${MUTED};text-decoration:underline;">Unsubscribe</a>.` : ""}
+    </p>
+  `);
+}
+
 type SponsorApplicationArgs = {
   firstName: string;
   companyName: string;

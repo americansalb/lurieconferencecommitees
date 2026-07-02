@@ -6,6 +6,7 @@ import { tierById, fullBenefits, SPONSOR_STATUS_LABELS } from "@/lib/sponsors";
 import PayNowButton from "./PayNowButton";
 import ExhibitorCompletionWizard from "./ExhibitorCompletionWizard";
 import LogoUploader from "./LogoUploader";
+import WebsiteField from "./WebsiteField";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +26,10 @@ export default async function SponsorStatusPage({ params }: { params: { token: s
   const tier = tierById(sponsor.tier);
   const TEAL = "#0E5566";
   const accent = tier?.accent || TEAL;
+  // In-kind Food / ASL sponsors don't pay: their portal collects a logo and a
+  // website link (the things the acceptance letter asks them for) instead of a
+  // payment. The exhibitor path has its own wizard above.
+  const isInKind = sponsor.tier === "food" || sponsor.tier === "asl";
   const status = SPONSOR_STATUS_LABELS[sponsor.status] || SPONSOR_STATUS_LABELS.submitted;
   // VIP courtesy discount: show what they actually owe/paid, not the list price,
   // matching the funnel and what Stripe charges. Applies to any paid level
@@ -105,10 +110,17 @@ export default async function SponsorStatusPage({ params }: { params: { token: s
             </div>
           )}
 
-          {(sponsor.tier === "exhibitor" || sponsor.wantsLogo || sponsor.logo) && (
+          {(sponsor.tier === "exhibitor" || isInKind || sponsor.wantsLogo || sponsor.logo) && (
             <div className="mt-6 rounded-xl border border-slate-100 bg-slate-50/70 p-4">
-              <div className="text-[10px] font-bold tracking-widest uppercase text-slate-400 mb-3">Your logo</div>
+              <div className="text-[10px] font-bold tracking-widest uppercase text-slate-400 mb-3">
+                {isInKind ? "Feature your organization" : "Your logo"}
+              </div>
               <LogoUploader token={params.token} sponsorId={sponsor.id} companyName={sponsor.companyName} hasLogo={!!sponsor.logo} />
+              {isInKind && (
+                <div className="mt-4 pt-4 border-t border-slate-200/70">
+                  <WebsiteField token={params.token} initial={sponsor.website || ""} />
+                </div>
+              )}
               {(sponsor.registreeName || sponsor.dietary || sponsor.accessibility) && (
                 <dl className="mt-4 pt-3 border-t border-slate-200/70 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
                   {sponsor.registreeName && <Detail label="Table representative" value={`${sponsor.registreeName}${sponsor.registreeEmail ? ` · ${sponsor.registreeEmail}` : ""}`} />}

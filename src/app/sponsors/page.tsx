@@ -80,6 +80,7 @@ export default function SponsorsAdminPage() {
   const [requestingLogoId, setRequestingLogoId] = useState<string | null>(null);
   const [sendingInviteId, setSendingInviteId] = useState<string | null>(null);
   const [sendingLetterId, setSendingLetterId] = useState<string | null>(null);
+  const [acceptingId, setAcceptingId] = useState<string | null>(null);
   const [mergeFor, setMergeFor] = useState<Sponsor | null>(null);
   const [mergeOtherId, setMergeOtherId] = useState("");
   const [mergeName, setMergeName] = useState("");
@@ -298,6 +299,35 @@ export default function SponsorsAdminPage() {
     }
   }
 
+  // Per-org "Accept" for an in-kind (food/ASL) sponsor who has pledged: sends
+  // the branded welcome letter that asks for their logo, website, and logistics,
+  // and moves them into the confirmed sponsors. Confirmed first, since it emails.
+  function acceptInKind(id: string) {
+    const s = sponsors.find((x) => x.id === id);
+    setConfirmDialog({
+      title: "Accept and welcome this sponsor?",
+      message: `${s?.companyName || "This sponsor"} will receive the welcome letter asking for their logo, a link to their website, and the logistics, and will move to your confirmed sponsors. It sends right away.`,
+      confirmLabel: "Accept & send letter",
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        setAcceptingId(id);
+        setActionNote(null);
+        try {
+          const res = await fetch(`/api/sponsors/${id}/accept`, { method: "POST" });
+          const j = await res.json().catch(() => ({}));
+          const who = s?.companyName || "Sponsor";
+          setActionNote(res.ok && j.ok ? `${who}: accepted, welcome letter sent.` : `${who}: could not accept. ${j.error || "Unknown error."}`);
+          await load();
+        } catch {
+          setActionNote("Network error sending the acceptance letter.");
+        } finally {
+          setAcceptingId(null);
+          setTimeout(() => setActionNote(null), 8000);
+        }
+      },
+    });
+  }
+
   // One click: load the curated prospect list into Pending invite. No emails.
   async function loadTargets() {
     setLoadingTargets(true);
@@ -463,6 +493,11 @@ export default function SponsorsAdminPage() {
   // single source of truth, even if the status field later drifts. Every place
   // that means "paid" uses this, so the card and the tab can never disagree.
   const isClosed = (s: Sponsor) => s.paid === true;
+  // "Won" = fully locked in. A paid sponsor, or a confirmed in-kind (food/ASL)
+  // sponsor who brings no dollars but is done. Both live under the "Paid" tab
+  // (which already lists the "confirmed" status), so this is what routes them
+  // there and what the Paid count reflects, keeping the card and tab in sync.
+  const isWon = (s: Sponsor) => isClosed(s) || s.status === "confirmed";
   // A live lead: an org actually in conversation or owing payment. Cold
   // prospects, queued, and merely-invited orgs are NOT engaged. This is exactly
   // the "In discussion" + "Awaiting payment" tabs, so the Engaged card and those
@@ -479,7 +514,7 @@ export default function SponsorsAdminPage() {
   // list filter so they always agree: paid sponsors live only under "Paid",
   // everyone else falls into their status's tab.
   const bucketOf = (s: Sponsor): string | null => {
-    if (isClosed(s)) return "paid";
+    if (isWon(s)) return "paid";
     const tab = PIPELINE_TABS.find((t) => t.key !== "paid" && t.statuses.includes(s.status));
     return tab ? tab.key : null;
   };
@@ -521,7 +556,8 @@ export default function SponsorsAdminPage() {
     .filter((ms) => Number.isFinite(ms) && ms >= 0);
   const clickRate = everSent.length ? Math.round((clickedSponsors.length / everSent.length) * 100) : 0;
 
-  const paidCount = countable.filter(isClosed).length;
+  // Count of won deals (paid + confirmed in-kind), matching the "Paid" tab.
+  const paidCount = countable.filter(isWon).length;
   const engagedCount = countable.filter(isEngaged).length;
   // Revenue actually collected, and the realistic dollar value of live deals
   // (not cold outreach). Both ignore the test record and in-kind sponsors.
@@ -834,6 +870,17 @@ export default function SponsorsAdminPage() {
                             >
                               {sendingLetterId === s.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <FileText className="w-3 h-3" />}
                               Send + 20% offer
+                            </button>
+                          )}
+                          {isAdmin && (s.tier === "food" || s.tier === "asl") && (s.status === "in_conversation" || s.status === "submitted") && (
+                            <button
+                              onClick={() => acceptInKind(s.id)}
+                              disabled={acceptingId === s.id}
+                              className="text-[10px] font-bold px-2 py-1 rounded-full border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 inline-flex items-center gap-1 shrink-0 disabled:opacity-50"
+                              title="Accept this in-kind sponsor and send the welcome letter asking for their logo, website, and logistics"
+                            >
+                              {acceptingId === s.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <BadgeCheck className="w-3 h-3" />}
+                              Accept
                             </button>
                           )}
                           {showPayAction && (
