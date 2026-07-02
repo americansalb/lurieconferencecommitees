@@ -149,7 +149,7 @@ function signOff(closing = "Warm regards,") {
 // dates, venue, CEUs, and format stay consistent with the landing tokens.
 const GLANCE_ROWS = [
   { label: "Location", value: "Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago, 225 E. Chicago Avenue, Chicago, IL 60611" },
-  { label: "Dates", value: "Saturday, August 15 &middot; 9:30 AM&ndash;6:00 PM<br/>Sunday, August 16 &middot; 9:30 AM&ndash;4:00 PM" },
+  { label: "Dates", value: "Saturday, August 15 &middot; 9:30 AM&ndash;6:30 PM<br/>Sunday, August 16 &middot; 9:00 AM&ndash;4:00 PM" },
   { label: "CEUs", value: "10+ accredited CEUs (CCHI, NBCMI, RID, and ATA accreditation sought)" },
   { label: "Format", value: "In person, with a virtual option for attendees" },
 ];

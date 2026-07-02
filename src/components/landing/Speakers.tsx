@@ -38,8 +38,9 @@ export default function Speakers() {
         </div>
 
         {/* Centered wrapping (not a grid) so a partial last row — e.g. 7 cards
-            as 3+3+1 — centers its leftovers instead of stranding them left. */}
-        <div className="flex flex-wrap justify-center items-start gap-6 max-w-5xl mx-auto">
+            as 3+3+1 — centers its leftovers instead of stranding them left.
+            Default stretch alignment keeps every card in a row the same height. */}
+        <div className="flex flex-wrap justify-center gap-6 max-w-5xl mx-auto">
           {SPEAKERS.map((s, i) => (
             <div key={s.slug} className="w-full sm:w-[calc(50%-0.75rem)] lg:w-[calc(33.333%-1rem)]">
               <SpeakerCard speaker={s} accent={ACCENTS[i % ACCENTS.length]} />

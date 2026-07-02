@@ -148,7 +148,9 @@ export default function Pricing() {
                       <td className="px-5 sm:px-6 py-4 text-right tabular-nums font-semibold" style={{ color: TOKENS.inkSoft }}>${PRICES[s.id].virtual}</td>
                       <td className="px-5 sm:px-6 py-4 text-right tabular-nums font-semibold" style={{ color: TOKENS.inkSoft }}>${PRICES[s.id].inPerson}</td>
                       <td className="px-5 sm:px-6 py-4 text-right text-xs" style={{ color: TOKENS.muted }}>
-                        {new Date(s.end).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                        {/* Pin to Chicago time: on a UTC server the 11:59 PM CDT
+                            cutoff would otherwise render as the next day. */}
+                        {new Date(s.end).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/Chicago" })}
                       </td>
                     </tr>
                   );
@@ -282,7 +284,7 @@ function SavingsNote({
       Save{" "}
       <span style={{ color: TOKENS.gold, fontWeight: 700 }}>${save}</span>{" "}
       per in-person ticket by registering before{" "}
-      {new Date(tier.end).toLocaleDateString("en-US", { month: "long", day: "numeric" })}.
+      {new Date(tier.end).toLocaleDateString("en-US", { month: "long", day: "numeric", timeZone: "America/Chicago" })}.
     </p>
   );
 }

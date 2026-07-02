@@ -7,8 +7,8 @@ export const CHICAGO_TZ = "America/Chicago";
 const AUG_OFFSET = "-05:00"; // CDT, valid for the Aug 15-16 conference dates
 
 export const CONFERENCE_DAYS = [
-  { id: "2026-08-15", label: "Saturday, August 15", short: "Aug 15", start: "09:30", end: "18:00" },
-  { id: "2026-08-16", label: "Sunday, August 16", short: "Aug 16", start: "09:30", end: "16:00" },
+  { id: "2026-08-15", label: "Saturday, August 15", short: "Aug 15", start: "09:30", end: "18:30" },
+  { id: "2026-08-16", label: "Sunday, August 16", short: "Aug 16", start: "09:00", end: "16:00" },
 ] as const;
 
 export type ConferenceDayId = (typeof CONFERENCE_DAYS)[number]["id"];

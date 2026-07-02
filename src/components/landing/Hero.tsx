@@ -95,7 +95,7 @@ export default function Hero() {
             icon={Calendar}
             label="When"
             primary="August 15 and 16"
-            secondary={<>Aug 15: 9:30 a.m.&ndash;6:00 p.m.<br />Aug 16: 9:30 a.m.&ndash;4:00 p.m. CDT</>}
+            secondary={<>Aug 15: 9:30 a.m.&ndash;6:30 p.m.<br />Aug 16: 9:00 a.m.&ndash;4:00 p.m. CDT</>}
           />
           <InfoCard
             icon={Globe}

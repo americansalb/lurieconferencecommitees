@@ -153,7 +153,8 @@ export default function RegisterFunnel({
   // Enter advances on the simple input steps.
   useEnterKey(next, step === 1 || step === 2);
 
-  const tierEndDate = new Date(tierEnd).toLocaleDateString("en-US", { month: "long", day: "numeric" });
+  // Pin to Chicago time so the 11:59 PM CDT cutoff never renders as the next day.
+  const tierEndDate = new Date(tierEnd).toLocaleDateString("en-US", { month: "long", day: "numeric", timeZone: "America/Chicago" });
 
   return (
     <WizardShell eyebrow="Register" current={step} total={STEPS.length} onBack={goBack}>

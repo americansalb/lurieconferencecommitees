@@ -24,7 +24,7 @@ export default function SpeakerCard({ speaker, accent }: { speaker: Speaker; acc
   return (
     <>
       <article
-        className="group relative flex flex-col self-start rounded-3xl bg-white border overflow-hidden transition-all duration-300 hover:-translate-y-1.5"
+        className="group relative flex h-full flex-col rounded-3xl bg-white border overflow-hidden transition-all duration-300 hover:-translate-y-1.5"
         style={{
           borderColor: TOKENS.hairline,
           boxShadow: "0 14px 36px -18px rgba(11,31,37,0.20), 0 2px 6px -3px rgba(11,31,37,0.06)",
@@ -63,16 +63,18 @@ export default function SpeakerCard({ speaker, accent }: { speaker: Speaker; acc
           <h3 className="text-[21px] font-bold leading-tight tracking-tight" style={{ color: TOKENS.ink }}>
             {s.name}
             {s.credentials ? (
-              <span className="font-semibold" style={{ color: TOKENS.mutedSoft }}>, {s.credentials}</span>
+              <span className="font-semibold" style={{ color: TOKENS.mutedSoft }}>, <span className="whitespace-nowrap">{s.credentials}</span></span>
             ) : null}
           </h3>
 
           <span className="mt-3 mb-3.5 block h-[3px] w-9 rounded-full" style={{ background: accent }} />
 
-          <div className="text-[12.5px] font-bold uppercase tracking-wide leading-snug line-clamp-2" style={{ color: accent }} title={s.title}>
+          {/* Reserve two lines for the title so one-line and two-line titles
+              don't stagger the org/bio baselines across the row. */}
+          <div className="min-h-[2.75em] text-[12.5px] font-bold uppercase tracking-wide leading-snug line-clamp-2" style={{ color: accent }} title={s.title}>
             {s.title}
           </div>
-          <div className="mt-0.5 text-[13px] leading-snug" style={{ color: TOKENS.muted }}>
+          <div className="mt-0.5 text-[13px] leading-snug line-clamp-2" style={{ color: TOKENS.muted }}>
             {s.org}
           </div>
 
@@ -84,7 +86,7 @@ export default function SpeakerCard({ speaker, accent }: { speaker: Speaker; acc
             <button
               type="button"
               onClick={() => setOpen(true)}
-              className="mt-3 inline-flex items-center gap-1 self-start text-[13px] font-bold tracking-wide hover:gap-1.5 transition-all"
+              className="mt-auto pt-3 inline-flex items-center gap-1 self-start text-[13px] font-bold tracking-wide hover:gap-1.5 transition-all"
               style={{ color: accent }}
             >
               Read full bio
@@ -153,7 +155,7 @@ function SpeakerModal({ speaker: s, accent, onClose }: { speaker: Speaker; accen
           <h3 className="text-2xl font-bold tracking-tight pr-8" style={{ color: TOKENS.ink }}>
             {s.name}
             {s.credentials ? (
-              <span className="font-semibold" style={{ color: TOKENS.mutedSoft }}>, {s.credentials}</span>
+              <span className="font-semibold" style={{ color: TOKENS.mutedSoft }}>, <span className="whitespace-nowrap">{s.credentials}</span></span>
             ) : null}
           </h3>
           <div className="mt-2 text-[12.5px] font-bold uppercase tracking-wide" style={{ color: accent }}>

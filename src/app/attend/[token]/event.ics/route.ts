@@ -6,7 +6,8 @@ const VENUE = "Ann & Robert H. Lurie Children's Hospital of Chicago, 225 E Chica
 
 // Per-attendee conference calendar (both days), with the location set to the
 // venue (in-person) or the live join link (virtual). August is month index 7;
-// 9:30 AM CDT is 14:30 UTC.
+// CDT is UTC-5, so 9:30 AM CDT = 14:30 UTC and 9:00 AM CDT = 14:00 UTC.
+// Day 1 runs 9:30 AM-6:30 PM CDT; Day 2 runs 9:00 AM-4:00 PM CDT.
 export async function GET(_req: Request, { params }: { params: { token: string } }) {
   const attendee = await prisma.attendee.findUnique({ where: { inviteToken: params.token } });
   if (!attendee) return new Response("Not found", { status: 404 });
@@ -17,8 +18,8 @@ export async function GET(_req: Request, { params }: { params: { token: string }
   const url = isVirtual ? joinUrl : null;
 
   const ics = buildCalendar("2026 Lurie Children's & AALB Conference", [
-    { id: "lcc-2026-day1", title: "2026 Lurie Children's & AALB Conference (Day 1)", startTime: new Date(Date.UTC(2026, 7, 15, 14, 30, 0)), endTime: new Date(Date.UTC(2026, 7, 15, 23, 0, 0)), location, url },
-    { id: "lcc-2026-day2", title: "2026 Lurie Children's & AALB Conference (Day 2)", startTime: new Date(Date.UTC(2026, 7, 16, 14, 30, 0)), endTime: new Date(Date.UTC(2026, 7, 16, 21, 0, 0)), location, url },
+    { id: "lcc-2026-day1", title: "2026 Lurie Children's & AALB Conference (Day 1)", startTime: new Date(Date.UTC(2026, 7, 15, 14, 30, 0)), endTime: new Date(Date.UTC(2026, 7, 15, 23, 30, 0)), location, url },
+    { id: "lcc-2026-day2", title: "2026 Lurie Children's & AALB Conference (Day 2)", startTime: new Date(Date.UTC(2026, 7, 16, 14, 0, 0)), endTime: new Date(Date.UTC(2026, 7, 16, 21, 0, 0)), location, url },
   ]);
 
   return new Response(ics, {
