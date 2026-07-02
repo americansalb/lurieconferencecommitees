@@ -47,7 +47,7 @@ export const SPEAKERS: Speaker[] = [
   {
     slug: "michael-mule",
     name: "Michael Mulé",
-    title: "Civil Rights Attorney",
+    title: "Civil Rights Attorney, Language Access Expert",
     org: "Formerly U.S. Department of Justice, Civil Rights Division",
     bio: "Michael Mulé is a civil rights attorney with twenty years of experience advancing the rights of people who communicate in languages other than English. For fifteen years, he led national Title VI and language access initiatives at the U.S. Department of Justice (DOJ) in the Civil Rights Division (CRT) and the Office of Justice Programs.",
     photo: "/speakers/michael-mule.webp",
