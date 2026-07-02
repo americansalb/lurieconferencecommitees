@@ -1269,28 +1269,49 @@ type SponsorInKindAcceptanceArgs = {
   pledge?: string | null;
   // The sponsor portal, where they upload their logo and add their website.
   materialsUrl: string;
+  // Conference home, for the secondary "See the conference" link.
+  learnMoreUrl?: string;
   // One-click unsubscribe URL (deliverability / CAN-SPAM).
   unsubscribeUrl?: string;
+  // Pre-formatted date string (e.g. "July 2, 2026"); defaults to today.
+  dateLabel?: string;
   assetBase?: string;
 };
 
 // The formal welcome / onboarding letter, sent when an admin clicks "Accept" on
-// an in-kind Food or ASL sponsor who has pledged. As warm and branded as the
-// pledge acknowledgement, but action-oriented: it makes the sponsorship
-// official, then asks for the three things we need to feature them and
-// coordinate: their logo, their website, and the logistics of what they are
-// providing. Logo and website funnel to the portal button; logistics are
-// reply-first. No em dashes; both host institutions named on the tax line.
+// an in-kind Food or ASL sponsor who has pledged. Set like the engraved
+// invitations (sponsorLetterEmail / attendeeAlumniInviteEmail): cream card,
+// deep-teal letterhead with the gold "2026" seal, a gold-foil rule, a serif
+// body with a drop cap, a gold-ruled pledge pull-quote, and real ink signatures
+// (rendered from /public/sig, with printed name + title as the image-blocked
+// fallback). It makes the sponsorship official, then asks for the three things
+// we need to feature them and coordinate: their logo and website (portal
+// button), and the logistics of what they are providing (reply-first). No em
+// dashes; both host institutions named on the tax line. Self-contained and
+// responsive, with solid colors under every gradient and a VML seal for Outlook.
 export function sponsorInKindAcceptanceEmail({
-  kind, contactName, companyName, pledge, materialsUrl, unsubscribeUrl, assetBase,
+  kind, contactName, companyName, pledge, materialsUrl, learnMoreUrl, unsubscribeUrl, dateLabel, assetBase,
 }: SponsorInKindAcceptanceArgs) {
-  const first = (contactName || "").trim().split(/\s+/)[0] || "there";
+  const postalAddress = process.env.MAIL_POSTAL_ADDRESS?.trim() || "Americans Against Language Barriers, Chicago, IL";
+  const TEAL_DEEP = "#0C3B4B", INK = "#0B1F25", SOFT = "#5A6E76", GOLD_SOFT = "#F4E9CD", LINK = "#1E6FA2";
+  const base = (assetBase || ASSET_BASE).replace(/\/$/, "");
+  const site = (learnMoreUrl || base).replace(/\/$/, "");
+  const today = dateLabel || new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   const isAsl = kind === "asl";
   const sponsorLabel = isAsl ? "ASL Interpreter Sponsor" : "Food Sponsor";
+
+  // Greeting: a person's first name when we have one, otherwise the org name
+  // (sans a trailing "(ABBR)").
+  const cn = (contactName || "").trim();
+  const isPerson = !!cn && cn.toLowerCase() !== companyName.trim().toLowerCase();
+  const honorific = /^(dr|mr|mrs|ms|prof|rev|hon|sr|fr|chef)\.?$/i;
+  const firstNameOf = (n: string) => { const t = n.replace(/,.*$/, "").trim().split(/\s+/); return honorific.test(t[0]) ? (t[1] || t[0]) : t[0]; };
+  const greeting = (isPerson ? firstNameOf(cn) : companyName.replace(/\s*\([^)]*\)\s*$/, "").trim()) || "there";
+
   const mission = isAsl
-    ? "helping us keep every session of the conference accessible in American Sign Language"
+    ? "helping us keep every session of the conference accessible in American Sign Language, so that Deaf and hard-of-hearing attendees are full participants and never an afterthought"
     : "helping us hold the line on a fully plant-based, meat-free conference, where every meal honors the same promise these two days are about";
-  const pledgeLabel = isAsl ? "Interpreting you are providing" : "What you are providing";
+  const pledgeLabel = isAsl ? "The interpreting you are providing" : "What you are providing";
   const logistics = isAsl
     ? [
         "Which sessions, day, or hours your interpreters can cover. We expect about 70 to 80 attendees in person, plus a virtual audience, across Saturday, August 15 and Sunday, August 16.",
@@ -1313,59 +1334,201 @@ export function sponsorInKindAcceptanceEmail({
   const taxLine = isAsl
     ? "Your in-kind donation of interpreting services is tax-deductible as a charitable contribution to a 501(c)(3)"
     : "Your in-kind food donation is tax-deductible as a charitable contribution to a 501(c)(3)";
-  const pledgeCard = pledge && pledge.trim()
-    ? glanceCard([{ label: pledgeLabel, value: escapeHtml(pledge.trim()) }])
-    : "";
-  const postalAddress = process.env.MAIL_POSTAL_ADDRESS?.trim() || "Americans Against Language Barriers, Chicago, IL";
-  return shell(`
-    ${heroBanner()}
-    <h1 style="font-size:23px;font-weight:800;margin:0 0 12px 0;letter-spacing:-0.01em;">It&rsquo;s official, ${escapeHtml(first)}.</h1>
-    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
-      We are delighted to welcome <strong>${escapeHtml(companyName)}</strong> as a confirmed <strong>${sponsorLabel}</strong> of the 2026 Lurie Children&rsquo;s and AALB Conference. Thank you for ${mission}. It genuinely means a great deal to have you with us.
-    </p>
-    ${pledgeCard}
-    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:14px 0 0 0;">
-      So that we can feature you properly and get the details right, there are just a few things we would love from you.
-    </p>
 
-    ${sectionHeading("1. Your logo, for the website")}
-    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 4px 0;">
-      We would love to add <strong>${escapeHtml(companyName)}</strong> to the conference website and to our on-site signage. You can upload your logo from your sponsor page in about a minute. A vector file (SVG or PDF), or a PNG at least 1000px wide, keeps it crisp in print and on screen.
-    </p>
-    ${button(materialsUrl, "Upload your logo &rarr;")}
+  // Style primitives shared with the engraved invitations.
+  const p = (html: string, mb = 18) =>
+    `<p style="margin:0 0 ${mb}px 0;font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.85;color:${INK};">${html}</p>`;
+  const sig = (img: string, name: string, title: string) => `
+        <img src="${base}/sig/${img}" alt="${escapeHtml(name)}" height="40" style="height:40px;width:auto;display:block;margin:0 0 4px 0;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="width:140px;height:1px;background-color:${GOLD};font-size:0;line-height:0;">&nbsp;</td></tr></table>
+        <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:${INK};font-weight:bold;padding-top:8px;">${escapeHtml(name)}</div>
+        <div style="font-family:Helvetica,Arial,sans-serif;font-size:12px;line-height:1.5;color:${SOFT};padding-top:2px;">${escapeHtml(title)}</div>`;
+  // A gold seal numeral for the three asks.
+  const askNo = (n: number) => `
+        <table role="presentation" width="30" height="30" cellpadding="0" cellspacing="0" border="0" style="width:30px;height:30px;background-color:${GOLD};background-image:linear-gradient(135deg,#F4E9CD 0%,#D9B863 30%,#C9A14B 58%,#9C7A2E 88%);border-radius:50%;box-shadow:inset 0 1px 1px rgba(255,255,255,0.5);">
+          <tr><td align="center" valign="middle" style="font-family:Georgia,'Times New Roman',serif;font-size:15px;color:#3C2E10;font-weight:bold;line-height:1;">${n}</td></tr>
+        </table>`;
+  const ask = (n: number, title: string, body: string) => `
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 16px 0;">
+        <tr>
+          <td valign="top" style="width:30px;">${askNo(n)}</td>
+          <td valign="top" style="padding:1px 0 0 15px;">
+            <div style="font-family:Georgia,'Times New Roman',serif;font-size:16px;line-height:1.4;color:${INK};font-weight:bold;">${title}</div>
+            <div style="font-family:Georgia,'Times New Roman',serif;font-size:14.5px;line-height:1.7;color:${SOFT};padding-top:3px;">${body}</div>
+          </td>
+        </tr>
+      </table>`;
+  // Gold-bulleted serif lines, for logistics and recognition.
+  const goldList = (items: string[], color = INK) => `
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:2px 0 0 0;">
+        ${items.map((t) => `<tr>
+          <td valign="top" style="width:18px;font-family:Georgia,'Times New Roman',serif;font-size:15px;line-height:1.7;color:${GOLD};">&#8226;</td>
+          <td valign="top" style="padding:3px 0;font-family:Georgia,'Times New Roman',serif;font-size:14.5px;line-height:1.7;color:${color};">${t}</td>
+        </tr>`).join("")}
+      </table>`;
+  const eyebrow = (text: string) =>
+    `<div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:${GOLD};font-weight:bold;margin:26px 0 12px 0;">${text}</div>`;
 
-    ${sectionHeading("2. A link to your website")}
-    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 4px 0;">
-      So we can link your name straight to your site, please add your website on that same sponsor page, or simply reply to this email with the address.
-    </p>
+  const pledgePanel = (pledge && pledge.trim()) ? `
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 22px 0;">
+        <tr><td bgcolor="#FBF4E2" style="background-color:#FBF4E2;border:1px solid #EAD9AE;border-radius:10px;padding:16px 20px;">
+          <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:${GOLD};font-weight:bold;padding-bottom:6px;">${pledgeLabel}</div>
+          <div style="font-family:Georgia,'Times New Roman',serif;font-size:15px;line-height:1.7;color:#3C2E10;">${escapeHtml(pledge.trim())}</div>
+        </td></tr>
+      </table>` : "";
 
-    ${sectionHeading("3. A few logistics")}
-    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 8px 0;">
-      Whenever it is convenient, just reply to this email and let us know:
-    </p>
-    ${bulletList(logistics)}
+  return `<!doctype html>
+<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="x-apple-disable-message-reformatting">
+<title>${escapeHtml(sponsorLabel)} &middot; 2026 Lurie Children&rsquo;s &amp; AALB Conference</title>
+<!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
+<style>
+  body{margin:0;padding:0;}
+  a{color:${LINK};}
+  @media only screen and (max-width:600px){
+    .sl-card{width:100%!important;}
+    .sl-body{padding:32px 24px 30px 24px!important;}
+    .sl-head{padding:36px 22px 30px 22px!important;}
+    .sl-foot{padding:24px 22px!important;}
+    .sl-display{font-size:25px!important;line-height:31px!important;}
+    .sl-seal{width:96px!important;height:96px!important;}
+    .sl-dropcap{font-size:46px!important;line-height:36px!important;}
+    .sl-cta{display:block!important;width:100%!important;}
+  }
+</style>
+</head>
+<body style="margin:0;padding:0;width:100%;background-color:#ECE6D7;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#ECE6D7;">It is official: ${escapeHtml(companyName)} is a confirmed ${escapeHtml(sponsorLabel)} of the Second Joint Conference on language access, August 15 and 16, 2026, in Chicago.</div>
 
-    ${sectionHeading("Your recognition")}
-    ${bulletList([
-      "Your name and logo on the conference website",
-      "Your name and logo on signage at the conference",
-      recognitionLast,
-    ])}
-    <p style="font-size:14px;line-height:1.7;color:${MUTED};margin:8px 0 0 0;">
-      ${taxLine}, and we are glad to provide a donation receipt for its value. Please consult your tax advisor.
-    </p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#ECE6D7;background-image:linear-gradient(180deg,#F0EBDD 0%,#E6DECB 100%);">
+<tr><td align="center" style="padding:34px 14px 44px 14px;">
 
-    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:18px 0 0 0;">
-      There is no rush on any of this, and nothing here is set in stone. Reply anytime and we will sort out the details together.
-    </p>
+  <table role="presentation" class="sl-card" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background-color:#FBF8F1;border:1px solid #E4DAC4;box-shadow:0 18px 48px rgba(12,59,75,0.18);">
 
-    ${signOff("With gratitude,")}
-    ${logoLockup(assetBase)}
+    <tr><td align="center" bgcolor="${TEAL_DEEP}" class="sl-head" style="background-color:${TEAL_DEEP};background-image:linear-gradient(160deg,${TEAL} 0%,${TEAL_DEEP} 100%);padding:44px 40px 34px 40px;">
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;line-height:18px;letter-spacing:4px;text-transform:uppercase;color:${GOLD_SOFT};font-weight:bold;">Lurie Children&rsquo;s &middot; AALB</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:9px;line-height:16px;letter-spacing:3px;text-transform:uppercase;color:#7FA7B1;padding-top:6px;">Your Sponsorship, Confirmed</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:8px;line-height:10px;letter-spacing:4px;text-transform:uppercase;color:${GOLD};font-weight:bold;padding:22px 0 8px 0;">&middot;&nbsp;Second Joint Conference&nbsp;&middot;</div>
 
-    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;padding-top:14px;border-top:1px solid #eef1f4;">
-      ${escapeHtml(postalAddress)}.${unsubscribeUrl ? ` <a href="${unsubscribeUrl}" style="color:${MUTED};text-decoration:underline;">Unsubscribe</a>.` : ""}
-    </p>
-  `);
+      <!--[if !mso]><!-->
+      <div class="sl-seal" style="width:116px;height:116px;border-radius:50%;background-color:${GOLD};background-image:linear-gradient(135deg,#F4E9CD 0%,#D9B863 28%,#C9A14B 52%,#9C7A2E 78%,#E7D5A4 100%);border:2px solid #F4E9CD;box-shadow:0 6px 16px rgba(0,0,0,0.30),inset 0 1px 2px rgba(255,255,255,0.55);display:inline-block;">
+        <table role="presentation" width="116" height="116" cellpadding="0" cellspacing="0" border="0" style="width:116px;height:116px;"><tr><td align="center" valign="middle" style="text-align:center;">
+          <div style="font-family:Georgia,'Times New Roman',serif;font-size:31px;line-height:30px;color:#3C2E10;font-weight:bold;letter-spacing:1px;">2026</div>
+        </td></tr></table>
+      </div>
+      <!--<![endif]-->
+      <!--[if mso]>
+      <v:oval fill="true" stroke="true" strokecolor="#F4E9CD" strokeweight="2px" style="width:116px;height:116px;">
+        <v:fill type="solid" color="#C9A14B"/>
+        <v:textbox inset="0,0,0,0"><center><div style="font-family:Georgia,serif;font-size:30px;color:#3C2E10;font-weight:bold;">2026</div></center></v:textbox>
+      </v:oval>
+      <![endif]-->
+
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:9px;line-height:13px;letter-spacing:3px;text-transform:uppercase;color:${GOLD};padding:10px 0 0 0;">True Language Access</div>
+      <div class="sl-display" style="font-family:Georgia,'Times New Roman',serif;font-size:31px;line-height:38px;color:#FFFFFF;padding:18px 0 0 0;">The Second Joint Conference</div>
+      <div style="font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:15px;line-height:22px;color:#A9C6CD;padding:7px 0 0 0;">on Language Access in American Healthcare</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;line-height:16px;letter-spacing:3px;text-transform:uppercase;color:#7FA7B1;padding:14px 0 0 0;">August 15&ndash;16, 2026 &middot; Chicago, Illinois</div>
+    </td></tr>
+
+    <tr><td style="height:3px;line-height:3px;font-size:0;background-color:${GOLD};background-image:linear-gradient(90deg,#9C7A2E 0%,#F4E9CD 50%,#9C7A2E 100%);">&nbsp;</td></tr>
+
+    <tr><td class="sl-body" style="padding:40px 52px 36px 52px;background-color:#FBF8F1;">
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2.5px;text-transform:uppercase;color:${SOFT};">${escapeHtml(today)}</div>
+
+      <div style="padding:20px 0 18px 0;">
+        <div style="font-family:Georgia,'Times New Roman',serif;font-size:17px;line-height:1.4;color:${INK};font-weight:bold;">${escapeHtml(companyName)}</div>
+        <div style="font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:14px;line-height:1.5;color:${SOFT};padding-top:2px;">Confirmed ${escapeHtml(sponsorLabel)}</div>
+      </div>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="width:46px;height:2px;background-color:${GOLD};font-size:0;line-height:0;">&nbsp;</td></tr></table>
+      <div style="height:22px;line-height:22px;font-size:0;">&nbsp;</div>
+
+      ${p(`Dear ${escapeHtml(greeting)},`)}
+
+      <p style="margin:0 0 18px 0;font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.85;color:${INK};">
+        <span class="sl-dropcap" style="float:left;font-family:Georgia,'Times New Roman',serif;font-size:54px;line-height:42px;color:${TEAL};padding:6px 11px 0 0;">I</span>t is official, and it is our joy to tell you so. On behalf of Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers, we are delighted to welcome <strong>${escapeHtml(companyName)}</strong> as a confirmed <strong>${escapeHtml(sponsorLabel)}</strong> of our Second Joint Conference on language access in American healthcare.
+      </p>
+
+      ${p(`Thank you for ${mission}. It genuinely means a great deal to have you standing with us.`, 20)}
+
+      ${pledgePanel}
+
+      ${p(`So that we can feature you properly and get every detail right, there are just three small things we would love from you.`, 18)}
+
+      ${ask(1, "Your logo, for the website", `We would love to add <strong>${escapeHtml(companyName)}</strong> to the conference website and our on-site signage. You can upload it from your sponsor page in about a minute; a vector file (SVG or PDF), or a PNG at least 1000px wide, keeps it crisp in print and on screen.`)}
+      ${ask(2, "A link to your website", `So we can link your name straight to your site, add your website on that same page, or simply reply to this letter with the address.`)}
+      ${ask(3, "A few logistics", `Whenever it is convenient, just reply and let us know:`)}
+      ${goldList(logistics)}
+
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0 2px 0;">
+        <tr><td align="center">
+          <!--[if mso]><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
+          <table role="presentation" class="sl-cta" cellpadding="0" cellspacing="0" border="0" style="display:inline-block;vertical-align:middle;margin:6px;"><tr>
+            <td align="center" bgcolor="${TEAL}" style="background-color:${TEAL};border-radius:9px;">
+              <a href="${materialsUrl}" style="display:inline-block;padding:15px 30px;font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:bold;letter-spacing:0.4px;color:#ffffff;text-decoration:none;border-radius:9px;">Add my logo &amp; website &nbsp;&rarr;</a>
+            </td>
+          </tr></table>
+          <!--[if mso]></td><td><![endif]-->
+          <table role="presentation" class="sl-cta" cellpadding="0" cellspacing="0" border="0" style="display:inline-block;vertical-align:middle;margin:6px;"><tr>
+            <td align="center" bgcolor="#FBF8F1" style="background-color:#FBF8F1;border:1.5px solid ${GOLD};border-radius:9px;">
+              <a href="${site}" style="display:inline-block;padding:13.5px 28px;font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:bold;letter-spacing:0.4px;color:${TEAL};text-decoration:none;border-radius:9px;">See the conference</a>
+            </td>
+          </tr></table>
+          <!--[if mso]></td></tr></table><![endif]-->
+        </td></tr>
+      </table>
+
+      ${eyebrow("Your recognition")}
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 14px 0;">
+        <tr><td bgcolor="#FBF4E2" style="background-color:#FBF4E2;border:1px solid #EAD9AE;border-radius:10px;padding:16px 20px;">
+          ${goldList([
+            "Your name and logo on the conference website",
+            "Your name and logo on signage at the conference",
+            recognitionLast,
+          ], "#3C2E10")}
+        </td></tr>
+      </table>
+      <div style="font-family:Georgia,'Times New Roman',serif;font-size:13px;line-height:1.7;color:${SOFT};padding:0 0 6px 0;">${taxLine}, and we are glad to provide a donation receipt for its value. Please consult your tax advisor.</div>
+
+      ${p(`There is no rush on any of this, and nothing here is set in stone. Reply anytime, straight to us at <a href="mailto:kevin@aalb.org" style="color:${LINK};text-decoration:none;">kevin@aalb.org</a>, and we will sort out the details together.`, 22)}
+
+      <div style="font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.85;color:${INK};padding-bottom:16px;">With gratitude,</div>
+
+      ${sig("kevin.png", "Kevin Thakkar", "Founder & Executive Director, Americans Against Language Barriers")}
+      <div style="height:20px;line-height:20px;font-size:0;">&nbsp;</div>
+      ${sig("iris.png", "Iris Laffitte", "Operations Manager, Americans Against Language Barriers")}
+      <div style="height:20px;line-height:20px;font-size:0;">&nbsp;</div>
+      ${sig("zachary.png", "Zachary Paul Romansky", "Lurie Children’s Language Services Department")}
+
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:34px 0 0 0;border-top:1px solid #ECE3D0;">
+        <tr><td align="center" style="padding:24px 0 4px 0;">
+          <div style="font-family:Helvetica,Arial,sans-serif;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#9A8B6A;padding-bottom:16px;">Presented Jointly By</div>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+            <td align="center" style="padding:0 18px;"><img src="${base}/logos/aalb.png" alt="Americans Against Language Barriers" height="40" style="height:40px;width:auto;display:block;"></td>
+            <td style="border-left:1px solid #E0D5BD;width:1px;font-size:0;">&nbsp;</td>
+            <td align="center" style="padding:0 18px;"><img src="${base}/logos/lurie.png" alt="Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago" height="34" style="height:34px;width:auto;display:block;"></td>
+          </tr></table>
+        </td></tr>
+      </table>
+    </td></tr>
+
+    <tr><td class="sl-foot" align="center" bgcolor="${TEAL_DEEP}" style="background-color:${TEAL_DEEP};background-image:linear-gradient(180deg,${TEAL_DEEP} 0%,#0A3340 100%);padding:26px 40px 28px 40px;">
+      <div style="font-family:Georgia,'Times New Roman',serif;font-size:13px;letter-spacing:0.5px;color:${GOLD_SOFT};">2026 Lurie Children&rsquo;s &amp; AALB Conference</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;line-height:18px;color:#9FB6BC;padding-top:8px;">August 15&ndash;16, 2026 &middot; Chicago, Illinois</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;line-height:18px;color:#9FB6BC;">conference.aalb.org &middot; contact@aalb.org</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;line-height:16px;letter-spacing:0.5px;color:#5F7E86;padding-top:8px;">501(c)(3) &middot; EINs 83-3016421 and 36-2170833</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;line-height:16px;color:#5F7E86;padding-top:10px;">${escapeHtml(postalAddress)}</div>
+      ${unsubscribeUrl ? `<div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;line-height:16px;color:#5F7E86;padding-top:4px;">You are receiving this as a confirmed sponsor of the conference. <a href="${unsubscribeUrl}" style="color:#9FB6BC;text-decoration:underline;">Unsubscribe</a>.</div>` : ""}
+    </td></tr>
+
+  </table>
+</td></tr>
+</table>
+</body>
+</html>`;
 }
 
 type SponsorApplicationArgs = {

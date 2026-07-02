@@ -44,9 +44,12 @@ type Sponsor = {
   clickedAt: string | null;
 };
 
-// The board: every sponsor lives in exactly one of these five buckets.
+// The board: every sponsor lives in exactly one of these buckets. "Confirmed"
+// holds accepted in-kind (food/ASL) sponsors, who are locked in but bring no
+// dollars, so they sit apart from paid revenue. See bucketOf for the routing.
 const PIPELINE_TABS: { key: string; label: string; statuses: string[] }[] = [
   { key: "paid", label: "Paid", statuses: ["paid", "confirmed"] },
+  { key: "confirmed", label: "Confirmed", statuses: ["confirmed"] },
   { key: "awaiting_payment", label: "Awaiting payment", statuses: ["awaiting_payment"] },
   { key: "in_discussion", label: "In discussion", statuses: ["in_conversation", "submitted"] },
   { key: "invited", label: "Invited", statuses: ["invited"] },
@@ -498,6 +501,7 @@ export default function SponsorsAdminPage() {
   // (which already lists the "confirmed" status), so this is what routes them
   // there and what the Paid count reflects, keeping the card and tab in sync.
   const isWon = (s: Sponsor) => isClosed(s) || s.status === "confirmed";
+  const isInKind = (s: Sponsor) => s.tier === "food" || s.tier === "asl";
   // A live lead: an org actually in conversation or owing payment. Cold
   // prospects, queued, and merely-invited orgs are NOT engaged. This is exactly
   // the "In discussion" + "Awaiting payment" tabs, so the Engaged card and those
@@ -514,8 +518,11 @@ export default function SponsorsAdminPage() {
   // list filter so they always agree: paid sponsors live only under "Paid",
   // everyone else falls into their status's tab.
   const bucketOf = (s: Sponsor): string | null => {
+    // Accepted in-kind (food/ASL) sponsors are confirmed but bring no dollars:
+    // they get their own "Confirmed" tab, apart from paid revenue.
+    if (isInKind(s) && s.status === "confirmed") return "confirmed";
     if (isWon(s)) return "paid";
-    const tab = PIPELINE_TABS.find((t) => t.key !== "paid" && t.statuses.includes(s.status));
+    const tab = PIPELINE_TABS.find((t) => t.key !== "paid" && t.key !== "confirmed" && t.statuses.includes(s.status));
     return tab ? tab.key : null;
   };
 
@@ -556,8 +563,9 @@ export default function SponsorsAdminPage() {
     .filter((ms) => Number.isFinite(ms) && ms >= 0);
   const clickRate = everSent.length ? Math.round((clickedSponsors.length / everSent.length) * 100) : 0;
 
-  // Count of won deals (paid + confirmed in-kind), matching the "Paid" tab.
-  const paidCount = countable.filter(isWon).length;
+  // The "Paid" card mirrors the "Paid" tab exactly (paid sponsors; accepted
+  // in-kind sponsors are counted under "Confirmed" instead).
+  const paidCount = countable.filter((s) => bucketOf(s) === "paid").length;
   const engagedCount = countable.filter(isEngaged).length;
   // Revenue actually collected, and the realistic dollar value of live deals
   // (not cold outreach). Both ignore the test record and in-kind sponsors.
