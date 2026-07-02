@@ -37,9 +37,13 @@ export default function Speakers() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 items-start max-w-5xl mx-auto">
+        {/* Centered wrapping (not a grid) so a partial last row — e.g. 7 cards
+            as 3+3+1 — centers its leftovers instead of stranding them left. */}
+        <div className="flex flex-wrap justify-center items-start gap-6 max-w-5xl mx-auto">
           {SPEAKERS.map((s, i) => (
-            <SpeakerCard key={s.slug} speaker={s} accent={ACCENTS[i % ACCENTS.length]} />
+            <div key={s.slug} className="w-full sm:w-[calc(50%-0.75rem)] lg:w-[calc(33.333%-1rem)]">
+              <SpeakerCard speaker={s} accent={ACCENTS[i % ACCENTS.length]} />
+            </div>
           ))}
         </div>
 
