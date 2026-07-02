@@ -37,6 +37,7 @@ type Sponsor = {
   status: string;
   paid: boolean;
   paidAt: string | null;
+  logistics: Record<string, string> | null;
   applicationToken: string;
   createdAt: string;
   invitedAt: string | null;
@@ -55,6 +56,15 @@ const PIPELINE_TABS: { key: string; label: string; statuses: string[] }[] = [
   { key: "invited", label: "Invited", statuses: ["invited"] },
   { key: "pending_invite", label: "Pending invite", statuses: ["prospect", "queued"] },
 ];
+
+// Human labels for the in-kind logistics fields the sponsor fills in on their
+// portal, so the dashboard can show their answers compactly.
+const LOGISTICS_LABELS: Record<string, string> = {
+  provide: "Providing", day: "Day", meal: "Meal", fulfillment: "Fulfillment",
+  window: "Window", dayOfContact: "Day-of contact", allergens: "Allergens",
+  setup: "Setup", coverage: "Coverage", interpreters: "Interpreters",
+  mode: "Mode", equipment: "Equipment", materials: "Materials",
+};
 
 function fmtCountdown(secs: number) {
   const m = Math.floor(secs / 60);
@@ -972,6 +982,18 @@ export default function SponsorsAdminPage() {
                                 )}
                               </div>
                             )}
+                          </div>
+                        )}
+                        {isInKind(s) && s.logistics && Object.keys(s.logistics).length > 0 && (
+                          <div className="mt-2 ml-12 rounded-lg border border-emerald-600/15 bg-emerald-50/40 px-3 py-2">
+                            <div className="text-[10px] font-bold uppercase tracking-wide text-emerald-700 mb-1">
+                              {s.tier === "asl" ? "Interpretation details" : "Food details"}
+                            </div>
+                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-slate-600">
+                              {Object.entries(s.logistics).map(([k, v]) => (
+                                <span key={k}><span className="text-slate-400">{LOGISTICS_LABELS[k] || k}:</span> {v}</span>
+                              ))}
+                            </div>
                           </div>
                         )}
                         {isAdmin && (

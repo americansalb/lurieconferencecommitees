@@ -7,6 +7,7 @@ import PayNowButton from "./PayNowButton";
 import ExhibitorCompletionWizard from "./ExhibitorCompletionWizard";
 import LogoUploader from "./LogoUploader";
 import WebsiteField from "./WebsiteField";
+import LogisticsForm from "./LogisticsForm";
 
 export const dynamic = "force-dynamic";
 
@@ -26,10 +27,17 @@ export default async function SponsorStatusPage({ params }: { params: { token: s
   const tier = tierById(sponsor.tier);
   const TEAL = "#0E5566";
   const accent = tier?.accent || TEAL;
-  // In-kind Food / ASL sponsors don't pay: their portal collects a logo and a
-  // website link (the things the acceptance letter asks them for) instead of a
-  // payment. The exhibitor path has its own wizard above.
+  // In-kind Food / ASL sponsors don't pay: their portal collects a logo, a
+  // website link, and the coordination logistics (the things the acceptance
+  // letter asks for) instead of a payment. The exhibitor path has its own
+  // wizard above.
   const isInKind = sponsor.tier === "food" || sponsor.tier === "asl";
+  const inKindKind: "food" | "asl" = sponsor.tier === "asl" ? "asl" : "food";
+  // sponsor.logistics is stored as a JSON string map; narrow it for the form.
+  const logistics =
+    sponsor.logistics && typeof sponsor.logistics === "object" && !Array.isArray(sponsor.logistics)
+      ? (sponsor.logistics as Record<string, string>)
+      : null;
   const status = SPONSOR_STATUS_LABELS[sponsor.status] || SPONSOR_STATUS_LABELS.submitted;
   // VIP courtesy discount: show what they actually owe/paid, not the list price,
   // matching the funnel and what Stripe charges. Applies to any paid level
@@ -119,6 +127,11 @@ export default async function SponsorStatusPage({ params }: { params: { token: s
               {isInKind && (
                 <div className="mt-4 pt-4 border-t border-slate-200/70">
                   <WebsiteField token={params.token} initial={sponsor.website || ""} />
+                </div>
+              )}
+              {isInKind && (
+                <div className="mt-4 pt-4 border-t border-slate-200/70">
+                  <LogisticsForm token={params.token} kind={inKindKind} initial={logistics} />
                 </div>
               )}
               {(sponsor.registreeName || sponsor.dietary || sponsor.accessibility) && (

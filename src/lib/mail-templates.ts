@@ -1312,22 +1312,11 @@ export function sponsorInKindAcceptanceEmail({
     ? "helping us keep every session of the conference accessible in American Sign Language, so that Deaf and hard-of-hearing attendees are full participants and never an afterthought"
     : "helping us hold the line on a fully plant-based, meat-free conference, where every meal honors the same promise these two days are about";
   const pledgeLabel = isAsl ? "The interpreting you are providing" : "What you are providing";
-  const logistics = isAsl
-    ? [
-        "Which sessions, day, or hours your interpreters can cover. We expect about 70 to 80 attendees in person, plus a virtual audience, across Saturday, August 15 and Sunday, August 16.",
-        "How many interpreters you will send, and any team or relay preferences for the longer sessions.",
-        "Whether coverage is on site or remote (VRI), and any equipment, platform, or sightline needs.",
-        "A day-of contact and cell number, so our team can reach yours quickly.",
-        "Anything you would like from us in advance, such as the agenda, slides, or a glossary, so your interpreters can prepare.",
-      ]
-    : [
-        "What you will provide and roughly how many servings. We expect about 70 to 80 attendees in person, so even part of a meal goes a long way.",
-        "Which day and meal it is for: Saturday, August 15 (9:30 AM to 6:30 PM) or Sunday, August 16 (9:00 AM to 4:00 PM).",
-        "Whether you will deliver to Lurie Children&rsquo;s or we should arrange pickup, and the drop-off window that works for you.",
-        "A day-of contact and cell number, so our team can reach yours on the day.",
-        "Ingredient and allergen notes for each dish (nuts, gluten, soy, and so on), so we can serve everyone safely.",
-        "Any setup needs, such as serving equipment, warming, power, or table space.",
-      ];
+  // A plain-language summary of what the portal form asks, so the letter names
+  // the details without turning into a reply-by-email checklist.
+  const detailsSummary = isAsl
+    ? "your coverage, how many interpreters, on-site or remote, a day-of contact, and any materials to send ahead"
+    : "what you are providing, which day and meal, delivery or pickup, a day-of contact, allergen notes, and any setup needs";
   const recognitionLast = isAsl
     ? "An honorable mention during the sessions your interpreters cover"
     : "An honorable mention at the meal you provide, before a national audience of interpreters, clinicians, and advocates";
@@ -1459,16 +1448,15 @@ export function sponsorInKindAcceptanceEmail({
       ${p(`So that we can feature you properly and get every detail right, there are just three small things we would love from you.`, 18)}
 
       ${ask(1, "Your logo, for the website", `We would love to add <strong>${escapeHtml(companyName)}</strong> to the conference website and our on-site signage. You can upload it from your sponsor page in about a minute; a vector file (SVG or PDF), or a PNG at least 1000px wide, keeps it crisp in print and on screen.`)}
-      ${ask(2, "A link to your website", `So we can link your name straight to your site, add your website on that same page, or simply reply to this letter with the address.`)}
-      ${ask(3, "A few logistics", `Whenever it is convenient, just reply and let us know:`)}
-      ${goldList(logistics)}
+      ${ask(2, "A link to your website", `So we can link your name straight to your site, add your website on that same page.`)}
+      ${ask(3, "The logistics", `We have put a short form on your sponsor page for the details, ${detailsSummary}. It takes a minute, and you can update it anytime.`)}
 
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0 2px 0;">
         <tr><td align="center">
           <!--[if mso]><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
           <table role="presentation" class="sl-cta" cellpadding="0" cellspacing="0" border="0" style="display:inline-block;vertical-align:middle;margin:6px;"><tr>
             <td align="center" bgcolor="${TEAL}" style="background-color:${TEAL};border-radius:9px;">
-              <a href="${materialsUrl}" style="display:inline-block;padding:15px 30px;font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:bold;letter-spacing:0.4px;color:#ffffff;text-decoration:none;border-radius:9px;">Add my logo &amp; website &nbsp;&rarr;</a>
+              <a href="${materialsUrl}" style="display:inline-block;padding:15px 30px;font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:bold;letter-spacing:0.4px;color:#ffffff;text-decoration:none;border-radius:9px;">Complete your sponsor details &nbsp;&rarr;</a>
             </td>
           </tr></table>
           <!--[if mso]></td><td><![endif]-->
