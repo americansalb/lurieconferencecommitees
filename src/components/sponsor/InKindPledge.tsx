@@ -99,6 +99,8 @@ export default function InKindPledge(props: Props) {
       const j = await res.json().catch(() => ({}));
       if (!res.ok) { setError(j.error || "Something went wrong. Please try again."); return; }
       setDone(true);
+    } catch {
+      setError("Network error. Please try again.");
     } finally {
       setSubmitting(false);
     }

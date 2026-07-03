@@ -5,6 +5,10 @@ import { sponsorFromHeader, sponsorLetterReplyTo } from "@/lib/sponsors";
 import { sponsorInKindPledgeEmail } from "@/lib/mail-templates";
 import { appUrl } from "@/lib/presenters";
 
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
 function isEmail(s: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((s || "").trim());
 }
@@ -34,6 +38,22 @@ export async function POST(req: Request) {
 
   const sponsor = await prisma.sponsor.findUnique({ where: { applicationToken: token } });
   if (!sponsor) return NextResponse.json({ error: "Pledge link not found." }, { status: 404 });
+
+  // A pledge rewrites the record to $0 in-kind. Never let it erase a real
+  // payment, and never let a paid-tier sponsor's token convert their
+  // sponsorship into a food/ASL pledge from a stale link.
+  if (sponsor.paid) {
+    return NextResponse.json(
+      { error: "This sponsorship is already paid — thank you! If you'd also like to donate in kind, just reply to your confirmation email." },
+      { status: 409 }
+    );
+  }
+  if (!["food", "asl", "undecided"].includes(sponsor.tier)) {
+    return NextResponse.json(
+      { error: "This link is for in-kind food or ASL pledges. To change your sponsorship, use your invitation link or reply to our email." },
+      { status: 409 }
+    );
+  }
 
   const kind: "food" | "asl" = sponsor.tier === "asl" ? "asl" : "food";
 
@@ -96,7 +116,8 @@ export async function POST(req: Request) {
     await sendMail({
       to: "contact@aalb.org",
       subject: `${kind === "asl" ? "ASL" : "Food"} pledge: ${updated.companyName}`,
-      html: `<p>${updated.companyName} (${updated.contactName}, ${updated.contactEmail}${updated.contactPhone ? `, ${updated.contactPhone}` : ""}) pledged in kind.</p><p><strong>${summary}</strong></p>`,
+      // All fields are user-entered via the public pledge form — escape them.
+      html: `<p>${escapeHtml(updated.companyName)} (${escapeHtml(updated.contactName)}, ${escapeHtml(updated.contactEmail)}${updated.contactPhone ? `, ${escapeHtml(updated.contactPhone)}` : ""}) pledged in kind.</p><p><strong>${escapeHtml(summary)}</strong></p>`,
       from: sponsorFromHeader(),
     });
   } catch {

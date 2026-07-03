@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { tierById } from "@/lib/sponsors";
+import { sendMail } from "@/lib/mail";
+import { tierById, sponsorFromHeader, sponsorLetterReplyTo } from "@/lib/sponsors";
+import { sponsorInKindPledgeEmail } from "@/lib/mail-templates";
+import { appUrl } from "@/lib/presenters";
+
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
 
 // Public endpoint: an invited sponsor picks (or changes) their level on
 // /sponsor/invited/<token>. Authenticated only by knowledge of the token.
@@ -41,6 +48,33 @@ export async function POST(req: Request) {
       meta: t.id,
     },
   });
+
+  // The landing page tells a food-in-kind sponsor "our team will follow up" —
+  // make that true: notify the team and confirm to the sponsor, mirroring the
+  // dedicated pledge funnel. Fire-and-forget; errors never block the flow.
+  if (usesAlternative) {
+    sendMail({
+      to: updated.contactEmail,
+      subject: "Thank you for feeding the 2026 Lurie Children's & AALB Conference",
+      html: sponsorInKindPledgeEmail({
+        kind: "food",
+        contactName: updated.contactName,
+        companyName: updated.companyName,
+        provide: "",
+        arrangementLabel: "Donating the food",
+        assetBase: appUrl(),
+      }),
+      from: sponsorFromHeader(),
+      replyTo: sponsorLetterReplyTo(),
+      cc: updated.additionalEmails,
+    }).catch((e) => console.error("[select-tier] in-kind confirmation email failed", e));
+    sendMail({
+      to: "contact@aalb.org",
+      subject: `Food pledge: ${updated.companyName}`,
+      html: `<p>${escapeHtml(updated.companyName)} (${escapeHtml(updated.contactName)}, ${escapeHtml(updated.contactEmail)}) chose to donate food in kind from their invitation page. Follow up to coordinate menu, quantities, and logistics.</p>`,
+      from: sponsorFromHeader(),
+    }).catch(() => { /* non-fatal */ });
+  }
 
   return NextResponse.json({
     ok: true,

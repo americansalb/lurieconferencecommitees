@@ -7,8 +7,9 @@ type Field =
   | { key: string; label: string; type: "text" | "textarea"; placeholder?: string; hint?: string }
   | { key: string; label: string; type: "select"; options: { value: string; label: string }[] };
 
-// The complimentary-ticket / attendance questions, shown to every in-kind
-// sponsor first: the sponsorship includes a seat, so we invite them to claim it.
+// The complimentary-tickets / attendance questions, shown to every in-kind
+// sponsor first: Food and ASL sponsorships include two seats (see TIERS), so
+// we invite them to claim both.
 const ATTEND_FIELDS: Field[] = [
   { key: "attend", label: "Will you join us at the conference?", type: "select", options: [
     { value: "", label: "Let us know…" },
@@ -17,8 +18,10 @@ const ATTEND_FIELDS: Field[] = [
     { value: "Not sure yet", label: "Not sure yet" },
     { value: "Can't attend this year", label: "Can't make it this year" },
   ] },
-  { key: "attendeeName", label: "Who is the ticket for?", type: "text", placeholder: "Name for your complimentary ticket" },
+  { key: "attendeeName", label: "Who is the first ticket for?", type: "text", placeholder: "Name for your first complimentary ticket" },
   { key: "attendeeEmail", label: "Their email", type: "text", placeholder: "Where we'll send the ticket" },
+  { key: "attendee2Name", label: "Who is the second ticket for?", type: "text", placeholder: "Name for your second ticket (optional)" },
+  { key: "attendee2Email", label: "Their email", type: "text", placeholder: "Where we'll send the second ticket" },
 ];
 
 // The coordination questions, per kind. Food and ASL sponsors see different
@@ -137,9 +140,9 @@ export default function LogisticsForm({
 
   return (
     <div>
-      <div className="text-sm font-semibold text-slate-700">Your seat at the conference</div>
+      <div className="text-sm font-semibold text-slate-700">Your seats at the conference</div>
       <p className="text-xs text-slate-500 mt-0.5">
-        Your sponsorship includes a complimentary ticket — we&rsquo;d love to have you there, in person or online. Entirely optional.
+        Your sponsorship includes two complimentary tickets — we&rsquo;d love to have you there, in person or online. Entirely optional.
       </p>
       <div className="mt-3 grid grid-cols-1 gap-3">
         {ATTEND_FIELDS.map(renderField)}
