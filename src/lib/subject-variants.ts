@@ -13,31 +13,36 @@
 
 export type SubjectVariant = { id: string; label: string; make: (first: string) => string };
 
+// Formal-invitation subject lines. The slots (position and count) are kept
+// stable so a token always maps to the same slot; only the copy changed from an
+// earlier, cheesier set. Each reads as a dignified invitation to attend in
+// person in Chicago or online. Append new ones to the end; do not reorder or
+// remove.
 export const ALUMNI_SUBJECT_VARIANTS: SubjectVariant[] = [
   {
-    id: "warm",
-    label: "Warm",
-    make: (f) => `${f}, we'd love to see you in Chicago this August`,
+    id: "invitation",
+    label: "Invitation",
+    make: (f) => `${f}, your invitation to the 2026 Lurie Children's & AALB Conference`,
   },
   {
-    id: "reunion",
-    label: "Reunion",
-    make: (f) => `${f}, the AALB community is getting together again in Chicago`,
+    id: "in-person-or-online",
+    label: "In person or online",
+    make: (f) => `${f}, we invite you to join us in Chicago, in person or online, this August`,
   },
   {
-    id: "question",
-    label: "Question",
-    make: (f) => `${f}, will we see you at this year's AALB & Lurie Children's Conference?`,
+    id: "formal",
+    label: "Formal",
+    make: (f) => `An invitation for ${f} to the Second Joint Lurie Children's & AALB Conference`,
   },
   {
-    id: "cohort",
-    label: "Cohort",
-    make: (f) => `${f}, reconnect with your AALB cohort in Chicago this August`,
+    id: "join-us",
+    label: "Join us",
+    make: (f) => `${f}, you are invited to join us in Chicago on August 15 and 16`,
   },
   {
-    id: "direct",
-    label: "Direct",
-    make: (f) => `${f}, your invitation to join AALB & Lurie Children's in Chicago, August 15 and 16`,
+    id: "dates",
+    label: "Formal with dates",
+    make: (f) => `${f}, your invitation to join us in Chicago, August 15 and 16`,
   },
 ];
 
