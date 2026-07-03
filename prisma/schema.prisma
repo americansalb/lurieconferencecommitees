@@ -380,6 +380,12 @@ model Attendee {
   affiliation          String?
   primaryLanguages     String?
 
+  // AALB training cohort (medical-interpreter session), for imported students.
+  // `cohort` is the label ("141"); `cohortOrder` is the numeric session number
+  // used to sort newest-first and to filter by session. Null for non-students.
+  cohort               String?
+  cohortOrder          Int?
+
   attendanceMode       String?
   needsParking         Boolean?
   accessibilityNotes   String?

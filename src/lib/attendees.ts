@@ -267,14 +267,24 @@ export type CsvParseRow = {
   email: string;
   affiliation?: string;
   notes?: string;
+  // Optional per-row overrides, for the AALB student/alumni import. When a row
+  // carries its own template ("alumni" | "student" | "former-student"), it wins
+  // over the batch-level template, so one paste can mix all three. cohort /
+  // cohortOrder tag the training session for newest-first sorting and filtering.
+  template?: AttendeeTemplate;
+  cohort?: string;
+  cohortOrder?: number;
 };
 
-// Parse a pasted block of "FirstName,LastName,Email[,Affiliation][,Notes]" rows.
-// Tolerates header row, blank lines, quoted fields.
+// Parse a pasted block of rows. The base shape is
+// "FirstName,LastName,Email[,Affiliation][,Notes]"; the AALB student import adds
+// three optional trailing columns: Template, Cohort, CohortOrder. Tolerates a
+// header row, blank lines, and quoted fields.
 export function parseAttendeeCsv(input: string): { rows: CsvParseRow[]; errors: string[] } {
   const rows: CsvParseRow[] = [];
   const errors: string[] = [];
   const lines = input.split(/\r?\n/);
+  const allowedTemplates = new Set(["standard", "alumni", "student", "former-student"]);
   let lineNum = 0;
   for (const raw of lines) {
     lineNum++;
@@ -285,7 +295,7 @@ export function parseAttendeeCsv(input: string): { rows: CsvParseRow[]; errors: 
       errors.push(`Line ${lineNum}: expected at least 3 columns (first, last, email)`);
       continue;
     }
-    const [firstName, lastName, email, affiliation, notes] = cells;
+    const [firstName, lastName, email, affiliation, notes, template, cohort, cohortOrder] = cells;
     // Skip header
     if (lineNum === 1 && /first/i.test(firstName) && /last/i.test(lastName) && /email/i.test(email)) {
       continue;
@@ -294,12 +304,17 @@ export function parseAttendeeCsv(input: string): { rows: CsvParseRow[]; errors: 
       errors.push(`Line ${lineNum}: "${email}" is not a valid email`);
       continue;
     }
+    const tpl = (template || "").trim().toLowerCase();
+    const order = cohortOrder != null ? parseInt(String(cohortOrder).trim(), 10) : NaN;
     rows.push({
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       email: email.trim().toLowerCase(),
       affiliation: affiliation?.trim() || undefined,
       notes: notes?.trim() || undefined,
+      template: allowedTemplates.has(tpl) ? (tpl as AttendeeTemplate) : undefined,
+      cohort: cohort?.trim() || undefined,
+      cohortOrder: Number.isFinite(order) ? order : undefined,
     });
   }
   return { rows, errors };
