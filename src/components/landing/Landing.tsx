@@ -10,10 +10,15 @@ import FAQ from "./FAQ";
 import Hosts from "./Hosts";
 import Footer from "./Footer";
 import { CONFERENCE } from "./tokens";
+import { activeTier, PRICES } from "./pricing-data";
 
 // JSON-LD for Google's rich Event results. Includes the EducationEvent
 // type so it surfaces under conference / professional development searches.
-const eventLd = {
+// Built per render (not module-level) so the offer prices track the live
+// pricing schedule instead of freezing the rate that was active at build.
+const buildEventLd = () => {
+  const live = PRICES[activeTier(new Date()).id];
+  return {
   "@context": "https://schema.org",
   "@type": "EducationEvent",
   name: CONFERENCE.name,
@@ -56,7 +61,7 @@ const eventLd = {
     {
       "@type": "Offer",
       name: "Virtual Registration",
-      price: "105",
+      price: String(live.virtual),
       priceCurrency: "USD",
       availability: "https://schema.org/InStock",
       url: "https://conference.aalb.org/register",
@@ -64,13 +69,14 @@ const eventLd = {
     {
       "@type": "Offer",
       name: "In-Person Registration",
-      price: "210",
+      price: String(live.inPerson),
       priceCurrency: "USD",
       availability: "https://schema.org/InStock",
       url: "https://conference.aalb.org/register",
     },
   ],
   image: "https://conference.aalb.org/conference/venue.jpg",
+  };
 };
 
 export default function Landing() {
@@ -78,7 +84,7 @@ export default function Landing() {
     <div className="min-h-screen bg-white text-slate-900">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(eventLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(buildEventLd()) }}
       />
       <Nav />
       <main>

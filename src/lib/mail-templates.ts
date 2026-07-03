@@ -2248,7 +2248,7 @@ export function proposalCallEmail({
     ${sectionHeading("Presentation Details")}
     ${glanceCard([
       { label: "Presentation Length", value: "45 minutes or 60 minutes" },
-      { label: "Submission Deadline", value: "June 30, 2026" },
+      { label: "Review", value: "Proposals are reviewed on a rolling basis; we reply within two weeks" },
     ])}
 
     ${button(submitUrl, "Submit your proposal")}

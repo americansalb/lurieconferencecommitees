@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { newAttendeeToken } from "@/lib/attendees";
 import { createCheckoutSession, isStripeConfigured } from "@/lib/stripe";
 import { appUrl } from "@/lib/presenters";
-import { activePriceCents, activeTier } from "@/components/landing/pricing-data";
+import { activePriceCents, activeTier, registrationClosed } from "@/components/landing/pricing-data";
 import { validateAndApply, DISCOUNT_ERROR_MESSAGES } from "@/lib/discounts";
 
 function isEmail(s: string): boolean {
@@ -14,6 +14,12 @@ function isEmail(s: string): boolean {
 // computes the price from today's active pricing tier, and returns a
 // Stripe Checkout URL the client can redirect to.
 export async function POST(req: Request) {
+  if (registrationClosed()) {
+    return NextResponse.json(
+      { error: "Registration for the 2026 conference has closed. Email contact@aalb.org with any questions." },
+      { status: 410 }
+    );
+  }
   if (!isStripeConfigured()) {
     return NextResponse.json(
       { error: "Registration is temporarily offline. Please email contact@aalb.org." },
