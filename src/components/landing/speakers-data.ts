@@ -78,4 +78,13 @@ export const SPEAKERS: Speaker[] = [
     bio: "Daniel Gutiérrez Mena, founder of AlbaHealth.us, blends yoga, mindfulness, and global healthcare experience to create transformative wellness education that connects individuals to their physical, mental, and spiritual dimensions. From his journey immigrating from Lima to Chicago to his work across clinical care, research, and health innovation, he integrates modern science with indigenous wisdom to help others rediscover their relationship with health and the Earth.",
     photo: "/speakers/daniel-gutierrez-mena.webp",
   },
+  {
+    slug: "danilo-formolo",
+    name: "Danilo Formolo",
+    credentials: "MBA, CHI™",
+    title: "CEO & Founder",
+    org: "Affinity Language Systems",
+    bio: "Danilo Formolo is the CEO and Founder of Affinity Language Systems, an organization focused on building human and technology-enabled language access infrastructure. He serves as a CCHI Commissioner and treasurer, and spent 21 years building the largest healthcare-based language access program in the nation at Atrium Health. As Associate Vice President of Language Access, he created a large, scalable infrastructure through technology, efficiency, and strategy to improve access across four states with a team of nearly 200 medical interpreters. Danilo earned Bachelor’s degrees in Management and International Business from UNC Charlotte, plus an MBA. He has delivered industry conference presentations around the country, is a Certified Healthcare Interpreter, and has served on various community boards and initiatives. Of Colombian and Italian heritage, his first instrument is the piano, and he has served as an organist and music director at various churches in the Charlotte, NC area.",
+    photo: "/speakers/danilo-formolo.webp",
+  },
 ];
