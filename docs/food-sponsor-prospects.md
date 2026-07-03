@@ -8,13 +8,22 @@ dropdown on the Sponsors page).
 
 ## Status
 
-**50 restaurants now have an email filled in and will load** via "Load food
-prospects" (the original 28 plus 22 added in the 2026 round-2 expansion). The
-emails are **search-sourced** (domain-matched or business-name-matched
-addresses found in search listings) but were **not confirmed on the live page**
-(the network policy blocks opening restaurant sites), so give each a quick
-confirm before enabling Auto-send. Bloom was removed (permanently closed Feb
-2026). The table below is the original research reference.
+**46 restaurants now have an email filled in and will load** via "Load food
+prospects" (the original 28 plus 22 added in the 2026 round-2 expansion, minus
+four whose addresses this doc itself flagged as do-not-use). The emails are
+**search-sourced** (domain-matched or business-name-matched addresses found in
+search listings) but were **not confirmed on the live page** (the network
+policy blocks opening restaurant sites), so give each a quick confirm before
+enabling Auto-send. Bloom was removed (permanently closed Feb 2026). The table
+below is the original research reference.
+
+**Blanked pending verification (2026-07):** the code list's emails for
+**Handlebar** (catering runs via Tock, no published email), **Arya Bhavan**
+(the `@aol` address the search surfaced is flagged ❌ below), **Penelope's
+Vegan Taqueria** (the `info@` snippet came with a fake phone, ❌ below), and
+**PLANTA Queen** (no email; use the events form) were cleared so a bulk load
+cannot mail them. Verify a real address per the "Verify email on" column, fill
+it into `FOOD_TARGETS`, and they'll load again.
 
 ### Round-2 expansion (2026)
 

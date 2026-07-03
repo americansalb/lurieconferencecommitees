@@ -8,8 +8,14 @@ same research live in `prospect-targets.ts` and load via **Sponsors → Load sug
 targets**.
 
 Work these by hand. Duplicates already merged into the email list (CASL, Erie,
-Indo-American, UnidosUS, Pocketalk) are not repeated here. Health Nuts Media was held
-out of the email list pending verification of an aggregator-sourced address.
+Indo-American, UnidosUS) are not repeated here — a 2026-07 dedupe pass also removed
+Unite for Literacy, Colorín Colorado, Worldreader, RIF, Latitude Prime, IHCC,
+Boostlingo, GLOBO, the National Museum of Mexican Art, Arab American Family
+Services, and The Coleman Foundation's email row (the Coleman grant open call
+below is the better channel), all of which now live only in the email pipeline.
+Pocketalk has NO published email and is worked by form below. Health Nuts Media
+was held out of the email list pending verification of an aggregator-sourced
+address.
 
 ---
 
@@ -41,7 +47,6 @@ out of the email list pending verification of an aggregator-sourced address.
 | Barefoot Books | Concord, MA | https://www.barefootbooks.com | B-Corp; diverse world-cultures titles |
 | Lil' Libros | Los Angeles, CA | https://www.lillibros.com | Bilingual Spanish/English Latino board books |
 | Encantos / Canticos | Cortez, CO | https://encantos.com | Bilingual nursery-rhyme books/apps/video |
-| Unite for Literacy | Fort Collins, CO | https://www.uniteforliteracy.com | Free narrated picture books in dozens of languages; in-kind |
 | Santillana USA / Vista Higher Learning | Miami, FL / Boston, MA | https://www.vistahigherlearning.com | Leading Spanish-language education publisher |
 | Free Spirit Publishing | Minneapolis, MN | https://www.freespirit.com | SEL/inclusive/bilingual titles |
 | Magination Press (APA) | Washington, DC | https://www.apa.org/pubs/magination | APA children's imprint; health/disability/difference |
@@ -57,30 +62,25 @@ out of the email list pending verification of an aggregator-sourced address.
 | Mango Languages | Farmington Hills, MI | https://mangolanguages.com | Library-distributed language learning; in-kind/sponsor |
 | Little Pim | New York, NY | https://www.littlepim.com | Early foreign-language video for children |
 | 7 Generation Games | Santa Monica, CA | https://www.7generationgames.com | Bilingual (EN/ES) Indigenous/Latino educational games |
-| Colorín Colorado (WETA) | Washington, DC | https://www.colorincolorado.org | Free bilingual ELL family/educator resources; in-kind |
 | TalkingPoints | Oakland, CA | https://talkingpts.org | Multilingual school-family messaging (100+ languages) |
 | Imagine Learning | Provo, UT | https://www.imaginelearning.com | ELL/Spanish ed-tech for young students |
 | Lakeshore Learning | Carson, CA | https://www.lakeshorelearning.com | Bilingual/multicultural early-learning materials |
-| Worldreader | San Francisco, CA | https://www.worldreader.org | Free multilingual children's e-books; in-kind/sponsor |
 | Highlights for Children | Honesdale, PA | https://www.highlights.com | Bilingual/Spanish content; family-literacy foundation |
 | Scholastic | New York, NY | https://www.scholastic.com/aboutscholastic/corporate-social-responsibility/ | Multicultural/Spanish programs + book-grant/CSR portal |
 | Estrellita Beginning Spanish Reading | Tustin, CA | https://estrellita.com | Spanish phonics/reading for dual-language learners; verify location |
 | North-South Books | New York, NY | https://www.northsouth.com | International children's books in many languages |
 | Age of Learning (ABCmouse) | Glendale, CA | https://www.ageoflearning.com | Bilingual early-learning ed-tech; sponsor/in-kind |
 | National Center for Families Learning | Louisville, KY | https://www.familieslearning.org | Two-generation/multilingual family literacy |
-| Reading Is Fundamental (RIF) | Washington, DC | https://www.rif.org | Largest US children's literacy nonprofit; bilingual programs |
 | Hooray Heroes | EU / US | https://hoorayheroes.com | Personalized multilingual kids' books; lower-priority; verify location |
 
 ### Healthcare LSPs & interpreting (form-only)
 | Org | Location | Form | Note |
 |---|---|---|---|
-| Latitude Prime | Minneapolis, MN | https://latitudeprime.com/contact-us/ | ISO-certified medical interpreting, 300+ languages |
 | Telelanguage | Portland, OR | https://telelanguage.com/contact/ | 24/7 phone/video/on-site, 350+ languages |
 | Acutrans | Chicago, IL | https://acutrans.com/contact/ | **Chicago**; clients incl. La Rabida, Northwestern, Advocate |
 | Metaphrasis Language & Cultural Solutions | Chicago, IL | https://metaphrasislcs.com/contact/ | **Chicago** (West Town); hometown LSP |
 | International Language Services (ILS) | Chicago, IL | https://ilschicago.com | **Chicago**; medical interpreting + ASL, 30+ languages |
 | Illinois Language Services | Chicago area, IL | https://illinoislanguageservices.com | **Chicago-area**; full-service incl. ASL |
-| Illinois Hispanic Chamber of Commerce (IHCC) | Chicago, IL | https://ihccbusiness.net/contact-3/ | **Chicago**; connector to Latino-owned sponsors |
 
 ### ASL / VRS providers (form-only)
 | Org | Location | Form | Note |
@@ -95,8 +95,6 @@ out of the email list pending verification of an aggregator-sourced address.
 | Institute for Healthcare Advancement (IHA) | Anaheim, CA | https://www.iha4health.org/contact-us/ | Easy-read health-literacy books (EN/ES + more) |
 | Smarty Symbols | Rowlett, TX | https://smartysymbols.com/contact-us-2/ | AAC symbol libraries / visual supports |
 | Diglo (Harris Communications) | Eden Prairie, MN | https://www.diglo.com/contact-us | Deaf/HoH daily-living products retailer; demo table |
-| Boostlingo | Austin, TX | https://boostlingo.com/contact-us/ | Interpreting-tech platform (phone/VRI + scheduling) |
-| GLOBO | Wyncote, PA | https://www.helloglobo.com/contact-sales | On-demand interpreting platform for healthcare, 250+ langs |
 | 3Play Media | Boston, MA | https://www.3playmedia.com/contact/ | Captioning/transcription; could also caption the event |
 | Verbit | New York, NY | https://verbit.ai/contact-us/ | AI live captioning; could caption the event (VITAC = Verbit) |
 | KUDO | New York, NY | https://kudo.ai/contact/ | AI multilingual meeting platform w/ live interpretation |
@@ -106,11 +104,10 @@ out of the email list pending verification of an aggregator-sourced address.
 ### Chicago immigrant / cultural nonprofits (form-only)
 | Org | Location | Form | Note |
 |---|---|---|---|
-| Arab American Family Services | Bridgeview, IL | https://www.aafsil.org/ | **Chicago**; bridge to Arabic-speaking families |
+| Heartland Human Care Services (RICS) | Chicago, IL | https://heartlandhumancareservices.org/contact-us/ | Refugee & Immigrant Community Services — formerly under Heartland Alliance, which dissolved in 2024; the old rics@heartlandalliance.org address was removed from the email pipeline. Verify a current contact before outreach. |
 | Universidad Popular | Chicago, IL | https://universidadpopular.us | **Chicago** (Little Village); ESL/civics for Spanish speakers |
 | Instituto del Progreso Latino | Chicago, IL | https://www.institutochicago.org/apps/contact/ | **Chicago**; bilingual education/workforce/citizenship |
 | Latinos Progresando | Chicago, IL | https://latinospro.org/ | **Chicago**; immigration legal + community wellness |
-| National Museum of Mexican Art | Chicago, IL | https://nationalmuseumofmexicanart.org/contact | **Chicago** (Pilsen); cultural exhibitor / in-kind |
 
 ### Foundations / grant programs (apply via portal)
 | Org | Location | Portal | Note |
