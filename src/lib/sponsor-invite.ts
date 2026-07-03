@@ -1,3 +1,4 @@
+import { prisma } from "@/lib/db";
 import {
   isFoodProspect, isAslProspect, isCompExhibitor, isOfficialPartner,
   sponsorInviteSubject, sponsorFoodSubject, sponsorAslSubject, sponsorUnsubscribeUrl,
@@ -40,11 +41,18 @@ export type SponsorInviteSource = {
 // complimentary exhibitor / standard letter) and its subject. Used both when
 // first queuing invites and when re-rendering already-queued rows after a
 // template change, so the two never drift.
-export function renderSponsorInvite(s: SponsorInviteSource, base: string): { subject: string; html: string } {
+export function renderSponsorInvite(
+  s: SponsorInviteSource,
+  base: string,
+  opts?: { discountPercent?: number | null },
+): { subject: string; html: string } {
   const token = s.applicationToken;
   const landingUrl = `${base}/sponsor/invited/${token}`;
   const unsub = sponsorUnsubscribeUrl(token);
   const partner = isOfficialPartner(s.companyName);
+  // The 20% VIP courtesy applies only to the standard paid-tier letter; food /
+  // ASL (in-kind) and complimentary exhibitors don't carry a discount.
+  const discountPercent = opts?.discountPercent ?? null;
 
   if (isFoodProspect(s)) {
     return {
@@ -66,6 +74,54 @@ export function renderSponsorInvite(s: SponsorInviteSource, base: string): { sub
   }
   return {
     subject: sponsorInviteSubject(s.companyName, { partner }),
-    html: sponsorLetterEmail({ contactName: s.contactName, recipientTitle: s.contactRole, companyName: s.companyName, reason: s.inviteMessage, landingUrl, learnMoreUrl: base, discountPercent: null, isPartner: partner, unsubscribeUrl: unsub, dateLabel: letterDate(), assetBase: base }),
+    html: sponsorLetterEmail({ contactName: s.contactName, recipientTitle: s.contactRole, companyName: s.companyName, reason: s.inviteMessage, landingUrl, learnMoreUrl: base, discountPercent, isPartner: partner, unsubscribeUrl: unsub, dateLabel: letterDate(), assetBase: base }),
   };
+}
+
+// Fields the one-org enqueue needs beyond what the renderer reads.
+export type EnqueueSponsor = SponsorInviteSource & {
+  id: string;
+  contactEmail: string;
+  status: string;
+};
+
+// Schedule ONE sponsor's invite into the shared paced queue — the only path
+// that actually delivers. Renders the correct template (with the optional 20%
+// discount for the VIP offer), drops it in due-now so it goes out on the next
+// paced tick, promotes a fresh prospect to "queued" (the queue then marks it
+// "invited" on send), and persists the discount so checkout auto-applies it.
+// This is what the per-org "Queue invite" and "Queue + 20% off" buttons call,
+// so no send ever bypasses the queue.
+export async function enqueueSponsorInvite(
+  s: EnqueueSponsor,
+  base: string,
+  opts?: { discountPercent?: number | null; actorEmail?: string | null },
+): Promise<{ id: string }> {
+  // Never freeze a localhost/base-less URL into a queued production email.
+  assertPublicBaseUrl(base);
+  const discountPercent = opts?.discountPercent ?? null;
+  const { subject, html } = renderSponsorInvite(s, base, { discountPercent });
+  const row = await prisma.emailQueue.create({
+    data: {
+      batchId: `sponsor-oneoff-${Date.now()}`,
+      recipientType: "sponsor",
+      recipientId: s.id,
+      to: s.contactEmail,
+      subject,
+      html,
+      scheduledFor: new Date(),
+      status: "pending",
+    },
+  });
+  await prisma.sponsor.update({
+    where: { id: s.id },
+    data: {
+      ...(s.status === "prospect" ? { status: "queued" } : {}),
+      ...(discountPercent != null ? { discountPercent } : {}),
+    },
+  });
+  await prisma.sponsorEvent
+    .create({ data: { sponsorId: s.id, type: "added_to_queue", actorEmail: opts?.actorEmail ?? null, meta: discountPercent != null ? `discount ${discountPercent}%` : null } })
+    .catch(() => {});
+  return { id: row.id };
 }

@@ -2,16 +2,13 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { sendMail } from "@/lib/mail";
-import { sponsorFromHeader, sponsorLetterReplyTo, sponsorInviteSubject, sponsorUnsubHeaders, sponsorUnsubscribeUrl, isOfficialPartner } from "@/lib/sponsors";
-import { sponsorLetterEmail } from "@/lib/mail-templates";
+import { enqueueSponsorInvite } from "@/lib/sponsor-invite";
 import { appUrl } from "@/lib/presenters";
 
-// Per-org "Send personal letter" button on the dashboard: send the formal,
-// founder-signed letter (Kevin + Zachary) to one marquee prospect, reusing the
-// org's saved Personal note as the letter's personalized paragraph. Replies go
-// straight to kevin@aalb.org, the way the speaker invitations do. Admin only,
-// no queue, no pacing, one click, tracked.
+// Per-org "Queue + 20% off" button: the same invitation letter, but with the
+// 20% VIP courtesy discount that auto-applies at checkout, scheduled into the
+// shared paced Email Queue (nothing sends immediately from here). For the
+// hand-picked prospects you want to give the deal. Admin only.
 export async function POST(_req: Request, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -24,71 +21,28 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
   const sponsor = await prisma.sponsor.findUnique({ where: { id: params.id } });
   if (!sponsor) return NextResponse.json({ error: "Not found" }, { status: 404 });
   if (sponsor.unsubscribedAt) {
-    return NextResponse.json({ ok: false, sent: false, error: "This organization has unsubscribed." }, { status: 409 });
+    return NextResponse.json({ ok: false, queued: false, error: "This organization has unsubscribed." }, { status: 409 });
   }
   // The 20% courtesy is for paid sponsorships. Food/ASL sponsors are asked to
-  // donate in kind, so a discount is meaningless; use the in-kind invite instead.
+  // donate in kind, so a discount is meaningless; use Queue invite instead.
   if (sponsor.tier === "food" || sponsor.tier === "asl") {
-    return NextResponse.json({ ok: false, sent: false, error: "The 20% offer does not apply to in-kind food or ASL sponsors. Use Send invite instead." }, { status: 400 });
+    return NextResponse.json({ ok: false, queued: false, error: "The 20% offer does not apply to in-kind food or ASL sponsors. Use Queue invite instead." }, { status: 400 });
   }
 
-  // VIP courtesy: 20% off any paid level, including the exhibitor table.
-  // Only a complimentary (already-free) table gets no discount.
+  // VIP courtesy: 20% off any paid level, including the exhibitor table. Only a
+  // complimentary (already-free) table gets no discount. enqueueSponsorInvite
+  // persists this on the sponsor so checkout applies it automatically.
   const discountPercent = (sponsor.tier === "exhibitor" && sponsor.amountCents <= 0) ? null : 20;
-  const dateLabel = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
-  const html = sponsorLetterEmail({
-    contactName: sponsor.contactName,
-    recipientTitle: sponsor.contactRole || null,
-    companyName: sponsor.companyName,
-    reason: sponsor.inviteMessage,
-    landingUrl: `${appUrl()}/sponsor/invited/${sponsor.applicationToken}`,
-    learnMoreUrl: appUrl(),
-    discountPercent,
-    isPartner: isOfficialPartner(sponsor.companyName),
-    unsubscribeUrl: sponsorUnsubscribeUrl(sponsor.applicationToken),
-    dateLabel,
-    assetBase: appUrl(),
-  });
 
   try {
-    await sendMail({
-      to: sponsor.contactEmail,
-      subject: sponsorInviteSubject(sponsor.companyName, { partner: isOfficialPartner(sponsor.companyName) }),
-      html,
-      from: sponsorFromHeader(),
-      // Replies reach both Kevin (on the letter) and the shared inbox.
-      replyTo: sponsorLetterReplyTo(),
-      cc: sponsor.additionalEmails,
-      headers: sponsorUnsubHeaders(sponsor.applicationToken),
-    });
+    await enqueueSponsorInvite(sponsor, appUrl(), { discountPercent, actorEmail });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    await prisma.sponsorEvent.create({
-      data: { sponsorId: sponsor.id, type: "letter_send_failed", meta: msg.slice(0, 300), actorEmail },
-    });
-    return NextResponse.json({ ok: false, sent: false, error: msg }, { status: 502 });
+    await prisma.sponsorEvent
+      .create({ data: { sponsorId: sponsor.id, type: "letter_queue_failed", meta: msg.slice(0, 300), actorEmail } })
+      .catch(() => {});
+    return NextResponse.json({ ok: false, queued: false, error: msg }, { status: 500 });
   }
 
-  // The letter just went out directly; cancel any still-pending queue row so
-  // the background cron doesn't send this contact a second invitation.
-  await prisma.emailQueue.updateMany({
-    where: { recipientType: "sponsor", recipientId: sponsor.id, status: "pending" },
-    data: { status: "canceled" },
-  }).catch(() => {});
-
-  const updated = await prisma.sponsor.update({
-    where: { id: sponsor.id },
-    data: {
-      status: sponsor.status === "prospect" || sponsor.status === "queued" ? "invited" : sponsor.status,
-      invitedAt: sponsor.invitedAt ?? new Date(),
-      lastSentAt: new Date(),
-      // Persist eligibility so the discount auto-applies when they check out.
-      discountPercent,
-    },
-  });
-  await prisma.sponsorEvent.create({
-    data: { sponsorId: sponsor.id, type: "letter_sent", actorEmail, meta: sponsor.status },
-  });
-
-  return NextResponse.json({ ok: true, sent: true, status: updated.status });
+  return NextResponse.json({ ok: true, queued: true, discountPercent });
 }

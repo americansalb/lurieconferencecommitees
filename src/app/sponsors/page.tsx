@@ -280,7 +280,7 @@ export default function SponsorsAdminPage() {
       const j = await res.json().catch(() => ({}));
       const who = s?.companyName || "Sponsor";
       const ok = res.ok && j.ok;
-      setActionNote(ok ? `${who}: invitation sent.` : `${who}: could not send. ${j.error || "Unknown error."}`);
+      setActionNote(ok ? `${who}: added to the Email Queue. It sends from there, paced with everything else.` : `${who}: could not queue. ${j.error || "Unknown error."}`);
       await load();
       return ok;
     } catch {
@@ -303,7 +303,7 @@ export default function SponsorsAdminPage() {
       const res = await fetch(`/api/sponsors/${id}/send-letter`, { method: "POST" });
       const j = await res.json().catch(() => ({}));
       const who = s?.companyName || "Sponsor";
-      setActionNote(res.ok && j.ok ? `${who}: letter sent with the 20% offer.` : `${who}: could not send. ${j.error || "Unknown error."}`);
+      setActionNote(res.ok && j.ok ? `${who}: queued with the 20% offer. It sends from the Email Queue.` : `${who}: could not queue. ${j.error || "Unknown error."}`);
       await load();
     } catch {
       setActionNote("Network error sending the letter.");
@@ -874,10 +874,10 @@ export default function SponsorsAdminPage() {
                               onClick={() => sendInvite(s.id)}
                               disabled={sendingInviteId === s.id}
                               className="text-[10px] font-bold px-2 py-1 rounded-full border border-teal-200 bg-teal-50 text-teal-700 hover:bg-teal-100 inline-flex items-center gap-1 shrink-0 disabled:opacity-50"
-                              title={s.status === "prospect" ? "Send the invitation email to this org now" : "Resend the invitation email"}
+                              title={s.status === "prospect" ? "Add this org's invitation to the Email Queue (it sends from there, paced)" : "Queue another send of the invitation"}
                             >
                               {sendingInviteId === s.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
-                              {s.status === "prospect" ? "Send invite" : "Resend"}
+                              {s.status === "prospect" ? "Queue invite" : "Re-queue"}
                             </button>
                           )}
                           {isAdmin && (s.status === "prospect" || s.status === "invited") && s.tier !== "food" && s.tier !== "asl" && (
@@ -885,10 +885,10 @@ export default function SponsorsAdminPage() {
                               onClick={() => sendLetter(s.id)}
                               disabled={sendingLetterId === s.id}
                               className="text-[10px] font-bold px-2 py-1 rounded-full border border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100 inline-flex items-center gap-1 shrink-0 disabled:opacity-50"
-                              title="Send the same letter with the 20% VIP courtesy discount, applied automatically at checkout. For hand-picked prospects."
+                              title="Queue the same letter with the 20% VIP courtesy discount, applied automatically at checkout. It sends from the Email Queue. For hand-picked prospects."
                             >
                               {sendingLetterId === s.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <FileText className="w-3 h-3" />}
-                              Send + 20% offer
+                              Queue + 20% off
                             </button>
                           )}
                           {isAdmin && (s.tier === "food" || s.tier === "asl") && (s.status === "in_conversation" || s.status === "submitted") && (
