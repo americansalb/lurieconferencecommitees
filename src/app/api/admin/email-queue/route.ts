@@ -184,10 +184,31 @@ export async function POST(req: Request) {
     if (!cancelIds || !cancelIds.length) {
       return NextResponse.json({ error: "Pass ids to cancel." }, { status: 400 });
     }
+    // Grab the rows first so the recipients can be released below — without
+    // this, a canceled sponsor/ambassador stays at "queued" forever and can
+    // never be re-queued from its own page.
+    const rows = await prisma.emailQueue.findMany({
+      where: { status: "pending", id: { in: cancelIds } },
+      select: { id: true, recipientType: true, recipientId: true },
+    });
     const r = await prisma.emailQueue.updateMany({
       where: { status: "pending", id: { in: cancelIds } },
       data: { status: "canceled" },
     });
+    const sponsorIds = rows.filter((x) => x.recipientType === "sponsor" && x.recipientId).map((x) => x.recipientId!);
+    const ambassadorIds = rows.filter((x) => x.recipientType === "ambassador" && x.recipientId).map((x) => x.recipientId!);
+    if (sponsorIds.length) {
+      await prisma.sponsor.updateMany({
+        where: { id: { in: sponsorIds }, status: "queued" },
+        data: { status: "prospect" },
+      }).catch(() => {});
+    }
+    if (ambassadorIds.length) {
+      await prisma.ambassador.updateMany({
+        where: { id: { in: ambassadorIds }, status: "queued" },
+        data: { status: "pending" },
+      }).catch(() => {});
+    }
     return NextResponse.json({ ok: true, canceled: r.count });
   }
 

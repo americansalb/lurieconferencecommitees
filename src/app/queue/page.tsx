@@ -159,11 +159,12 @@ export default function EmailQueuePage() {
   async function refreshTemplates() {
     setBusy("refresh");
     try {
-      const [a, s] = await Promise.all([
+      const [a, s, m] = await Promise.all([
         fetch("/api/attendees/refresh-queue", { method: "POST" }).then((r) => r.json()).catch(() => ({})),
         fetch("/api/sponsors/refresh-queue", { method: "POST" }).then((r) => r.json()).catch(() => ({})),
+        fetch("/api/ambassadors/refresh-queue", { method: "POST" }).then((r) => r.json()).catch(() => ({})),
       ]);
-      flash(`Re-rendered ${(a.refreshed || 0)} attendee and ${(s.refreshed || 0)} sponsor invite${(a.refreshed || 0) + (s.refreshed || 0) === 1 ? "" : "s"} to the latest templates.`);
+      flash(`Re-rendered ${(a.refreshed || 0)} attendee, ${(s.refreshed || 0)} sponsor, and ${(m.refreshed || 0)} ambassador invite${(a.refreshed || 0) + (s.refreshed || 0) + (m.refreshed || 0) === 1 ? "" : "s"} to the latest templates.`);
     } finally {
       setBusy(null);
       load();
