@@ -287,6 +287,11 @@ type AttendeeInviteArgs = {
   virtualDiscountedCents: number;
   personalCode: string;
   mainSiteUrl: string;
+  // Relationship framing for the gold letter: "alumnus" (trained and certified),
+  // "student" (currently or recently training), or "former-student" (trained
+  // with us, no certificate). Defaults to alumnus. Only changes two lines of
+  // copy, never implies anyone is lesser for not holding a certificate.
+  relationship?: "alumnus" | "student" | "former-student";
   // Used by the engraved alumni letter: the conference home (second button),
   // a pre-formatted date for the letterhead, and the absolute asset origin for
   // signature and logo images.
@@ -474,6 +479,7 @@ export function attendeeAlumniInviteEmail({
   dateLabel,
   assetBase,
   unsubscribeUrl,
+  relationship,
 }: AttendeeInviteArgs) {
   const TEAL_DEEP = "#0C3B4B", INK = "#0B1F25", SOFT = "#5A6E76", GOLD_SOFT = "#F4E9CD", LINK = "#1E6FA2";
   const base = (assetBase || ASSET_BASE).replace(/\/$/, "");
@@ -481,6 +487,19 @@ export function attendeeAlumniInviteEmail({
   const first = (firstName || "there").trim();
   const today = dateLabel || new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   const hasDiscount = discountPercent > 0;
+
+  // Relationship framing. The letter, layout, and 25% courtesy are identical for
+  // everyone who trained with AALB; only the opening line and the courtesy label
+  // change, and none of the wording implies anyone is lesser for not certifying.
+  const rel = relationship || "alumnus";
+  // Text after the drop-cap "Y" (every opening begins with "You").
+  const openingRest =
+    rel === "student"
+      ? "ou are part of the AALB community, training with us toward your medical interpreter certification, and as we plan our next conference you are exactly the person we hoped would be in the room, so we wanted to write to you directly."
+      : rel === "former-student"
+      ? "ou trained with us, and you have been part of this community ever since. As we plan our next conference, you are exactly the person we hoped would be in the room, so we wanted to write to you directly."
+      : "ou trained with us, you earned your certificate with us, and you have stayed part of this community ever since. As we plan our next conference, you are exactly the person we hoped would be in the room, so we wanted to write to you directly.";
+  const courtesyLabel = rel === "alumnus" ? "Your alumni courtesy" : "Your AALB student courtesy";
 
   // The recipient's personal note, shown as a gold-ruled pull-quote when present.
   const noteParas = (inviteMessage || "").trim()
@@ -503,7 +522,7 @@ export function attendeeAlumniInviteEmail({
   const ratePanel = hasDiscount ? `
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 22px 0;">
         <tr><td bgcolor="#FBF4E2" style="background-color:#FBF4E2;border:1px solid #EAD9AE;border-radius:10px;padding:20px 18px;text-align:center;">
-          <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:${GOLD};font-weight:bold;padding-bottom:8px;">Your alumni courtesy</div>
+          <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:${GOLD};font-weight:bold;padding-bottom:8px;">${courtesyLabel}</div>
           <div style="font-family:Georgia,'Times New Roman',serif;font-size:23px;line-height:1.25;color:#3C2E10;">${discountPercent}% off your registration</div>
           <div style="font-family:Georgia,'Times New Roman',serif;font-size:13.5px;line-height:1.6;color:#6B5A33;padding:8px 6px 0 6px;">Good for an in-person seat in Chicago or live online attendance alike, applied automatically at checkout.</div>
         </td></tr>
@@ -561,7 +580,7 @@ export function attendeeAlumniInviteEmail({
 
     <tr><td align="center" bgcolor="${TEAL_DEEP}" class="sl-head" style="background-color:${TEAL_DEEP};background-image:linear-gradient(160deg,${TEAL} 0%,${TEAL_DEEP} 100%);padding:44px 40px 34px 40px;">
       <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;line-height:18px;letter-spacing:4px;text-transform:uppercase;color:${GOLD_SOFT};font-weight:bold;">Lurie Children&rsquo;s &middot; AALB</div>
-      <div style="font-family:Helvetica,Arial,sans-serif;font-size:9px;line-height:16px;letter-spacing:3px;text-transform:uppercase;color:#7FA7B1;padding-top:6px;">An Invitation to Our Alumni</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:9px;line-height:16px;letter-spacing:3px;text-transform:uppercase;color:#7FA7B1;padding-top:6px;">${rel === "alumnus" ? "An Invitation to Our Alumni" : "An Invitation to Our Community"}</div>
       <div style="font-family:Helvetica,Arial,sans-serif;font-size:8px;line-height:10px;letter-spacing:4px;text-transform:uppercase;color:${GOLD};font-weight:bold;padding:22px 0 8px 0;">&middot;&nbsp;Second Joint Conference&nbsp;&middot;</div>
 
       <!--[if !mso]><!-->
@@ -593,7 +612,7 @@ export function attendeeAlumniInviteEmail({
       ${p(`Dear ${escapeHtml(first)},`)}
 
       <p style="margin:0 0 18px 0;font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.85;color:${INK};">
-        <span class="sl-dropcap" style="float:left;font-family:Georgia,'Times New Roman',serif;font-size:54px;line-height:42px;color:${TEAL};padding:6px 11px 0 0;">Y</span>ou trained with us, you earned your certificate with us, and you have stayed part of this community ever since. As we plan our next conference, you are exactly the person we hoped would be in the room, so we wanted to write to you directly.
+        <span class="sl-dropcap" style="float:left;font-family:Georgia,'Times New Roman',serif;font-size:54px;line-height:42px;color:${TEAL};padding:6px 11px 0 0;">Y</span>${openingRest}
       </p>
 
       ${p(`We would love for you to join us at the <strong>2026 Lurie Children&rsquo;s &amp; AALB Conference</strong> in Chicago on August 15 and 16. More than the sessions, what we are really after is the chance to be together again, to put faces to names and reconnect with the people you came up alongside.`)}

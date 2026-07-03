@@ -4,11 +4,21 @@ import { attendeeInviteEmail, attendeeAlumniInviteEmail } from "./mail-templates
 import { firstNameToCode } from "./codes";
 import { pickAlumniSubject } from "./subject-variants";
 
-export type AttendeeTemplate = "standard" | "alumni";
+export type AttendeeTemplate = "standard" | "alumni" | "student" | "former-student";
 export const ATTENDEE_TEMPLATES: { id: AttendeeTemplate; label: string; description: string }[] = [
   { id: "standard", label: "Standard invite", description: "Concise personal invitation with the discounted rate." },
-  { id: "alumni", label: "AALB alumni", description: "Warm, fully-branded invitation for the AALB community." },
+  { id: "alumni", label: "AALB alumni", description: "Gold letter for certificate holders (alumni courtesy)." },
+  { id: "student", label: "AALB student", description: "Gold letter for current or recently-finished students." },
+  { id: "former-student", label: "Former AALB student", description: "Gold letter for past students without a certificate." },
 ];
+
+// The three AALB-community templates all render the same gold letter; only the
+// relationship framing differs. "standard" is the plain invite for everyone else.
+const GOLD_TEMPLATES: Record<string, "alumnus" | "student" | "former-student"> = {
+  alumni: "alumnus",
+  student: "student",
+  "former-student": "former-student",
+};
 
 // Single source for rendering an attendee invitation, so send / resend /
 // preview / view-copy all produce identical output for a given template.
@@ -19,10 +29,14 @@ export function buildAttendeeInvite(opts: {
   inviteMessage?: string | null;
   template?: string | null;
 }): { subject: string; html: string; template: AttendeeTemplate; subjectVariant: string | null } {
-  const template: AttendeeTemplate = opts.template === "alumni" ? "alumni" : "standard";
+  const template: AttendeeTemplate =
+    opts.template === "alumni" || opts.template === "student" || opts.template === "former-student"
+      ? opts.template
+      : "standard";
   const inPerson = computePrice("in-person", opts.discountPercent);
   const virtual = computePrice("virtual", opts.discountPercent);
-  const render = template === "alumni" ? attendeeAlumniInviteEmail : attendeeInviteEmail;
+  const relationship = GOLD_TEMPLATES[template];
+  const render = relationship ? attendeeAlumniInviteEmail : attendeeInviteEmail;
   const html = render({
     firstName: opts.firstName,
     url: attendeeFunnelUrl(opts.inviteToken),
@@ -39,12 +53,15 @@ export function buildAttendeeInvite(opts: {
     assetBase: appUrl(),
     dateLabel: new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
     unsubscribeUrl: attendeeUnsubscribeUrl(opts.inviteToken),
+    relationship,
   });
   // Alumni sends rotate through several subject lines (A/B), assigned by token
   // so the choice is stable across resends and measurable on the dashboard.
   let subject: string;
   let subjectVariant: string | null = null;
-  if (template === "alumni") {
+  if (relationship) {
+    // Alumni, student, and former-student all rotate through the formal
+    // invitation subject lines (A/B), assigned stably by token.
     const picked = pickAlumniSubject(opts.firstName, opts.inviteToken);
     subject = picked.subject;
     subjectVariant = picked.id;
