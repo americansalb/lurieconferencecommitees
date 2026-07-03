@@ -37,6 +37,7 @@ type Sponsor = {
   status: string;
   paid: boolean;
   paidAt: string | null;
+  logistics: Record<string, string> | null;
   applicationToken: string;
   createdAt: string;
   invitedAt: string | null;
@@ -44,14 +45,27 @@ type Sponsor = {
   clickedAt: string | null;
 };
 
-// The board: every sponsor lives in exactly one of these five buckets.
+// The board: every sponsor lives in exactly one of these buckets. "Confirmed"
+// holds accepted in-kind (food/ASL) sponsors, who are locked in but bring no
+// dollars, so they sit apart from paid revenue. See bucketOf for the routing.
 const PIPELINE_TABS: { key: string; label: string; statuses: string[] }[] = [
   { key: "paid", label: "Paid", statuses: ["paid", "confirmed"] },
+  { key: "confirmed", label: "Confirmed", statuses: ["confirmed"] },
   { key: "awaiting_payment", label: "Awaiting payment", statuses: ["awaiting_payment"] },
   { key: "in_discussion", label: "In discussion", statuses: ["in_conversation", "submitted"] },
   { key: "invited", label: "Invited", statuses: ["invited"] },
   { key: "pending_invite", label: "Pending invite", statuses: ["prospect", "queued"] },
 ];
+
+// Human labels for the in-kind logistics fields the sponsor fills in on their
+// portal, so the dashboard can show their answers compactly.
+const LOGISTICS_LABELS: Record<string, string> = {
+  attend: "Attending", attendeeName: "Ticket for", attendeeEmail: "Ticket email",
+  provide: "Providing", day: "Day", meal: "Meal", fulfillment: "Fulfillment",
+  window: "Window", dayOfContact: "Day-of contact", allergens: "Allergens",
+  setup: "Setup", coverage: "Coverage", interpreters: "Interpreters",
+  mode: "Mode", equipment: "Equipment", materials: "Materials",
+};
 
 function fmtCountdown(secs: number) {
   const m = Math.floor(secs / 60);
@@ -80,6 +94,7 @@ export default function SponsorsAdminPage() {
   const [requestingLogoId, setRequestingLogoId] = useState<string | null>(null);
   const [sendingInviteId, setSendingInviteId] = useState<string | null>(null);
   const [sendingLetterId, setSendingLetterId] = useState<string | null>(null);
+  const [acceptingId, setAcceptingId] = useState<string | null>(null);
   const [mergeFor, setMergeFor] = useState<Sponsor | null>(null);
   const [mergeOtherId, setMergeOtherId] = useState("");
   const [mergeName, setMergeName] = useState("");
@@ -298,6 +313,35 @@ export default function SponsorsAdminPage() {
     }
   }
 
+  // Per-org "Accept" for an in-kind (food/ASL) sponsor who has pledged: sends
+  // the branded welcome letter that asks for their logo, website, and logistics,
+  // and moves them into the confirmed sponsors. Confirmed first, since it emails.
+  function acceptInKind(id: string) {
+    const s = sponsors.find((x) => x.id === id);
+    setConfirmDialog({
+      title: "Accept and welcome this sponsor?",
+      message: `${s?.companyName || "This sponsor"} will receive the welcome letter asking for their logo, a link to their website, and the logistics, and will move to your confirmed sponsors. It sends right away.`,
+      confirmLabel: "Accept & send letter",
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        setAcceptingId(id);
+        setActionNote(null);
+        try {
+          const res = await fetch(`/api/sponsors/${id}/accept`, { method: "POST" });
+          const j = await res.json().catch(() => ({}));
+          const who = s?.companyName || "Sponsor";
+          setActionNote(res.ok && j.ok ? `${who}: accepted, welcome letter sent.` : `${who}: could not accept. ${j.error || "Unknown error."}`);
+          await load();
+        } catch {
+          setActionNote("Network error sending the acceptance letter.");
+        } finally {
+          setAcceptingId(null);
+          setTimeout(() => setActionNote(null), 8000);
+        }
+      },
+    });
+  }
+
   // One click: load the curated prospect list into Pending invite. No emails.
   async function loadTargets() {
     setLoadingTargets(true);
@@ -463,6 +507,12 @@ export default function SponsorsAdminPage() {
   // single source of truth, even if the status field later drifts. Every place
   // that means "paid" uses this, so the card and the tab can never disagree.
   const isClosed = (s: Sponsor) => s.paid === true;
+  // "Won" = fully locked in. A paid sponsor, or a confirmed in-kind (food/ASL)
+  // sponsor who brings no dollars but is done. Both live under the "Paid" tab
+  // (which already lists the "confirmed" status), so this is what routes them
+  // there and what the Paid count reflects, keeping the card and tab in sync.
+  const isWon = (s: Sponsor) => isClosed(s) || s.status === "confirmed";
+  const isInKind = (s: Sponsor) => s.tier === "food" || s.tier === "asl";
   // A live lead: an org actually in conversation or owing payment. Cold
   // prospects, queued, and merely-invited orgs are NOT engaged. This is exactly
   // the "In discussion" + "Awaiting payment" tabs, so the Engaged card and those
@@ -479,8 +529,11 @@ export default function SponsorsAdminPage() {
   // list filter so they always agree: paid sponsors live only under "Paid",
   // everyone else falls into their status's tab.
   const bucketOf = (s: Sponsor): string | null => {
-    if (isClosed(s)) return "paid";
-    const tab = PIPELINE_TABS.find((t) => t.key !== "paid" && t.statuses.includes(s.status));
+    // Accepted in-kind (food/ASL) sponsors are confirmed but bring no dollars:
+    // they get their own "Confirmed" tab, apart from paid revenue.
+    if (isInKind(s) && s.status === "confirmed") return "confirmed";
+    if (isWon(s)) return "paid";
+    const tab = PIPELINE_TABS.find((t) => t.key !== "paid" && t.key !== "confirmed" && t.statuses.includes(s.status));
     return tab ? tab.key : null;
   };
 
@@ -521,7 +574,9 @@ export default function SponsorsAdminPage() {
     .filter((ms) => Number.isFinite(ms) && ms >= 0);
   const clickRate = everSent.length ? Math.round((clickedSponsors.length / everSent.length) * 100) : 0;
 
-  const paidCount = countable.filter(isClosed).length;
+  // The "Paid" card mirrors the "Paid" tab exactly (paid sponsors; accepted
+  // in-kind sponsors are counted under "Confirmed" instead).
+  const paidCount = countable.filter((s) => bucketOf(s) === "paid").length;
   const engagedCount = countable.filter(isEngaged).length;
   // Revenue actually collected, and the realistic dollar value of live deals
   // (not cold outreach). Both ignore the test record and in-kind sponsors.
@@ -836,6 +891,17 @@ export default function SponsorsAdminPage() {
                               Send + 20% offer
                             </button>
                           )}
+                          {isAdmin && (s.tier === "food" || s.tier === "asl") && (s.status === "in_conversation" || s.status === "submitted") && (
+                            <button
+                              onClick={() => acceptInKind(s.id)}
+                              disabled={acceptingId === s.id}
+                              className="text-[10px] font-bold px-2 py-1 rounded-full border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 inline-flex items-center gap-1 shrink-0 disabled:opacity-50"
+                              title="Accept this in-kind sponsor and send the welcome letter asking for their logo, website, and logistics"
+                            >
+                              {acceptingId === s.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <BadgeCheck className="w-3 h-3" />}
+                              Accept
+                            </button>
+                          )}
                           {showPayAction && (
                             <button
                               onClick={() => confirmPayment(s.id)}
@@ -917,6 +983,18 @@ export default function SponsorsAdminPage() {
                                 )}
                               </div>
                             )}
+                          </div>
+                        )}
+                        {isInKind(s) && s.logistics && Object.keys(s.logistics).length > 0 && (
+                          <div className="mt-2 ml-12 rounded-lg border border-emerald-600/15 bg-emerald-50/40 px-3 py-2">
+                            <div className="text-[10px] font-bold uppercase tracking-wide text-emerald-700 mb-1">
+                              {s.tier === "asl" ? "Interpretation details" : "Food details"}
+                            </div>
+                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-slate-600">
+                              {Object.entries(s.logistics).map(([k, v]) => (
+                                <span key={k}><span className="text-slate-400">{LOGISTICS_LABELS[k] || k}:</span> {v}</span>
+                              ))}
+                            </div>
                           </div>
                         )}
                         {isAdmin && (

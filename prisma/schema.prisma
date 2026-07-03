@@ -513,6 +513,12 @@ model Sponsor {
 
   message               String?
 
+  // In-kind (food/ASL) logistics, collected on the sponsor portal after they
+  // accept: what they'll provide, day/meal, delivery, day-of contact, allergens,
+  // setup (food) or coverage, interpreters, mode, materials (ASL). A flat
+  // string map keyed by field; see LogisticsForm / the logistics save route.
+  logistics             Json?
+
   status                String         @default("submitted")
   paid                  Boolean        @default(false)
   paidAt                DateTime?

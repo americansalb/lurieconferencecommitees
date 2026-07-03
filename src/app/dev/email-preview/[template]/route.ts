@@ -3,6 +3,7 @@ import {
   sponsorInviteEmail,
   sponsorLetterEmail,
   sponsorAcceptedEmail,
+  sponsorInKindAcceptanceEmail,
   proposalCallEmail,
   bookingInviteEmail,
   bookingConfirmedInviteeEmail,
@@ -78,6 +79,28 @@ export async function GET(
         donatesFoodInstead: false,
         isExhibitor: true,
         benefits: fullBenefits("exhibitor"),
+        assetBase: base,
+      });
+      break;
+    case "inkind-accepted-food":
+      html = sponsorInKindAcceptanceEmail({
+        kind: "food",
+        contactName: "Jules",
+        companyName: "The Chicago Diner",
+        pledge: "Food pledge: A tray of vegan comfort-food entrees for lunch · Est: 60 servings · Arrangement: Donate part, we purchase the rest",
+        materialsUrl: `${base}/sponsor/status/demo-token`,
+        unsubscribeUrl: `${base}/api/sponsors/unsubscribe/demo-token`,
+        assetBase: base,
+      });
+      break;
+    case "inkind-accepted-asl":
+      html = sponsorInKindAcceptanceEmail({
+        kind: "asl",
+        contactName: "Dana",
+        companyName: "Chicago Hearing Society Interpreting",
+        pledge: "ASL pledge: Two interpreters for Saturday's plenary sessions · Arrangement: Donate some hours, we cover the rest",
+        materialsUrl: `${base}/sponsor/status/demo-token`,
+        unsubscribeUrl: `${base}/api/sponsors/unsubscribe/demo-token`,
         assetBase: base,
       });
       break;

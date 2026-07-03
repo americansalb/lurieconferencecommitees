@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { isPaused, setPaused, getPolicy, savePolicy, queueEnvelope, afterQueueSend, runEmailQueue } from "@/lib/email-queue";
+import { isPaused, setPaused, getPolicy, savePolicy, queueEnvelope, afterQueueSend, runEmailQueue, estimateNextSend } from "@/lib/email-queue";
 import { sendMail } from "@/lib/mail";
 import { buildAttendeeInvite } from "@/lib/attendees";
 
@@ -41,9 +41,12 @@ export async function GET() {
     isPaused(),
   ]);
 
-  const [last24h, last1h] = await Promise.all([
+  const [last24h, last1h, nextSend] = await Promise.all([
     prisma.emailQueue.count({ where: { status: "sent", sentAt: { gte: new Date(Date.now() - 24 * 3600 * 1000) } } }),
     prisma.emailQueue.count({ where: { status: "sent", sentAt: { gte: new Date(Date.now() - 3600 * 1000) } } }),
+    // The honest "when will the next one actually leave", accounting for pacing,
+    // caps, and the send window (not just the earliest raw scheduledFor).
+    estimateNextSend(),
   ]);
 
   // The individual queued sends, so the dashboard can show who is waiting and
@@ -55,14 +58,26 @@ export async function GET() {
     select: { id: true, to: true, subject: true, scheduledFor: true, recipientType: true, recipientId: true, attempts: true },
   });
 
+  // The sent log: what has already gone out (and what failed / was canceled or
+  // skipped), most recent first, so admins can see the trail instead of just the
+  // pending queue. updatedAt is set on every status transition.
+  const recent = await prisma.emailQueue.findMany({
+    where: { status: { in: ["sent", "failed", "canceled", "skipped"] } },
+    orderBy: { updatedAt: "desc" },
+    take: 100,
+    select: { id: true, to: true, subject: true, recipientType: true, status: true, sentAt: true, updatedAt: true, attempts: true, lastError: true, resendId: true },
+  });
+
   return NextResponse.json({
     counts: counts.reduce<Record<string, number>>((acc, c) => ((acc[c.status] = c._count._all), acc), {}),
     nextScheduledFor: nextDue?.scheduledFor || null,
+    nextSend,
     sentLast24h: last24h,
     sentLastHour: last1h,
     policy,
     paused,
     pending,
+    recent,
   });
 }
 
