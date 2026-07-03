@@ -10,29 +10,29 @@ datasource db {
 }
 
 model User {
-  id                  String                  @id @default(cuid())
-  email               String                  @unique
-  passwordHash        String
-  name                String
-  role                String                  @default("member")
-  timezone            String                  @default("America/Chicago")
-  icalToken           String?                 @unique
-  createdAt           DateTime                @default(now())
-  committees          CommitteeMember[]
-  discussions         Discussion[]
-  posts               Post[]
-  tasks               Task[]                  @relation("assignee")
-  files               CommitteeFile[]
-  devices             Device[]
-  mobileSessions      MobileSession[]
-  notificationPrefs   NotificationPreference?
-  notificationLog     NotificationLog[]
-  scheduledNotifs     ScheduledNotification[]
-  discussionReads     DiscussionRead[]
-  mentions            Mention[]
-  availability        MemberAvailability[]
+  id                     String                  @id @default(cuid())
+  email                  String                  @unique
+  passwordHash           String
+  name                   String
+  role                   String                  @default("member")
+  timezone               String                  @default("America/Chicago")
+  icalToken              String?                 @unique
+  createdAt              DateTime                @default(now())
+  committees             CommitteeMember[]
+  discussions            Discussion[]
+  posts                  Post[]
+  tasks                  Task[]                  @relation("assignee")
+  files                  CommitteeFile[]
+  devices                Device[]
+  mobileSessions         MobileSession[]
+  notificationPrefs      NotificationPreference?
+  notificationLog        NotificationLog[]
+  scheduledNotifs        ScheduledNotification[]
+  discussionReads        DiscussionRead[]
+  mentions               Mention[]
+  availability           MemberAvailability[]
   availabilityExceptions AvailabilityException[]
-  bookings            Booking[]
+  bookings               Booking[]
 
   @@map("lcc_users")
   @@schema("lcc")
@@ -186,17 +186,17 @@ model Mention {
 }
 
 model Device {
-  id          String   @id @default(cuid())
-  userId      String
-  platform    String
-  pushToken   String   @unique
-  appVersion  String?
-  deviceName  String?
-  locale      String?
-  timezone    String?
-  lastSeenAt  DateTime @default(now())
-  createdAt   DateTime @default(now())
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  userId     String
+  platform   String
+  pushToken  String   @unique
+  appVersion String?
+  deviceName String?
+  locale     String?
+  timezone   String?
+  lastSeenAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("lcc_devices")
@@ -282,77 +282,77 @@ model PasswordResetToken {
 }
 
 model Presenter {
-  id                 String           @id @default(cuid())
-  email              String           @unique
-  name               String
-  affiliation        String?
-  jobTitle           String?
-  pronouns           String?
-  phone              String?
+  id          String  @id @default(cuid())
+  email       String  @unique
+  name        String
+  affiliation String?
+  jobTitle    String?
+  pronouns    String?
+  phone       String?
 
-  role               String?
-  talkTitle          String?
-  talkAbstract       String?
-  sessionFormat      String?
-  sessionTrack       String?
-  sessionLength      String?
-  qaLength           String?
-  coPresenters       String?
-  preferredDay       String?
-  learningObjectives String?
-  honorariumAmount   Int?
+  role                String?
+  talkTitle           String?
+  talkAbstract        String?
+  sessionFormat       String?
+  sessionTrack        String?
+  sessionLength       String?
+  qaLength            String?
+  coPresenters        String?
+  preferredDay        String?
+  learningObjectives  String?
+  honorariumAmount    Int?
   travelReimbursement Int?
-  presenterMessage   String?
+  presenterMessage    String?
 
-  bio                String?
-  headshotData       Bytes?
-  headshotMime       String?
-  websiteUrl         String?
-  linkedinUrl        String?
-  twitterHandle      String?
-  facebookUrl        String?
-  instagramUrl       String?
-  otherSocialUrl     String?
+  bio            String?
+  headshotData   Bytes?
+  headshotMime   String?
+  websiteUrl     String?
+  linkedinUrl    String?
+  twitterHandle  String?
+  facebookUrl    String?
+  instagramUrl   String?
+  otherSocialUrl String?
 
-  avNotes            String?
-  needsMic           Boolean          @default(false)
-  needsProjector     Boolean          @default(false)
-  needsAudio         Boolean          @default(false)
-  needsInternet      Boolean          @default(false)
-  needsRecording     Boolean          @default(false)
-  needsClicker       Boolean          @default(false)
+  avNotes        String?
+  needsMic       Boolean @default(false)
+  needsProjector Boolean @default(false)
+  needsAudio     Boolean @default(false)
+  needsInternet  Boolean @default(false)
+  needsRecording Boolean @default(false)
+  needsClicker   Boolean @default(false)
 
-  travelMode         String?
-  travelOrigin       String?
-  travelArrival      DateTime?
-  travelDeparture    DateTime?
-  needsHotel         Boolean          @default(false)
-  hotelNotes         String?
-  needsParking       Boolean          @default(false)
+  travelMode      String?
+  travelOrigin    String?
+  travelArrival   DateTime?
+  travelDeparture DateTime?
+  needsHotel      Boolean   @default(false)
+  hotelNotes      String?
+  needsParking    Boolean   @default(false)
 
   dietary            String?
   allergies          String?
   accessibilityNeeds String?
   emergencyContact   String?
 
-  agreedToRecord     Boolean          @default(false)
-  agreedToPhoto      Boolean          @default(false)
-  agreedToTerms      Boolean          @default(false)
-  agreedToCe         Boolean          @default(false)
-  agreedToHeadshot   Boolean          @default(false)
+  agreedToRecord     Boolean   @default(false)
+  agreedToPhoto      Boolean   @default(false)
+  agreedToTerms      Boolean   @default(false)
+  agreedToCe         Boolean   @default(false)
+  agreedToHeadshot   Boolean   @default(false)
   policiesAcceptedAt DateTime?
 
-  status             String           @default("invited")
-  declineReason      String?
-  requestedChanges   String?
-  token              String           @unique
-  invitedAt          DateTime         @default(now())
-  confirmedAt        DateTime?
-  lastSentAt         DateTime?
-  adminNotes         String?
-  invitedById        String?
+  status           String    @default("invited")
+  declineReason    String?
+  requestedChanges String?
+  token            String    @unique
+  invitedAt        DateTime  @default(now())
+  confirmedAt      DateTime?
+  lastSentAt       DateTime?
+  adminNotes       String?
+  invitedById      String?
 
-  events             PresenterEvent[]
+  events PresenterEvent[]
 
   @@map("lcc_presenters")
   @@schema("lcc")
@@ -372,69 +372,69 @@ model PresenterEvent {
 }
 
 model Attendee {
-  id                   String          @id @default(cuid())
-  email                String          @unique
-  firstName            String
-  lastName             String
-  phone                String?
-  affiliation          String?
-  primaryLanguages     String?
+  id               String  @id @default(cuid())
+  email            String  @unique
+  firstName        String
+  lastName         String
+  phone            String?
+  affiliation      String?
+  primaryLanguages String?
 
   // AALB training cohort (medical-interpreter session), for imported students.
   // `cohort` is the label ("141"); `cohortOrder` is the numeric session number
   // used to sort newest-first and to filter by session. Null for non-students.
-  cohort               String?
-  cohortOrder          Int?
+  cohort      String?
+  cohortOrder Int?
 
-  attendanceMode       String?
-  needsParking         Boolean?
-  accessibilityNotes   String?
-  dietary              String?
-  notes                String?
+  attendanceMode     String?
+  needsParking       Boolean?
+  accessibilityNotes String?
+  dietary            String?
+  notes              String?
 
-  discountPercent      Int             @default(25)
-  basePriceCents       Int?
-  finalPriceCents      Int?
+  discountPercent Int  @default(25)
+  basePriceCents  Int?
+  finalPriceCents Int?
 
   // Shared discount code applied at registration (distinct from the
   // per-person discountPercent used for personal invites). Set when a code
   // is accepted; the redemption row is the authoritative audit record.
-  discountCodeId       String?
-  discountCode         String?
-  discountCodeCents    Int?            @default(0)
+  discountCodeId    String?
+  discountCode      String?
+  discountCodeCents Int?    @default(0)
 
-  paid                 Boolean         @default(false)
-  paidAt               DateTime?
-  stripeSessionId      String?
+  paid                  Boolean   @default(false)
+  paidAt                DateTime?
+  stripeSessionId       String?
   stripePaymentIntentId String?
 
-  status               String          @default("queued")
-  declineReason        String?
+  status        String  @default("queued")
+  declineReason String?
 
-  inviteToken          String          @unique
-  inviteMessage        String?
-  inviteTemplate       String          @default("standard")
-  invitedById          String?
-  invitedAt            DateTime?
-  lastSentAt           DateTime?
-  viewedAt             DateTime?
-  confirmedAt          DateTime?
-  declinedAt           DateTime?
+  inviteToken    String    @unique
+  inviteMessage  String?
+  inviteTemplate String    @default("standard")
+  invitedById    String?
+  invitedAt      DateTime?
+  lastSentAt     DateTime?
+  viewedAt       DateTime?
+  confirmedAt    DateTime?
+  declinedAt     DateTime?
 
   // Created by the emails-only deliverability test, not a real invitee. Kept
   // out of the attendee pipeline and all email metrics so test traffic never
   // skews the numbers.
-  isTest               Boolean         @default(false)
+  isTest Boolean @default(false)
 
   // Set when the recipient uses one-click unsubscribe. Suppresses all further
   // sends to this person and is honored before every send.
-  unsubscribedAt       DateTime?
+  unsubscribedAt DateTime?
 
-  adminNotes           String?
-  createdAt            DateTime        @default(now())
-  updatedAt            DateTime?       @updatedAt
+  adminNotes String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime? @updatedAt
 
-  events               AttendeeEvent[]
+  events AttendeeEvent[]
 
   @@index([status])
   @@map("lcc_attendees")
@@ -490,66 +490,66 @@ model SystemSetting {
 }
 
 model Sponsor {
-  id                    String         @id @default(cuid())
-  companyName           String
-  contactName           String
-  contactEmail          String
+  id               String   @id @default(cuid())
+  companyName      String
+  contactName      String
+  contactEmail     String
   // Co-applicants merged into this profile: extra emails CC'd on every
   // interaction; they can open the same portal link. See the merge endpoint.
-  additionalEmails      String[]       @default([])
+  additionalEmails String[] @default([])
   // When this record was consolidated into another, points at the survivor.
   // Merged records are hidden from the pipeline.
-  mergedIntoId          String?
-  contactPhone          String?
-  contactRole           String?
-  website               String?
+  mergedIntoId     String?
+  contactPhone     String?
+  contactRole      String?
+  website          String?
 
   // Exhibitor on-site details (collected for the Exhibitor Table tier).
-  registreeName         String?
-  registreeEmail        String?
-  dietary               String?
-  accessibility         String?
-  wantsLogo             Boolean        @default(false)
-  exhibitorDetailsAt    DateTime?
+  registreeName      String?
+  registreeEmail     String?
+  dietary            String?
+  accessibility      String?
+  wantsLogo          Boolean   @default(false)
+  exhibitorDetailsAt DateTime?
 
-  tier                  String
-  customTierName        String?
-  amountCents           Int
-  donateFoodInstead     Boolean        @default(false)
+  tier              String
+  customTierName    String?
+  amountCents       Int
+  donateFoodInstead Boolean @default(false)
 
-  message               String?
+  message String?
 
   // In-kind (food/ASL) logistics, collected on the sponsor portal after they
   // accept: what they'll provide, day/meal, delivery, day-of contact, allergens,
   // setup (food) or coverage, interpreters, mode, materials (ASL). A flat
   // string map keyed by field; see LogisticsForm / the logistics save route.
-  logistics             Json?
+  logistics Json?
 
-  status                String         @default("submitted")
-  paid                  Boolean        @default(false)
+  status                String    @default("submitted")
+  paid                  Boolean   @default(false)
   paidAt                DateTime?
   stripeSessionId       String?
   stripePaymentIntentId String?
 
-  applicationToken      String         @unique
+  applicationToken String @unique
 
-  inviteMessage         String?
+  inviteMessage   String?
   // VIP courtesy: when set (e.g. 20), checkout applies this percentage off the
   // chosen sponsorship level. Excludes exhibitor tables; applied at checkout.
-  discountPercent       Int?
-  invitedById           String?
-  invitedAt             DateTime?
-  lastSentAt            DateTime?
+  discountPercent Int?
+  invitedById     String?
+  invitedAt       DateTime?
+  lastSentAt      DateTime?
   // Set when the recipient uses the one-click unsubscribe. Suppresses all
   // further sends to this org and is honored before every send.
-  unsubscribedAt        DateTime?
+  unsubscribedAt  DateTime?
 
-  adminNotes            String?
-  createdAt             DateTime       @default(now())
-  updatedAt             DateTime?      @updatedAt
+  adminNotes String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime? @updatedAt
 
-  events                SponsorEvent[]
-  logo                  SponsorLogo?
+  events SponsorEvent[]
+  logo   SponsorLogo?
 
   @@index([status])
   @@index([tier])
@@ -560,12 +560,12 @@ model Sponsor {
 // Exhibitor/sponsor logo, stored out-of-row so the Sponsor list query never
 // pulls the image bytes. One per sponsor; served via /api/sponsors/:id/logo.
 model SponsorLogo {
-  sponsorId String   @id
-  sponsor   Sponsor  @relation(fields: [sponsorId], references: [id], onDelete: Cascade)
+  sponsorId String    @id
+  sponsor   Sponsor   @relation(fields: [sponsorId], references: [id], onDelete: Cascade)
   data      Bytes
   mime      String
   fileName  String?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
   updatedAt DateTime? @updatedAt
 
   @@map("lcc_sponsor_logos")
@@ -590,21 +590,21 @@ model SponsorEvent {
 // open CFP to, so the team can see who's been contacted, which variant
 // (general vs. healthcare) went out, the send status, and resend.
 model ProposalInvite {
-  id            String   @id @default(cuid())
+  id            String  @id @default(cuid())
   email         String
   name          String?
-  variant       String   @default("general") // "general" | "healthcare"
+  variant       String  @default("general") // "general" | "healthcare"
   customMessage String?
 
-  status        String   @default("sent") // "sent" | "failed"
-  sendError     String?
-  sentCount     Int      @default(0)
+  status    String  @default("sent") // "sent" | "failed"
+  sendError String?
+  sentCount Int     @default(0)
 
-  invitedById   String?
+  invitedById    String?
   invitedByEmail String?
-  lastSentAt    DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime? @updatedAt
+  lastSentAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime? @updatedAt
 
   @@unique([email, variant])
   @@index([variant])
@@ -623,29 +623,29 @@ model ProposalInvite {
 //   kind = "percent" → virtualValue / inPersonValue are percentage points
 // A null value means the code does not apply to that mode; at least one is set.
 model DiscountCode {
-  id             String   @id @default(cuid())
-  code           String   @unique // stored uppercased; matched case-insensitively
-  description    String?  // internal label, e.g. "Partner org — NWU"
+  id          String  @id @default(cuid())
+  code        String  @unique // stored uppercased; matched case-insensitively
+  description String? // internal label, e.g. "Partner org — NWU"
 
-  kind           String   @default("fixed") // "fixed" | "percent"
-  virtualValue   Int?     // cents (fixed) or percent points (percent); null = N/A for virtual
-  inPersonValue  Int?     // cents (fixed) or percent points (percent); null = N/A for in-person
+  kind          String @default("fixed") // "fixed" | "percent"
+  virtualValue  Int? // cents (fixed) or percent points (percent); null = N/A for virtual
+  inPersonValue Int? // cents (fixed) or percent points (percent); null = N/A for in-person
 
   // Optional constraints. Null = no limit.
-  active         Boolean  @default(true)
+  active         Boolean   @default(true)
   expiresAt      DateTime?
-  maxRedemptions Int?     // null = unlimited
+  maxRedemptions Int? // null = unlimited
 
   // Denormalized tally of successful (paid) redemptions, kept in sync with
   // the redemption log so the dashboard can sort/filter without a join.
-  redeemedCount  Int      @default(0)
+  redeemedCount Int @default(0)
 
   createdById    String?
   createdByEmail String?
-  createdAt      DateTime @default(now())
+  createdAt      DateTime  @default(now())
   updatedAt      DateTime? @updatedAt
 
-  redemptions    DiscountRedemption[]
+  redemptions DiscountRedemption[]
 
   @@index([active])
   @@map("lcc_discount_codes")
@@ -656,23 +656,23 @@ model DiscountCode {
 // when the code is accepted at checkout, promoted to "redeemed" when payment
 // clears in the webhook. This is the audit trail for tracking usage.
 model DiscountRedemption {
-  id              String   @id @default(cuid())
-  codeId          String
-  code            String   // snapshot of the code text at apply time
-  attendeeId      String?
-  attendeeEmail   String?
-  attendanceMode  String?
+  id             String  @id @default(cuid())
+  codeId         String
+  code           String // snapshot of the code text at apply time
+  attendeeId     String?
+  attendeeEmail  String?
+  attendanceMode String?
 
   basePriceCents  Int
   discountCents   Int
   finalPriceCents Int
 
-  status          String   @default("applied") // "applied" | "redeemed" | "voided"
+  status          String    @default("applied") // "applied" | "redeemed" | "voided"
   stripeSessionId String?
   redeemedAt      DateTime?
-  createdAt       DateTime @default(now())
+  createdAt       DateTime  @default(now())
 
-  discount        DiscountCode @relation(fields: [codeId], references: [id], onDelete: Cascade)
+  discount DiscountCode @relation(fields: [codeId], references: [id], onDelete: Cascade)
 
   @@index([codeId])
   @@index([attendeeEmail])
@@ -688,15 +688,15 @@ model DiscountRedemption {
 // A recurring weekly availability rule for one team member, e.g. Mondays
 // 09:00–12:00. Times are wall-clock in the member's own timezone (User.timezone).
 model MemberAvailability {
-  id         String   @id @default(cuid())
-  userId     String
-  weekday    Int      // 0 = Sunday … 6 = Saturday
-  startMin   Int      // minutes from midnight, local to the member's tz (e.g. 540 = 09:00)
-  endMin     Int      // minutes from midnight (must be > startMin)
-  active     Boolean  @default(true)
-  createdAt  DateTime @default(now())
+  id        String   @id @default(cuid())
+  userId    String
+  weekday   Int // 0 = Sunday … 6 = Saturday
+  startMin  Int // minutes from midnight, local to the member's tz (e.g. 540 = 09:00)
+  endMin    Int // minutes from midnight (must be > startMin)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
 
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("lcc_member_availability")
@@ -714,7 +714,7 @@ model AvailabilityException {
   note      String?
   createdAt DateTime @default(now())
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("lcc_availability_exceptions")
@@ -725,27 +725,27 @@ model AvailabilityException {
 // presents free slots to the invitee at /book/[token]. Optionally tied to a
 // Presenter (a "proposed" submitter) but can also target a manual email.
 model BookingInvite {
-  id             String   @id @default(cuid())
-  token          String   @unique
+  id    String @id @default(cuid())
+  token String @unique
 
-  inviteeName    String
-  inviteeEmail   String
-  presenterId    String?  // set when inviting an existing proposed presenter
+  inviteeName  String
+  inviteeEmail String
+  presenterId  String? // set when inviting an existing proposed presenter
 
-  memberIds      String[] // User ids whose availability is pooled
-  durationMin    Int      @default(30)
-  title          String?  // e.g. "Conversation about your proposal"
-  message        String?  // personal note shown on the booking page
+  memberIds   String[] // User ids whose availability is pooled
+  durationMin Int      @default(30)
+  title       String? // e.g. "Conversation about your proposal"
+  message     String? // personal note shown on the booking page
 
-  status         String   @default("sent") // "sent" | "booked" | "canceled" | "expired"
-  expiresAt      DateTime?
+  status    String    @default("sent") // "sent" | "booked" | "canceled" | "expired"
+  expiresAt DateTime?
 
   invitedById    String?
   invitedByEmail String?
-  createdAt      DateTime @default(now())
+  createdAt      DateTime  @default(now())
   updatedAt      DateTime? @updatedAt
 
-  booking        Booking?
+  booking Booking?
 
   @@index([status])
   @@map("lcc_booking_invites")
@@ -755,25 +755,25 @@ model BookingInvite {
 // A confirmed booking from an invite. assignedUserId is whoever was free for
 // the chosen slot (pooled first-available) and hosts the Zoom meeting.
 model Booking {
-  id             String   @id @default(cuid())
-  inviteId       String   @unique
+  id             String @id @default(cuid())
+  inviteId       String @unique
   assignedUserId String
 
-  startAt        DateTime // absolute UTC
-  endAt          DateTime
-  inviteeTz      String   // timezone the invitee booked in, for display
+  startAt   DateTime // absolute UTC
+  endAt     DateTime
+  inviteeTz String // timezone the invitee booked in, for display
 
-  zoomMeetingId  String?
-  zoomJoinUrl    String?
-  zoomStartUrl   String?
-  zoomError      String?  // set if Zoom creation failed (booking still stands)
+  zoomMeetingId String?
+  zoomJoinUrl   String?
+  zoomStartUrl  String?
+  zoomError     String? // set if Zoom creation failed (booking still stands)
 
-  status         String   @default("confirmed") // "confirmed" | "canceled"
-  canceledAt     DateTime?
-  createdAt      DateTime @default(now())
+  status     String    @default("confirmed") // "confirmed" | "canceled"
+  canceledAt DateTime?
+  createdAt  DateTime  @default(now())
 
-  invite         BookingInvite @relation(fields: [inviteId], references: [id], onDelete: Cascade)
-  assignedUser   User          @relation(fields: [assignedUserId], references: [id], onDelete: Cascade)
+  invite       BookingInvite @relation(fields: [inviteId], references: [id], onDelete: Cascade)
+  assignedUser User          @relation(fields: [assignedUserId], references: [id], onDelete: Cascade)
 
   @@index([assignedUserId])
   @@index([startAt])
@@ -799,5 +799,37 @@ model ScheduleSession {
 
   @@index([startTime])
   @@map("lcc_schedule_sessions")
+  @@schema("lcc")
+}
+
+// An ambassador: an educator, program director, or association leader we ask
+// to SHARE the conference with their students/members (not to sponsor). Each
+// carries a personal 20% discount code (created in DiscountCode at queue time,
+// valid through Aug 10) whose redemptions tell us who actually drove signups.
+model Ambassador {
+  id             String    @id @default(cuid())
+  orgName        String
+  // Person to greet; "" greets the organization.
+  contactName    String    @default("")
+  email          String    @unique
+  website        String?
+  // Who they reach, e.g. "healthcare-interpreting certificate students".
+  audience       String?
+  // The individually written "why we thought of you" paragraph in the letter.
+  note           String?
+  // Their shareable discount code (uppercase; row in DiscountCode by `code`).
+  code           String    @unique
+  // pending (loaded) -> queued (in email queue) -> invited (letter sent)
+  status         String    @default("pending")
+  // Unsubscribe + share-link token, unguessable.
+  token          String    @unique
+  invitedAt      DateTime?
+  lastSentAt     DateTime?
+  unsubscribedAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime? @updatedAt
+
+  @@index([status])
+  @@map("lcc_ambassadors")
   @@schema("lcc")
 }

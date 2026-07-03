@@ -4,7 +4,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import {
-  Mail, RefreshCw, Pause, Play, Shuffle, SlidersHorizontal, Loader2, Send, X, Award, Ticket, FlaskConical,
+  Mail, RefreshCw, Pause, Play, Shuffle, SlidersHorizontal, Loader2, Send, X, Award, Ticket, FlaskConical, Megaphone,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
@@ -45,11 +45,13 @@ type QueueData = {
   pending: PendingItem[];
   recent?: RecentItem[];
   sponsorProspects?: number;
+  ambassadorsPending?: number;
 };
 
 const TYPE_META: Record<string, { label: string; cls: string; Icon: typeof Award }> = {
   sponsor: { label: "Sponsor", cls: "bg-amber-50 text-amber-700 border-amber-200", Icon: Award },
   attendee: { label: "Attendee", cls: "bg-teal-50 text-teal-700 border-teal-200", Icon: Ticket },
+  ambassador: { label: "Ambassador", cls: "bg-violet-50 text-violet-700 border-violet-200", Icon: Megaphone },
   test: { label: "Test", cls: "bg-slate-100 text-slate-600 border-slate-200", Icon: FlaskConical },
 };
 
@@ -95,6 +97,7 @@ export default function EmailQueuePage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [rowBusy, setRowBusy] = useState<string | null>(null);
   const [queuingSponsors, setQueuingSponsors] = useState(false);
+  const [queuingAmbassadors, setQueuingAmbassadors] = useState(false);
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [view, setView] = useState<"queued" | "sent">("queued");
   const [showSettings, setShowSettings] = useState(false);
@@ -178,6 +181,18 @@ export default function EmailQueuePage() {
       flash(r.ok ? `${j.queued || 0} sponsor invite${(j.queued || 0) === 1 ? "" : "s"} added to the queue, paced with the attendees.` : (j.error || "Could not add sponsors to the queue."));
     } finally {
       setQueuingSponsors(false);
+      load();
+    }
+  }
+
+  async function queueAllAmbassadors() {
+    setQueuingAmbassadors(true);
+    try {
+      const r = await fetch("/api/ambassadors/queue", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+      const j = await r.json().catch(() => ({}));
+      flash(r.ok ? `${j.queued || 0} ambassador letter${(j.queued || 0) === 1 ? "" : "s"} added to the queue; their 20% codes are live.` : (j.error || "Could not queue ambassador letters."));
+    } finally {
+      setQueuingAmbassadors(false);
       load();
     }
   }
@@ -305,6 +320,24 @@ export default function EmailQueuePage() {
               </div>
             )}
 
+            {/* Ambassadors loaded but not yet queued — pull them into this one place */}
+            {isAdmin && (data?.ambassadorsPending || 0) > 0 && (
+              <div className="mb-4 rounded-xl border border-violet-300 bg-violet-50 px-4 py-3 flex flex-wrap items-center gap-3">
+                <Megaphone className="w-4 h-4 text-violet-600 shrink-0" />
+                <span className="text-sm text-violet-900">
+                  <strong>{data?.ambassadorsPending}</strong> ambassador{(data?.ambassadorsPending || 0) === 1 ? " letter isn’t" : " letters aren’t"} in the queue yet — professors and program leaders waiting on the <a href="/ambassadors" className="font-bold underline">Ambassadors page</a>. Queue them so their 20% share codes start working.
+                </span>
+                <button
+                  onClick={queueAllAmbassadors}
+                  disabled={queuingAmbassadors}
+                  className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-violet-600 hover:bg-violet-700 disabled:opacity-50 shrink-0"
+                  title="Schedule every loaded ambassador letter into this queue, paced with everything else"
+                >
+                  {queuingAmbassadors ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />} Add all to the queue
+                </button>
+              </div>
+            )}
+
             {/* Past-due explainer: answers "why is the next send in the past?" */}
             {view === "queued" && !data?.paused && overdueCount > 0 && (
               <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-[13px] text-amber-800">
@@ -324,10 +357,10 @@ export default function EmailQueuePage() {
               </button>
               {view === "queued" && (
                 <div className="ml-auto flex items-center gap-1.5 flex-wrap">
-                  {([["all", "All"], ["sponsor", "Sponsors"], ["attendee", "Attendees"], ["test", "Test"]] as const).map(([k, label]) => {
+                  {([["all", "All"], ["sponsor", "Sponsors"], ["attendee", "Attendees"], ["ambassador", "Ambassadors"], ["test", "Test"]] as const).map(([k, label]) => {
                     const count = k === "all" ? pending.length : (typeCounts[k] || 0);
                     const active = typeFilter === k;
-                    if (k === "test" && count === 0) return null;
+                    if ((k === "test" || k === "ambassador") && count === 0) return null;
                     return (
                       <button key={k} onClick={() => setTypeFilter(k)} className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-colors ${active ? "bg-slate-700 text-white border-slate-700" : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"}`}>
                         {label}

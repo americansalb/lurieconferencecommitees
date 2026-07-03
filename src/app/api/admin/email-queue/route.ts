@@ -76,6 +76,12 @@ export async function GET() {
     where: { status: "prospect", mergedIntoId: null, unsubscribedAt: null },
   });
 
+  // Ambassadors loaded on /ambassadors but not yet scheduled, surfaced here so
+  // the queue page stays the one place everything sends from.
+  const ambassadorsPending = await prisma.ambassador.count({
+    where: { status: "pending", unsubscribedAt: null },
+  });
+
   return NextResponse.json({
     counts: counts.reduce<Record<string, number>>((acc, c) => ((acc[c.status] = c._count._all), acc), {}),
     nextScheduledFor: nextDue?.scheduledFor || null,
@@ -87,6 +93,7 @@ export async function GET() {
     pending,
     recent,
     sponsorProspects,
+    ambassadorsPending,
   });
 }
 

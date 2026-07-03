@@ -34,12 +34,15 @@ const STEPS = ["Attendance", "Your name", "Contact", "Personalize", "Review"];
 const emailOk = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
 
 export default function RegisterFunnel({
-  tierLabel, tierEnd, inPersonPrice, virtualPrice,
+  tierLabel, tierEnd, inPersonPrice, virtualPrice, initialCode,
 }: {
   tierLabel: string;
   tierEnd: string;
   inPersonPrice: number;
   virtualPrice: number;
+  // A shared discount code carried in the URL (?code=GARCIA20 from an
+  // ambassador's share link); prefills the review-step code field.
+  initialCode?: string;
 }) {
   const router = useRouter();
   const [step, setStep] = useState(0);
@@ -49,7 +52,7 @@ export default function RegisterFunnel({
 
   // Discount code: entered on the review step, validated server-side so the
   // shown total always matches what the server will charge.
-  const [codeInput, setCodeInput] = useState("");
+  const [codeInput, setCodeInput] = useState((initialCode || "").trim().toUpperCase());
   const [codeBusy, setCodeBusy] = useState(false);
   const [codeError, setCodeError] = useState<string | null>(null);
   const [applied, setApplied] = useState<{ code: string; label: string; finalCents: number; discountCents: number } | null>(null);

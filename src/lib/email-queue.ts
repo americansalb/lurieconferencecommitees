@@ -2,6 +2,7 @@ import { prisma } from "./db";
 import { sendMail } from "./mail";
 import { attendeeFromHeader, attendeeReplyTo, attendeeBcc, attendeeUnsubHeaders } from "./attendees";
 import { sponsorFromHeader, sponsorLetterReplyTo, sponsorUnsubHeaders } from "./sponsors";
+import { ambassadorUnsubHeaders } from "./ambassadors";
 
 // Default sending policy. Tunable via SystemSetting keys with the same names.
 export const DEFAULT_POLICY = {
@@ -350,6 +351,21 @@ export async function prepareQueueDelivery(item: {
     }
     return { skip: false, headers: at?.inviteToken ? attendeeUnsubHeaders(at.inviteToken) : undefined };
   }
+  if (item.recipientType === "ambassador" && item.recipientId) {
+    const am = await prisma.ambassador.findUnique({
+      where: { id: item.recipientId },
+      select: { token: true, unsubscribedAt: true },
+    });
+    if (am?.unsubscribedAt) {
+      await prisma.emailQueue.update({ where: { id: item.id }, data: { status: "skipped" } });
+      await prisma.ambassador.updateMany({
+        where: { id: item.recipientId, status: "queued" },
+        data: { status: "pending" },
+      }).catch(() => {});
+      return { skip: true };
+    }
+    return { skip: false, headers: am?.token ? ambassadorUnsubHeaders(am.token) : undefined };
+  }
   return { skip: false };
 }
 
@@ -358,6 +374,9 @@ export async function prepareQueueDelivery(item: {
 export function queueEnvelope(recipientType: string): { from?: string; replyTo?: string; bcc?: string } {
   if (recipientType === "attendee") return { from: attendeeFromHeader(), replyTo: attendeeReplyTo(), bcc: attendeeBcc() };
   if (recipientType === "sponsor") return { from: sponsorFromHeader(), replyTo: sponsorLetterReplyTo() };
+  // Ambassadors are attendance outreach: replies go to the same inbox that
+  // handles attendee questions (the letter's own reply-to line says kevin@).
+  if (recipientType === "ambassador") return { from: sponsorFromHeader(), replyTo: sponsorLetterReplyTo() };
   return {};
 }
 
@@ -373,6 +392,9 @@ export async function afterQueueSend(item: { recipientType: string; recipientId:
     await prisma.sponsor.updateMany({ where: { id: item.recipientId, status: { in: ["queued"] } }, data: { status: "invited", invitedAt: new Date(), lastSentAt: new Date() } });
     await prisma.sponsor.updateMany({ where: { id: item.recipientId, status: { notIn: ["queued"] } }, data: { lastSentAt: new Date() } });
     await prisma.sponsorEvent.create({ data: { sponsorId: item.recipientId, type: "invite_sent" } }).catch(() => {});
+  } else if (item.recipientType === "ambassador") {
+    await prisma.ambassador.updateMany({ where: { id: item.recipientId, status: { in: ["queued"] } }, data: { status: "invited", invitedAt: new Date(), lastSentAt: new Date() } });
+    await prisma.ambassador.updateMany({ where: { id: item.recipientId, status: { notIn: ["queued"] } }, data: { lastSentAt: new Date() } });
   }
 }
 

@@ -7,6 +7,7 @@ import {
   proposalCallEmail,
   bookingInviteEmail,
   bookingConfirmedInviteeEmail,
+  ambassadorInviteEmail,
 } from "@/lib/mail-templates";
 import { fullBenefits } from "@/lib/sponsors";
 
@@ -150,6 +151,20 @@ export async function GET(
         tz: "America/Chicago",
         joinUrl: null,
         title: "Conversation about your proposal",
+      });
+      break;
+    case "ambassador":
+      html = ambassadorInviteEmail({
+        contactName: "Dr. Elena Garcia",
+        orgName: "College of DuPage — Healthcare Interpreting Certificate",
+        note:
+          "Your healthcare interpreting certificate has put trained interpreters into clinics across the western suburbs, and the students working through it right now are exactly who these two days are for. A conference at a children's hospital, full of the people doing the work they are training to do, is the kind of first professional room a student remembers.",
+        code: "GARCIA20",
+        shareUrl: `${base}/register?code=GARCIA20`,
+        learnMoreUrl: base,
+        unsubscribeUrl: `${base}/api/ambassadors/unsubscribe/preview-token`,
+        dateLabel: "July 3, 2026",
+        assetBase: base,
       });
       break;
     default:

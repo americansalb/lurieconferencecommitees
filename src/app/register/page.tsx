@@ -11,7 +11,7 @@ export const metadata = {
     "Register for the 2026 Lurie Children's and AALB Conference. August 15 and 16, 2026, Chicago. Virtual and in-person tickets available with CEU certification.",
 };
 
-export default function RegisterPage() {
+export default function RegisterPage({ searchParams }: { searchParams?: { code?: string } }) {
   if (registrationClosed()) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 bg-slate-50">
@@ -37,6 +37,7 @@ export default function RegisterPage() {
       tierEnd={tier.end}
       inPersonPrice={live.inPerson}
       virtualPrice={live.virtual}
+      initialCode={searchParams?.code}
     />
   );
 }
