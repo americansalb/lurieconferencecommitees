@@ -705,7 +705,11 @@ export function attendeeConfirmedEmail({
 }) {
   const first = firstName || "there";
   const modeLabel = attendanceMode === "in-person" ? "In-person attendance" : "Virtual attendance";
-  const amount = finalPriceCents != null ? `$${(finalPriceCents / 100).toFixed(2)}` : null;
+  const amountLine = finalPriceCents == null
+    ? null
+    : finalPriceCents === 0
+    ? "Complimentary"
+    : `$${(finalPriceCents / 100).toFixed(2)} paid`;
   return shell(`
     <h1 style="font-size:24px;font-weight:700;margin:0 0 12px 0;letter-spacing:-0.01em;">You&rsquo;re in, ${escapeHtml(first)}.</h1>
     <p style="font-size:15px;line-height:1.65;color:${TEXT};margin:0 0 14px 0;">
@@ -714,7 +718,7 @@ export function attendeeConfirmedEmail({
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:14px 0;border-collapse:separate;">
       <tr><td style="background:#f8fafc;border-left:3px solid ${TEAL};padding:14px 18px;border-radius:6px;">
         <div style="font-size:13px;color:${MUTED};">${escapeHtml(modeLabel)}</div>
-        ${amount ? `<div style="font-size:20px;font-weight:700;color:${TEXT};margin-top:4px;">${amount} paid</div>` : ""}
+        ${amountLine ? `<div style="font-size:20px;font-weight:700;color:${TEXT};margin-top:4px;">${amountLine}</div>` : ""}
         <div style="font-size:13px;color:${MUTED};margin-top:6px;">August 15 &amp; 16, 2026 &middot; Chicago</div>
       </td></tr>
     </table>

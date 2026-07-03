@@ -5,6 +5,7 @@ import { createCheckoutSession, isStripeConfigured } from "@/lib/stripe";
 import { appUrl } from "@/lib/presenters";
 import { activePriceCents, activeTier, registrationClosed } from "@/components/landing/pricing-data";
 import { validateAndApply, DISCOUNT_ERROR_MESSAGES } from "@/lib/discounts";
+import { confirmFreeAttendee } from "@/lib/attendee-mail";
 
 function isEmail(s: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((s || "").trim());
@@ -144,6 +145,21 @@ export async function POST(req: Request) {
         finalPriceCents: finalCents,
         status: "applied",
       },
+    });
+  }
+
+  // A 100%-off code (e.g. partner staff tickets) means nothing to charge.
+  // Stripe payment-mode sessions reject zero totals, so complete the
+  // registration directly and land them on the same success page.
+  if (finalCents === 0) {
+    await confirmFreeAttendee(attendee.id);
+    await prisma.attendeeEvent.create({
+      data: { attendeeId: attendee.id, type: "free_registration_completed", meta: discountCodeText },
+    }).catch(() => {});
+    return NextResponse.json({
+      url: `${appUrl()}/register/success/${attendee.inviteToken}`,
+      token: attendee.inviteToken,
+      free: true,
     });
   }
 
