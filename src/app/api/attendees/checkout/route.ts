@@ -5,6 +5,7 @@ import { createCheckoutSession, isStripeConfigured } from "@/lib/stripe";
 import { appUrl } from "@/lib/presenters";
 import { validateAndApply, normalizeCode, DISCOUNT_ERROR_MESSAGES } from "@/lib/discounts";
 import { firstNameToCode } from "@/lib/codes";
+import { confirmFreeAttendee } from "@/lib/attendee-mail";
 
 export async function POST(req: Request) {
   const { token, discountCode } = await req.json();
@@ -53,6 +54,47 @@ export async function POST(req: Request) {
     codeDiscountCents = outcome.result.discountCents;
     discountCodeId = outcome.result.code.id;
     discountCodeText = outcome.result.code.code;
+  }
+
+  // A 100%-off code (e.g. partner staff tickets) leaves nothing to charge;
+  // Stripe payment-mode sessions reject zero totals. Persist the pricing and
+  // redemption exactly as the paid path would, then complete directly.
+  if (finalCents === 0) {
+    await prisma.attendee.update({
+      where: { id: attendee.id },
+      data: {
+        basePriceCents: baseCents,
+        finalPriceCents: finalCents,
+        discountCodeId,
+        discountCode: discountCodeText,
+        discountCodeCents: codeDiscountCents,
+        status: attendee.status === "rsvp_pending" ? "confirmed" : attendee.status,
+        confirmedAt: attendee.confirmedAt || new Date(),
+      },
+    });
+    if (discountCodeId) {
+      await prisma.discountRedemption.deleteMany({
+        where: { attendeeId: attendee.id, status: "applied" },
+      });
+      await prisma.discountRedemption.create({
+        data: {
+          codeId: discountCodeId,
+          code: discountCodeText!,
+          attendeeId: attendee.id,
+          attendeeEmail: attendee.email,
+          attendanceMode: attendee.attendanceMode,
+          basePriceCents: afterPersonal,
+          discountCents: codeDiscountCents,
+          finalPriceCents: finalCents,
+          status: "applied",
+        },
+      });
+    }
+    await confirmFreeAttendee(attendee.id);
+    await prisma.attendeeEvent.create({
+      data: { attendeeId: attendee.id, type: "free_registration_completed", meta: discountCodeText },
+    }).catch(() => {});
+    return NextResponse.json({ url: `${appUrl()}/attend/${token}/success`, free: true });
   }
 
   const isInPerson = attendee.attendanceMode === "in-person";

@@ -32,3 +32,11 @@ export function activePriceCents(mode: "virtual" | "in-person", now = new Date()
   const price = PRICES[tier.id];
   return mode === "in-person" ? price.inPerson * 100 : price.virtual * 100;
 }
+
+// Registration closes at the end of the event's final day. Without this, the
+// schedule falls through to "Late" forever: the countdown flatlines at zero
+// and the API keeps selling tickets to a conference that already happened.
+export const REGISTRATION_CLOSE = "2026-08-16T23:59:59-05:00";
+export function registrationClosed(now = new Date()): boolean {
+  return now.getTime() > new Date(REGISTRATION_CLOSE).getTime();
+}

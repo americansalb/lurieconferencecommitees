@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import InKindPledge from "@/components/sponsor/InKindPledge";
 
@@ -11,6 +11,11 @@ export const metadata = {
 export default async function FoodPledgePage({ params }: { params: { token: string } }) {
   const sponsor = await prisma.sponsor.findUnique({ where: { applicationToken: params.token } });
   if (!sponsor) notFound();
+
+  // A paid sponsor clicking the pledge link from their original invitation
+  // belongs on their status page; the pledge form would offer to rewrite a
+  // completed payment into a $0 in-kind record.
+  if (sponsor.paid) redirect(`/sponsor/status/${params.token}`);
 
   await prisma.sponsorEvent.create({
     data: { sponsorId: sponsor.id, type: "inkind_pledge_viewed", meta: "food" },

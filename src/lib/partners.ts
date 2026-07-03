@@ -41,20 +41,26 @@ export type Partner = {
 export const PARTNERS: Partner[] = [
   {
     slug: "nicc",
-    orgName: "Northeastern Iowa Community College Foundation",
+    // HOLD — do not send until the relationship is confirmed. The college is
+    // "Northeast Iowa Community College" (Calmar/Peosta, @nicc.edu addresses),
+    // but Alex@dbqfoundation.org belongs to the Community Foundation of
+    // Greater Dubuque — a different 501(c)(3). Either the recipient or the
+    // org copy is wrong; confirm with Kevin which partner is meant, then fix
+    // orgName/intro (or the contact) and set ready back to true.
+    orgName: "Northeast Iowa Community College Foundation",
     shortName: "NICC",
     contactName: "Alex",
     contactEmail: "Alex@dbqfoundation.org",
-    location: "Dubuque, Iowa",
+    location: "Peosta, Iowa",
     freeTickets: 2,
     shareDiscountPct: 25,
     exhibitorDiscountPct: 20,
     staffCode: "NICC-STAFF",
     shareCode: "NICC-FRIENDS",
     intro:
-      "Over the years, Americans Against Language Barriers has had the privilege of training dozens of interpreters for Northeastern Iowa Community College, and NICC has been an official partner of ours through all of it. That is a rare kind of partnership, and it has put skilled, caring interpreters into the rooms where families in Dubuque and across the region most need to be understood.\n\n" +
+      "Over the years, Americans Against Language Barriers has had the privilege of training dozens of interpreters for Northeast Iowa Community College, and NICC has been an official partner of ours through all of it. That is a rare kind of partnership, and it has put skilled, caring interpreters into the rooms where families in Dubuque and across the region most need to be understood.\n\n" +
       "This August, we are co-hosting our Second Joint Conference with Ann & Robert H. Lurie Children's Hospital of Chicago, on language access in American healthcare, and we did not want to mark it without bringing something back to you.",
-    ready: true,
+    ready: false,
   },
 
   // --- Awaiting email and/or a finalized relationship line. Not sendable yet. ---

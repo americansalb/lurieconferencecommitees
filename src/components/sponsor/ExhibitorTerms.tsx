@@ -26,7 +26,7 @@ export function ExhibitorTermsContent() {
         You grant Lurie Children&rsquo;s and AALB a non-exclusive, royalty-free license to use your organization&rsquo;s name and logo to acknowledge your participation on the conference website, signage, program, and related communications. You represent that you have the right to grant this license and that your materials do not infringe any third-party rights.
       </Clause>
       <Clause title="6. Payment, cancellation, and refunds">
-        Your table is confirmed when payment is received. Cancellations requested in writing on or before July 1, 2026 may be refunded less any non-recoverable costs; cancellations after that date, and no-shows, forfeit the fee. The organizers may cancel or reschedule the conference, in which case fees will be refunded or credited.
+        Your table is confirmed when payment is received. Cancellations requested in writing within 14 days of payment, and no later than August 1, 2026, may be refunded less any non-recoverable costs; later cancellations, and no-shows, forfeit the fee. The organizers may cancel or reschedule the conference, in which case fees will be refunded or credited.
       </Clause>
       <Clause title="7. Privacy">
         Information you provide is used by the conference organizers to plan, communicate, and document the event, and is shared with vendors only as needed to deliver event services.

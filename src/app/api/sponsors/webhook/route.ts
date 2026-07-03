@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyWebhookSignature } from "@/lib/stripe";
 import { confirmSponsorPaid } from "@/lib/sponsor-confirm";
+import { confirmAttendeePaid } from "@/lib/attendee-mail";
 
 // Stripe webhook for sponsor checkout.session.completed events.
 // Configure in Stripe dashboard: endpoint URL = https://conference.aalb.org/api/sponsors/webhook
@@ -37,19 +38,29 @@ export async function POST(req: Request) {
     amount_total?: number;
     metadata?: Record<string, string>;
   };
+  const opts = {
+    paymentIntentId: typeof obj.payment_intent === "string" ? obj.payment_intent : null,
+    amountTotal: typeof obj.amount_total === "number" ? obj.amount_total : null,
+    sessionId: obj.id ?? null,
+    source: "webhook",
+  };
+
+  // Cross-dispatch: a single combined Stripe destination pointed here used to
+  // discard attendee payments as "non-sponsor session" — those attendees were
+  // never marked paid and never received their confirmation email.
   if (obj.metadata?.kind !== "sponsor") {
-    return NextResponse.json({ received: true, ignored: "non-sponsor session" });
+    const attendeeId = obj.metadata?.attendeeId;
+    if (attendeeId) {
+      const result = await confirmAttendeePaid(attendeeId, opts);
+      return NextResponse.json({ received: true, kind: "attendee", ...result });
+    }
+    return NextResponse.json({ received: true, ignored: "unrecognized session" });
   }
 
   const sponsorId = obj.metadata?.sponsorId;
   if (!sponsorId) return NextResponse.json({ warning: "no sponsorId in metadata" });
 
-  const result = await confirmSponsorPaid(sponsorId, {
-    paymentIntentId: typeof obj.payment_intent === "string" ? obj.payment_intent : null,
-    amountTotal: typeof obj.amount_total === "number" ? obj.amount_total : null,
-    sessionId: obj.id ?? null,
-    source: "webhook",
-  });
+  const result = await confirmSponsorPaid(sponsorId, opts);
 
-  return NextResponse.json({ received: true, ...result });
+  return NextResponse.json({ received: true, kind: "sponsor", ...result });
 }

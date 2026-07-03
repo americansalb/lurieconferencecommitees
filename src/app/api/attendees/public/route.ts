@@ -3,8 +3,9 @@ import { prisma } from "@/lib/db";
 import { newAttendeeToken } from "@/lib/attendees";
 import { createCheckoutSession, isStripeConfigured } from "@/lib/stripe";
 import { appUrl } from "@/lib/presenters";
-import { activePriceCents, activeTier } from "@/components/landing/pricing-data";
+import { activePriceCents, activeTier, registrationClosed } from "@/components/landing/pricing-data";
 import { validateAndApply, DISCOUNT_ERROR_MESSAGES } from "@/lib/discounts";
+import { confirmFreeAttendee } from "@/lib/attendee-mail";
 
 function isEmail(s: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((s || "").trim());
@@ -14,6 +15,12 @@ function isEmail(s: string): boolean {
 // computes the price from today's active pricing tier, and returns a
 // Stripe Checkout URL the client can redirect to.
 export async function POST(req: Request) {
+  if (registrationClosed()) {
+    return NextResponse.json(
+      { error: "Registration for the 2026 conference has closed. Email contact@aalb.org with any questions." },
+      { status: 410 }
+    );
+  }
   if (!isStripeConfigured()) {
     return NextResponse.json(
       { error: "Registration is temporarily offline. Please email contact@aalb.org." },
@@ -138,6 +145,21 @@ export async function POST(req: Request) {
         finalPriceCents: finalCents,
         status: "applied",
       },
+    });
+  }
+
+  // A 100%-off code (e.g. partner staff tickets) means nothing to charge.
+  // Stripe payment-mode sessions reject zero totals, so complete the
+  // registration directly and land them on the same success page.
+  if (finalCents === 0) {
+    await confirmFreeAttendee(attendee.id);
+    await prisma.attendeeEvent.create({
+      data: { attendeeId: attendee.id, type: "free_registration_completed", meta: discountCodeText },
+    }).catch(() => {});
+    return NextResponse.json({
+      url: `${appUrl()}/register/success/${attendee.inviteToken}`,
+      token: attendee.inviteToken,
+      free: true,
     });
   }
 

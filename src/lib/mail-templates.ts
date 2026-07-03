@@ -1,4 +1,5 @@
 import { SPEAKERS } from "@/components/landing/speakers-data";
+import { sponsorFirstName } from "@/lib/sponsors";
 
 type InviteArgs = {
   name: string;
@@ -16,14 +17,21 @@ const CARD_BG = "#ffffff";
 const TEXT = "#0f172a";
 const MUTED = "#475569";
 
-function shell(inner: string) {
+function shell(inner: string, preheader?: string) {
   return `<!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light">
+    <meta name="supported-color-schemes" content="light">
+  </head>
   <body style="margin:0;padding:0;background:${SHELL_BG};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:${TEXT};">
+    ${preheader ? `<div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">${preheader}</div>` : ""}
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${SHELL_BG};padding:32px 16px;">
       <tr><td align="center">
         <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:${CARD_BG};border-radius:16px;overflow:hidden;border:1px solid #e2e8f0;">
-          <tr><td style="padding:0;height:6px;background:linear-gradient(to right, ${TEAL} 0%, ${TEAL} 50%, ${BLUE} 50%, ${BLUE} 100%);">&nbsp;</td></tr>
+          <tr><td bgcolor="${TEAL}" style="padding:0;height:6px;background-color:${TEAL};background:linear-gradient(to right, ${TEAL} 0%, ${TEAL} 50%, ${BLUE} 50%, ${BLUE} 100%);">&nbsp;</td></tr>
           <tr><td style="padding:32px 32px 24px 32px;">
             <div style="font-size:11px;letter-spacing:0.2em;font-weight:600;color:${TEAL};text-transform:uppercase;">2026 Lurie Children&rsquo;s and AALB Conference</div>
             <div style="font-size:13px;color:${MUTED};margin-top:6px;">True Language Access: Yesterday, Today, and Tomorrow</div>
@@ -150,7 +158,7 @@ function signOff(closing = "Warm regards,") {
 const GLANCE_ROWS = [
   { label: "Location", value: "Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago, 225 E. Chicago Avenue, Chicago, IL 60611" },
   { label: "Dates", value: "Saturday, August 15 &middot; 9:30 AM&ndash;6:30 PM<br/>Sunday, August 16 &middot; 9:00 AM&ndash;4:00 PM" },
-  { label: "CEUs", value: "10+ accredited CEUs (CCHI, NBCMI, RID, and ATA accreditation sought)" },
+  { label: "CEUs", value: "10+ CEU hours (CCHI, NBCMI, RID, and ATA accreditation sought)" },
   { label: "Format", value: "In person, with a virtual option for attendees" },
 ];
 
@@ -553,6 +561,8 @@ export function attendeeAlumniInviteEmail({
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="x-apple-disable-message-reformatting">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
 <title>An Invitation &middot; 2026 Lurie Children&rsquo;s &amp; AALB Conference</title>
 <!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
 <style>
@@ -695,7 +705,11 @@ export function attendeeConfirmedEmail({
 }) {
   const first = firstName || "there";
   const modeLabel = attendanceMode === "in-person" ? "In-person attendance" : "Virtual attendance";
-  const amount = finalPriceCents != null ? `$${(finalPriceCents / 100).toFixed(2)}` : null;
+  const amountLine = finalPriceCents == null
+    ? null
+    : finalPriceCents === 0
+    ? "Complimentary"
+    : `$${(finalPriceCents / 100).toFixed(2)} paid`;
   return shell(`
     <h1 style="font-size:24px;font-weight:700;margin:0 0 12px 0;letter-spacing:-0.01em;">You&rsquo;re in, ${escapeHtml(first)}.</h1>
     <p style="font-size:15px;line-height:1.65;color:${TEXT};margin:0 0 14px 0;">
@@ -704,7 +718,7 @@ export function attendeeConfirmedEmail({
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:14px 0;border-collapse:separate;">
       <tr><td style="background:#f8fafc;border-left:3px solid ${TEAL};padding:14px 18px;border-radius:6px;">
         <div style="font-size:13px;color:${MUTED};">${escapeHtml(modeLabel)}</div>
-        ${amount ? `<div style="font-size:20px;font-weight:700;color:${TEXT};margin-top:4px;">${amount} paid</div>` : ""}
+        ${amountLine ? `<div style="font-size:20px;font-weight:700;color:${TEXT};margin-top:4px;">${amountLine}</div>` : ""}
         <div style="font-size:13px;color:${MUTED};margin-top:6px;">August 15 &amp; 16, 2026 &middot; Chicago</div>
       </td></tr>
     </table>
@@ -806,6 +820,9 @@ export function sponsorInviteEmail({
   for (let i = 0; i < speakerCells.length; i += 2) {
     speakerRows += `<tr>${speakerCells[i]}${speakerCells[i + 1] || `<td width="50%"></td>`}</tr>`;
   }
+  const preheader = compExhibitor
+    ? `A complimentary exhibitor table for ${escapeHtml(companyName)} at the 2026 Lurie Children's & AALB Conference, August 15 and 16 in Chicago.`
+    : `An invitation for ${escapeHtml(companyName)} to sponsor the 2026 Lurie Children's & AALB Conference, August 15 and 16 in Chicago.`;
   return shell(`
     ${heroBanner()}
     <h1 style="font-size:22px;font-weight:700;margin:0 0 14px 0;letter-spacing:-0.01em;">Hi ${escapeHtml(first)},</h1>
@@ -828,7 +845,7 @@ export function sponsorInviteEmail({
     ${button(landingUrl, ctaLabel)}
 
     <p style="font-size:14.5px;line-height:1.7;color:${TEXT};margin:16px 0 0 0;">
-      If you have any questions or want to talk it through, just reply to this email and it reaches me directly. We&rsquo;d be glad to find a fit that works for ${escapeHtml(companyName)}.
+      If you have any questions or want to talk it through, just reply to this email and it reaches our team directly. We&rsquo;d be glad to find a fit that works for ${escapeHtml(companyName)}.
     </p>
 
     ${signOff()}
@@ -841,7 +858,7 @@ export function sponsorInviteEmail({
     <p style="font-size:12px;line-height:1.6;color:${MUTED};margin:10px 0 0 0;">
       ${escapeHtml(postalAddress)}.${unsubscribeUrl ? ` You received this invitation to sponsor the conference. <a href="${unsubscribeUrl}" style="color:${MUTED};text-decoration:underline;">Unsubscribe</a>.` : ""}
     </p>
-  `);
+  `, preheader);
 }
 
 type SponsorLetterArgs = {
@@ -930,6 +947,8 @@ export function sponsorLetterEmail({
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="x-apple-disable-message-reformatting">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
 <title>An Invitation &middot; 2026 Lurie Children&rsquo;s &amp; AALB Conference</title>
 <!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
 <style>
@@ -1115,16 +1134,33 @@ function engravedInKindInvite(kind: "food" | "asl", {
     : `to help feed our Second Joint Conference on language access in American healthcare, August 15 and 16, 2026, in Chicago, as a <strong>Food Sponsor</strong>`;
   const missionPara = isAsl
     ? `A conference about being heard has to include the people for whom American Sign Language is that voice. We are committed to interpreting our sessions in ASL so that Deaf and hard-of-hearing attendees are full participants, never an afterthought, and that commitment is only as real as the interpreters who make it happen.`
-    : `This will be our third meat-free conference in a row, and we intend to keep that promise: every meal will be fully plant-based, with no meat served. It would ring hollow to spend two days insisting that no one should go unheard, and then serve animals who cannot speak for themselves at all. A fully meat-free conference of this size is only possible with Chicago kitchens like yours.`;
+    : `We have kept every conference we host meat-free, and this one will be no different: every meal will be fully plant-based, with no meat served. It would ring hollow to spend two days insisting that no one should go unheard, and then serve animals who cannot speak for themselves at all. A fully meat-free conference of this size is only possible with Chicago kitchens like yours.`;
   const askPara = isAsl
     ? `We are expecting about seventy to eighty attendees in person, plus a virtual audience. What we are really hoping for is a donation of your interpreters&rsquo; time, ASL interpretation for a session, a day, or the full event. If donating the whole thing is not possible, there is an easy middle ground: you could donate some hours and let us cover the rest. Either way, your in-kind donation makes you an official ASL Interpreter Sponsor.`
     : `We are expecting about seventy to eighty attendees in person, plus a virtual audience, so even part of a meal goes a long way. What we are really hoping for is a donation of your food, a plant-based meal, or part of one. If donating the whole thing is not possible, there is an easy middle ground: you could donate part and let us purchase the rest. Either way, your in-kind donation makes you an official Food Sponsor.`;
-  const recognitionLast = isAsl
-    ? "An honorable mention during the sessions your interpreters cover"
-    : "An honorable mention at the meal you provide, before a national audience of interpreters, clinicians, and advocates";
+  // Recognition mirrors the published tier benefits (sponsors.ts TIERS) so the
+  // letter never promises more or less than the website and prospectus do.
+  const recognitionItems = isAsl
+    ? [
+        "Your name and logo on the conference website",
+        "Your name and logo on signage at the conference",
+        "An honorable mention during opening remarks",
+        "Social media thank-you posts",
+        "One flyer or material of yours distributed to attendees",
+        "Two complimentary conference tickets for your team",
+      ]
+    : [
+        "Your name and logo on the conference website",
+        "Your name and logo on signage at the conference",
+        "An honorable mention at the opening and at the meal you provide, before a national audience of interpreters, clinicians, and advocates",
+        "Two complimentary conference tickets for your team",
+      ];
+  // Careful, accurate tax language: the IRS does not allow a deduction for the
+  // value of donated services, and a charity should describe (not value) an
+  // in-kind gift in its acknowledgment.
   const taxLine = isAsl
-    ? "Your in-kind donation of interpreting services is tax-deductible as a charitable contribution to a 501(c)(3), and we are glad to provide a donation receipt for its value"
-    : "Your in-kind food donation is tax-deductible as a charitable contribution to a 501(c)(3), and we are glad to provide a donation receipt for its value";
+    ? "Out-of-pocket costs connected to your donation may be tax-deductible (donated services themselves generally are not), and we will gladly provide a written acknowledgment describing your gift"
+    : "A food donation from your business may be tax-deductible, and we will gladly provide a written acknowledgment describing your gift";
   const ctaLabel = isAsl ? "Sponsor ASL interpretation in kind" : "Sponsor our food in kind";
   const ctaHref = pledgeUrl || site;
   const noteLabel = isAsl ? "Why we thought of you" : "Why we thought of your kitchen";
@@ -1168,6 +1204,8 @@ function engravedInKindInvite(kind: "food" | "asl", {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="x-apple-disable-message-reformatting">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
 <title>An Invitation to be a ${escapeHtml(sponsorLabel)} &middot; 2026 Lurie Children&rsquo;s &amp; AALB Conference</title>
 <!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
 <style>
@@ -1262,11 +1300,7 @@ function engravedInKindInvite(kind: "food" | "asl", {
       ${eyebrow("Your recognition as a " + sponsorLabel)}
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 14px 0;">
         <tr><td bgcolor="#FBF4E2" style="background-color:#FBF4E2;border:1px solid #EAD9AE;border-radius:10px;padding:16px 20px;">
-          ${goldList([
-            "Your name and logo on the conference website",
-            "Your name and logo on signage at the conference",
-            recognitionLast,
-          ], "#3C2E10")}
+          ${goldList(recognitionItems, "#3C2E10")}
         </td></tr>
       </table>
       <div style="font-family:Georgia,'Times New Roman',serif;font-size:13px;line-height:1.7;color:${SOFT};padding:0 0 6px 0;">${taxLine}. Please consult your tax advisor.</div>
@@ -1395,8 +1429,10 @@ export function partnerOfferEmail({
   const eyebrow = (text: string) =>
     `<div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:${GOLD};font-weight:bold;margin:26px 0 14px 0;">${text}</div>`;
 
+  // Plain text only: the render path escapes firstPara (drop cap + body), so
+  // any markup in this fallback would show up literally in the letter.
   const introParas = (intro || "").trim().split(/\n\s*\n/).map((s) => s.trim()).filter(Boolean);
-  const firstPara = introParas[0] || `It is our privilege to count <strong>${escapeHtml(orgName)}</strong> among our partners.`;
+  const firstPara = introParas[0] || `It is our privilege to count ${orgName} among our partners, and we did not want this year's conference to pass without bringing something back to you.`;
   const restParas = introParas.slice(1);
 
   return `<!doctype html>
@@ -1406,6 +1442,8 @@ export function partnerOfferEmail({
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="x-apple-disable-message-reformatting">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
 <title>A Partner Invitation &middot; 2026 Lurie Children&rsquo;s &amp; AALB Conference</title>
 <!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
 <style>
@@ -1554,7 +1592,7 @@ type SponsorInKindPledgeArgs = {
 // in kind through the funnel. Warm, short, and makes clear they are now a
 // tracked sponsor; the team will reach out to coordinate logistics.
 export function sponsorInKindPledgeEmail({ kind, contactName, companyName, provide, arrangementLabel, assetBase }: SponsorInKindPledgeArgs) {
-  const first = (contactName || "").split(" ")[0] || "there";
+  const first = sponsorFirstName(contactName, companyName) || "there";
   const isAsl = kind === "asl";
   const sponsorLabel = isAsl ? "ASL Interpreter Sponsor" : "Food Sponsor";
   const mission = isAsl
@@ -1562,11 +1600,11 @@ export function sponsorInKindPledgeEmail({ kind, contactName, companyName, provi
     : "helping us hold the line on a fully plant-based, meat-free event";
   const provideLabel = isAsl ? "Interpreting you can provide" : "What you can provide";
   const recognitionLast = isAsl
-    ? "An honorable mention during the sessions your interpreters cover"
-    : "An honorable mention at the meal you provide";
+    ? "An honorable mention during opening remarks"
+    : "An honorable mention at the opening and at the meal you provide";
   const taxLine = isAsl
-    ? "Your in-kind donation of interpreting services is tax-deductible as a charitable contribution to a 501(c)(3)"
-    : "Your in-kind food donation is tax-deductible as a charitable contribution to a 501(c)(3)";
+    ? "Out-of-pocket costs connected to your donation may be tax-deductible (donated services themselves generally are not)"
+    : "Your in-kind food donation may be tax-deductible";
   return shell(`
     <h1 style="font-size:23px;font-weight:800;margin:0 0 12px 0;letter-spacing:-0.01em;">Thank you, ${escapeHtml(first)}.</h1>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
@@ -1585,9 +1623,10 @@ export function sponsorInKindPledgeEmail({ kind, contactName, companyName, provi
       "Your name and logo on the conference website",
       "Your name and logo on signage at the conference",
       recognitionLast,
+      "Two complimentary conference tickets for your team",
     ])}
     <p style="font-size:14px;line-height:1.7;color:${MUTED};margin:14px 0 0 0;">
-      ${taxLine}, and we are glad to provide a donation receipt for its value. Please consult your tax advisor.
+      ${taxLine}, and we will gladly provide a written acknowledgment describing your gift. Please consult your tax advisor.
     </p>
     ${signOff("With gratitude,")}
     ${logoLockup(assetBase)}
@@ -1652,11 +1691,13 @@ export function sponsorInKindAcceptanceEmail({
     ? "your coverage, how many interpreters, on-site or remote, a day-of contact, and any materials to send ahead"
     : "what you are providing, which day and meal, delivery or pickup, a day-of contact, allergen notes, and any setup needs";
   const recognitionLast = isAsl
-    ? "An honorable mention during the sessions your interpreters cover"
-    : "An honorable mention at the meal you provide, before a national audience of interpreters, clinicians, and advocates";
+    ? "An honorable mention during opening remarks"
+    : "An honorable mention at the opening and at the meal you provide, before a national audience of interpreters, clinicians, and advocates";
+  // Careful, accurate tax language: donated services are not deductible under
+  // IRS rules, and the acknowledgment describes the gift without valuing it.
   const taxLine = isAsl
-    ? "Your in-kind donation of interpreting services is tax-deductible as a charitable contribution to a 501(c)(3)"
-    : "Your in-kind food donation is tax-deductible as a charitable contribution to a 501(c)(3)";
+    ? "Out-of-pocket costs connected to your donation may be tax-deductible as a charitable contribution to a 501(c)(3); the value of donated services themselves generally is not"
+    : "Your in-kind food donation may be tax-deductible as a charitable contribution to a 501(c)(3)";
 
   // Style primitives shared with the engraved invitations.
   const p = (html: string, mb = 18) =>
@@ -1707,6 +1748,8 @@ export function sponsorInKindAcceptanceEmail({
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="x-apple-disable-message-reformatting">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
 <title>${escapeHtml(sponsorLabel)} &middot; 2026 Lurie Children&rsquo;s &amp; AALB Conference</title>
 <!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
 <style>
@@ -1813,13 +1856,13 @@ export function sponsorInKindAcceptanceEmail({
           ], "#3C2E10")}
         </td></tr>
       </table>
-      <div style="font-family:Georgia,'Times New Roman',serif;font-size:13px;line-height:1.7;color:${SOFT};padding:0 0 6px 0;">${taxLine}. Once your gift is complete, we will send you a formal written acknowledgment for your records, which you can keep for your tax deduction. Please consult your tax advisor.</div>
+      <div style="font-family:Georgia,'Times New Roman',serif;font-size:13px;line-height:1.7;color:${SOFT};padding:0 0 6px 0;">${taxLine}. Once your gift is complete, we will send you a formal written acknowledgment describing it for your records. Please consult your tax advisor about deductibility.</div>
 
-      ${eyebrow("Please be our guest")}
+      ${eyebrow("Please be our guests")}
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 8px 0;">
         <tr><td bgcolor="#F2F6F6" style="background-color:#F2F6F6;border:1px solid #D9E6E8;border-left:3px solid ${TEAL};border-radius:10px;padding:16px 20px;">
           <div style="font-family:Georgia,'Times New Roman',serif;font-size:15px;line-height:1.75;color:${INK};">
-            And this is our favorite part: your sponsorship includes a <strong>complimentary ticket</strong> to the conference, and we would genuinely love to have you there, whether in person in Chicago or online. It is entirely optional, but the seat is yours and you would be most welcome. Just tell us on your sponsor page whether you can join, and who the ticket is for.
+            And this is our favorite part: your sponsorship includes <strong>two complimentary tickets</strong> to the conference, and we would genuinely love to have you there, whether in person in Chicago or online. It is entirely optional, but the seats are yours and you would be most welcome. Just tell us on your sponsor page whether you can join, and who the tickets are for.
           </div>
         </td></tr>
       </table>
@@ -1876,7 +1919,7 @@ export function sponsorApplicationReceivedEmail({
   const first = firstName || "there";
   const amountLine = donatesFoodInstead
     ? "You indicated you would like to donate food in kind rather than make a cash sponsorship. We will be in touch shortly to coordinate menu, quantities, and logistics."
-    : `Your selected level is the <strong>${escapeHtml(tier.name)}</strong> at ${escapeHtml(tier.amountLabel)}, which includes ${tier.ticketsIncluded} conference ticket${tier.ticketsIncluded === 1 ? "" : "s"}.`;
+    : `Your selected level is the <strong>${escapeHtml(tier.name)}</strong> at ${escapeHtml(tier.amountLabel)}, which includes ${tier.ticketsIncluded > 0 ? `${tier.ticketsIncluded} conference ticket${tier.ticketsIncluded === 1 ? "" : "s"}` : "logo recognition at the conference"}.`;
   return shell(`
     <h1 style="font-size:22px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">Thank you, ${escapeHtml(first)}.</h1>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
@@ -1995,7 +2038,7 @@ export function sponsorPaidEmail({
     ? "Complimentary"
     : `$${(amountCents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const receiptSentence = isComplimentary
-    ? "Your complimentary table is all set, there is nothing to pay."
+    ? `Your complimentary ${isExhibitor ? "table" : "sponsorship"} is all set, there is nothing to pay.`
     : `Your payment of <strong>${escapeHtml(amount)}</strong> has been received, and this email is your receipt.`;
   const ticketLine = ticketsIncluded
     ? `${ticketsIncluded} conference ${ticketsIncluded === 1 ? "ticket" : "tickets"}`
@@ -2053,7 +2096,7 @@ export function sponsorPaidEmail({
 
     <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;padding-top:14px;border-top:1px solid #eef1f4;">
       ${isComplimentary
-        ? "This table is complimentary, so there is nothing to pay. Keep this email for your records."
+        ? `This ${isExhibitor ? "table" : "sponsorship"} is complimentary, so there is nothing to pay. Keep this email for your records.`
         : "Your payment may be tax-deductible as a business expense, or as a charitable contribution to the extent it exceeds the value of any benefits received; consult your tax advisor. Keep this email as your receipt."}
     </p>
   `);
@@ -2209,7 +2252,7 @@ export function proposalCallEmail({
     ${sectionHeading("Presentation Details")}
     ${glanceCard([
       { label: "Presentation Length", value: "45 minutes or 60 minutes" },
-      { label: "Submission Deadline", value: "June 30, 2026" },
+      { label: "Review", value: "Proposals are reviewed on a rolling basis; we reply within two weeks" },
     ])}
 
     ${button(submitUrl, "Submit your proposal")}

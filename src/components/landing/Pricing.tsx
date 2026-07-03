@@ -283,7 +283,7 @@ function SavingsNote({
     <p className="text-center text-sm mb-14 max-w-md mx-auto" style={{ color: TOKENS.muted }}>
       Save{" "}
       <span style={{ color: TOKENS.gold, fontWeight: 700 }}>${save}</span>{" "}
-      per in-person ticket by registering before{" "}
+      per in-person ticket by registering through{" "}
       {new Date(tier.end).toLocaleDateString("en-US", { month: "long", day: "numeric", timeZone: "America/Chicago" })}.
     </p>
   );
