@@ -201,8 +201,12 @@ export type AttendeeSource = "invited" | "organic";
 export function attendeeSource(a: { invitedById?: string | null; invitedAt?: string | null }): AttendeeSource {
   return a.invitedById || a.invitedAt ? "invited" : "organic";
 }
+// "Added" (we put them on the list) vs "Signed up" (they registered themselves).
+// Deliberately NOT "Invited": that collides with the funnel step "Not emailed"
+// — a person we added but haven't emailed is "Added · Not emailed", which reads
+// clearly, whereas "Invited · Not emailed" looks contradictory.
 export const ATTENDEE_SOURCE_LABELS: Record<AttendeeSource, string> = {
-  invited: "Invited",
+  invited: "Added",
   organic: "Signed up",
 };
 
