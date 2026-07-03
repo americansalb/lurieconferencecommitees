@@ -6,12 +6,13 @@ import { useEffect, useState, useCallback } from "react";
 import {
   Users, Send, Pause, Play, Loader2, Mail, Check,
   RefreshCw, Zap, FileText, UserPlus, Rocket, Eye, SlidersHorizontal,
-  ChevronDown, ChevronRight, Video, Shuffle,
+  ChevronDown, ChevronRight, Video, Shuffle, GraduationCap,
 } from "lucide-react";
+import { STUDENT_ROSTER_CSV, STUDENT_ROSTER_COUNT, STUDENT_ROSTER_ALUMNI, STUDENT_ROSTER_STUDENT, STUDENT_ROSTER_FORMER } from "@/lib/student-roster";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
 import MobileNav from "@/components/layout/MobileNav";
-import { ATTENDEE_TEMPLATES } from "@/lib/attendees";
+import { ATTENDEE_TEMPLATES, type AttendeeTemplate } from "@/lib/attendees";
 import EmailPreviewModal from "@/components/attendees/EmailPreviewModal";
 import QueueSettingsModal from "@/components/email/QueueSettingsModal";
 import AttendeesView, { type Attendee } from "./AttendeesView";
@@ -67,13 +68,18 @@ export default function AttendeesPage() {
     title: string; message: string; confirmLabel: string; danger?: boolean; onConfirm: () => void;
   } | null>(null);
   const [reinvite, setReinvite] = useState<{ sending: boolean; note: string | null }>({ sending: false, note: null });
+  // One-click AALB student roster load (draft only, nothing sent).
+  const [rosterLoading, setRosterLoading] = useState(false);
+  const [rosterNote, setRosterNote] = useState<string | null>(null);
 
   // Shared composer state
   const [inviteMessage, setInviteMessage] = useState("");
   const [discountPercent, setDiscountPercent] = useState(25);
-  // No default: the admin must explicitly pick Standard or AALB alumni so the
-  // wrong template never goes out by accident.
-  const [template, setTemplate] = useState<"standard" | "alumni" | null>(null);
+  // No default: the admin must explicitly pick a template so the wrong email
+  // never goes out by accident. Any of the four (standard / alumni / student /
+  // former-student) is allowed for manual sends; the roster load carries its
+  // own per-row template.
+  const [template, setTemplate] = useState<AttendeeTemplate | null>(null);
   const [preview, setPreview] = useState<PreviewState | null>(null);
   const [showQueue, setShowQueue] = useState(false);
   const [showQueueList, setShowQueueList] = useState(false);
@@ -185,6 +191,39 @@ export default function AttendeesPage() {
     }
   }
 
+  // One click: load the full baked-in AALB student roster into the pipeline as
+  // "queued" (on the list, NOT emailed) with the 25% discount, each person with
+  // their own template. Nothing sends. Re-clicking only adds people not already
+  // on the list. Jumps to the Attendees tab afterward so they're visible.
+  async function loadStudents() {
+    setRosterLoading(true);
+    setRosterNote(null);
+    try {
+      const res = await fetch("/api/attendees", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ csv: STUDENT_ROSTER_CSV, draftOnly: true, discountPercent: 25 }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setRosterNote(
+          json.created > 0
+            ? `Loaded ${json.created} AALB student${json.created === 1 ? "" : "s"} into the list${json.skipped ? `, ${json.skipped} already there` : ""}. Nothing has been emailed — they're all queued. Open the Attendees tab to see them.`
+            : `Everyone's already on the list${json.skipped ? ` (${json.skipped} skipped)` : ""}. Nothing new to add.`
+        );
+        await load();
+        if (json.created > 0) setTab("attendees");
+      } else {
+        setRosterNote(json.error || "Could not load the roster.");
+      }
+    } catch {
+      setRosterNote("Network error while loading the roster.");
+    } finally {
+      setRosterLoading(false);
+      setTimeout(() => setRosterNote(null), 12000);
+    }
+  }
+
   // Emails-only delivery test: paste addresses separated by commas/spaces/lines,
   // no names. Sends each one right away so seed inboxes get it immediately.
   async function sendDeliveryTest() {
@@ -210,7 +249,9 @@ export default function AttendeesPage() {
   }
 
   const templateLabel = (t: string | null) =>
-    t === "alumni" ? "AALB alumni template" : t === "standard" ? "Standard template" : "No template selected";
+    ATTENDEE_TEMPLATES.find((x) => x.id === t)?.label
+      ? `${ATTENDEE_TEMPLATES.find((x) => x.id === t)!.label} template`
+      : "No template selected";
 
   async function sendQueueEntry(id: string) {
     setSendingEntryId(id);
@@ -508,6 +549,42 @@ export default function AttendeesPage() {
 
             {tab === "invite" && (
               <div>
+                {isAdmin && (
+                  <div className="rounded-xl p-4 shadow-sm mb-4 border" style={{ background: "linear-gradient(180deg,#FBF8F1,#ffffff)", borderColor: "#E6D9B8" }}>
+                    <div className="flex items-start justify-between gap-3 flex-wrap">
+                      <div className="min-w-0">
+                        <div className="text-sm font-bold text-slate-900 inline-flex items-center gap-1.5">
+                          <GraduationCap className="w-4 h-4" style={{ color: "#9A7B2E" }} /> Load AALB students
+                        </div>
+                        <p className="text-xs text-slate-500 mt-1 max-w-xl">
+                          One click adds all <strong>{STUDENT_ROSTER_COUNT.toLocaleString()}</strong> AALB students and alumni to the
+                          list as <strong>queued</strong> — on the list, but <strong>nothing is emailed</strong>. Everyone gets the
+                          25% courtesy and their own gold invitation:{" "}
+                          <strong>{STUDENT_ROSTER_ALUMNI.toLocaleString()}</strong> alumni,{" "}
+                          <strong>{STUDENT_ROSTER_STUDENT}</strong> current students, and{" "}
+                          <strong>{STUDENT_ROSTER_FORMER.toLocaleString()}</strong> former students. Already-added people are skipped,
+                          so it&rsquo;s safe to click again. They&rsquo;re sorted newest session first.
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setConfirmDialog({
+                          title: `Load ${STUDENT_ROSTER_COUNT.toLocaleString()} AALB students?`,
+                          message: "Everyone is added to the Attendees list as queued (not emailed) with the 25% discount and their own gold invitation. Nothing sends until you send it. Anyone already on the list is skipped.",
+                          confirmLabel: "Load them",
+                          onConfirm: () => { setConfirmDialog(null); void loadStudents(); },
+                        })}
+                        disabled={rosterLoading}
+                        className="px-4 py-2 rounded-lg text-sm font-bold text-white shadow-sm inline-flex items-center gap-1.5 disabled:opacity-50 shrink-0"
+                        style={{ background: "#9A7B2E" }}
+                      >
+                        {rosterLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <GraduationCap className="w-4 h-4" />}
+                        {rosterLoading ? "Loading…" : "Load students"}
+                      </button>
+                    </div>
+                    {rosterNote && <div className="mt-2 text-xs font-semibold" style={{ color: "#7A5E1E" }}>{rosterNote}</div>}
+                  </div>
+                )}
+
                 {isAdmin && (
                   <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm mb-4">
                     <div className="flex items-start justify-between gap-3 flex-wrap">

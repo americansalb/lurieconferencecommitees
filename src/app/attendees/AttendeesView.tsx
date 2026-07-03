@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Search, Mail, Send, MapPin, Monitor, Check, Eye } from "lucide-react";
+import { Search, Mail, Send, MapPin, Monitor, Check, Eye, ArrowDownWideNarrow } from "lucide-react";
 import {
   ATTENDEE_STEP_LABELS, ATTENDEE_SOURCE_LABELS, AttendeeStep,
   attendeeStep, attendeeStepMoment, attendeeSource,
@@ -28,6 +28,18 @@ export type Attendee = {
   createdAt: string;
   inviteTemplate?: string | null;
   subjectVariant?: string | null;
+  cohort?: string | null;
+  cohortOrder?: number | null;
+  notes?: string | null;
+};
+
+// The AALB-community relationship badge, derived from the invite template. Only
+// shown for the three community framings; regular invitees get no badge. Gold
+// for alumni (certificate holders), teal for current students, slate for former.
+const RELATIONSHIP_BADGE: Record<string, { label: string; className: string }> = {
+  alumni: { label: "Alumnus", className: "bg-amber-50 text-amber-800 border-amber-200" },
+  student: { label: "AALB student", className: "bg-teal-50 text-teal-700 border-teal-200" },
+  "former-student": { label: "Former student", className: "bg-slate-100 text-slate-600 border-slate-200" },
 };
 
 // The funnel, left to right, in plain language. Each card owns one or more of
@@ -60,9 +72,32 @@ export default function AttendeesView({
   const [cardFilter, setCardFilter] = useState<string>("all");
   const [sourceFilter, setSourceFilter] = useState<"all" | "invited" | "organic">("all");
   const [modeFilter, setModeFilter] = useState<"all" | "in-person" | "virtual">("all");
+  const [relFilter, setRelFilter] = useState<string>("all");
+  const [cohortFilter, setCohortFilter] = useState<string>("all");
+  const [sortNewestSession, setSortNewestSession] = useState(false);
   const [clickedOnly, setClickedOnly] = useState(false);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  // The training sessions present in the loaded list, newest (highest cohort
+  // number) first, for the session filter dropdown. Only AALB students carry a
+  // cohort, so this stays empty until the roster is loaded.
+  const cohorts = useMemo(() => {
+    const seen = new Map<string, number>();
+    for (const a of attendees) {
+      if (!a.cohort) continue;
+      if (!seen.has(a.cohort)) seen.set(a.cohort, a.cohortOrder ?? -1);
+    }
+    return Array.from(seen.entries())
+      .sort((x, y) => y[1] - x[1])
+      .map(([c]) => c);
+  }, [attendees]);
+  // Whether any community members (alumni/student/former) are loaded, so the
+  // relationship filter only appears once there's something to filter.
+  const hasCommunity = useMemo(
+    () => attendees.some((a) => a.inviteTemplate && RELATIONSHIP_BADGE[a.inviteTemplate]),
+    [attendees]
+  );
 
   // Engagement: "delivered" is when the invite was sent (we have no SMTP
   // delivery receipt), "clicked" is when they first loaded their invite link.
@@ -128,6 +163,8 @@ export default function AttendeesView({
       }
       if (sourceFilter !== "all" && attendeeSource(a) !== sourceFilter) return false;
       if (modeFilter !== "all" && a.attendanceMode !== modeFilter) return false;
+      if (relFilter !== "all" && a.inviteTemplate !== relFilter) return false;
+      if (cohortFilter !== "all" && a.cohort !== cohortFilter) return false;
       if (search) {
         const s = search.toLowerCase();
         if (![a.firstName, a.lastName, a.email, a.affiliation].some((v) => v?.toLowerCase().includes(s))) return false;
@@ -136,9 +173,18 @@ export default function AttendeesView({
     });
     if (clickedOnly) {
       list.sort((a, b) => new Date(clickAt(b) || 0).getTime() - new Date(clickAt(a) || 0).getTime());
+    } else if (sortNewestSession) {
+      // Newest training session first (highest cohort number). People with no
+      // cohort sink to the bottom; ties fall back to most-recently added.
+      list.sort((a, b) => {
+        const ao = a.cohortOrder ?? -1;
+        const bo = b.cohortOrder ?? -1;
+        if (bo !== ao) return bo - ao;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
     }
     return list;
-  }, [attendees, activeCard, sourceFilter, modeFilter, clickedOnly, search, stepOf]);
+  }, [attendees, activeCard, sourceFilter, modeFilter, relFilter, cohortFilter, clickedOnly, sortNewestSession, search, stepOf]);
 
   const allShownSelected = filtered.length > 0 && filtered.every((a) => selected.has(a.id));
   function toggleAll() {
@@ -181,6 +227,35 @@ export default function AttendeesView({
           </div>
           <Segmented value={sourceFilter} onChange={(v) => setSourceFilter(v as typeof sourceFilter)} options={[["all", "All sources"], ["invited", "Invited"], ["organic", "Signed up"]]} />
           <Segmented value={modeFilter} onChange={(v) => setModeFilter(v as typeof modeFilter)} options={[["all", "All"], ["in-person", "In-person"], ["virtual", "Virtual"]]} />
+          {hasCommunity && (
+            <Segmented
+              value={relFilter}
+              onChange={setRelFilter}
+              options={[["all", "Everyone"], ["alumni", "Alumni"], ["student", "Students"], ["former-student", "Former"]]}
+            />
+          )}
+          {cohorts.length > 0 && (
+            <select
+              value={cohortFilter}
+              onChange={(e) => setCohortFilter(e.target.value)}
+              title="Filter to one AALB training session"
+              className="text-xs font-semibold border border-slate-200 rounded-lg px-2.5 py-2 text-slate-600 outline-none focus:border-teal-500 bg-white"
+            >
+              <option value="all">All sessions</option>
+              {cohorts.map((c) => (
+                <option key={c} value={c}>Session {c}</option>
+              ))}
+            </select>
+          )}
+          {cohorts.length > 0 && (
+            <button
+              onClick={() => setSortNewestSession((v) => !v)}
+              title="Sort so the most recent training sessions are at the top"
+              className={`inline-flex items-center gap-1.5 text-xs font-semibold border rounded-lg px-3 py-2 transition-colors ${sortNewestSession ? "border-teal-300 bg-teal-50 text-teal-700" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+            >
+              <ArrowDownWideNarrow className="w-3.5 h-3.5" /> Newest session
+            </button>
+          )}
           <button
             onClick={() => setClickedOnly((v) => !v)}
             title="Show everyone who clicked their invite link, with delivered-vs-clicked timing"
@@ -227,15 +302,18 @@ export default function AttendeesView({
         )}
 
         {/* Active-filter hint so it's obvious what the list is showing */}
-        {(activeCard || sourceFilter !== "all" || modeFilter !== "all" || clickedOnly || search) && (
+        {(activeCard || sourceFilter !== "all" || modeFilter !== "all" || relFilter !== "all" || cohortFilter !== "all" || sortNewestSession || clickedOnly || search) && (
           <div className="px-4 py-2 bg-slate-50 border-b border-slate-100 text-[11px] text-slate-500 flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-slate-600">Showing:</span>
             {activeCard && <Pill>{activeCard.label} · {activeCard.sub}</Pill>}
             {sourceFilter !== "all" && <Pill>{sourceFilter === "invited" ? "Invited by us" : "Signed up themselves"}</Pill>}
             {modeFilter !== "all" && <Pill>{modeFilter === "virtual" ? "Virtual" : "In-person"}</Pill>}
+            {relFilter !== "all" && <Pill>{RELATIONSHIP_BADGE[relFilter]?.label || relFilter}</Pill>}
+            {cohortFilter !== "all" && <Pill>Session {cohortFilter}</Pill>}
+            {sortNewestSession && <Pill>Newest session first</Pill>}
             {clickedOnly && <Pill>Clicked their link</Pill>}
             {search && <Pill>“{search}”</Pill>}
-            <button onClick={() => { setCardFilter("all"); setSourceFilter("all"); setModeFilter("all"); setClickedOnly(false); setSearch(""); }} className="ml-auto font-semibold text-slate-500 hover:text-slate-800">Clear all</button>
+            <button onClick={() => { setCardFilter("all"); setSourceFilter("all"); setModeFilter("all"); setRelFilter("all"); setCohortFilter("all"); setSortNewestSession(false); setClickedOnly(false); setSearch(""); }} className="ml-auto font-semibold text-slate-500 hover:text-slate-800">Clear all</button>
           </div>
         )}
 
@@ -283,9 +361,14 @@ export default function AttendeesView({
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-bold text-slate-900 truncate flex items-center gap-2">
                       {a.firstName} {a.lastName}
+                      {a.inviteTemplate && RELATIONSHIP_BADGE[a.inviteTemplate] && (
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${RELATIONSHIP_BADGE[a.inviteTemplate].className}`}>
+                          {RELATIONSHIP_BADGE[a.inviteTemplate].label}
+                        </span>
+                      )}
                       <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded text-slate-500 bg-slate-100">{ATTENDEE_SOURCE_LABELS[source]}</span>
                     </div>
-                    <div className="text-xs text-slate-500 truncate">{a.email}{a.affiliation && ` · ${a.affiliation}`}</div>
+                    <div className="text-xs text-slate-500 truncate">{a.email}{a.affiliation && ` · ${a.affiliation}`}{a.cohort && ` · Session ${a.cohort}`}</div>
                     {clickedOnly && clickAt(a) && (
                       <div className="mt-0.5 text-[11px] text-violet-700 truncate">
                         {deliveredOf(a)

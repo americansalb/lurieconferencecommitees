@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const b = await req.json().catch(() => ({}));
-  const template = b?.template === "alumni" ? "alumni" : "standard";
+  const template = ["standard", "alumni", "student", "former-student"].includes(b?.template) ? String(b.template) : "standard";
   const pct = Math.max(0, Math.min(100, Number.isFinite(b?.discountPercent) ? Number(b.discountPercent) : 25));
   const firstName = (b?.firstName ? String(b.firstName) : "").trim() || "Alex";
   const { subject, html } = buildAttendeeInvite({
