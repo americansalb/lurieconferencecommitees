@@ -1,16 +1,14 @@
 import Link from "next/link";
-import { Check, Calendar, MapPin, Monitor, Video, CalendarPlus, ListChecks, Mail } from "lucide-react";
+import { Calendar, MapPin, Monitor, Video, CalendarPlus, ListChecks, Mail, Train, Ticket } from "lucide-react";
+import {
+  E, Parchment, TicketCard, GoldRule, Eyebrow, Perforation, FactCell, TicketFooter, HostsLockup, Seal,
+} from "@/components/attend/engraved";
 
-const TEAL = "#0E4456";
-const TEAL_DEEP = "#0C3B4B";
-const BLUE = "#2A8FCC";
-const GOLD = "#C9A14B";
-const INK = "#0B1F25";
-const MUTED = "#5A6E76";
-
-// The returning home for a paid attendee: ticket, join link (virtual) or venue
-// (in-person), add-to-calendar, agenda, and how to reach us. Presentational so
-// it can be rendered server-side or screenshotted with mock data.
+// The returning home for a paid attendee, set in the same engraved gold-foil
+// language as the invitation letters and the confirmation ticket: their
+// admission stub up top, then joining details, calendar, and agenda.
+// Presentational so it can be rendered server-side or screenshotted with
+// mock data (see /dev/portal-preview).
 export default function AttendeePortal({
   token, firstName, email, attendanceMode, finalPriceCents, joinUrl, agendaUrl,
 }: {
@@ -23,104 +21,166 @@ export default function AttendeePortal({
   agendaUrl: string;
 }) {
   const isVirtual = attendanceMode === "virtual";
-  const price = finalPriceCents != null ? `$${(finalPriceCents / 100).toFixed(2)}` : null;
+  const paidLabel =
+    finalPriceCents == null ? null
+    : finalPriceCents === 0 ? "Complimentary"
+    : `$${(finalPriceCents / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
 
   return (
-    <div className="min-h-screen px-4 py-10" style={{ background: `linear-gradient(180deg, ${TEAL} 0%, ${TEAL_DEEP} 100%)` }}>
-      <div className="max-w-xl mx-auto">
-        <div className="flex items-center justify-center gap-2.5 mb-6 opacity-90">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logos/aalb-icon.png" alt="AALB" className="h-6 w-auto" style={{ filter: "brightness(0) invert(1)" }} />
-          <span className="w-px h-4 bg-white/30" />
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logos/lurie-icon.png" alt="Lurie Children's" className="h-6 w-auto" style={{ filter: "brightness(0) invert(1)" }} />
-        </div>
-
-        <div className="bg-white rounded-2xl overflow-hidden" style={{ boxShadow: "0 32px 80px -32px rgba(0,0,0,0.45)" }}>
-          <div className="h-1.5" style={{ background: `linear-gradient(90deg, ${TEAL} 0%, ${BLUE} 50%, ${GOLD} 100%)` }} />
-          <div className="p-7 sm:p-9">
-            <div className="flex items-center gap-3 mb-1">
-              <div className="w-11 h-11 rounded-full flex items-center justify-center shrink-0" style={{ background: "#16a34a18", color: "#16a34a" }}>
-                <Check className="w-6 h-6" strokeWidth={2.5} />
-              </div>
-              <div>
-                <div className="text-[11px] font-bold tracking-[0.18em] uppercase" style={{ color: "#16a34a" }}>You&rsquo;re attending</div>
-                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight" style={{ color: INK }}>You&rsquo;re going, {firstName}.</h1>
-              </div>
+    <Parchment>
+      <TicketCard>
+        {/* Compact letterhead: the portal is a returning page, so the head is
+            shorter than the confirmation ticket's but keeps the seal. */}
+        <div
+          className="px-7 sm:px-9 py-6 flex items-center gap-5"
+          style={{ background: `linear-gradient(160deg, ${E.teal} 0%, ${E.tealDeep} 100%)` }}
+        >
+          <div className="shrink-0"><Seal size={72} /></div>
+          <div className="min-w-0">
+            <div className="text-[9px] font-bold uppercase" style={{ letterSpacing: "0.3em", color: E.goldSoft }}>
+              Lurie Children&rsquo;s &middot; AALB
             </div>
-            <p className="text-sm leading-relaxed mt-2" style={{ color: MUTED }}>
-              This is your portal for the 2026 Lurie Children&rsquo;s &amp; AALB Conference. Bookmark it, everything you need is here.
-            </p>
-
-            {/* Ticket */}
-            <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-              <Cell label="Dates" value="Aug 15 & 16, 2026" icon={Calendar} />
-              <Cell label="Attendance" value={isVirtual ? "Virtual" : "In-person"} icon={isVirtual ? Monitor : MapPin} />
-              {price && <Cell label="Paid" value={price} icon={Check} />}
+            <div className="mt-1" style={{ fontFamily: E.serif, fontSize: 21, lineHeight: 1.25, color: "#fff" }}>
+              Your Attendee Portal
             </div>
-
-            {/* Join link or venue */}
-            {isVirtual ? (
-              <Section title="Joining live" icon={Video}>
-                {joinUrl ? (
-                  <>
-                    <p className="text-sm" style={{ color: MUTED }}>Use this link to join both days. It&rsquo;s the same link each day.</p>
-                    <a href={joinUrl} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-white" style={{ background: TEAL }}>
-                      <Video className="w-4 h-4" /> Join the conference
-                    </a>
-                  </>
-                ) : (
-                  <p className="text-sm" style={{ color: MUTED }}>Your live join link will appear here, and be emailed to <strong style={{ color: INK }}>{email}</strong>, a few days before the event.</p>
-                )}
-              </Section>
-            ) : (
-              <Section title="The venue" icon={MapPin}>
-                <p className="text-sm" style={{ color: INK }}><strong>Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago</strong></p>
-                <p className="text-sm" style={{ color: MUTED }}>225 E Chicago Ave, Chicago, IL 60611. A short walk from the CTA Red Line, parking garages within two blocks.</p>
-              </Section>
-            )}
-
-            {/* Quick actions */}
-            <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              <a href={`/attend/${token}/event.ics`} className="flex items-center gap-3 rounded-xl border p-3.5 hover:bg-slate-50 transition-colors" style={{ borderColor: "#e6ebee" }}>
-                <CalendarPlus className="w-5 h-5" style={{ color: TEAL }} />
-                <div><div className="text-sm font-bold" style={{ color: INK }}>Add to calendar</div><div className="text-xs" style={{ color: MUTED }}>Both days, .ics</div></div>
-              </a>
-              <Link href={agendaUrl} className="flex items-center gap-3 rounded-xl border p-3.5 hover:bg-slate-50 transition-colors" style={{ borderColor: "#e6ebee" }}>
-                <ListChecks className="w-5 h-5" style={{ color: TEAL }} />
-                <div><div className="text-sm font-bold" style={{ color: INK }}>See the agenda</div><div className="text-xs" style={{ color: MUTED }}>Sessions &amp; speakers</div></div>
-              </Link>
-            </div>
-
-            <div className="mt-6 pt-5 border-t flex items-center gap-2 text-xs" style={{ borderColor: "#eef1f4", color: MUTED }}>
-              <Mail className="w-3.5 h-3.5" />
-              Need to change anything? Email <a className="font-semibold" style={{ color: TEAL }} href="mailto:contact@aalb.org">contact@aalb.org</a>. Refundable through July 15.
+            <div className="mt-1 text-[10px] font-bold uppercase" style={{ letterSpacing: "0.24em", color: "#7FA7B1" }}>
+              August 15&ndash;16, 2026 &middot; Chicago
             </div>
           </div>
         </div>
+        <GoldRule />
 
-        <div className="mt-5 text-center">
-          <Link href="/" className="text-xs font-semibold text-white/70 hover:text-white">← Back to the conference site</Link>
+        <div className="px-7 sm:px-9 pt-6 pb-5">
+          <div className="flex items-baseline justify-between gap-3 flex-wrap">
+            <div>
+              <Eyebrow>Admitted</Eyebrow>
+              <div className="mt-1.5" style={{ fontFamily: E.serif, fontSize: 26, lineHeight: 1.2, color: E.ink }}>
+                You&rsquo;re going, {firstName}.
+              </div>
+            </div>
+            <div
+              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider"
+              style={{ background: "#16a34a14", color: "#15803d", border: "1px solid #16a34a33" }}
+            >
+              <Ticket className="w-3 h-3" /> Confirmed
+            </div>
+          </div>
+          <p className="mt-2 text-[13px] leading-relaxed" style={{ color: E.soft }}>
+            This page is your ticket home for the conference — bookmark it. Everything below
+            stays current as the event approaches.
+          </p>
+
+          <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <FactCell
+              label="Dates"
+              value={<span className="inline-flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" style={{ color: E.goldDark }} />Aug 15 &amp; 16</span>}
+              sub="Sat 9:30–6:30 · Sun 9:00–4:00"
+            />
+            <FactCell
+              label="Attendance"
+              value={
+                <span className="inline-flex items-center gap-1.5">
+                  {isVirtual ? <Monitor className="w-3.5 h-3.5" style={{ color: E.goldDark }} /> : <MapPin className="w-3.5 h-3.5" style={{ color: E.goldDark }} />}
+                  {isVirtual ? "Virtual" : "In-Person"}
+                </span>
+              }
+              sub={isVirtual ? "Live stream, both days" : "Streeterville, Chicago"}
+            />
+            {paidLabel && <FactCell label="Paid" value={paidLabel} sub="Receipt in your inbox" />}
+          </div>
         </div>
+
+        <Perforation />
+
+        <div className="px-7 sm:px-9 pt-6 pb-7">
+          {isVirtual ? (
+            <section>
+              <Eyebrow>Joining live</Eyebrow>
+              {joinUrl ? (
+                <div className="mt-3">
+                  <p className="text-[13px]" style={{ color: E.soft }}>
+                    One link for both days — it goes live shortly before the opening session.
+                  </p>
+                  <a
+                    href={joinUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold text-white"
+                    style={{ background: E.teal, boxShadow: "0 10px 24px -10px rgba(14,85,102,0.55)" }}
+                  >
+                    <Video className="w-4 h-4" /> Join the conference
+                  </a>
+                </div>
+              ) : (
+                <p className="mt-2 text-[13px] leading-relaxed" style={{ color: E.soft }}>
+                  Your live join link will appear right here — and be emailed to{" "}
+                  <strong style={{ color: E.ink }}>{email}</strong> — a few days before the event.
+                </p>
+              )}
+            </section>
+          ) : (
+            <section>
+              <Eyebrow>The venue</Eyebrow>
+              <div className="mt-2.5 rounded-xl overflow-hidden" style={{ border: "1px solid #EAD9AE" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/conference/venue.jpg" alt="Ann & Robert H. Lurie Children's Hospital of Chicago" className="w-full h-36 object-cover" />
+                <div className="px-4 py-3" style={{ background: "#FBF4E2" }}>
+                  <div className="text-[14px] font-bold" style={{ color: "#3C2E10", fontFamily: E.serif }}>
+                    Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago
+                  </div>
+                  <div className="mt-0.5 text-[12px]" style={{ color: "#8a744a" }}>
+                    225 E Chicago Ave, Chicago, IL 60611
+                  </div>
+                  <div className="mt-1.5 text-[11.5px] inline-flex items-center gap-1.5" style={{ color: "#8a744a" }}>
+                    <Train className="w-3 h-3" /> Short walk from the CTA Red Line &middot; parking garages within two blocks
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+
+          <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <a
+              href={`/attend/${token}/event.ics`}
+              className="flex items-center gap-3 rounded-xl px-4 py-3.5 transition-colors hover:brightness-[0.98]"
+              style={{ background: E.cream, border: "1.5px solid " + E.gold }}
+            >
+              <CalendarPlus className="w-5 h-5 shrink-0" style={{ color: E.goldDark }} />
+              <div>
+                <div className="text-[13.5px] font-bold" style={{ color: E.ink }}>Add to calendar</div>
+                <div className="text-[11px]" style={{ color: E.soft }}>Both days, .ics file</div>
+              </div>
+            </a>
+            <Link
+              href={agendaUrl}
+              className="flex items-center gap-3 rounded-xl px-4 py-3.5 transition-colors hover:brightness-[0.98]"
+              style={{ background: E.cream, border: "1.5px solid " + E.gold }}
+            >
+              <ListChecks className="w-5 h-5 shrink-0" style={{ color: E.goldDark }} />
+              <div>
+                <div className="text-[13.5px] font-bold" style={{ color: E.ink }}>See the agenda</div>
+                <div className="text-[11px]" style={{ color: E.soft }}>Sessions &amp; speakers</div>
+              </div>
+            </Link>
+          </div>
+
+          <div className="mt-6 pt-5 text-[11px]" style={{ borderTop: "1px solid #ECE3D0", color: E.soft }}>
+            <Mail className="w-3 h-3 inline mr-1 -mt-0.5" />
+            Need to change anything? Email{" "}
+            <a className="font-semibold" style={{ color: E.teal }} href="mailto:contact@aalb.org">contact@aalb.org</a>.
+            {" "}Refundable through July 15.
+          </div>
+        </div>
+
+        <TicketFooter />
+      </TicketCard>
+
+      <HostsLockup />
+      <div className="mt-4 text-center">
+        <Link href="/" className="text-[11.5px] font-semibold hover:underline" style={{ color: "#8a744a" }}>
+          &larr; Back to the conference site
+        </Link>
       </div>
-    </div>
-  );
-}
-
-function Cell({ label, value, icon: Icon }: { label: string; value: string; icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }> }) {
-  return (
-    <div className="rounded-lg p-3" style={{ background: "#F6F1E6" }}>
-      <div className="text-[9px] font-bold tracking-[0.2em] uppercase mb-1" style={{ color: TEAL }}>{label}</div>
-      <div className="text-sm font-bold inline-flex items-center gap-1.5" style={{ color: INK }}><Icon className="w-3.5 h-3.5" />{value}</div>
-    </div>
-  );
-}
-
-function Section({ title, icon: Icon, children }: { title: string; icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>; children: React.ReactNode }) {
-  return (
-    <div className="mt-6 rounded-xl p-4" style={{ background: "#f7fafb", border: "1px solid #e6ebee" }}>
-      <div className="text-[11px] font-bold tracking-wide uppercase mb-1.5 inline-flex items-center gap-1.5" style={{ color: TEAL }}><Icon className="w-3.5 h-3.5" /> {title}</div>
-      {children}
-    </div>
+    </Parchment>
   );
 }
