@@ -1303,6 +1303,224 @@ export function sponsorAslLetterEmail(args: SponsorFoodLetterArgs) {
   return engravedInKindInvite("asl", args);
 }
 
+type PartnerOfferArgs = {
+  contactName: string;
+  orgName: string;
+  // Handcrafted invitation paragraph(s). Blank lines split paragraphs.
+  intro: string;
+  freeTickets: number;
+  shareDiscountPct: number;
+  exhibitorDiscountPct: number;
+  staffCode: string;
+  shareCode: string;
+  // Public registration funnel (where a code is entered).
+  registerUrl: string;
+  // Sponsor/exhibitor page, for the 20% exhibitor offer.
+  exhibitorUrl?: string;
+  // Conference home, for the secondary "see the conference" link.
+  learnMoreUrl?: string;
+  unsubscribeUrl?: string;
+  assetBase?: string;
+};
+
+// A warm, engraved gold-foil letter thanking an organization AALB partners with
+// (interpreter training, official partnership) and giving them three gifts at
+// the conference: complimentary staff tickets, a shareable attendee discount
+// code, and a partner discount on an exhibitor table. Same letterhead as the
+// sponsor invites; the handcrafted `intro` carries the per-partner voice, and
+// the two codes are shown as prominent chips.
+export function partnerOfferEmail({
+  contactName, orgName, intro, freeTickets, shareDiscountPct, exhibitorDiscountPct,
+  staffCode, shareCode, registerUrl, exhibitorUrl, learnMoreUrl, unsubscribeUrl, assetBase,
+}: PartnerOfferArgs) {
+  const postalAddress = process.env.MAIL_POSTAL_ADDRESS?.trim() || "Americans Against Language Barriers, Chicago, IL";
+  const TEAL_DEEP = "#0C3B4B", INK = "#0B1F25", SOFT = "#5A6E76", GOLD_SOFT = "#F4E9CD", LINK = "#1E6FA2";
+  const base = (assetBase || ASSET_BASE).replace(/\/$/, "");
+  const site = (learnMoreUrl || base).replace(/\/$/, "");
+  const exhibit = (exhibitorUrl || `${site}/sponsor`).replace(/\/$/, "");
+  const register = registerUrl || `${site}/register`;
+  const ticketsWord = freeTickets === 1 ? "ticket" : "tickets";
+  const seatsWord = freeTickets === 1 ? "seat is" : "seats are";
+
+  const cn = (contactName || "").trim();
+  const isPerson = !!cn && cn.toLowerCase() !== orgName.trim().toLowerCase();
+  const honorific = /^(dr|mr|mrs|ms|prof|rev|hon|sr|fr)\.?$/i;
+  const firstNameOf = (n: string) => { const t = n.replace(/,.*$/, "").trim().split(/\s+/); return honorific.test(t[0]) ? (t[1] || t[0]) : t[0]; };
+  const greeting = (isPerson ? firstNameOf(cn) : orgName.replace(/\s*\([^)]*\)\s*$/, "").trim()) || "there";
+
+  const p = (html: string, mb = 18) =>
+    `<p style="margin:0 0 ${mb}px 0;font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.85;color:${INK};">${html}</p>`;
+  const sig = (img: string, name: string, title: string) => `
+        <img src="${base}/sig/${img}" alt="${escapeHtml(name)}" height="40" style="height:40px;width:auto;display:block;margin:0 0 4px 0;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="width:140px;height:1px;background-color:${GOLD};font-size:0;line-height:0;">&nbsp;</td></tr></table>
+        <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:${INK};font-weight:bold;padding-top:8px;">${escapeHtml(name)}</div>
+        <div style="font-family:Helvetica,Arial,sans-serif;font-size:12px;line-height:1.5;color:${SOFT};padding-top:2px;">${escapeHtml(title)}</div>`;
+  const askNo = (n: number) => `
+        <table role="presentation" width="30" height="30" cellpadding="0" cellspacing="0" border="0" style="width:30px;height:30px;background-color:${GOLD};background-image:linear-gradient(135deg,#F4E9CD 0%,#D9B863 30%,#C9A14B 58%,#9C7A2E 88%);border-radius:50%;box-shadow:inset 0 1px 1px rgba(255,255,255,0.5);">
+          <tr><td align="center" valign="middle" style="font-family:Georgia,'Times New Roman',serif;font-size:15px;color:#3C2E10;font-weight:bold;line-height:1;">${n}</td></tr>
+        </table>`;
+  const codeChip = (code: string) => `
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:10px 0 2px 0;"><tr>
+          <td bgcolor="#FBF4E2" style="background-color:#FBF4E2;border:1.5px dashed ${GOLD};border-radius:8px;padding:9px 18px;font-family:'Courier New',Courier,monospace;font-size:18px;letter-spacing:2px;font-weight:bold;color:#3C2E10;">${escapeHtml(code)}</td>
+        </tr></table>`;
+  const gift = (n: number, title: string, body: string) => `
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 18px 0;">
+        <tr>
+          <td valign="top" style="width:30px;">${askNo(n)}</td>
+          <td valign="top" style="padding:1px 0 0 15px;">
+            <div style="font-family:Georgia,'Times New Roman',serif;font-size:16px;line-height:1.4;color:${INK};font-weight:bold;">${title}</div>
+            <div style="font-family:Georgia,'Times New Roman',serif;font-size:14.5px;line-height:1.7;color:${SOFT};padding-top:3px;">${body}</div>
+          </td>
+        </tr>
+      </table>`;
+  const eyebrow = (text: string) =>
+    `<div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:${GOLD};font-weight:bold;margin:26px 0 14px 0;">${text}</div>`;
+
+  const introParas = (intro || "").trim().split(/\n\s*\n/).map((s) => s.trim()).filter(Boolean);
+  const firstPara = introParas[0] || `It is our privilege to count <strong>${escapeHtml(orgName)}</strong> among our partners.`;
+  const restParas = introParas.slice(1);
+
+  return `<!doctype html>
+<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="x-apple-disable-message-reformatting">
+<title>A Partner Invitation &middot; 2026 Lurie Children&rsquo;s &amp; AALB Conference</title>
+<!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
+<style>
+  body{margin:0;padding:0;}
+  a{color:${LINK};}
+  @media only screen and (max-width:600px){
+    .sl-card{width:100%!important;}
+    .sl-body{padding:32px 24px 30px 24px!important;}
+    .sl-head{padding:36px 22px 30px 22px!important;}
+    .sl-foot{padding:24px 22px!important;}
+    .sl-display{font-size:25px!important;line-height:31px!important;}
+    .sl-seal{width:96px!important;height:96px!important;}
+    .sl-dropcap{font-size:46px!important;line-height:36px!important;}
+    .sl-cta{display:block!important;width:100%!important;}
+  }
+</style>
+</head>
+<body style="margin:0;padding:0;width:100%;background-color:#ECE6D7;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#ECE6D7;">With our thanks: complimentary tickets, a ${shareDiscountPct}% code to share, and a partner rate on an exhibitor table at the 2026 Lurie Children&rsquo;s &amp; AALB Conference.</div>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#ECE6D7;background-image:linear-gradient(180deg,#F0EBDD 0%,#E6DECB 100%);">
+<tr><td align="center" style="padding:34px 14px 44px 14px;">
+
+  <table role="presentation" class="sl-card" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background-color:#FBF8F1;border:1px solid #E4DAC4;box-shadow:0 18px 48px rgba(12,59,75,0.18);">
+
+    <tr><td align="center" bgcolor="${TEAL_DEEP}" class="sl-head" style="background-color:${TEAL_DEEP};background-image:linear-gradient(160deg,${TEAL} 0%,${TEAL_DEEP} 100%);padding:44px 40px 34px 40px;">
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;line-height:18px;letter-spacing:4px;text-transform:uppercase;color:${GOLD_SOFT};font-weight:bold;">Lurie Children&rsquo;s &middot; AALB</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:9px;line-height:16px;letter-spacing:3px;text-transform:uppercase;color:#7FA7B1;padding-top:6px;">A Note for Our Partners</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:8px;line-height:10px;letter-spacing:4px;text-transform:uppercase;color:${GOLD};font-weight:bold;padding:22px 0 8px 0;">&middot;&nbsp;Second Joint Conference&nbsp;&middot;</div>
+
+      <!--[if !mso]><!-->
+      <div class="sl-seal" style="width:116px;height:116px;border-radius:50%;background-color:${GOLD};background-image:linear-gradient(135deg,#F4E9CD 0%,#D9B863 28%,#C9A14B 52%,#9C7A2E 78%,#E7D5A4 100%);border:2px solid #F4E9CD;box-shadow:0 6px 16px rgba(0,0,0,0.30),inset 0 1px 2px rgba(255,255,255,0.55);display:inline-block;">
+        <table role="presentation" width="116" height="116" cellpadding="0" cellspacing="0" border="0" style="width:116px;height:116px;"><tr><td align="center" valign="middle" style="text-align:center;">
+          <div style="font-family:Georgia,'Times New Roman',serif;font-size:31px;line-height:30px;color:#3C2E10;font-weight:bold;letter-spacing:1px;">2026</div>
+        </td></tr></table>
+      </div>
+      <!--<![endif]-->
+      <!--[if mso]>
+      <v:oval fill="true" stroke="true" strokecolor="#F4E9CD" strokeweight="2px" style="width:116px;height:116px;">
+        <v:fill type="solid" color="#C9A14B"/>
+        <v:textbox inset="0,0,0,0"><center><div style="font-family:Georgia,serif;font-size:30px;color:#3C2E10;font-weight:bold;">2026</div></center></v:textbox>
+      </v:oval>
+      <![endif]-->
+
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:9px;line-height:13px;letter-spacing:3px;text-transform:uppercase;color:${GOLD};padding:10px 0 0 0;">True Language Access</div>
+      <div class="sl-display" style="font-family:Georgia,'Times New Roman',serif;font-size:31px;line-height:38px;color:#FFFFFF;padding:18px 0 0 0;">The Second Joint Conference</div>
+      <div style="font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:15px;line-height:22px;color:#A9C6CD;padding:7px 0 0 0;">on Language Access in American Healthcare</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;line-height:16px;letter-spacing:3px;text-transform:uppercase;color:#7FA7B1;padding:14px 0 0 0;">August 15&ndash;16, 2026 &middot; Chicago, Illinois</div>
+    </td></tr>
+
+    <tr><td style="height:3px;line-height:3px;font-size:0;background-color:${GOLD};background-image:linear-gradient(90deg,#9C7A2E 0%,#F4E9CD 50%,#9C7A2E 100%);">&nbsp;</td></tr>
+
+    <tr><td class="sl-body" style="padding:40px 52px 36px 52px;background-color:#FBF8F1;">
+      <div style="padding:0 0 18px 0;">
+        <div style="font-family:Georgia,'Times New Roman',serif;font-size:17px;line-height:1.4;color:${INK};font-weight:bold;">${escapeHtml(orgName)}</div>
+        <div style="font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:14px;line-height:1.5;color:${SOFT};padding-top:2px;">Our Partner</div>
+      </div>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="width:46px;height:2px;background-color:${GOLD};font-size:0;line-height:0;">&nbsp;</td></tr></table>
+      <div style="height:22px;line-height:22px;font-size:0;">&nbsp;</div>
+
+      ${p(`Dear ${escapeHtml(greeting)},`)}
+
+      <p style="margin:0 0 18px 0;font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.85;color:${INK};">
+        <span class="sl-dropcap" style="float:left;font-family:Georgia,'Times New Roman',serif;font-size:54px;line-height:42px;color:${TEAL};padding:6px 11px 0 0;">${escapeHtml(firstPara.charAt(0))}</span>${escapeHtml(firstPara.slice(1))}
+      </p>
+      ${restParas.map((para) => p(escapeHtml(para))).join("")}
+
+      ${eyebrow("Three things, with our thanks")}
+
+      ${gift(1, `${freeTickets} complimentary ${ticketsWord}, on us`,
+        `We would love for your team to join us, in person in Chicago or online. Enter this code at registration and your ${seatsWord} free:${codeChip(staffCode)}<span style="font-size:13px;color:${SOFT};">Good for ${freeTickets} ${ticketsWord}.</span>`)}
+
+      ${gift(2, `${shareDiscountPct}% off, for anyone you send our way`,
+        `Share this code as widely as you like, with the interpreters you have trained, your staff, your colleagues. It takes ${shareDiscountPct}% off conference registration, for as many people as want to use it:${codeChip(shareCode)}`)}
+
+      ${gift(3, `${exhibitorDiscountPct}% off an exhibitor table`,
+        `And if you would like a presence on the exhibitor floor, your table is ${exhibitorDiscountPct}% off as our partner. Just reply, or start at <a href="${exhibit}" style="color:${LINK};text-decoration:none;">${escapeHtml(exhibit.replace(/^https?:\/\//, ""))}</a>, and we will apply it for you.`)}
+
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 6px 0;">
+        <tr><td align="center">
+          <!--[if mso]><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
+          <table role="presentation" class="sl-cta" cellpadding="0" cellspacing="0" border="0" style="display:inline-block;vertical-align:middle;margin:6px;"><tr>
+            <td align="center" bgcolor="${TEAL}" style="background-color:${TEAL};border-radius:9px;">
+              <a href="${register}" style="display:inline-block;padding:15px 30px;font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:bold;letter-spacing:0.4px;color:#ffffff;text-decoration:none;border-radius:9px;">Register for the conference &nbsp;&rarr;</a>
+            </td>
+          </tr></table>
+          <!--[if mso]></td><td><![endif]-->
+          <table role="presentation" class="sl-cta" cellpadding="0" cellspacing="0" border="0" style="display:inline-block;vertical-align:middle;margin:6px;"><tr>
+            <td align="center" bgcolor="#FBF8F1" style="background-color:#FBF8F1;border:1.5px solid ${GOLD};border-radius:9px;">
+              <a href="${site}" style="display:inline-block;padding:13.5px 28px;font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:bold;letter-spacing:0.4px;color:${TEAL};text-decoration:none;border-radius:9px;">See the conference</a>
+            </td>
+          </tr></table>
+          <!--[if mso]></td></tr></table><![endif]-->
+        </td></tr>
+      </table>
+
+      ${p(`Thank you for being the kind of partner who makes this work possible. If there is anything at all we can do for you, reply straight to us at <a href="mailto:kevin@aalb.org" style="color:${LINK};text-decoration:none;">kevin@aalb.org</a>, and we would be glad to help.`, 22)}
+
+      <div style="font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.85;color:${INK};padding-bottom:16px;">With gratitude,</div>
+
+      ${sig("kevin.png", "Kevin Thakkar", "Founder & Executive Director, Americans Against Language Barriers")}
+      <div style="height:20px;line-height:20px;font-size:0;">&nbsp;</div>
+      ${sig("iris.png", "Iris Laffitte", "Operations Manager, Americans Against Language Barriers")}
+      <div style="height:20px;line-height:20px;font-size:0;">&nbsp;</div>
+      ${sig("zachary.png", "Zachary Paul Romansky", "Lurie Children’s Language Services Department")}
+
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:34px 0 0 0;border-top:1px solid #ECE3D0;">
+        <tr><td align="center" style="padding:24px 0 4px 0;">
+          <div style="font-family:Helvetica,Arial,sans-serif;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#9A8B6A;padding-bottom:16px;">Presented Jointly By</div>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+            <td align="center" style="padding:0 18px;"><img src="${base}/logos/aalb.png" alt="Americans Against Language Barriers" height="40" style="height:40px;width:auto;display:block;"></td>
+            <td style="border-left:1px solid #E0D5BD;width:1px;font-size:0;">&nbsp;</td>
+            <td align="center" style="padding:0 18px;"><img src="${base}/logos/lurie.png" alt="Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago" height="34" style="height:34px;width:auto;display:block;"></td>
+          </tr></table>
+        </td></tr>
+      </table>
+    </td></tr>
+
+    <tr><td class="sl-foot" align="center" bgcolor="${TEAL_DEEP}" style="background-color:${TEAL_DEEP};background-image:linear-gradient(180deg,${TEAL_DEEP} 0%,#0A3340 100%);padding:26px 40px 28px 40px;">
+      <div style="font-family:Georgia,'Times New Roman',serif;font-size:13px;letter-spacing:0.5px;color:${GOLD_SOFT};">2026 Lurie Children&rsquo;s &amp; AALB Conference</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;line-height:18px;color:#9FB6BC;padding-top:8px;">August 15&ndash;16, 2026 &middot; Chicago, Illinois</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;line-height:18px;color:#9FB6BC;">conference.aalb.org &middot; contact@aalb.org</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;line-height:16px;letter-spacing:0.5px;color:#5F7E86;padding-top:8px;">501(c)(3) &middot; EINs 83-3016421 and 36-2170833</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;line-height:16px;color:#5F7E86;padding-top:10px;">${escapeHtml(postalAddress)}</div>
+      ${unsubscribeUrl ? `<div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;line-height:16px;color:#5F7E86;padding-top:4px;">You received this note as a partner of the conference. <a href="${unsubscribeUrl}" style="color:#9FB6BC;text-decoration:underline;">Unsubscribe</a>.</div>` : ""}
+    </td></tr>
+
+  </table>
+</td></tr>
+</table>
+</body>
+</html>`;
+}
+
 type SponsorInKindPledgeArgs = {
   kind: "food" | "asl";
   contactName: string;
