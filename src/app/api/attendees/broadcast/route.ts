@@ -21,6 +21,17 @@ export async function POST(req: Request) {
   if (!ids.length) return NextResponse.json({ error: "No recipients selected." }, { status: 400 });
   if (!subject || !text) return NextResponse.json({ error: "Subject and message are required." }, { status: 400 });
 
+  // Hard guardrail: a broadcast sends immediately, with no pacing. Refuse to
+  // fire at a whole roster at once — that's how you torch your sender
+  // reputation. Above the cap, narrow the selection or use paced invites.
+  const IMMEDIATE_BROADCAST_CAP = 100;
+  if (ids.length > IMMEDIATE_BROADCAST_CAP) {
+    return NextResponse.json(
+      { error: `You selected ${ids.length} people. An immediate broadcast is capped at ${IMMEDIATE_BROADCAST_CAP} to protect deliverability. Narrow the selection, or use "Queue invites" to send them paced through the queue.` },
+      { status: 400 },
+    );
+  }
+
   const result = await sendBroadcastTo(ids, subject, text, ctaUrl ? { url: ctaUrl, label: ctaLabel || "Open" } : null);
   return NextResponse.json({ ok: true, ...result });
 }

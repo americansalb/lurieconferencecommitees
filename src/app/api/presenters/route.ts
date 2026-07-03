@@ -71,7 +71,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Name and email are required." }, { status: 400 });
     }
 
-    const existing = await prisma.presenter.findUnique({ where: { email: String(email).toLowerCase() } });
+    // Email is no longer unique (one person can have several proposals), so use
+    // findFirst. Kept as a heads-up for the admin add form; the public proposal
+    // intake is what allows genuine multiple submissions.
+    const existing = await prisma.presenter.findFirst({ where: { email: String(email).toLowerCase() } });
     if (existing) {
       return NextResponse.json({ error: "A presenter with this email already exists.", id: existing.id }, { status: 409 });
     }

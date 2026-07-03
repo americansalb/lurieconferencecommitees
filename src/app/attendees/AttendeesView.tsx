@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Search, Mail, Send, MapPin, Monitor, Check, Eye, ArrowDownWideNarrow } from "lucide-react";
+import { Search, Mail, Send, MapPin, Monitor, Check, Eye, ArrowDownWideNarrow, Clock } from "lucide-react";
 import {
   ATTENDEE_STEP_LABELS, ATTENDEE_SOURCE_LABELS, AttendeeStep,
   attendeeStep, attendeeStepMoment, attendeeSource,
@@ -62,12 +62,13 @@ function shortDate(iso: string | null): string {
 }
 
 export default function AttendeesView({
-  attendees, onOpenDetail, onCompose, onSendPortal,
+  attendees, onOpenDetail, onCompose, onSendPortal, onQueueInvites,
 }: {
   attendees: Attendee[];
   onOpenDetail: (id: string) => void;
   onCompose: (ids: string[]) => void;
   onSendPortal: (ids: string[]) => void;
+  onQueueInvites: (ids: string[]) => void;
 }) {
   const [cardFilter, setCardFilter] = useState<string>("all");
   const [sourceFilter, setSourceFilter] = useState<"all" | "invited" | "organic">("all");
@@ -199,6 +200,10 @@ export default function AttendeesView({
     setSelected((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
   }
   const selectedIds = Array.from(selected);
+  // How many of the selected are not-yet-emailed ("queued"): those are the ones
+  // "Queue invites" will actually schedule, so we label the button with it.
+  const statusById = new Map(attendees.map((a) => [a.id, a.status]));
+  const notEmailedSelected = selectedIds.reduce((n, id) => n + (statusById.get(id) === "queued" ? 1 : 0), 0);
 
   return (
     <div>
@@ -321,7 +326,12 @@ export default function AttendeesView({
         {selectedIds.length > 0 && (
           <div className="px-4 py-2.5 bg-teal-50 border-b border-teal-100 flex items-center gap-3 flex-wrap">
             <span className="text-sm font-bold text-teal-800">{selectedIds.length} selected</span>
-            <button onClick={() => onCompose(selectedIds)} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-[#0E5566] text-white inline-flex items-center gap-1.5"><Mail className="w-3.5 h-3.5" /> Email them</button>
+            {notEmailedSelected > 0 && (
+              <button onClick={() => onQueueInvites(selectedIds)} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-[#0E5566] text-white inline-flex items-center gap-1.5" title="Schedule invites for the not-yet-emailed people into the paced queue — they drip out one at a time, never all at once">
+                <Clock className="w-3.5 h-3.5" /> Queue invites ({notEmailedSelected.toLocaleString()})
+              </button>
+            )}
+            <button onClick={() => onCompose(selectedIds)} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 inline-flex items-center gap-1.5" title="Write and send a one-off message now (capped at 100 for deliverability)"><Mail className="w-3.5 h-3.5" /> Email them</button>
             <button onClick={() => onSendPortal(selectedIds)} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-white border border-teal-200 text-teal-700 inline-flex items-center gap-1.5"><Send className="w-3.5 h-3.5" /> Send portal link</button>
             <button onClick={() => setSelected(new Set())} className="text-xs font-semibold text-slate-500 hover:text-slate-700 ml-auto">Clear</button>
           </div>

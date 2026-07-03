@@ -39,10 +39,19 @@ export async function POST(req: Request) {
   }
 
   const normalized = email.trim().toLowerCase();
-  const existing = await prisma.presenter.findUnique({ where: { email: normalized } });
-  if (existing) {
+  // One person may submit more than one proposal. Only block an accidental
+  // re-submission of the SAME talk (same email + same title); different talks
+  // from the same email are welcome, each as its own submission.
+  const dupeTitle = await prisma.presenter.findFirst({
+    where: {
+      email: normalized,
+      talkTitle: { equals: talkTitle.trim(), mode: "insensitive" },
+    },
+    select: { id: true },
+  });
+  if (dupeTitle) {
     return NextResponse.json(
-      { error: `A submission from ${normalized} already exists. Email contact@aalb.org if you need to update it.` },
+      { error: `You've already submitted a talk titled "${talkTitle.trim()}". To propose a different session, give it a different title. Email contact@aalb.org to update an existing submission.` },
       { status: 409 }
     );
   }
