@@ -72,6 +72,9 @@ export default function SponsorFunnel() {
     setSelected(tier);
     setShowMore(false);
     setError(null);
+    // In-kind tiers (Food Sponsor) default to donating, not paying: the whole
+    // point is that a kitchen provides a meal. Paying is the opt-out.
+    setForm((f) => ({ ...f, donateFoodInstead: !!tier.inKind }));
     setStep("details");
     toTop();
   }
@@ -223,7 +226,7 @@ export default function SponsorFunnel() {
         <StepFrame stepKey="apply">
           <Question
             title={<>Tell us about your organization.</>}
-            sub={<><AccentChip tier={selected} /> <span className="ml-1">{selected.amountLabel}</span></>}
+            sub={<><AccentChip tier={selected} /> <span className="ml-1">{selected.inKind ? selected.inKind.valueLabel : selected.amountLabel}</span></>}
           />
           <div className="space-y-3">
             <TextInput label={selected.id === "exhibitor" ? "Full name of your organization" : "Company / organization"} value={form.companyName} onChange={(v) => setF("companyName", v)} required autoFocus />
@@ -236,12 +239,12 @@ export default function SponsorFunnel() {
               <TextInput label="Website" value={form.website} onChange={(v) => setF("website", v)} required placeholder="https://" inputMode="url" />
             )}
 
-            {selected.acceptsAlternativePayment && (
+            {selected.inKind && (
               <ToggleRow
                 checked={form.donateFoodInstead}
                 onToggle={() => setF("donateFoodInstead", !form.donateFoodInstead)}
-                title={selected.acceptsAlternativePayment.label}
-                desc={`${selected.acceptsAlternativePayment.note} We'll coordinate directly instead of charging the ${selected.amountLabel} fee.`}
+                title={`${selected.inKind.action} (in kind)`}
+                desc={`${selected.inKind.requirement} ${selected.inKind.payAlternative} Turn this off to pay instead.`}
                 icon={Heart}
               />
             )}
@@ -307,11 +310,13 @@ export default function SponsorFunnel() {
             <div className="p-5 flex items-start justify-between gap-3" style={{ borderBottom: `1px solid ${C.hairline}` }}>
               <div className="min-w-0">
                 <AccentChip tier={selected} />
-                <div className="text-[26px] font-bold mt-2 tabular-nums" style={{ color: C.ink }}>
-                  {selected.amountLabel}
+                <div className="text-[26px] font-bold mt-2" style={{ color: C.ink }}>
+                  {selected.inKind && form.donateFoodInstead ? selected.inKind.action : selected.amountLabel}
                 </div>
                 <div className="text-[13px]" style={{ color: C.muted }}>
-                  {selected.ticketsIncluded > 0
+                  {selected.inKind && form.donateFoodInstead
+                    ? `${selected.inKind.valueLabel} · includes ${selected.ticketsIncluded} ticket${selected.ticketsIncluded === 1 ? "" : "s"}`
+                    : selected.ticketsIncluded > 0
                     ? `includes ${selected.ticketsIncluded} conference ticket${selected.ticketsIncluded === 1 ? "" : "s"}`
                     : "logo recognition · no ticket included"}
                 </div>
@@ -328,8 +333,8 @@ export default function SponsorFunnel() {
               <SummaryRow label="Phone" value={form.contactPhone || "Not provided"} onEdit={editApply} />
               {form.website && <SummaryRow label="Website" value={form.website} onEdit={editApply} />}
               {form.message && <SummaryRow label="Note" value={form.message} onEdit={editApply} />}
-              {form.donateFoodInstead && selected.id === "food" && (
-                <SummaryRow label="In kind" value="Donating food instead of the fee" onEdit={editApply} />
+              {form.donateFoodInstead && selected.inKind && (
+                <SummaryRow label="In kind" value={`Donating a plant-based meal (${selected.inKind.valueLabel})`} onEdit={editApply} />
               )}
               {selected.id === "exhibitor" && (
                 <>
@@ -430,7 +435,7 @@ function Browse({ onPick }: { onPick: (t: SponsorTier) => void }) {
 
       <TierGroup
         title="Underwrite a piece of the conference"
-        sub="Direct support for meals or ASL interpretation, with recognition on signage and program."
+        sub="Donate a meal in kind, or support ASL interpretation, with recognition on signage and program."
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {specialty.map((tier) => (
@@ -500,11 +505,17 @@ function TierCard({
             <div className="text-[10px] font-bold tracking-widest uppercase" style={{ color: tier.accent }}>
               {tier.name}
             </div>
-            <div className="mt-1.5 text-[30px] font-bold tabular-nums leading-none" style={{ color: C.ink }}>
-              {tier.amountLabel}
-            </div>
-            {tier.acceptsAlternativePayment && (
-              <div className="text-[12px] mt-1" style={{ color: C.muted }}>or {tier.acceptsAlternativePayment.label.toLowerCase()}</div>
+            {tier.inKind ? (
+              <>
+                <div className="mt-1.5 text-[21px] font-bold leading-tight" style={{ color: C.ink }}>
+                  {tier.inKind.action}
+                </div>
+                <div className="text-[12px] mt-1" style={{ color: C.muted }}>{tier.inKind.valueLabel}</div>
+              </>
+            ) : (
+              <div className="mt-1.5 text-[30px] font-bold tabular-nums leading-none" style={{ color: C.ink }}>
+                {tier.amountLabel}
+              </div>
             )}
           </div>
           {tier.ticketsIncluded > 0 && (
@@ -571,8 +582,17 @@ function Details({ tier, onApply }: { tier: SponsorTier; onApply: () => void }) 
         <div className="h-1.5" style={{ background: tier.accent }} />
         <div className="p-5 sm:p-6">
           <div className="flex items-baseline gap-3 flex-wrap">
-            <span className="text-[36px] font-bold tabular-nums leading-none" style={{ color: C.ink }}>{tier.amountLabel}</span>
-            <span className="text-[13px]" style={{ color: C.muted }}>{tier.ticketsIncluded > 0 ? `includes ${tier.ticketsIncluded} conference ticket${tier.ticketsIncluded === 1 ? "" : "s"}` : "logo recognition · no ticket included"}</span>
+            {tier.inKind ? (
+              <>
+                <span className="text-[28px] font-bold leading-none" style={{ color: C.ink }}>{tier.inKind.action}</span>
+                <span className="text-[13px]" style={{ color: C.muted }}>{tier.inKind.valueLabel} · includes {tier.ticketsIncluded} ticket{tier.ticketsIncluded === 1 ? "" : "s"}</span>
+              </>
+            ) : (
+              <>
+                <span className="text-[36px] font-bold tabular-nums leading-none" style={{ color: C.ink }}>{tier.amountLabel}</span>
+                <span className="text-[13px]" style={{ color: C.muted }}>{tier.ticketsIncluded > 0 ? `includes ${tier.ticketsIncluded} conference ticket${tier.ticketsIncluded === 1 ? "" : "s"}` : "logo recognition · no ticket included"}</span>
+              </>
+            )}
           </div>
 
           <div className="text-[11px] font-bold tracking-widest uppercase mt-6 mb-3" style={{ color: C.gold }}>What&rsquo;s included</div>
@@ -585,11 +605,11 @@ function Details({ tier, onApply }: { tier: SponsorTier; onApply: () => void }) 
             ))}
           </ul>
 
-          {tier.acceptsAlternativePayment && (
+          {tier.inKind && (
             <div className="mt-5 rounded-xl p-4" style={{ background: tier.accentSoft, border: `1px solid ${tier.accent}33` }}>
-              <div className="text-[11px] font-bold tracking-widest uppercase" style={{ color: tier.accent }}>Alternative</div>
+              <div className="text-[11px] font-bold tracking-widest uppercase" style={{ color: tier.accent }}>The ask</div>
               <div className="text-[13px] mt-1" style={{ color: C.inkSoft }}>
-                <strong>{tier.acceptsAlternativePayment.label}.</strong> {tier.acceptsAlternativePayment.note}
+                {tier.inKind.requirement} {tier.inKind.payAlternative}
               </div>
             </div>
           )}
@@ -597,7 +617,7 @@ function Details({ tier, onApply }: { tier: SponsorTier; onApply: () => void }) 
       </div>
 
       <div className="mt-7">
-        <PrimaryButton onClick={onApply}>Apply for {tier.name.replace(" Sponsor", "")}</PrimaryButton>
+        <PrimaryButton onClick={onApply}>{tier.inKind ? `Become a ${tier.name.replace(" Sponsor", "")} Sponsor` : `Apply for ${tier.name.replace(" Sponsor", "")}`}</PrimaryButton>
       </div>
 
       <p className="mt-4 text-center text-[12px]" style={{ color: C.mutedSoft }}>

@@ -40,7 +40,9 @@ export default function InvitedLanding({ token, sponsor }: { token: string; spon
   const initialTier = tierById(sponsor.tier);
   const [selected, setSelected] = useState<SponsorTier | null>(initialTier || null);
   const [step, setStep] = useState<Step>(initialTier ? "details" : "choose");
-  const [donateFoodInstead, setDonateFoodInstead] = useState(sponsor.donateFoodInstead);
+  // Food is an in-kind tier: default to donating a meal (paying is the opt-out),
+  // unless this sponsor already recorded a choice.
+  const [donateFoodInstead, setDonateFoodInstead] = useState(sponsor.donateFoodInstead || sponsor.tier === "food");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [doneMode, setDoneMode] = useState<"food" | "paid">("paid");
@@ -52,6 +54,8 @@ export default function InvitedLanding({ token, sponsor }: { token: string; spon
     setSelected(tier);
     setStep("details");
     setError(null);
+    // In-kind tiers (Food Sponsor) default to donating; paying is the opt-out.
+    setDonateFoodInstead(!!tier.inKind);
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -312,11 +316,20 @@ function Details({
             {tier.name}
           </div>
           <div className="mt-1 flex items-baseline gap-3 flex-wrap">
-            <span className="text-4xl font-extrabold text-slate-900 tracking-tight">{payLabel}</span>
-            {disc && <span className="text-lg text-slate-400 line-through">{tier.amountLabel}</span>}
-            <span className="text-sm text-slate-500">{tier.ticketsIncluded > 0 ? `includes ${tier.ticketsIncluded} conference ticket${tier.ticketsIncluded === 1 ? "" : "s"}` : "logo recognition · no ticket included"}</span>
+            {tier.inKind && donateFoodInstead ? (
+              <>
+                <span className="text-3xl font-extrabold text-slate-900 tracking-tight">{tier.inKind.action}</span>
+                <span className="text-sm text-slate-500">{tier.inKind.valueLabel} · includes {tier.ticketsIncluded} ticket{tier.ticketsIncluded === 1 ? "" : "s"}</span>
+              </>
+            ) : (
+              <>
+                <span className="text-4xl font-extrabold text-slate-900 tracking-tight">{payLabel}</span>
+                {disc && <span className="text-lg text-slate-400 line-through">{tier.amountLabel}</span>}
+                <span className="text-sm text-slate-500">{tier.ticketsIncluded > 0 ? `includes ${tier.ticketsIncluded} conference ticket${tier.ticketsIncluded === 1 ? "" : "s"}` : "logo recognition · no ticket included"}</span>
+              </>
+            )}
           </div>
-          {disc && (
+          {disc && !(tier.inKind && donateFoodInstead) && (
             <div className="mt-1 text-xs font-bold uppercase tracking-wide" style={{ color: GOLD }}>
               {pct}% partner discount applied
             </div>
@@ -333,7 +346,7 @@ function Details({
             ))}
           </ul>
 
-          {tier.acceptsAlternativePayment && (
+          {tier.inKind && (
             <label className="mt-5 flex items-start gap-3 p-3 rounded-lg cursor-pointer border"
               style={{ background: donateFoodInstead ? tier.accentSoft : "#fff", borderColor: donateFoodInstead ? tier.accent : "#e2e8f0" }}>
               <input
@@ -343,9 +356,9 @@ function Details({
                 className="mt-0.5"
               />
               <div className="flex-1">
-                <div className="text-sm font-bold text-slate-900">{tier.acceptsAlternativePayment.label}</div>
-                <div className="text-xs text-slate-600 mt-0.5">{tier.acceptsAlternativePayment.note}</div>
-                <div className="text-xs text-slate-500 mt-1">If checked, we&rsquo;ll coordinate directly instead of charging the {tier.amountLabel} sponsorship fee.</div>
+                <div className="text-sm font-bold text-slate-900">{tier.inKind.action} (in kind)</div>
+                <div className="text-xs text-slate-600 mt-0.5">{tier.inKind.requirement}</div>
+                <div className="text-xs text-slate-500 mt-1">{tier.inKind.payAlternative} Uncheck to pay instead.</div>
               </div>
             </label>
           )}

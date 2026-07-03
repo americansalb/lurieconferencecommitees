@@ -38,7 +38,11 @@ export type SponsorTier = {
   variant: "supporter" | "silver" | "gold" | "diamond" | "food" | "asl" | "exhibitor";
   accent: string;
   accentSoft: string;
-  acceptsAlternativePayment?: { label: string; note: string };
+  // In-kind tiers (e.g. Food Sponsor) lead with the donation, not a fee: the
+  // whole ask is that a kitchen provide a meal. `valueLabel` frames the dollar
+  // figure as the approximate VALUE of that donation (a sense of scale), not a
+  // price, and `payAlternative` is the secondary "or just fund it" option.
+  inKind?: { action: string; valueLabel: string; requirement: string; payAlternative: string };
 };
 
 // Pricing and benefits straight from the 2026 Sponsorship & Exhibitor Prospectus.
@@ -120,13 +124,15 @@ export const TIERS: SponsorTier[] = [
     amountCents: 175000,
     amountLabel: "$1,750",
     ticketsIncluded: 2,
-    tagline: "Cover meals for two days of attendees.",
+    tagline: "Donate a plant-based meal for two days of attendees.",
     variant: "food",
     accent: "#92400E",
     accentSoft: "#FEF3C7",
-    acceptsAlternativePayment: {
-      label: "Donate food instead",
-      note: "Food must be vegetarian or vegan. No meat will be served.",
+    inKind: {
+      action: "Donate a plant-based meal",
+      valueLabel: "about $1,750 in value",
+      requirement: "Vegetarian or vegan, no meat is served. Even part of a meal goes a long way.",
+      payAlternative: "Prefer to fund it instead? You can pay the $1,750 and we will arrange the catering.",
     },
     benefits: [
       "Company info and logo on the conference website",
