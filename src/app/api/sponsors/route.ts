@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
-import { newSponsorToken, tierById, sponsorFromHeader, sponsorReplyTo, sponsorStatusUrl } from "@/lib/sponsors";
+import { newSponsorToken, tierById, sponsorFromHeader, sponsorReplyTo, sponsorStatusUrl, sponsorFirstName } from "@/lib/sponsors";
 import { sponsorApplicationReceivedEmail, sponsorAdminNotificationEmail } from "@/lib/mail-templates";
 import { saveLogoFromDataUrl } from "@/lib/sponsor-logo";
 import { isCountedClick } from "@/lib/engagement";
@@ -104,11 +104,14 @@ export async function POST(req: Request) {
   }
 
   // Fire-and-forget notifications. Errors don't block the user's flow.
+  const applicantFirst = sponsorFirstName(sponsor.contactName, sponsor.companyName);
   sendMail({
     to: sponsor.contactEmail,
-    subject: `Thanks for your sponsorship application, ${sponsor.contactName.split(" ")[0]}`,
+    subject: applicantFirst
+      ? `Thanks for your sponsorship application, ${applicantFirst}`
+      : `Thanks for your sponsorship application`,
     html: sponsorApplicationReceivedEmail({
-      firstName: sponsor.contactName.split(" ")[0],
+      firstName: applicantFirst,
       companyName: sponsor.companyName,
       tier: t,
       statusUrl: sponsorStatusUrl(token),

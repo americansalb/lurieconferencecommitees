@@ -6,7 +6,7 @@ import {
   Calendar, MapPin, Check, FileText, Award, Sparkles, ArrowRight,
   Loader2, CreditCard, AlertCircle, ChevronLeft, Heart,
 } from "lucide-react";
-import { TIERS, fullBenefits, tierById, SponsorTier } from "@/lib/sponsors";
+import { TIERS, fullBenefits, tierById, SponsorTier, sponsorFirstName } from "@/lib/sponsors";
 
 const TEAL = "#0E5566";
 const GOLD = "#C9A14B";
@@ -47,7 +47,7 @@ export default function InvitedLanding({ token, sponsor }: { token: string; spon
   const [error, setError] = useState<string | null>(null);
   const [doneMode, setDoneMode] = useState<"food" | "paid">("paid");
 
-  const firstName = sponsor.contactName.split(" ")[0];
+  const firstName = sponsorFirstName(sponsor.contactName, sponsor.companyName);
   const pct = sponsor.discountPercent || 0;
 
   async function pickTier(tier: SponsorTier) {
@@ -87,6 +87,15 @@ export default function InvitedLanding({ token, sponsor }: { token: string; spon
         setDoneMode("food");
         setStep("done");
         setBusy(false);
+        return;
+      }
+
+      // Exhibitor tables collect a table representative and the exhibitor
+      // terms before payment. Route through the status page's completion
+      // wizard instead of jumping straight into Stripe, so no one buys a
+      // table without agreeing to the terms or telling us who staffs it.
+      if (selected.id === "exhibitor") {
+        window.location.href = `/sponsor/status/${token}`;
         return;
       }
 
@@ -172,7 +181,7 @@ function Hero({ firstName, companyName, accent }: { firstName: string; companyNa
         <Award className="w-3 h-3" /> Personal invitation
       </div>
       <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-        Hi {firstName}.
+        {firstName ? `Hi ${firstName}.` : "Hello."}
       </h1>
       <p className="mt-3 text-base text-slate-600 leading-relaxed max-w-xl mx-auto">
         We&rsquo;d be honored to have <strong>{companyName}</strong> partner with us on the 2026 Lurie Children&rsquo;s and AALB Conference.

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { renderSponsorInvite } from "@/lib/sponsor-invite";
+import { renderSponsorInvite, assertPublicBaseUrl } from "@/lib/sponsor-invite";
 import { appUrl } from "@/lib/presenters";
 
 // Re-render every still-pending sponsor invite in the queue from the current
@@ -21,6 +21,11 @@ export async function POST() {
   });
 
   const base = appUrl();
+  try {
+    assertPublicBaseUrl(base);
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 400 });
+  }
   let refreshed = 0;
   for (const row of rows) {
     if (!row.recipientId) continue;

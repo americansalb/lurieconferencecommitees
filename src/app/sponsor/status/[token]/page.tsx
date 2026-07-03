@@ -8,6 +8,7 @@ import ExhibitorCompletionWizard from "./ExhibitorCompletionWizard";
 import LogoUploader from "./LogoUploader";
 import WebsiteField from "./WebsiteField";
 import LogisticsForm from "./LogisticsForm";
+import PostPaymentDetailsForm from "./PostPaymentDetailsForm";
 
 export const dynamic = "force-dynamic";
 
@@ -116,6 +117,10 @@ export default async function SponsorStatusPage({ params }: { params: { token: s
             <div className="mt-5 rounded-lg p-3 text-sm flex items-center gap-2" style={{ background: tier?.accentSoft || "#f8fafc", color: accent }}>
               <Check className="w-4 h-4" /> Payment received. Keep your confirmation email as a receipt for tax purposes.
             </div>
+          )}
+
+          {sponsor.tier === "exhibitor" && sponsor.paid && !sponsor.registreeName && (
+            <PostPaymentDetailsForm token={params.token} accent={accent} />
           )}
 
           {(sponsor.tier === "exhibitor" || isInKind || sponsor.wantsLogo || sponsor.logo) && (

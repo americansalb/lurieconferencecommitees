@@ -2063,19 +2063,25 @@ type SponsorLogoRequestArgs = {
   firstName: string;
   companyName: string;
   statusUrl: string;
+  // Whether a logo already exists on file; the copy must not claim we have a
+  // low-resolution logo when we have none at all.
+  hasLogoOnFile?: boolean;
   assetBase?: string;
 };
 
 // Admin-triggered request for a print/web quality logo, with a one-click path to
 // upload it from the portal, so the team stops chasing logos by hand.
 export function sponsorLogoRequestEmail({
-  firstName, companyName, statusUrl, assetBase,
+  firstName, companyName, statusUrl, hasLogoOnFile = true, assetBase,
 }: SponsorLogoRequestArgs) {
   const first = firstName || "there";
+  const situation = hasLogoOnFile
+    ? `The logo we have on file is a little low-resolution for print and large-screen use, so we&rsquo;d love a higher-quality version.`
+    : `We don&rsquo;t yet have a logo on file for you, and we&rsquo;d love one so your organization is represented properly.`;
   return shell(`
     <h1 style="font-size:22px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">A quick logo request, ${escapeHtml(first)}.</h1>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
-      We&rsquo;re putting together the conference materials and want to feature ${escapeHtml(companyName)} at its best. The logo we have on file is a little low-resolution for print and large-screen use, so we&rsquo;d love a higher-quality version.
+      We&rsquo;re putting together the conference materials and want to feature ${escapeHtml(companyName)} at its best. ${situation}
     </p>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 6px 0;">Ideally:</p>
     ${bulletList([

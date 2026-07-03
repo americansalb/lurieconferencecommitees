@@ -44,6 +44,7 @@ type QueueData = {
   paused: boolean;
   pending: PendingItem[];
   recent?: RecentItem[];
+  sponsorProspects?: number;
 };
 
 const TYPE_META: Record<string, { label: string; cls: string; Icon: typeof Award }> = {
@@ -93,6 +94,7 @@ export default function EmailQueuePage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [rowBusy, setRowBusy] = useState<string | null>(null);
+  const [queuingSponsors, setQueuingSponsors] = useState(false);
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [view, setView] = useState<"queued" | "sent">("queued");
   const [showSettings, setShowSettings] = useState(false);
@@ -161,6 +163,21 @@ export default function EmailQueuePage() {
       flash(`Re-rendered ${(a.refreshed || 0)} attendee and ${(s.refreshed || 0)} sponsor invite${(a.refreshed || 0) + (s.refreshed || 0) === 1 ? "" : "s"} to the latest templates.`);
     } finally {
       setBusy(null);
+      load();
+    }
+  }
+
+  // Pull every waiting sponsor prospect into this one queue (paced with the
+  // attendees), so the queue reflects everything instead of sponsors sitting
+  // apart on the Sponsors page.
+  async function queueAllSponsors() {
+    setQueuingSponsors(true);
+    try {
+      const r = await fetch("/api/sponsors/queue-pending", { method: "POST" });
+      const j = await r.json().catch(() => ({}));
+      flash(r.ok ? `${j.queued || 0} sponsor invite${(j.queued || 0) === 1 ? "" : "s"} added to the queue, paced with the attendees.` : (j.error || "Could not add sponsors to the queue."));
+    } finally {
+      setQueuingSponsors(false);
       load();
     }
   }
@@ -269,6 +286,24 @@ export default function EmailQueuePage() {
               </div>
               {note && <div className="mt-2 text-xs font-semibold text-teal-700">{note}</div>}
             </div>
+
+            {/* Sponsor prospects not yet in the queue — pull them into this one place */}
+            {isAdmin && (data?.sponsorProspects || 0) > 0 && (
+              <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 flex flex-wrap items-center gap-3">
+                <Award className="w-4 h-4 text-amber-600 shrink-0" />
+                <span className="text-sm text-amber-900">
+                  <strong>{data?.sponsorProspects}</strong> sponsor {(data?.sponsorProspects || 0) === 1 ? "prospect isn’t" : "prospects aren’t"} in the queue yet — {(data?.sponsorProspects || 0) === 1 ? "it’s" : "they’re"} waiting on the Sponsors page. Add {(data?.sponsorProspects || 0) === 1 ? "it" : "them"} here so everything sends from one paced queue.
+                </span>
+                <button
+                  onClick={queueAllSponsors}
+                  disabled={queuingSponsors}
+                  className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 disabled:opacity-50 shrink-0"
+                  title="Schedule every waiting sponsor prospect into this queue, paced with the attendees"
+                >
+                  {queuingSponsors ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />} Add all to the queue
+                </button>
+              </div>
+            )}
 
             {/* Past-due explainer: answers "why is the next send in the past?" */}
             {view === "queued" && !data?.paused && overdueCount > 0 && (

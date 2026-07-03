@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sendMail, isMailConfigured } from "@/lib/mail";
 import { sponsorLogoRequestEmail } from "@/lib/mail-templates";
-import { sponsorFromHeader, sponsorReplyTo, sponsorStatusUrl } from "@/lib/sponsors";
+import { sponsorFromHeader, sponsorReplyTo, sponsorStatusUrl, sponsorFirstName } from "@/lib/sponsors";
 
 function isAdmin(role?: string) {
   return role === "admin" || role === "developer";
@@ -19,8 +19,14 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
   }
   const actorEmail = session?.user?.email || null;
 
-  const sponsor = await prisma.sponsor.findUnique({ where: { id: params.id } });
+  const sponsor = await prisma.sponsor.findUnique({
+    where: { id: params.id },
+    include: { logo: { select: { mime: true } } },
+  });
   if (!sponsor) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (sponsor.unsubscribedAt) {
+    return NextResponse.json({ ok: false, error: "This organization has unsubscribed." }, { status: 409 });
+  }
   if (!isMailConfigured()) {
     return NextResponse.json({ error: "Email is not configured on this service." }, { status: 503 });
   }
@@ -28,11 +34,14 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
   try {
     await sendMail({
       to: sponsor.contactEmail,
-      subject: `Could you send a higher-resolution logo for ${sponsor.companyName}?`,
+      subject: sponsor.logo
+        ? `Could you send a higher-resolution logo for ${sponsor.companyName}?`
+        : `Could you send us a logo for ${sponsor.companyName}?`,
       html: sponsorLogoRequestEmail({
-        firstName: (sponsor.contactName || "").split(" ")[0],
+        firstName: sponsorFirstName(sponsor.contactName, sponsor.companyName),
         companyName: sponsor.companyName,
         statusUrl: sponsorStatusUrl(sponsor.applicationToken),
+        hasLogoOnFile: !!sponsor.logo,
       }),
       from: sponsorFromHeader(),
       replyTo: sponsorReplyTo(),

@@ -216,6 +216,24 @@ export function isOfficialPartner(companyName: string): boolean {
   return OFFICIAL_PARTNERS.has((companyName || "").trim().toLowerCase());
 }
 
+// First name for a sponsor greeting. Sponsor rows often carry the organization
+// itself (or nothing) in contactName, and a naive split greets "American
+// Society for Deaf Children" as "Hi American,". Returns the person's first
+// name (skipping honorifics like "Dr.") only when contactName looks like a
+// person; otherwise "" so templates fall back to their neutral greeting.
+const GREETING_HONORIFIC = /^(dr|mr|mrs|ms|prof|rev|hon|sr|fr)\.?$/i;
+export function sponsorFirstName(
+  contactName: string | null | undefined,
+  companyName?: string | null,
+): string {
+  const cn = (contactName || "").trim();
+  if (!cn) return "";
+  const co = (companyName || "").trim().toLowerCase();
+  if (co && cn.toLowerCase() === co) return "";
+  const toks = cn.replace(/,.*$/, "").trim().split(/\s+/);
+  return GREETING_HONORIFIC.test(toks[0]) ? (toks[1] || "") : toks[0];
+}
+
 export const SPONSOR_FROM_NAME_DEFAULT = "AALB & Lurie Children's";
 
 // Subject lines lead with the organization's own name (so it catches their eye

@@ -62,6 +62,10 @@ type RetrievedSession = {
   paid: boolean;
   amountTotal: number | null;
   paymentIntentId: string | null;
+  // Session metadata as set at creation (kind, sponsorId, ...). Callers MUST
+  // check this to prove the session belongs to the record they are about to
+  // mark paid — any paid session ID is otherwise interchangeable.
+  metadata: Record<string, string>;
 };
 
 // Fetch a checkout session straight from Stripe to verify its real payment
@@ -86,6 +90,7 @@ export async function retrieveCheckoutSession(sessionId: string): Promise<Retrie
     paid: data?.payment_status === "paid",
     amountTotal: typeof data?.amount_total === "number" ? data.amount_total : null,
     paymentIntentId: typeof pi === "string" ? pi : (pi?.id ?? null),
+    metadata: data?.metadata && typeof data.metadata === "object" ? data.metadata : {},
   };
 }
 

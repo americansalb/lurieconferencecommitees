@@ -69,6 +69,13 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
     return NextResponse.json({ ok: false, sent: false, error: msg }, { status: 502 });
   }
 
+  // The letter just went out directly; cancel any still-pending queue row so
+  // the background cron doesn't send this contact a second invitation.
+  await prisma.emailQueue.updateMany({
+    where: { recipientType: "sponsor", recipientId: sponsor.id, status: "pending" },
+    data: { status: "canceled" },
+  }).catch(() => {});
+
   const updated = await prisma.sponsor.update({
     where: { id: sponsor.id },
     data: {
