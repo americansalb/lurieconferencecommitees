@@ -49,6 +49,7 @@ interface Presenter {
   needsAudio: boolean;
   needsInternet: boolean;
   needsRecording: boolean;
+  recordingWaived: boolean;
   needsClicker: boolean;
   travelMode: string | null;
   travelOrigin: string | null;
@@ -327,6 +328,11 @@ export default function PresenterDetailPage() {
                     <KV label="Other link" value={presenter.otherSocialUrl} link />
                   </Section>
                   <Section title="Tech & A/V">
+                    {presenter.recordingWaived && (
+                      <div className="col-span-2 mb-1 rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-[13px] font-semibold text-rose-800">
+                        Do NOT record this session — the presenter has a prior written no-record agreement with AALB &amp; Lurie.
+                      </div>
+                    )}
                     <KV label="Microphone" value={yesno(presenter.needsMic)} />
                     <KV label="Projector" value={yesno(presenter.needsProjector)} />
                     <KV label="Audio" value={yesno(presenter.needsAudio)} />

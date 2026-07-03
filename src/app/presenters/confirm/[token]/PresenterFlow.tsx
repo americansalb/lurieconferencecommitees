@@ -56,6 +56,7 @@ export type Initial = {
   accessibilityNeeds: string | null;
   emergencyContact: string | null;
   agreedToRecord: boolean;
+  recordingWaived: boolean;
   agreedToPhoto: boolean;
   agreedToTerms: boolean;
   agreedToCe: boolean;
@@ -1170,16 +1171,19 @@ function ConfirmScreen({
   saving: boolean;
   error: string | null;
 }) {
+  // Recording consent is satisfied EITHER by agreeing to be recorded OR by
+  // confirming a prior written no-record agreement from AALB & Lurie.
+  const recordingOk = !!fields.agreedToRecord || !!fields.recordingWaived;
   const canSubmit =
     !!fields.agreedToTerms &&
     !!headshotPreview &&
-    !!fields.agreedToRecord &&
+    recordingOk &&
     !!fields.agreedToPhoto &&
     !!fields.agreedToCe;
   const missing: string[] = [];
   if (!headshotPreview) missing.push("a photo");
   if (!fields.agreedToTerms) missing.push("the participation confirmation");
-  if (!fields.agreedToRecord || !fields.agreedToPhoto || !fields.agreedToCe) {
+  if (!recordingOk || !fields.agreedToPhoto || !fields.agreedToCe) {
     missing.push("the presenter permissions");
   }
 
@@ -1247,12 +1251,33 @@ function ConfirmScreen({
 
         <div className="space-y-3">
           <div className="text-sm font-semibold text-slate-900">Presenter permissions</div>
-          <p className="text-xs text-slate-500 -mt-2">Please confirm each of the following. All three are required to present at the conference.</p>
+          <p className="text-xs text-slate-500 -mt-2">Please confirm the photo and continuing-education permissions. Recording consent is required <em>unless</em> AALB &amp; Lurie have already agreed, in writing, not to record your session.</p>
           <SoftToggle
             checked={!!fields.agreedToRecord}
             label="My session may be recorded and shared with registered attendees"
-            onToggle={() => set("agreedToRecord", !fields.agreedToRecord)}
+            onToggle={() => {
+              const next = !fields.agreedToRecord;
+              set("agreedToRecord", next);
+              // Consenting to record and a no-record agreement are mutually
+              // exclusive — turning one on clears the other.
+              if (next) set("recordingWaived", false);
+            }}
           />
+          <label className="flex items-start gap-2.5 pl-1 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={!!fields.recordingWaived}
+              onChange={(e) => {
+                const next = e.target.checked;
+                set("recordingWaived", next);
+                if (next) set("agreedToRecord", false);
+              }}
+              className="mt-0.5 w-4 h-4 rounded border-slate-300 text-[#0066B3] focus:ring-[#0066B3]"
+            />
+            <span className="text-[13px] text-slate-600 leading-relaxed">
+              AALB &amp; Lurie have agreed, in prior written communication, <strong>not to record</strong> my session. (Check this only if you have that agreement; it replaces the recording consent above.)
+            </span>
+          </label>
           <SoftToggle
             checked={!!fields.agreedToPhoto}
             label="My photo and likeness may be used for event marketing and social media"

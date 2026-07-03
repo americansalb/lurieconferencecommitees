@@ -283,7 +283,9 @@ model PasswordResetToken {
 
 model Presenter {
   id                 String           @id @default(cuid())
-  email              String           @unique
+  // Not unique: one person may submit more than one proposal (each proposal is
+  // its own Presenter row with its own confirm token). Indexed for lookups.
+  email              String
   name               String
   affiliation        String?
   jobTitle           String?
@@ -336,6 +338,10 @@ model Presenter {
   emergencyContact   String?
 
   agreedToRecord     Boolean          @default(false)
+  // Set when the presenter has a prior written agreement from AALB & Lurie that
+  // their session will NOT be recorded. Satisfies the recording permission in
+  // place of agreedToRecord, so recording consent is optional for them.
+  recordingWaived    Boolean          @default(false)
   agreedToPhoto      Boolean          @default(false)
   agreedToTerms      Boolean          @default(false)
   agreedToCe         Boolean          @default(false)
@@ -354,6 +360,7 @@ model Presenter {
 
   events             PresenterEvent[]
 
+  @@index([email])
   @@map("lcc_presenters")
   @@schema("lcc")
 }

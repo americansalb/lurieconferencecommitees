@@ -17,7 +17,7 @@ const SUBMITTABLE = new Set([
   "needsRecording", "needsClicker",
   "travelMode", "travelOrigin", "needsHotel", "hotelNotes", "needsParking",
   "dietary", "allergies", "accessibilityNeeds", "emergencyContact",
-  "agreedToRecord", "agreedToPhoto", "agreedToTerms", "agreedToCe", "agreedToHeadshot",
+  "agreedToRecord", "recordingWaived", "agreedToPhoto", "agreedToTerms", "agreedToCe", "agreedToHeadshot",
   "declineReason", "requestedChanges", "presenterMessage",
 ]);
 
@@ -52,7 +52,7 @@ export async function GET(_req: Request, { params }: { params: { token: string }
         travelMode: true, travelOrigin: true, travelArrival: true, travelDeparture: true,
         needsHotel: true, hotelNotes: true, needsParking: true,
         dietary: true, allergies: true, accessibilityNeeds: true, emergencyContact: true,
-        agreedToRecord: true, agreedToPhoto: true, agreedToTerms: true,
+        agreedToRecord: true, recordingWaived: true, agreedToPhoto: true, agreedToTerms: true,
         agreedToCe: true, agreedToHeadshot: true,
         status: true, confirmedAt: true, requestedChanges: true,
       },

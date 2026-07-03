@@ -22,7 +22,7 @@ export default async function PresenterConfirmPage({ params }: { params: { token
       travelMode: true, travelOrigin: true, travelArrival: true, travelDeparture: true,
       needsHotel: true, hotelNotes: true, needsParking: true,
       dietary: true, allergies: true, accessibilityNeeds: true, emergencyContact: true,
-      agreedToRecord: true, agreedToPhoto: true, agreedToTerms: true,
+      agreedToRecord: true, recordingWaived: true, agreedToPhoto: true, agreedToTerms: true,
       agreedToCe: true, agreedToHeadshot: true,
       status: true, confirmedAt: true, requestedChanges: true,
       token: true,
