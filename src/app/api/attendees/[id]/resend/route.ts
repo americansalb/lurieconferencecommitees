@@ -2,10 +2,12 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { attendeeFromHeader, attendeeReplyTo, attendeeBcc, attendeeUnsubHeaders, buildAttendeeInvite } from "@/lib/attendees";
+import { buildAttendeeInvite } from "@/lib/attendees";
 import { ensureFirstNameCode } from "@/lib/discounts";
-import { sendMail } from "@/lib/mail";
 
+// Per-person "Queue invite" for an attendee: schedule the invitation into the
+// shared paced Email Queue (the only path that delivers). Supersedes any copy
+// already queued for this person so we never double-send.
 export async function POST(_req: Request, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
@@ -30,38 +32,20 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
   });
 
   try {
-    await sendMail({
-      to: attendee.email,
-      subject,
-      html,
-      from: attendeeFromHeader(),
-      replyTo: attendeeReplyTo(),
-      bcc: attendeeBcc(),
-      headers: attendeeUnsubHeaders(attendee.inviteToken),
-    });
-    await prisma.emailQueue.create({
-      data: { batchId: "attendee-resend", recipientType: "attendee", recipientId: attendee.id, to: attendee.email, subject, html, scheduledFor: new Date(), status: "sent", sentAt: new Date() },
-    }).catch(() => {});
-    // Drop any still-pending paced send for this person so the cron doesn't
-    // also deliver it: sending now supersedes the queued copy.
+    // Supersede any still-pending paced copy so the cron doesn't also send it.
     await prisma.emailQueue.updateMany({
       where: { recipientType: "attendee", recipientId: attendee.id, status: "pending" },
-      data: { status: "cancelled" },
+      data: { status: "canceled" },
     }).catch(() => {});
-    await prisma.attendee.update({
-      where: { id: attendee.id },
-      data: {
-        status: attendee.status === "queued" ? "invited" : attendee.status,
-        invitedAt: attendee.invitedAt || new Date(),
-        lastSentAt: new Date(),
-      },
+    await prisma.emailQueue.create({
+      data: { batchId: "attendee-resend", recipientType: "attendee", recipientId: attendee.id, to: attendee.email, subject, html, scheduledFor: new Date(), status: "pending" },
     });
     await prisma.attendeeEvent.create({
-      data: { attendeeId: attendee.id, type: "invite_resent", actorEmail: adminEmail },
+      data: { attendeeId: attendee.id, type: "invite_requeued", actorEmail: adminEmail },
     });
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, queued: true });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    return NextResponse.json({ ok: false, error: msg }, { status: 502 });
+    return NextResponse.json({ ok: false, error: msg }, { status: 500 });
   }
 }

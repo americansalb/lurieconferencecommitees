@@ -225,7 +225,7 @@ export default function AttendeesView({
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search name, email, org…" className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10" />
           </div>
-          <Segmented value={sourceFilter} onChange={(v) => setSourceFilter(v as typeof sourceFilter)} options={[["all", "All sources"], ["invited", "Invited"], ["organic", "Signed up"]]} />
+          <Segmented value={sourceFilter} onChange={(v) => setSourceFilter(v as typeof sourceFilter)} options={[["all", "All sources"], ["invited", "Added"], ["organic", "Signed up"]]} />
           <Segmented value={modeFilter} onChange={(v) => setModeFilter(v as typeof modeFilter)} options={[["all", "All"], ["in-person", "In-person"], ["virtual", "Virtual"]]} />
           {hasCommunity && (
             <Segmented
@@ -306,7 +306,7 @@ export default function AttendeesView({
           <div className="px-4 py-2 bg-slate-50 border-b border-slate-100 text-[11px] text-slate-500 flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-slate-600">Showing:</span>
             {activeCard && <Pill>{activeCard.label} · {activeCard.sub}</Pill>}
-            {sourceFilter !== "all" && <Pill>{sourceFilter === "invited" ? "Invited by us" : "Signed up themselves"}</Pill>}
+            {sourceFilter !== "all" && <Pill>{sourceFilter === "invited" ? "Added by us" : "Signed up themselves"}</Pill>}
             {modeFilter !== "all" && <Pill>{modeFilter === "virtual" ? "Virtual" : "In-person"}</Pill>}
             {relFilter !== "all" && <Pill>{RELATIONSHIP_BADGE[relFilter]?.label || relFilter}</Pill>}
             {cohortFilter !== "all" && <Pill>Session {cohortFilter}</Pill>}

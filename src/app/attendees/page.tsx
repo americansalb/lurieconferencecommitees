@@ -224,6 +224,17 @@ export default function AttendeesPage() {
     }
   }
 
+  // Shared confirm gate for the roster load, used by both the header shortcut
+  // and the full card on the Invite tab.
+  function confirmLoadStudents() {
+    setConfirmDialog({
+      title: `Load ${STUDENT_ROSTER_COUNT.toLocaleString()} AALB students?`,
+      message: "Everyone is added to the Attendees list as queued (not emailed) with the 25% discount and their own gold invitation. Nothing sends until you send it. Anyone already on the list is skipped.",
+      confirmLabel: "Load them",
+      onConfirm: () => { setConfirmDialog(null); void loadStudents(); },
+    });
+  }
+
   // Emails-only delivery test: paste addresses separated by commas/spaces/lines,
   // no names. Sends each one right away so seed inboxes get it immediately.
   async function sendDeliveryTest() {
@@ -407,6 +418,11 @@ export default function AttendeesPage() {
                 <p className="text-xs text-slate-500">Invite people and track them through to paid attendees</p>
               </div>
               {isAdmin && (
+                <button onClick={confirmLoadStudents} disabled={rosterLoading} className="px-3 py-1.5 rounded-lg text-xs font-bold text-white inline-flex items-center gap-1.5 disabled:opacity-50 shadow-sm" style={{ background: "#9A7B2E" }} title={`Add all ${STUDENT_ROSTER_COUNT.toLocaleString()} AALB students to the list as queued (nothing emailed)`}>
+                  {rosterLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <GraduationCap className="w-3.5 h-3.5" />} Load students
+                </button>
+              )}
+              {isAdmin && (
                 <button onClick={() => setShowEventSettings(true)} className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 inline-flex items-center gap-1.5" title="Set the attendee portal join link and agenda">
                   <Video className="w-3.5 h-3.5" /> Portal
                 </button>
@@ -418,6 +434,10 @@ export default function AttendeesPage() {
 
             {portalNote && (
               <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-800">{portalNote}</div>
+            )}
+
+            {rosterNote && (
+              <div className="mb-4 rounded-lg border px-4 py-2.5 text-sm font-semibold" style={{ borderColor: "#E6D9B8", background: "#FBF8F1", color: "#7A5E1E" }}>{rosterNote}</div>
             )}
 
             {queueStatus && (queueStatus.counts.pending > 0 || queueStatus.paused) && (
@@ -567,12 +587,7 @@ export default function AttendeesPage() {
                         </p>
                       </div>
                       <button
-                        onClick={() => setConfirmDialog({
-                          title: `Load ${STUDENT_ROSTER_COUNT.toLocaleString()} AALB students?`,
-                          message: "Everyone is added to the Attendees list as queued (not emailed) with the 25% discount and their own gold invitation. Nothing sends until you send it. Anyone already on the list is skipped.",
-                          confirmLabel: "Load them",
-                          onConfirm: () => { setConfirmDialog(null); void loadStudents(); },
-                        })}
+                        onClick={confirmLoadStudents}
                         disabled={rosterLoading}
                         className="px-4 py-2 rounded-lg text-sm font-bold text-white shadow-sm inline-flex items-center gap-1.5 disabled:opacity-50 shrink-0"
                         style={{ background: "#9A7B2E" }}
@@ -581,7 +596,6 @@ export default function AttendeesPage() {
                         {rosterLoading ? "Loading…" : "Load students"}
                       </button>
                     </div>
-                    {rosterNote && <div className="mt-2 text-xs font-semibold" style={{ color: "#7A5E1E" }}>{rosterNote}</div>}
                   </div>
                 )}
 
