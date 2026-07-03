@@ -230,10 +230,14 @@ export async function POST(req: Request) {
         lastName: r.lastName,
         affiliation: r.affiliation || null,
         notes: r.notes || null,
+        cohort: r.cohort || null,
+        cohortOrder: r.cohortOrder ?? null,
         discountPercent: pct,
         inviteToken: token,
         inviteMessage: inviteMessage?.trim() || null,
-        inviteTemplate: template,
+        // A row's own template (alumni/student/former-student) wins, so one
+        // paste can carry all three; otherwise the batch-level template applies.
+        inviteTemplate: r.template || template,
         invitedById: invitedById || null,
         status: "queued",
       },

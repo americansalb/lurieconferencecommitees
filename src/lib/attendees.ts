@@ -4,11 +4,21 @@ import { attendeeInviteEmail, attendeeAlumniInviteEmail } from "./mail-templates
 import { firstNameToCode } from "./codes";
 import { pickAlumniSubject } from "./subject-variants";
 
-export type AttendeeTemplate = "standard" | "alumni";
+export type AttendeeTemplate = "standard" | "alumni" | "student" | "former-student";
 export const ATTENDEE_TEMPLATES: { id: AttendeeTemplate; label: string; description: string }[] = [
   { id: "standard", label: "Standard invite", description: "Concise personal invitation with the discounted rate." },
-  { id: "alumni", label: "AALB alumni", description: "Warm, fully-branded invitation for the AALB community." },
+  { id: "alumni", label: "AALB alumni", description: "Gold letter for certificate holders (alumni courtesy)." },
+  { id: "student", label: "AALB student", description: "Gold letter for current or recently-finished students." },
+  { id: "former-student", label: "Former AALB student", description: "Gold letter for past students without a certificate." },
 ];
+
+// The three AALB-community templates all render the same gold letter; only the
+// relationship framing differs. "standard" is the plain invite for everyone else.
+const GOLD_TEMPLATES: Record<string, "alumnus" | "student" | "former-student"> = {
+  alumni: "alumnus",
+  student: "student",
+  "former-student": "former-student",
+};
 
 // Single source for rendering an attendee invitation, so send / resend /
 // preview / view-copy all produce identical output for a given template.
@@ -19,10 +29,14 @@ export function buildAttendeeInvite(opts: {
   inviteMessage?: string | null;
   template?: string | null;
 }): { subject: string; html: string; template: AttendeeTemplate; subjectVariant: string | null } {
-  const template: AttendeeTemplate = opts.template === "alumni" ? "alumni" : "standard";
+  const template: AttendeeTemplate =
+    opts.template === "alumni" || opts.template === "student" || opts.template === "former-student"
+      ? opts.template
+      : "standard";
   const inPerson = computePrice("in-person", opts.discountPercent);
   const virtual = computePrice("virtual", opts.discountPercent);
-  const render = template === "alumni" ? attendeeAlumniInviteEmail : attendeeInviteEmail;
+  const relationship = GOLD_TEMPLATES[template];
+  const render = relationship ? attendeeAlumniInviteEmail : attendeeInviteEmail;
   const html = render({
     firstName: opts.firstName,
     url: attendeeFunnelUrl(opts.inviteToken),
@@ -39,12 +53,15 @@ export function buildAttendeeInvite(opts: {
     assetBase: appUrl(),
     dateLabel: new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
     unsubscribeUrl: attendeeUnsubscribeUrl(opts.inviteToken),
+    relationship,
   });
   // Alumni sends rotate through several subject lines (A/B), assigned by token
   // so the choice is stable across resends and measurable on the dashboard.
   let subject: string;
   let subjectVariant: string | null = null;
-  if (template === "alumni") {
+  if (relationship) {
+    // Alumni, student, and former-student all rotate through the formal
+    // invitation subject lines (A/B), assigned stably by token.
     const picked = pickAlumniSubject(opts.firstName, opts.inviteToken);
     subject = picked.subject;
     subjectVariant = picked.id;
@@ -250,14 +267,24 @@ export type CsvParseRow = {
   email: string;
   affiliation?: string;
   notes?: string;
+  // Optional per-row overrides, for the AALB student/alumni import. When a row
+  // carries its own template ("alumni" | "student" | "former-student"), it wins
+  // over the batch-level template, so one paste can mix all three. cohort /
+  // cohortOrder tag the training session for newest-first sorting and filtering.
+  template?: AttendeeTemplate;
+  cohort?: string;
+  cohortOrder?: number;
 };
 
-// Parse a pasted block of "FirstName,LastName,Email[,Affiliation][,Notes]" rows.
-// Tolerates header row, blank lines, quoted fields.
+// Parse a pasted block of rows. The base shape is
+// "FirstName,LastName,Email[,Affiliation][,Notes]"; the AALB student import adds
+// three optional trailing columns: Template, Cohort, CohortOrder. Tolerates a
+// header row, blank lines, and quoted fields.
 export function parseAttendeeCsv(input: string): { rows: CsvParseRow[]; errors: string[] } {
   const rows: CsvParseRow[] = [];
   const errors: string[] = [];
   const lines = input.split(/\r?\n/);
+  const allowedTemplates = new Set(["standard", "alumni", "student", "former-student"]);
   let lineNum = 0;
   for (const raw of lines) {
     lineNum++;
@@ -268,7 +295,7 @@ export function parseAttendeeCsv(input: string): { rows: CsvParseRow[]; errors: 
       errors.push(`Line ${lineNum}: expected at least 3 columns (first, last, email)`);
       continue;
     }
-    const [firstName, lastName, email, affiliation, notes] = cells;
+    const [firstName, lastName, email, affiliation, notes, template, cohort, cohortOrder] = cells;
     // Skip header
     if (lineNum === 1 && /first/i.test(firstName) && /last/i.test(lastName) && /email/i.test(email)) {
       continue;
@@ -277,12 +304,17 @@ export function parseAttendeeCsv(input: string): { rows: CsvParseRow[]; errors: 
       errors.push(`Line ${lineNum}: "${email}" is not a valid email`);
       continue;
     }
+    const tpl = (template || "").trim().toLowerCase();
+    const order = cohortOrder != null ? parseInt(String(cohortOrder).trim(), 10) : NaN;
     rows.push({
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       email: email.trim().toLowerCase(),
       affiliation: affiliation?.trim() || undefined,
       notes: notes?.trim() || undefined,
+      template: allowedTemplates.has(tpl) ? (tpl as AttendeeTemplate) : undefined,
+      cohort: cohort?.trim() || undefined,
+      cohortOrder: Number.isFinite(order) ? order : undefined,
     });
   }
   return { rows, errors };
