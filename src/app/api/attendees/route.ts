@@ -57,7 +57,10 @@ export async function POST(req: Request) {
   const payload = await req.json();
   const { single, csv, inviteMessage, discountPercent } = payload;
   const pct = Math.max(0, Math.min(100, Number.isFinite(discountPercent) ? discountPercent : 25));
-  const template = payload.template === "alumni" ? "alumni" : "standard";
+  // Any of the four community/standard templates is valid; anything else falls
+  // back to the plain standard invite. buildAttendeeInvite handles all four.
+  const VALID_TEMPLATES = new Set(["standard", "alumni", "student", "former-student"]);
+  const template = VALID_TEMPLATES.has(payload.template) ? String(payload.template) : "standard";
 
   // Single-recipient mode: send immediately, bypass the queue.
   if (single && typeof single === "object") {
@@ -204,6 +207,70 @@ export async function POST(req: Request) {
       results,
       invalid,
       skippedOverCap: emails.length > CAP ? emails.length - CAP : 0,
+    });
+  }
+
+  // Draft-load mode: bulk-insert a big roster as "queued" (on the list, NOT
+  // emailed) with NO emails scheduled. Powers the one-click "Load AALB students"
+  // button, which posts the ~2,900-row baked-in roster. Uses createMany in
+  // batches so it can't time out, and each row keeps its own template
+  // (alumni/student/former-student) and cohort. Re-loading is safe: existing
+  // emails are skipped. We deliberately skip the per-row first-name discount
+  // codes here (too slow at this scale, and not needed until send) — the 25%
+  // still applies through each person's invite link, and codes get ensured when
+  // the invite is actually built to send.
+  if (payload.draftOnly && typeof csv === "string" && csv.trim()) {
+    const { rows, errors } = parseAttendeeCsv(csv);
+    if (!rows.length) {
+      return NextResponse.json({ mode: "draft", created: 0, skipped: 0, parseErrors: errors }, { status: 400 });
+    }
+    // Dedupe against the file itself and against everyone already on the list,
+    // in one query, so the "skipped" count is accurate. createMany's
+    // skipDuplicates is the backstop against a race.
+    const wantEmails = Array.from(new Set(rows.map((r) => r.email)));
+    const existing = await prisma.attendee.findMany({
+      where: { email: { in: wantEmails } },
+      select: { email: true },
+    });
+    const have = new Set(existing.map((e: { email: string }) => e.email));
+    const seen = new Set<string>();
+    const fresh = rows.filter((r) => {
+      if (have.has(r.email) || seen.has(r.email)) return false;
+      seen.add(r.email);
+      return true;
+    });
+
+    let created = 0;
+    const BATCH = 500;
+    for (let i = 0; i < fresh.length; i += BATCH) {
+      const chunk = fresh.slice(i, i + BATCH);
+      const res = await prisma.attendee.createMany({
+        data: chunk.map((r) => ({
+          email: r.email,
+          firstName: r.firstName,
+          lastName: r.lastName,
+          affiliation: r.affiliation || null,
+          notes: r.notes || null,
+          cohort: r.cohort || null,
+          cohortOrder: r.cohortOrder ?? null,
+          discountPercent: pct,
+          inviteToken: newAttendeeToken(),
+          inviteMessage: inviteMessage?.trim() || null,
+          // Each row's own template wins so one load carries all three framings.
+          inviteTemplate: r.template || template,
+          invitedById: invitedById || null,
+          status: "queued",
+        })),
+        skipDuplicates: true,
+      });
+      created += res.count;
+    }
+
+    return NextResponse.json({
+      mode: "draft",
+      created,
+      skipped: rows.length - fresh.length,
+      parseErrors: errors,
     });
   }
 
