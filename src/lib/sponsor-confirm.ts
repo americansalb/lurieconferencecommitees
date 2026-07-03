@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
 import { sponsorPaidEmail } from "@/lib/mail-templates";
-import { sponsorFromHeader, sponsorReplyTo, sponsorStatusUrl, tierById, fullBenefits } from "@/lib/sponsors";
+import { sponsorFromHeader, sponsorReplyTo, sponsorStatusUrl, tierById, fullBenefits, sponsorFirstName } from "@/lib/sponsors";
 
 export type ConfirmResult = {
   ok: boolean;
@@ -40,6 +40,37 @@ export async function confirmSponsorPaid(
   if (!sponsor) return { ok: false, alreadyPaid: false, emailed: false, error: "Sponsor not found" };
 
   const wasPaid = sponsor.paid;
+
+  // A Stripe-verified amount must match what this sponsor owes. A mismatch
+  // means the session belongs to a different (or stale, pre-tier-change)
+  // checkout — flag it for a human instead of marking a $5,000 sponsorship
+  // paid off a $450 session. Admin confirms pass no amountTotal and can
+  // therefore always override deliberately.
+  if (
+    !wasPaid &&
+    typeof opts.amountTotal === "number" &&
+    sponsor.amountCents > 0 &&
+    opts.amountTotal !== sponsor.amountCents
+  ) {
+    await prisma.sponsorEvent.create({
+      data: {
+        sponsorId: sponsor.id,
+        type: "payment_amount_mismatch",
+        meta: JSON.stringify({
+          expectedCents: sponsor.amountCents,
+          receivedCents: opts.amountTotal,
+          sessionId: opts.sessionId ?? null,
+          source: opts.source || "system",
+        }).slice(0, 300),
+      },
+    }).catch(() => {});
+    return {
+      ok: false,
+      alreadyPaid: false,
+      emailed: false,
+      error: `Payment of ${opts.amountTotal} does not match the expected ${sponsor.amountCents}; flagged for review.`,
+    };
+  }
   if (!wasPaid) {
     await prisma.sponsor.update({
       where: { id: sponsor.id },
@@ -75,7 +106,7 @@ export async function confirmSponsorPaid(
       to: sponsor.contactEmail,
       subject: "Thank you for sponsoring the 2026 Lurie Children's and AALB Conference",
       html: sponsorPaidEmail({
-        firstName: sponsor.contactName.split(" ")[0],
+        firstName: sponsorFirstName(sponsor.contactName, sponsor.companyName),
         companyName: sponsor.companyName,
         tierName: t?.name || sponsor.tier,
         amountCents: sponsor.amountCents,

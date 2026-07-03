@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { isPaused, setPaused, getPolicy, savePolicy, queueEnvelope, afterQueueSend, runEmailQueue, estimateNextSend } from "@/lib/email-queue";
+import { isPaused, setPaused, getPolicy, savePolicy, queueEnvelope, afterQueueSend, runEmailQueue, estimateNextSend, prepareQueueDelivery } from "@/lib/email-queue";
 import { sendMail } from "@/lib/mail";
 import { buildAttendeeInvite } from "@/lib/attendees";
 
@@ -201,12 +201,18 @@ export async function POST(req: Request) {
 
   let sent = 0;
   let failed = 0;
+  let skipped = 0;
   for (const item of due) {
     const claim = await prisma.emailQueue.updateMany({
       where: { id: item.id, status: "pending" },
       data: { status: "sending", attempts: { increment: 1 } },
     });
     if (claim.count === 0) continue;
+
+    // Same suppression check + unsubscribe headers + CC as the cron path —
+    // "send this one now" must not become the one door an opt-out slips through.
+    const extras = await prepareQueueDelivery(item);
+    if (extras.skip) { skipped++; continue; }
 
     try {
       const result = await sendMail({
@@ -215,6 +221,8 @@ export async function POST(req: Request) {
         html: item.html,
         text: item.textBody || undefined,
         ...queueEnvelope(item.recipientType),
+        cc: extras.cc,
+        headers: extras.headers,
       });
       const resendId = (result as { id?: string })?.id || null;
       await prisma.emailQueue.update({
@@ -239,5 +247,5 @@ export async function POST(req: Request) {
     }
   }
 
-  return NextResponse.json({ processed: due.length, sent, failed });
+  return NextResponse.json({ processed: due.length, sent, failed, skipped });
 }

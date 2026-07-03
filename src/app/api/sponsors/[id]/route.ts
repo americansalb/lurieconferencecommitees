@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
-import { tierById, fullBenefits, sponsorStatusUrl, sponsorFromHeader, sponsorReplyTo } from "@/lib/sponsors";
+import { tierById, fullBenefits, sponsorStatusUrl, sponsorFromHeader, sponsorReplyTo, sponsorFirstName } from "@/lib/sponsors";
 import { sponsorAcceptedEmail } from "@/lib/mail-templates";
 
 function isAdmin(role?: string) {
@@ -58,15 +58,32 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     !updated.donateFoodInstead &&
     updated.amountCents > 0
   ) {
+    if (updated.unsubscribedAt) {
+      // Honor the opt-out here too — the dashboard still shows the status
+      // change, but no email goes out to an unsubscribed contact.
+      await prisma.sponsorEvent.create({
+        data: { sponsorId: updated.id, type: "acceptance_email_suppressed", meta: "unsubscribed" },
+      }).catch(() => {});
+      return NextResponse.json(updated);
+    }
     const t = tierById(updated.tier);
+    // Quote what checkout will actually charge: sponsors sent the 20%-courtesy
+    // letter must not be asked for the list price in their acceptance email.
+    const pct = updated.discountPercent || 0;
+    const listCents = t?.amountCents ?? updated.amountCents;
+    const dueCents = pct > 0 && listCents > 0 ? Math.round((listCents * (100 - pct)) / 100) : updated.amountCents;
+    const amountLabel =
+      pct > 0 && listCents > 0
+        ? `$${Math.round(dueCents / 100).toLocaleString("en-US")} (${pct}% partner courtesy applied)`
+        : t?.amountLabel || `$${(updated.amountCents / 100).toFixed(0)}`;
     try {
       await sendMail({
         to: updated.contactEmail,
         subject: `You're confirmed: complete your ${t?.name || "sponsorship"} payment`,
         html: sponsorAcceptedEmail({
-          firstName: (updated.contactName || "").split(" ")[0],
+          firstName: sponsorFirstName(updated.contactName, updated.companyName),
           companyName: updated.companyName,
-          tier: t || { name: updated.tier, amountLabel: `$${(updated.amountCents / 100).toFixed(0)}`, ticketsIncluded: 0 },
+          tier: { name: t?.name || updated.tier, amountLabel, ticketsIncluded: t?.ticketsIncluded ?? 0 },
           statusUrl: sponsorStatusUrl(updated.applicationToken),
           donatesFoodInstead: updated.donateFoodInstead,
           isExhibitor: updated.tier === "exhibitor",

@@ -28,6 +28,10 @@ export async function POST(req: Request) {
       amountCents,
       donateFoodInstead: usesAlternative,
       status: usesAlternative ? "in_conversation" : sponsor.status,
+      // Any checkout session created before this choice priced a different
+      // tier; Stripe keeps such sessions payable for ~24h, so drop the
+      // reference to keep a stale cheaper tab from confirming the new tier.
+      stripeSessionId: null,
     },
   });
   await prisma.sponsorEvent.create({

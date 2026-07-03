@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
-import { sponsorFromHeader, sponsorReplyTo, sponsorLetterReplyTo, sponsorInviteSubject, sponsorFoodSubject, sponsorAslSubject, sponsorUnsubHeaders, sponsorUnsubscribeUrl, isCompExhibitor, isFoodProspect, isAslProspect, isOfficialPartner } from "@/lib/sponsors";
+import { sponsorFromHeader, sponsorReplyTo, sponsorLetterReplyTo, sponsorInviteSubject, sponsorFoodSubject, sponsorAslSubject, sponsorUnsubHeaders, sponsorUnsubscribeUrl, isCompExhibitor, isFoodProspect, isAslProspect, isOfficialPartner, sponsorFirstName } from "@/lib/sponsors";
 import { sponsorInviteEmail, sponsorLetterEmail, sponsorFoodLetterEmail, sponsorAslLetterEmail } from "@/lib/mail-templates";
 import { appUrl } from "@/lib/presenters";
 
@@ -59,7 +59,7 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
     subject = sponsorAslSubject(sponsor.companyName);
   } else if (comp) {
     html = sponsorInviteEmail({
-      contactFirstName: sponsor.contactName.split(" ")[0],
+      contactFirstName: sponsorFirstName(sponsor.contactName, sponsor.companyName),
       companyName: sponsor.companyName,
       suggestedTier: null,
       inviteMessage: sponsor.inviteMessage,
@@ -105,6 +105,14 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
     });
     return NextResponse.json({ ok: false, sent: false, error: msg }, { status: 502 });
   }
+
+  // The invitation just went out directly, so cancel any still-pending queue
+  // row for this sponsor — otherwise the background cron would send the same
+  // gold-foil letter a second time days later.
+  await prisma.emailQueue.updateMany({
+    where: { recipientType: "sponsor", recipientId: sponsor.id, status: "pending" },
+    data: { status: "canceled" },
+  }).catch(() => {});
 
   const updated = await prisma.sponsor.update({
     where: { id: sponsor.id },

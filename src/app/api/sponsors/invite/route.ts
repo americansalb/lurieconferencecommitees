@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
-import { newSponsorToken, tierById, sponsorFromHeader, sponsorReplyTo, sponsorLetterReplyTo, sponsorInviteSubject, sponsorFoodSubject, sponsorAslSubject, sponsorUnsubHeaders, sponsorUnsubscribeUrl, isOfficialPartner } from "@/lib/sponsors";
+import { newSponsorToken, tierById, sponsorFromHeader, sponsorReplyTo, sponsorLetterReplyTo, sponsorInviteSubject, sponsorFoodSubject, sponsorAslSubject, sponsorUnsubHeaders, sponsorUnsubscribeUrl, isOfficialPartner, sponsorFirstName } from "@/lib/sponsors";
 import { sponsorInviteEmail, sponsorLetterEmail, sponsorFoodLetterEmail, sponsorAslLetterEmail } from "@/lib/mail-templates";
 
 // The formal letter is the standard sponsor invitation. Complimentary
@@ -14,6 +14,7 @@ function letterDate() {
   return new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
 }
 import { appUrl } from "@/lib/presenters";
+import { assertPublicBaseUrl } from "@/lib/sponsor-invite";
 import { getPolicy, planSendTimes } from "@/lib/email-queue";
 import { buildSponsorInviteRows } from "@/lib/imports";
 
@@ -65,12 +66,21 @@ export async function POST(req: Request) {
   const amountCents = compTable ? 0 : (suggested ? suggested.amountCents : 0);
 
   const email = contactEmail.trim().toLowerCase();
+  // Dedupe on email alone: "Acme, Inc." vs "Acme Inc" is the same inbox, and
+  // two records would mean two invitation threads (and an unsubscribe on one
+  // that doesn't suppress the other).
   const existing = await prisma.sponsor.findFirst({
-    where: { contactEmail: email, companyName: companyName.trim() },
+    where: { contactEmail: { equals: email, mode: "insensitive" }, mergedIntoId: null },
   });
   if (existing) {
+    const sameCompany = existing.companyName.trim().toLowerCase() === companyName.trim().toLowerCase();
     return NextResponse.json(
-      { error: `${companyName} (${email}) already has a sponsorship record. Open it from the list.`, sponsorId: existing.id },
+      {
+        error: sameCompany
+          ? `${companyName} (${email}) already has a sponsorship record. Open it from the list.`
+          : `${email} already belongs to the record for "${existing.companyName}". Open that record instead of creating a duplicate.`,
+        sponsorId: existing.id,
+      },
       { status: 409 }
     );
   }
@@ -125,7 +135,7 @@ export async function POST(req: Request) {
     subject = sponsorAslSubject(sponsor.companyName);
   } else if (compTable) {
     html = sponsorInviteEmail({
-      contactFirstName: sponsor.contactName.split(" ")[0],
+      contactFirstName: sponsorFirstName(sponsor.contactName, sponsor.companyName),
       companyName: sponsor.companyName,
       suggestedTier: null,
       inviteMessage: sponsor.inviteMessage,
@@ -183,6 +193,16 @@ async function bulkInvite(
   const compTable = Boolean(body.compExhibitor);
   // draftOnly = just load them into the dashboard as prospects, send nothing.
   const draftOnly = Boolean(body.draftOnly);
+  if (!draftOnly) {
+    // The rendered HTML (links, images, unsubscribe) is stored and sent later
+    // verbatim — never freeze a localhost base into the queue. Checked before
+    // any records are created so a refusal leaves nothing half-queued.
+    try {
+      assertPublicBaseUrl(appUrl());
+    } catch (e) {
+      return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 400 });
+    }
+  }
   const suggested = compTable ? null : (body.tier ? tierById(body.tier) : null);
   const tierId = compTable ? "exhibitor" : (suggested ? suggested.id : "undecided");
   const food = tierId === "food";
@@ -200,8 +220,12 @@ async function bulkInvite(
   for (const r of rows) {
     if (seen.has(r.contactEmail)) { skipped.push({ email: r.contactEmail, reason: "duplicate in list" }); continue; }
     seen.add(r.contactEmail);
-    const existing = await prisma.sponsor.findFirst({ where: { contactEmail: r.contactEmail, companyName: r.companyName } });
-    if (existing) { skipped.push({ email: r.contactEmail, reason: "already a record" }); continue; }
+    // Email-only dedupe (company names drift between "Acme, Inc." and "Acme
+    // Inc"); one inbox gets one record, however it's spelled.
+    const existing = await prisma.sponsor.findFirst({
+      where: { contactEmail: { equals: r.contactEmail, mode: "insensitive" }, mergedIntoId: null },
+    });
+    if (existing) { skipped.push({ email: r.contactEmail, reason: `already a record (${existing.companyName})` }); continue; }
     const note = r.note?.trim() || defaultNote;
     const token = newSponsorToken();
     const sp = await prisma.sponsor.create({
@@ -245,7 +269,7 @@ async function bulkInvite(
           })
         : compTable
         ? sponsorInviteEmail({
-            contactFirstName: c.contactName.split(" ")[0],
+            contactFirstName: sponsorFirstName(c.contactName, c.companyName),
             companyName: c.companyName,
             suggestedTier: null,
             inviteMessage: c.note,

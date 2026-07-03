@@ -1,11 +1,28 @@
 import {
   isFoodProspect, isAslProspect, isCompExhibitor, isOfficialPartner,
   sponsorInviteSubject, sponsorFoodSubject, sponsorAslSubject, sponsorUnsubscribeUrl,
+  sponsorFirstName,
 } from "@/lib/sponsors";
 import { sponsorLetterEmail, sponsorFoodLetterEmail, sponsorAslLetterEmail, sponsorInviteEmail } from "@/lib/mail-templates";
 
 function letterDate() {
-  return new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+  // Dated in Chicago, where the letter is "from" — a UTC server would
+  // otherwise stamp an evening send with tomorrow's date on the letterhead.
+  return new Date().toLocaleDateString("en-US", {
+    year: "numeric", month: "long", day: "numeric", timeZone: "America/Chicago",
+  });
+}
+
+// Queued emails bake the base URL into HTML that production later sends
+// verbatim. A dev instance pointed at the shared database would freeze
+// http://localhost:3002 links (and broken images) into real prospects'
+// inboxes — refuse to enqueue from a non-public base.
+export function assertPublicBaseUrl(base: string) {
+  if (!/^https:\/\//i.test(base) || /localhost|127\.0\.0\.1/i.test(base)) {
+    throw new Error(
+      `Refusing to queue emails with non-public base URL "${base}". Set APP_URL (or NEXTAUTH_URL) to the public https address first.`
+    );
+  }
 }
 
 // Fields the renderer needs off a Sponsor row.
@@ -44,7 +61,7 @@ export function renderSponsorInvite(s: SponsorInviteSource, base: string): { sub
   if (isCompExhibitor(s)) {
     return {
       subject: sponsorInviteSubject(s.companyName, { comp: true }),
-      html: sponsorInviteEmail({ contactFirstName: s.contactName.split(" ")[0], companyName: s.companyName, suggestedTier: null, inviteMessage: s.inviteMessage, landingUrl, assetBase: base, compExhibitor: true, isPartner: partner, unsubscribeUrl: unsub }),
+      html: sponsorInviteEmail({ contactFirstName: sponsorFirstName(s.contactName, s.companyName), companyName: s.companyName, suggestedTier: null, inviteMessage: s.inviteMessage, landingUrl, assetBase: base, compExhibitor: true, isPartner: partner, unsubscribeUrl: unsub }),
     };
   }
   return {

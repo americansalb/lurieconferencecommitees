@@ -265,30 +265,8 @@ export async function runEmailQueue(): Promise<{ processed: number; sent: number
 
     // Honor an unsubscribe, attach the one-click header, and CC any merged
     // co-applicant emails for sponsor sends.
-    let extraHeaders: Record<string, string> | undefined;
-    let extraCc: string[] | undefined;
-    if (item.recipientType === "sponsor" && item.recipientId) {
-      const sp = await prisma.sponsor.findUnique({
-        where: { id: item.recipientId },
-        select: { applicationToken: true, unsubscribedAt: true, additionalEmails: true },
-      });
-      if (sp?.unsubscribedAt) {
-        await prisma.emailQueue.update({ where: { id: item.id }, data: { status: "skipped" } });
-        continue;
-      }
-      if (sp?.applicationToken) extraHeaders = sponsorUnsubHeaders(sp.applicationToken);
-      if (sp?.additionalEmails?.length) extraCc = sp.additionalEmails;
-    } else if (item.recipientType === "attendee" && item.recipientId) {
-      const at = await prisma.attendee.findUnique({
-        where: { id: item.recipientId },
-        select: { inviteToken: true, unsubscribedAt: true },
-      });
-      if (at?.unsubscribedAt) {
-        await prisma.emailQueue.update({ where: { id: item.id }, data: { status: "skipped" } });
-        continue;
-      }
-      if (at?.inviteToken) extraHeaders = attendeeUnsubHeaders(at.inviteToken);
-    }
+    const extras = await prepareQueueDelivery(item);
+    if (extras.skip) continue;
 
     try {
       const result = await sendMail({
@@ -297,8 +275,8 @@ export async function runEmailQueue(): Promise<{ processed: number; sent: number
         html: item.html,
         text: item.textBody || undefined,
         ...queueEnvelope(item.recipientType),
-        cc: extraCc,
-        headers: extraHeaders,
+        cc: extras.cc,
+        headers: extras.headers,
       });
       const resendId = (result as { id?: string })?.id || null;
       await prisma.emailQueue.update({
@@ -323,6 +301,56 @@ export async function runEmailQueue(): Promise<{ processed: number; sent: number
     }
   }
   return { processed: due.length, sent, failed };
+}
+
+// Pre-send suppression check + per-recipient envelope extras for one queue
+// item. Shared by the cron runner AND the admin "send this one now" flush, so
+// an unsubscribe is honored on every path that delivers a queued message.
+// When the recipient has unsubscribed: the row is marked skipped, a sponsor
+// still sitting at "queued" flips back to "prospect" (so the dashboard stops
+// showing an invite as forever on its way), and the suppression is logged.
+export async function prepareQueueDelivery(item: {
+  id: string;
+  recipientType: string;
+  recipientId: string | null;
+}): Promise<{ skip: boolean; headers?: Record<string, string>; cc?: string[] }> {
+  if (item.recipientType === "sponsor" && item.recipientId) {
+    const sp = await prisma.sponsor.findUnique({
+      where: { id: item.recipientId },
+      select: { applicationToken: true, unsubscribedAt: true, additionalEmails: true },
+    });
+    if (sp?.unsubscribedAt) {
+      await prisma.emailQueue.update({ where: { id: item.id }, data: { status: "skipped" } });
+      await prisma.sponsor.updateMany({
+        where: { id: item.recipientId, status: "queued" },
+        data: { status: "prospect" },
+      }).catch(() => {});
+      await prisma.sponsorEvent.create({
+        data: { sponsorId: item.recipientId, type: "send_skipped_unsubscribed" },
+      }).catch(() => {});
+      return { skip: true };
+    }
+    return {
+      skip: false,
+      headers: sp?.applicationToken ? sponsorUnsubHeaders(sp.applicationToken) : undefined,
+      cc: sp?.additionalEmails?.length ? sp.additionalEmails : undefined,
+    };
+  }
+  if (item.recipientType === "attendee" && item.recipientId) {
+    const at = await prisma.attendee.findUnique({
+      where: { id: item.recipientId },
+      select: { inviteToken: true, unsubscribedAt: true },
+    });
+    if (at?.unsubscribedAt) {
+      await prisma.emailQueue.update({ where: { id: item.id }, data: { status: "skipped" } });
+      await prisma.attendeeEvent.create({
+        data: { attendeeId: item.recipientId, type: "send_skipped_unsubscribed" },
+      }).catch(() => {});
+      return { skip: true };
+    }
+    return { skip: false, headers: at?.inviteToken ? attendeeUnsubHeaders(at.inviteToken) : undefined };
+  }
+  return { skip: false };
 }
 
 // Per-recipient-type envelope (personalized From / Reply-To). Used by every
