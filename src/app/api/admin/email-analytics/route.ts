@@ -119,14 +119,21 @@ export async function GET() {
     combined: engagementOf([...attRows, ...spoRows]),
   };
 
-  // Conversion: of those we emailed, how many paid.
-  const attSent = attendees.filter((a) => a.invitedAt || a.lastSentAt);
-  const attPaid = attendees.filter((a) => a.paid).length;
-  const spoSent = sponsorsRaw.filter((s) => s.invitedAt || s.lastSentAt);
-  const spoPaid = sponsorsRaw.filter((s) => s.paid).length;
+  // Conversion, honest about attribution. The numerator is only people we
+  // EMAILED who then registered/confirmed (the intersection), never every
+  // registration, so it can't imply that a walk-up registration came from our
+  // list. totalPaid reports the real total (emailed or not) for context.
+  const emailedAtt = (a: { invitedAt: Date | null; lastSentAt: Date | null }) => !!(a.invitedAt || a.lastSentAt);
+  const emailedSpo = (s: { invitedAt: Date | null; lastSentAt: Date | null }) => !!(s.invitedAt || s.lastSentAt);
+  const attEmailed = attendees.filter(emailedAtt).length;
+  const attEmailedPaid = attendees.filter((a) => emailedAtt(a) && a.paid).length;
+  const attTotalPaid = attendees.filter((a) => a.paid).length;
+  const spoEmailed = sponsorsRaw.filter(emailedSpo).length;
+  const spoEmailedPaid = sponsorsRaw.filter((s) => emailedSpo(s) && s.paid).length;
+  const spoTotalPaid = sponsorsRaw.filter((s) => s.paid).length;
   const conversion = {
-    attendees: { sent: attSent.length, paid: attPaid, rate: attSent.length ? Math.round((attPaid / attSent.length) * 100) : 0 },
-    sponsors: { sent: spoSent.length, paid: spoPaid, rate: spoSent.length ? Math.round((spoPaid / spoSent.length) * 100) : 0 },
+    attendees: { sent: attEmailed, paid: attEmailedPaid, totalPaid: attTotalPaid, rate: attEmailed ? Math.round((attEmailedPaid / attEmailed) * 100) : 0 },
+    sponsors: { sent: spoEmailed, paid: spoEmailedPaid, totalPaid: spoTotalPaid, rate: spoEmailed ? Math.round((spoEmailedPaid / spoEmailed) * 100) : 0 },
   };
 
   // Alumni subject A/B.

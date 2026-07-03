@@ -15,7 +15,7 @@ type Analytics = {
   sent: { total: number; last24h: number; last7d: number; last30d: number; byType: Record<string, number> };
   daily: { day: string; attendee: number; sponsor: number; other: number }[];
   engagement: { attendees: Eng; sponsors: Eng; combined: Eng };
-  conversion: { attendees: { sent: number; paid: number; rate: number }; sponsors: { sent: number; paid: number; rate: number } };
+  conversion: { attendees: { sent: number; paid: number; totalPaid: number; rate: number }; sponsors: { sent: number; paid: number; totalPaid: number; rate: number } };
   ab: { id: string; label: string; example: string; sent: number; clicked: number }[];
   failures: { to: string; subject: string; lastError: string | null; recipientType: string; attempts: number; scheduledFor: string | null }[];
 };
@@ -142,14 +142,17 @@ export default function EmailAnalyticsPage() {
             </Card>
 
             {/* Conversion */}
-            <div className="grid sm:grid-cols-2 gap-3 mb-4">
+            <div className="grid sm:grid-cols-2 gap-3 mb-1.5">
               <Card title="Attendee conversion" tight>
-                <ConvBody sent={d?.conversion.attendees.sent || 0} paid={d?.conversion.attendees.paid || 0} rate={d?.conversion.attendees.rate || 0} color={TEAL} noun="registered" />
+                <ConvBody sent={d?.conversion.attendees.sent || 0} paid={d?.conversion.attendees.paid || 0} totalPaid={d?.conversion.attendees.totalPaid || 0} rate={d?.conversion.attendees.rate || 0} color={TEAL} noun="registered" />
               </Card>
               <Card title="Sponsor conversion" tight>
-                <ConvBody sent={d?.conversion.sponsors.sent || 0} paid={d?.conversion.sponsors.paid || 0} rate={d?.conversion.sponsors.rate || 0} color={AMBER} noun="confirmed" />
+                <ConvBody sent={d?.conversion.sponsors.sent || 0} paid={d?.conversion.sponsors.paid || 0} totalPaid={d?.conversion.sponsors.totalPaid || 0} rate={d?.conversion.sponsors.rate || 0} color={AMBER} noun="confirmed" />
               </Card>
             </div>
+            <p className="text-[11px] text-slate-400 mb-4 px-1">
+              Counts only people we emailed who have since registered or confirmed, so it never credits a walk-up registration to email. The greyed total is everyone registered or confirmed, whether we emailed them or not.
+            </p>
 
             {/* Subject A/B */}
             {(d?.ab || []).some((r) => r.sent > 0) && (
@@ -238,15 +241,19 @@ function EngRow({ label, e, Icon, color, bold }: { label: string; e?: Eng; Icon?
   );
 }
 
-function ConvBody({ sent, paid, rate, color, noun }: { sent: number; paid: number; rate: number; color: string; noun: string }) {
+function ConvBody({ sent, paid, totalPaid, rate, color, noun }: { sent: number; paid: number; totalPaid: number; rate: number; color: string; noun: string }) {
+  const extra = totalPaid - paid;
   return (
     <div>
       <div className="flex items-baseline gap-2">
         <span className="text-3xl font-extrabold" style={{ color }}>{rate}%</span>
-        <span className="text-sm text-slate-500">{paid} {noun} of {sent} emailed</span>
+        <span className="text-sm text-slate-500">{paid} of {sent} we emailed have {noun}</span>
       </div>
       <div className="mt-2 h-2 rounded-full bg-slate-100 overflow-hidden">
         <div style={{ width: `${Math.min(100, rate)}%`, background: color }} className="h-full" />
+      </div>
+      <div className="mt-1.5 text-[11px] text-slate-400">
+        {totalPaid} {noun} in total{extra > 0 ? ` · ${extra} we didn’t email` : ""}
       </div>
     </div>
   );
