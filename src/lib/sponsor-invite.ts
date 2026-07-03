@@ -101,6 +101,13 @@ export async function enqueueSponsorInvite(
   assertPublicBaseUrl(base);
   const discountPercent = opts?.discountPercent ?? null;
   const { subject, html } = renderSponsorInvite(s, base, { discountPercent });
+  // Re-queueing replaces, never duplicates: cancel any still-pending row for
+  // this sponsor so a second click (or a bulk load plus this button) can't
+  // send the same letter twice.
+  await prisma.emailQueue.updateMany({
+    where: { recipientType: "sponsor", recipientId: s.id, status: "pending" },
+    data: { status: "canceled" },
+  }).catch(() => {});
   const row = await prisma.emailQueue.create({
     data: {
       batchId: `sponsor-oneoff-${Date.now()}`,
