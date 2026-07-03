@@ -68,6 +68,14 @@ export async function GET() {
     select: { id: true, to: true, subject: true, recipientType: true, status: true, sentAt: true, updatedAt: true, attempts: true, lastError: true, resendId: true },
   });
 
+  // Sponsors don't auto-enter the queue: a prospect only gets scheduled when
+  // it's added to the background queue. Surface how many are still waiting so
+  // this page (the one queue) can pull them all in, instead of them being
+  // invisible over on the Sponsors dashboard. Mirrors the queue-pending filter.
+  const sponsorProspects = await prisma.sponsor.count({
+    where: { status: "prospect", mergedIntoId: null, unsubscribedAt: null },
+  });
+
   return NextResponse.json({
     counts: counts.reduce<Record<string, number>>((acc, c) => ((acc[c.status] = c._count._all), acc), {}),
     nextScheduledFor: nextDue?.scheduledFor || null,
@@ -78,6 +86,7 @@ export async function GET() {
     paused,
     pending,
     recent,
+    sponsorProspects,
   });
 }
 
