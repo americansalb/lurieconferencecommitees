@@ -1,18 +1,25 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
 import { verifyWebhookSignature } from "@/lib/stripe";
-import { sendMail } from "@/lib/mail";
-import { attendeeConfirmedEmail } from "@/lib/mail-templates";
-import { attendeeFunnelUrl, attendeeFromHeader, attendeeReplyTo } from "@/lib/attendees";
-import { appUrl } from "@/lib/presenters";
+import { confirmAttendeePaid } from "@/lib/attendee-mail";
+import { confirmSponsorPaid } from "@/lib/sponsor-confirm";
 
 // Stripe webhook for checkout.session.completed.
 // Configure in Stripe dashboard: endpoint URL = https://conference.aalb.org/api/attendees/webhook
 // Subscribe to: checkout.session.completed
+//
+// Accepts either signing secret (attendee or sponsor destination) and
+// dispatches BOTH kinds of session: if the team configures a single combined
+// Stripe endpoint — at either URL — every payment still confirms. Attendee
+// payments previously depended on this exact route being wired with exactly
+// STRIPE_WEBHOOK_SECRET; a combined endpoint pointed at the sponsor route
+// silently dropped them, and no confirmation email ever went out.
 export async function POST(req: Request) {
   const payload = await req.text();
   const sig = req.headers.get("stripe-signature");
-  const ok = await verifyWebhookSignature(payload, sig, process.env.STRIPE_WEBHOOK_SECRET);
+  const ok = await verifyWebhookSignature(payload, sig, [
+    process.env.STRIPE_WEBHOOK_SECRET,
+    process.env.STRIPE_SPONSOR_WEBHOOK_SECRET,
+  ]);
   if (!ok) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
@@ -24,76 +31,32 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  if (event.type === "checkout.session.completed") {
-    const obj = event.data.object as {
-      id?: string;
-      payment_intent?: string;
-      amount_total?: number;
-      metadata?: Record<string, string>;
-    };
-    const attendeeId = obj.metadata?.attendeeId;
-    if (!attendeeId) {
-      return NextResponse.json({ warning: "no attendeeId in metadata" });
-    }
-    const attendee = await prisma.attendee.findUnique({ where: { id: attendeeId } });
-    if (!attendee) return NextResponse.json({ warning: "attendee not found" });
-
-    if (!attendee.paid) {
-      await prisma.attendee.update({
-        where: { id: attendee.id },
-        data: {
-          paid: true,
-          paidAt: new Date(),
-          stripePaymentIntentId: typeof obj.payment_intent === "string" ? obj.payment_intent : null,
-          status: "paid",
-        },
-      });
-      await prisma.attendeeEvent.create({
-        data: {
-          attendeeId: attendee.id,
-          type: "paid",
-          meta: JSON.stringify({ sessionId: obj.id, amount: obj.amount_total }),
-        },
-      });
-
-      // Finalize a discount redemption: promote the pending "applied" row to
-      // "redeemed" and bump the code's tally. Guarded on the still-pending
-      // row so a duplicate webhook delivery can't double-count.
-      if (attendee.discountCodeId) {
-        const pending = await prisma.discountRedemption.findFirst({
-          where: { attendeeId: attendee.id, status: "applied" },
-        });
-        if (pending) {
-          await prisma.discountRedemption.update({
-            where: { id: pending.id },
-            data: { status: "redeemed", redeemedAt: new Date() },
-          });
-          await prisma.discountCode.update({
-            where: { id: attendee.discountCodeId },
-            data: { redeemedCount: { increment: 1 } },
-          });
-        }
-      }
-
-      // Confirmation email. Public registrations link to the receipt
-      // page; invited attendees go back to the funnel page they came from.
-      const url = attendee.invitedById
-        ? attendeeFunnelUrl(attendee.inviteToken)
-        : `${appUrl()}/register/success/${attendee.inviteToken}`;
-      sendMail({
-        to: attendee.email,
-        subject: "You're in: 2026 Lurie Children's and AALB Conference",
-        html: attendeeConfirmedEmail({
-          firstName: attendee.firstName,
-          url,
-          attendanceMode: attendee.attendanceMode || "in-person",
-          finalPriceCents: attendee.finalPriceCents,
-        }),
-        from: attendeeFromHeader(),
-        replyTo: attendeeReplyTo(),
-      }).catch((e) => console.error("[attendee webhook] mail send error", e));
-    }
+  if (event.type !== "checkout.session.completed") {
+    return NextResponse.json({ received: true, ignored: event.type });
   }
 
-  return NextResponse.json({ received: true });
+  const obj = event.data.object as {
+    id?: string;
+    payment_intent?: string;
+    amount_total?: number;
+    metadata?: Record<string, string>;
+  };
+  const opts = {
+    paymentIntentId: typeof obj.payment_intent === "string" ? obj.payment_intent : null,
+    amountTotal: typeof obj.amount_total === "number" ? obj.amount_total : null,
+    sessionId: obj.id ?? null,
+    source: "webhook",
+  };
+
+  if (obj.metadata?.kind === "sponsor" && obj.metadata?.sponsorId) {
+    const result = await confirmSponsorPaid(obj.metadata.sponsorId, opts);
+    return NextResponse.json({ received: true, kind: "sponsor", ...result });
+  }
+
+  const attendeeId = obj.metadata?.attendeeId;
+  if (!attendeeId) {
+    return NextResponse.json({ warning: "no attendeeId in metadata" });
+  }
+  const result = await confirmAttendeePaid(attendeeId, opts);
+  return NextResponse.json({ received: true, kind: "attendee", ...result });
 }
