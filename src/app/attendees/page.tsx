@@ -366,6 +366,30 @@ export default function AttendeesPage() {
     load(true);
   }
 
+  // Schedule invites for the selected not-yet-emailed people into the paced
+  // queue. Confirmed first, since it's a real commitment — but it can NEVER
+  // blast: the server drips them one at a time (~19/hr), and you can pause.
+  function queueInvites(ids: string[]) {
+    if (!ids.length) return;
+    setConfirmDialog({
+      title: "Queue these invites?",
+      message: "This schedules invites for the not-yet-emailed people in your selection into the paced queue. They go out one at a time (about 19/hour, in the 9 AM–7 PM window), never all at once, and you can pause anytime. Nothing sends immediately.",
+      confirmLabel: "Queue invites",
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        const res = await fetch("/api/attendees/queue-invites", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ids }),
+        }).then((r) => r.json()).catch(() => ({}));
+        setPortalNote(res.ok
+          ? `Queued ${(res.queued || 0).toLocaleString()} invite${res.queued === 1 ? "" : "s"} to send paced${res.skipped ? ` · ${res.skipped} skipped (already queued or emailed)` : ""}.`
+          : (res.error || "Could not queue invites."));
+        setTimeout(() => setPortalNote(null), 6000);
+        load(true);
+      },
+    });
+  }
+
   async function reinviteNonResponders() {
     setReinvite({ sending: true, note: null });
     try {
@@ -905,6 +929,7 @@ export default function AttendeesPage() {
                 onOpenDetail={(id) => setDetailId(id)}
                 onCompose={(ids) => setComposerIds(ids)}
                 onSendPortal={sendPortalLink}
+                onQueueInvites={queueInvites}
               />
             )}
           </div>

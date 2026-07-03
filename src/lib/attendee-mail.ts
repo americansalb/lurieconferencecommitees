@@ -187,7 +187,11 @@ export async function sendBroadcastTo(
   bodyText: string,
   cta?: { url: string; label: string } | null,
 ): Promise<{ sent: number; failed: number }> {
-  const attendees = await prisma.attendee.findMany({ where: { id: { in: attendeeIds } } });
+  // Backstop cap: even if a caller slips past the API guard, never let a single
+  // broadcast blast more than this many mailboxes at once (deliverability).
+  const MAX_IMMEDIATE = 100;
+  const safeIds = attendeeIds.slice(0, MAX_IMMEDIATE);
+  const attendees = await prisma.attendee.findMany({ where: { id: { in: safeIds } } });
   const bodyHtml = escapeBody(bodyText);
   let sent = 0, failed = 0;
   await inBatches(attendees, 12, async (a) => {
