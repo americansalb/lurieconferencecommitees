@@ -129,6 +129,7 @@ out of the email list pending verification of an aggregator-sourced address.
 | GE HealthCare | Chicago, IL | Health-tech + community-health investment | Via Lurie dev; possible in-kind tech |
 | Molina Healthcare of Illinois | Oak Brook, IL | Medicaid plan; language access drives outcomes/ratings | Via Lurie payer/managed-care relationships |
 | Meridian Health Plan of Illinois (Centene) | Chicago, IL | Large IL Medicaid plan; multilingual members | **Highest-probability warm target**; via Lurie managed-care |
+| Selfreliance Association | Ukrainian Village, Chicago, IL | Existing close relationship / major AALB supporter | **Do NOT cold-email.** Handle personally through the existing relationship. Removed from the auto-load list (round-2 add; the `info@welcomeukraine.us` address was also off-domain from selfrelianceassociation.net). |
 
 ---
 
