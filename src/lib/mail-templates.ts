@@ -1065,145 +1065,242 @@ type SponsorFoodLetterArgs = {
   assetBase?: string;
 };
 
-// A warm, detailed letter to a vegan/vegetarian restaurant or caterer asking
-// them to provide a plant-based meal as an in-kind Food Sponsor. Leads with the
-// conference's deliberate all-plant-based commitment (no meat will be served),
-// makes the in-kind ask, and lays out the Food Sponsor recognition. Reply-first:
-// the next step is a short conversation, with a link to the conference. No em
-// dashes; both host institutions are named on the tax line.
-export function sponsorFoodLetterEmail({
+// The in-kind INVITE (food & ASL), set in the same engraved gold-foil style as
+// the in-kind acceptance letter and the marquee sponsor letter: deep-teal
+// letterhead with a gold "2026" seal, an engraved drop cap, the personalized
+// note as a gold-ruled pull-quote, gold-bulleted recognition, and real cursive
+// signatures. Leads with the invitation, carries the mission and the in-kind
+// ask, and offers the self-serve pledge funnel (or a "see the conference"
+// fallback). Kind-parameterized so food and ASL share one shell. No em dashes;
+// both host institutions named. sponsorFoodLetterEmail / sponsorAslLetterEmail
+// stay as thin wrappers so the send routes are unchanged.
+function engravedInKindInvite(kind: "food" | "asl", {
   contactName, companyName, note, pledgeUrl, learnMoreUrl, unsubscribeUrl, assetBase,
 }: SponsorFoodLetterArgs) {
-  const site = (learnMoreUrl || ASSET_BASE).replace(/\/$/, "");
   const postalAddress = process.env.MAIL_POSTAL_ADDRESS?.trim() || "Americans Against Language Barriers, Chicago, IL";
+  const TEAL_DEEP = "#0C3B4B", INK = "#0B1F25", SOFT = "#5A6E76", GOLD_SOFT = "#F4E9CD", LINK = "#1E6FA2";
+  const base = (assetBase || ASSET_BASE).replace(/\/$/, "");
+  const site = (learnMoreUrl || base).replace(/\/$/, "");
+  const isAsl = kind === "asl";
+  const sponsorLabel = isAsl ? "ASL Interpreter Sponsor" : "Food Sponsor";
+
   const cn = (contactName || "").trim();
   const isPerson = !!cn && cn.toLowerCase() !== companyName.trim().toLowerCase();
   const honorific = /^(dr|mr|mrs|ms|prof|rev|hon|sr|fr|chef)\.?$/i;
   const firstNameOf = (n: string) => { const t = n.replace(/,.*$/, "").trim().split(/\s+/); return honorific.test(t[0]) ? (t[1] || t[0]) : t[0]; };
   const greeting = (isPerson ? firstNameOf(cn) : companyName.replace(/\s*\([^)]*\)\s*$/, "").trim()) || "there";
-  const notePara = note && note.trim()
-    ? `<p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 16px 0;">${escapeHtml(note.trim()).replace(/\n/g, "<br>")}</p>`
-    : "";
-  return shell(`
-    ${heroBanner()}
-    <h1 style="font-size:22px;font-weight:700;margin:0 0 14px 0;letter-spacing:-0.01em;">Dear ${escapeHtml(greeting)},</h1>
 
-    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
-      This August, Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers are co-hosting the 2nd Joint Conference on language access in American healthcare, two days devoted to a single idea: that no one should go unheard because of the language they speak. Lurie Children&rsquo;s is one of the nation&rsquo;s leading children&rsquo;s hospitals, caring for families across Chicago in dozens of languages, and Americans Against Language Barriers has trained roughly three thousand medical interpreters nationwide so families can be understood when it matters most.
-    </p>
+  // Kind-specific copy.
+  const inviteTail = isAsl
+    ? `to help keep every session of our Second Joint Conference on language access in American healthcare, August 15 and 16, 2026, in Chicago, accessible in American Sign Language, as an <strong>ASL Interpreter Sponsor</strong>`
+    : `to help feed our Second Joint Conference on language access in American healthcare, August 15 and 16, 2026, in Chicago, as a <strong>Food Sponsor</strong>`;
+  const missionPara = isAsl
+    ? `A conference about being heard has to include the people for whom American Sign Language is that voice. We are committed to interpreting our sessions in ASL so that Deaf and hard-of-hearing attendees are full participants, never an afterthought, and that commitment is only as real as the interpreters who make it happen.`
+    : `This will be our third meat-free conference in a row, and we intend to keep that promise: every meal will be fully plant-based, with no meat served. It would ring hollow to spend two days insisting that no one should go unheard, and then serve animals who cannot speak for themselves at all. A fully meat-free conference of this size is only possible with Chicago kitchens like yours.`;
+  const askPara = isAsl
+    ? `We are expecting about seventy to eighty attendees in person, plus a virtual audience. What we are really hoping for is a donation of your interpreters&rsquo; time, ASL interpretation for a session, a day, or the full event. If donating the whole thing is not possible, there is an easy middle ground: you could donate some hours and let us cover the rest. Either way, your in-kind donation makes you an official ASL Interpreter Sponsor.`
+    : `We are expecting about seventy to eighty attendees in person, plus a virtual audience, so even part of a meal goes a long way. What we are really hoping for is a donation of your food, a plant-based meal, or part of one. If donating the whole thing is not possible, there is an easy middle ground: you could donate part and let us purchase the rest. Either way, your in-kind donation makes you an official Food Sponsor.`;
+  const recognitionLast = isAsl
+    ? "An honorable mention during the sessions your interpreters cover"
+    : "An honorable mention at the meal you provide, before a national audience of interpreters, clinicians, and advocates";
+  const taxLine = isAsl
+    ? "Your in-kind donation of interpreting services is tax-deductible as a charitable contribution to a 501(c)(3), and we are glad to provide a donation receipt for its value"
+    : "Your in-kind food donation is tax-deductible as a charitable contribution to a 501(c)(3), and we are glad to provide a donation receipt for its value";
+  const ctaLabel = isAsl ? "Sponsor ASL interpretation in kind" : "Sponsor our food in kind";
+  const ctaHref = pledgeUrl || site;
+  const noteLabel = isAsl ? "Why we thought of you" : "Why we thought of your kitchen";
+  const footNote = isAsl
+    ? "You received this invitation to provide ASL interpretation for the conference."
+    : "You received this invitation to provide food for the conference.";
 
-    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
-      This will be our <strong>third meat-free conference in a row</strong>, and we intend to keep that promise: every meal will be <strong>fully plant-based</strong>, with no meat served. It would ring hollow to spend two days insisting that no one should go unheard, and then serve animals who cannot speak for themselves at all, who face the most absolute language barrier of any of us. Bringing a major children&rsquo;s hospital on board for an entirely plant-based event means a great deal to us.
-    </p>
+  // Engraved primitives, shared visual language with the acceptance letter.
+  const p = (html: string, mb = 18) =>
+    `<p style="margin:0 0 ${mb}px 0;font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.85;color:${INK};">${html}</p>`;
+  const sig = (img: string, name: string, title: string) => `
+        <img src="${base}/sig/${img}" alt="${escapeHtml(name)}" height="40" style="height:40px;width:auto;display:block;margin:0 0 4px 0;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="width:140px;height:1px;background-color:${GOLD};font-size:0;line-height:0;">&nbsp;</td></tr></table>
+        <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:${INK};font-weight:bold;padding-top:8px;">${escapeHtml(name)}</div>
+        <div style="font-family:Helvetica,Arial,sans-serif;font-size:12px;line-height:1.5;color:${SOFT};padding-top:2px;">${escapeHtml(title)}</div>`;
+  const goldList = (items: string[], color = INK) => `
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:2px 0 0 0;">
+        ${items.map((t) => `<tr>
+          <td valign="top" style="width:18px;font-family:Georgia,'Times New Roman',serif;font-size:15px;line-height:1.7;color:${GOLD};">&#8226;</td>
+          <td valign="top" style="padding:3px 0;font-family:Georgia,'Times New Roman',serif;font-size:14.5px;line-height:1.7;color:${color};">${t}</td>
+        </tr>`).join("")}
+      </table>`;
+  const eyebrow = (text: string) =>
+    `<div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:${GOLD};font-weight:bold;margin:26px 0 12px 0;">${text}</div>`;
 
-    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 16px 0;">
-      A fully meat-free conference of this size is only possible with Chicago kitchens like yours willing to help feed it, which is exactly why we are writing to <strong>${escapeHtml(companyName)}</strong>. We would love for the food to come from people who do plant-based cooking with real care.
-    </p>
+  const notePanel = (note && note.trim()) ? `
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 22px 0;">
+        <tr>
+          <td style="width:3px;background-color:${GOLD};font-size:0;line-height:0;">&nbsp;</td>
+          <td style="padding:2px 0 2px 20px;">
+            <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:${GOLD};font-weight:bold;padding-bottom:8px;">${noteLabel}</div>
+            ${escapeHtml(note.trim()).split(/\n\s*\n/).map((para, i, a) => `<p style="margin:0 0 ${i === a.length - 1 ? 0 : 12}px 0;font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:15.5px;line-height:1.8;color:#284752;">${para.replace(/\n/g, "<br>")}</p>`).join("")}
+          </td>
+        </tr>
+      </table>` : "";
 
-    ${notePara}
+  return `<!doctype html>
+<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="x-apple-disable-message-reformatting">
+<title>An Invitation to be a ${escapeHtml(sponsorLabel)} &middot; 2026 Lurie Children&rsquo;s &amp; AALB Conference</title>
+<!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
+<style>
+  body{margin:0;padding:0;}
+  a{color:${LINK};}
+  @media only screen and (max-width:600px){
+    .sl-card{width:100%!important;}
+    .sl-body{padding:32px 24px 30px 24px!important;}
+    .sl-head{padding:36px 22px 30px 22px!important;}
+    .sl-foot{padding:24px 22px!important;}
+    .sl-display{font-size:25px!important;line-height:31px!important;}
+    .sl-seal{width:96px!important;height:96px!important;}
+    .sl-dropcap{font-size:46px!important;line-height:36px!important;}
+    .sl-cta{display:block!important;width:100%!important;}
+  }
+</style>
+</head>
+<body style="margin:0;padding:0;width:100%;background-color:#ECE6D7;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#ECE6D7;">An invitation for ${escapeHtml(companyName)} to stand with us as a ${escapeHtml(sponsorLabel)} of the Second Joint Conference on language access, August 15 and 16, 2026, in Chicago.</div>
 
-    ${sectionHeading("The ask")}
-    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 8px 0;">
-      We are expecting about <strong>70 to 80 attendees in person</strong>, plus a virtual audience, so even part of a meal goes a long way. What we are really hoping for is a <strong>donation of your food</strong>, a plant-based meal, or part of one, for our attendees. And if donating the whole thing is not possible, there is an easy middle ground: you could donate part and let us <strong>purchase the rest</strong>. Last year, for example, a partner donated fifty sandwiches and we bought twenty more. Either way, your in-kind donation makes you an official <strong>Food Sponsor</strong>, recognized with:
-    </p>
-    ${bulletList([
-      "Your name and logo on the conference website",
-      "Your name and logo on signage at the conference",
-      "An honorable mention at the meal you provide, before a national audience of interpreters, clinicians, and advocates",
-      "Our deep gratitude, and a room full of people tasting your cooking",
-    ])}
-    <p style="font-size:14px;line-height:1.7;color:${MUTED};margin:8px 0 0 0;">
-      Your in-kind food donation is <strong>tax-deductible</strong> as a charitable contribution to a 501(c)(3), and we are glad to provide a donation receipt for its value. Please consult your tax advisor.
-    </p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#ECE6D7;background-image:linear-gradient(180deg,#F0EBDD 0%,#E6DECB 100%);">
+<tr><td align="center" style="padding:34px 14px 44px 14px;">
 
-    ${sectionHeading("The conference at a glance")}
-    ${glanceCard(GLANCE_ROWS)}
+  <table role="presentation" class="sl-card" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background-color:#FBF8F1;border:1px solid #E4DAC4;box-shadow:0 18px 48px rgba(12,59,75,0.18);">
 
-    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:16px 0 0 0;">
-      The easiest next step is to tell us what you could provide. It takes a minute, it does not commit you to anything final, and it puts you on our Food Sponsor list right away. You are also always welcome to simply reply to this email.
-    </p>
+    <tr><td align="center" bgcolor="${TEAL_DEEP}" class="sl-head" style="background-color:${TEAL_DEEP};background-image:linear-gradient(160deg,${TEAL} 0%,${TEAL_DEEP} 100%);padding:44px 40px 34px 40px;">
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;line-height:18px;letter-spacing:4px;text-transform:uppercase;color:${GOLD_SOFT};font-weight:bold;">Lurie Children&rsquo;s &middot; AALB</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:9px;line-height:16px;letter-spacing:3px;text-transform:uppercase;color:#7FA7B1;padding-top:6px;">An Invitation to Sponsor</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:8px;line-height:10px;letter-spacing:4px;text-transform:uppercase;color:${GOLD};font-weight:bold;padding:22px 0 8px 0;">&middot;&nbsp;Second Joint Conference&nbsp;&middot;</div>
 
-    ${pledgeUrl ? button(pledgeUrl, "Sponsor our food in kind &rarr;") : button(site, "See the conference")}
-    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:2px 0 0 0;">
-      Or <a href="${site}" style="color:${BLUE};font-weight:600;text-decoration:none;">see the conference</a> first.
-    </p>
+      <!--[if !mso]><!-->
+      <div class="sl-seal" style="width:116px;height:116px;border-radius:50%;background-color:${GOLD};background-image:linear-gradient(135deg,#F4E9CD 0%,#D9B863 28%,#C9A14B 52%,#9C7A2E 78%,#E7D5A4 100%);border:2px solid #F4E9CD;box-shadow:0 6px 16px rgba(0,0,0,0.30),inset 0 1px 2px rgba(255,255,255,0.55);display:inline-block;">
+        <table role="presentation" width="116" height="116" cellpadding="0" cellspacing="0" border="0" style="width:116px;height:116px;"><tr><td align="center" valign="middle" style="text-align:center;">
+          <div style="font-family:Georgia,'Times New Roman',serif;font-size:31px;line-height:30px;color:#3C2E10;font-weight:bold;letter-spacing:1px;">2026</div>
+        </td></tr></table>
+      </div>
+      <!--<![endif]-->
+      <!--[if mso]>
+      <v:oval fill="true" stroke="true" strokecolor="#F4E9CD" strokeweight="2px" style="width:116px;height:116px;">
+        <v:fill type="solid" color="#C9A14B"/>
+        <v:textbox inset="0,0,0,0"><center><div style="font-family:Georgia,serif;font-size:30px;color:#3C2E10;font-weight:bold;">2026</div></center></v:textbox>
+      </v:oval>
+      <![endif]-->
 
-    ${signOff("With gratitude,")}
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:9px;line-height:13px;letter-spacing:3px;text-transform:uppercase;color:${GOLD};padding:10px 0 0 0;">True Language Access</div>
+      <div class="sl-display" style="font-family:Georgia,'Times New Roman',serif;font-size:31px;line-height:38px;color:#FFFFFF;padding:18px 0 0 0;">The Second Joint Conference</div>
+      <div style="font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:15px;line-height:22px;color:#A9C6CD;padding:7px 0 0 0;">on Language Access in American Healthcare</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;line-height:16px;letter-spacing:3px;text-transform:uppercase;color:#7FA7B1;padding:14px 0 0 0;">August 15&ndash;16, 2026 &middot; Chicago, Illinois</div>
+    </td></tr>
 
-    ${logoLockup(assetBase)}
+    <tr><td style="height:3px;line-height:3px;font-size:0;background-color:${GOLD};background-image:linear-gradient(90deg,#9C7A2E 0%,#F4E9CD 50%,#9C7A2E 100%);">&nbsp;</td></tr>
 
-    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;padding-top:14px;border-top:1px solid #eef1f4;">
-      ${escapeHtml(postalAddress)}.${unsubscribeUrl ? ` You received this invitation to provide food for the conference. <a href="${unsubscribeUrl}" style="color:${MUTED};text-decoration:underline;">Unsubscribe</a>.` : ""}
-    </p>
-  `);
+    <tr><td class="sl-body" style="padding:40px 52px 36px 52px;background-color:#FBF8F1;">
+      <div style="padding:0 0 18px 0;">
+        <div style="font-family:Georgia,'Times New Roman',serif;font-size:17px;line-height:1.4;color:${INK};font-weight:bold;">${escapeHtml(companyName)}</div>
+        <div style="font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:14px;line-height:1.5;color:${SOFT};padding-top:2px;">Invited to be a ${escapeHtml(sponsorLabel)}</div>
+      </div>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="width:46px;height:2px;background-color:${GOLD};font-size:0;line-height:0;">&nbsp;</td></tr></table>
+      <div style="height:22px;line-height:22px;font-size:0;">&nbsp;</div>
+
+      ${p(`Dear ${escapeHtml(greeting)},`)}
+
+      <p style="margin:0 0 18px 0;font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.85;color:${INK};">
+        <span class="sl-dropcap" style="float:left;font-family:Georgia,'Times New Roman',serif;font-size:54px;line-height:42px;color:${TEAL};padding:6px 11px 0 0;">O</span>n behalf of Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers, it is our privilege to invite <strong>${escapeHtml(companyName)}</strong> ${inviteTail}.
+      </p>
+
+      ${p(missionPara)}
+
+      ${notePanel}
+
+      ${eyebrow("The ask")}
+      ${p(askPara, 22)}
+
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:2px 0 28px 0;">
+        <tr><td align="center">
+          <!--[if mso]><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
+          <table role="presentation" class="sl-cta" cellpadding="0" cellspacing="0" border="0" style="display:inline-block;vertical-align:middle;margin:6px;"><tr>
+            <td align="center" bgcolor="${TEAL}" style="background-color:${TEAL};border-radius:9px;">
+              <a href="${ctaHref}" style="display:inline-block;padding:15px 30px;font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:bold;letter-spacing:0.4px;color:#ffffff;text-decoration:none;border-radius:9px;">${ctaLabel} &nbsp;&rarr;</a>
+            </td>
+          </tr></table>
+          <!--[if mso]></td><td><![endif]-->
+          <table role="presentation" class="sl-cta" cellpadding="0" cellspacing="0" border="0" style="display:inline-block;vertical-align:middle;margin:6px;"><tr>
+            <td align="center" bgcolor="#FBF8F1" style="background-color:#FBF8F1;border:1.5px solid ${GOLD};border-radius:9px;">
+              <a href="${site}" style="display:inline-block;padding:13.5px 28px;font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:bold;letter-spacing:0.4px;color:${TEAL};text-decoration:none;border-radius:9px;">See the conference</a>
+            </td>
+          </tr></table>
+          <!--[if mso]></td></tr></table><![endif]-->
+        </td></tr>
+      </table>
+
+      ${eyebrow("Your recognition as a " + sponsorLabel)}
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 14px 0;">
+        <tr><td bgcolor="#FBF4E2" style="background-color:#FBF4E2;border:1px solid #EAD9AE;border-radius:10px;padding:16px 20px;">
+          ${goldList([
+            "Your name and logo on the conference website",
+            "Your name and logo on signage at the conference",
+            recognitionLast,
+          ], "#3C2E10")}
+        </td></tr>
+      </table>
+      <div style="font-family:Georgia,'Times New Roman',serif;font-size:13px;line-height:1.7;color:${SOFT};padding:0 0 6px 0;">${taxLine}. Please consult your tax advisor.</div>
+
+      ${p(`The easiest next step is to tell us what you could provide. It takes a minute, it does not commit you to anything final, and it puts you on our ${sponsorLabel} list right away. Or simply reply, straight to us at <a href="mailto:kevin@aalb.org" style="color:${LINK};text-decoration:none;">kevin@aalb.org</a>, and we will sort out the details together.`, 22)}
+
+      <div style="font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.85;color:${INK};padding-bottom:16px;">With gratitude,</div>
+
+      ${sig("kevin.png", "Kevin Thakkar", "Founder & Executive Director, Americans Against Language Barriers")}
+      <div style="height:20px;line-height:20px;font-size:0;">&nbsp;</div>
+      ${sig("iris.png", "Iris Laffitte", "Operations Manager, Americans Against Language Barriers")}
+      <div style="height:20px;line-height:20px;font-size:0;">&nbsp;</div>
+      ${sig("zachary.png", "Zachary Paul Romansky", "Lurie Children’s Language Services Department")}
+
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:34px 0 0 0;border-top:1px solid #ECE3D0;">
+        <tr><td align="center" style="padding:24px 0 4px 0;">
+          <div style="font-family:Helvetica,Arial,sans-serif;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#9A8B6A;padding-bottom:16px;">Presented Jointly By</div>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+            <td align="center" style="padding:0 18px;"><img src="${base}/logos/aalb.png" alt="Americans Against Language Barriers" height="40" style="height:40px;width:auto;display:block;"></td>
+            <td style="border-left:1px solid #E0D5BD;width:1px;font-size:0;">&nbsp;</td>
+            <td align="center" style="padding:0 18px;"><img src="${base}/logos/lurie.png" alt="Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago" height="34" style="height:34px;width:auto;display:block;"></td>
+          </tr></table>
+        </td></tr>
+      </table>
+    </td></tr>
+
+    <tr><td class="sl-foot" align="center" bgcolor="${TEAL_DEEP}" style="background-color:${TEAL_DEEP};background-image:linear-gradient(180deg,${TEAL_DEEP} 0%,#0A3340 100%);padding:26px 40px 28px 40px;">
+      <div style="font-family:Georgia,'Times New Roman',serif;font-size:13px;letter-spacing:0.5px;color:${GOLD_SOFT};">2026 Lurie Children&rsquo;s &amp; AALB Conference</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;line-height:18px;color:#9FB6BC;padding-top:8px;">August 15&ndash;16, 2026 &middot; Chicago, Illinois</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;line-height:18px;color:#9FB6BC;">conference.aalb.org &middot; contact@aalb.org</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;line-height:16px;letter-spacing:0.5px;color:#5F7E86;padding-top:8px;">501(c)(3) &middot; EINs 83-3016421 and 36-2170833</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;line-height:16px;color:#5F7E86;padding-top:10px;">${escapeHtml(postalAddress)}</div>
+      ${unsubscribeUrl ? `<div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;line-height:16px;color:#5F7E86;padding-top:4px;">${footNote} <a href="${unsubscribeUrl}" style="color:#9FB6BC;text-decoration:underline;">Unsubscribe</a>.</div>` : ""}
+    </td></tr>
+
+  </table>
+</td></tr>
+</table>
+</body>
+</html>`;
 }
 
-// A warm letter to an ASL interpreting company asking them to donate
-// interpretation in kind and become an ASL Interpreter Sponsor. Parallels the
-// food letter: leads with the accessibility commitment, makes the in-kind ask
-// (donate, or donate some hours and we cover the rest), recognition, and a
-// pledge funnel CTA. No em dashes; both host institutions named.
-export function sponsorAslLetterEmail({
-  contactName, companyName, note, pledgeUrl, learnMoreUrl, unsubscribeUrl, assetBase,
-}: SponsorFoodLetterArgs) {
-  const site = (learnMoreUrl || ASSET_BASE).replace(/\/$/, "");
-  const postalAddress = process.env.MAIL_POSTAL_ADDRESS?.trim() || "Americans Against Language Barriers, Chicago, IL";
-  const cn = (contactName || "").trim();
-  const isPerson = !!cn && cn.toLowerCase() !== companyName.trim().toLowerCase();
-  const honorific = /^(dr|mr|mrs|ms|prof|rev|hon|sr|fr)\.?$/i;
-  const firstNameOf = (n: string) => { const t = n.replace(/,.*$/, "").trim().split(/\s+/); return honorific.test(t[0]) ? (t[1] || t[0]) : t[0]; };
-  const greeting = (isPerson ? firstNameOf(cn) : companyName.replace(/\s*\([^)]*\)\s*$/, "").trim()) || "there";
-  const notePara = note && note.trim()
-    ? `<p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 16px 0;">${escapeHtml(note.trim()).replace(/\n/g, "<br>")}</p>`
-    : "";
-  return shell(`
-    ${heroBanner()}
-    <h1 style="font-size:22px;font-weight:700;margin:0 0 14px 0;letter-spacing:-0.01em;">Dear ${escapeHtml(greeting)},</h1>
+// Engraved gold-foil invite to a vegan/vegetarian restaurant or caterer to
+// provide a plant-based meal in kind as a Food Sponsor. Thin wrapper over
+// engravedInKindInvite so the send routes are unchanged.
+export function sponsorFoodLetterEmail(args: SponsorFoodLetterArgs) {
+  return engravedInKindInvite("food", args);
+}
 
-    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
-      This August, Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers are co-hosting the 2nd Joint Conference on language access in American healthcare, two days devoted to a single idea: that no one should go unheard because of the language they speak. Lurie Children&rsquo;s is one of the nation&rsquo;s leading children&rsquo;s hospitals, caring for families across Chicago in dozens of languages, and Americans Against Language Barriers has trained roughly three thousand medical interpreters nationwide.
-    </p>
-
-    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 16px 0;">
-      A conference about being heard has to include the people for whom <strong>American Sign Language</strong> is that voice. We are committed to interpreting our sessions in ASL so that Deaf and hard-of-hearing attendees are full participants, not an afterthought. That commitment is only as real as the interpreters who make it happen, which is exactly why we are writing to <strong>${escapeHtml(companyName)}</strong>.
-    </p>
-
-    ${notePara}
-
-    ${sectionHeading("The ask")}
-    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 8px 0;">
-      We are expecting about <strong>70 to 80 attendees in person</strong>, plus a virtual audience. What we are really hoping for is a <strong>donation of your interpreters&rsquo; time</strong>, ASL interpretation for a session, a day, or the full event. And if donating the whole thing is not possible, there is an easy middle ground: you could donate some hours and let us cover the rest. Either way, your in-kind donation makes you an official <strong>ASL Interpreter Sponsor</strong>, recognized with:
-    </p>
-    ${bulletList([
-      "Your name and logo on the conference website",
-      "Your name and logo on signage at the conference",
-      "An honorable mention during the sessions your interpreters cover",
-      "Our deep gratitude, and a genuinely accessible conference because of you",
-    ])}
-    <p style="font-size:14px;line-height:1.7;color:${MUTED};margin:8px 0 0 0;">
-      Your in-kind donation of interpreting services is <strong>tax-deductible</strong> as a charitable contribution to a 501(c)(3), and we are glad to provide a donation receipt for its value. Please consult your tax advisor.
-    </p>
-
-    ${sectionHeading("The conference at a glance")}
-    ${glanceCard(GLANCE_ROWS)}
-
-    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:16px 0 0 0;">
-      The easiest next step is to tell us what you could provide. It takes a minute, it does not commit you to anything final, and it puts you on our ASL Interpreter Sponsor list right away. You are also always welcome to simply reply to this email.
-    </p>
-
-    ${pledgeUrl ? button(pledgeUrl, "Sponsor ASL interpretation in kind &rarr;") : button(site, "See the conference")}
-    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:2px 0 0 0;">
-      Or <a href="${site}" style="color:${BLUE};font-weight:600;text-decoration:none;">see the conference</a> first.
-    </p>
-
-    ${signOff("With gratitude,")}
-
-    ${logoLockup(assetBase)}
-
-    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;padding-top:14px;border-top:1px solid #eef1f4;">
-      ${escapeHtml(postalAddress)}.${unsubscribeUrl ? ` You received this invitation to provide ASL interpretation for the conference. <a href="${unsubscribeUrl}" style="color:${MUTED};text-decoration:underline;">Unsubscribe</a>.` : ""}
-    </p>
-  `);
+// Engraved gold-foil invite to an ASL interpreting company to donate
+// interpretation in kind as an ASL Interpreter Sponsor.
+export function sponsorAslLetterEmail(args: SponsorFoodLetterArgs) {
+  return engravedInKindInvite("asl", args);
 }
 
 type SponsorInKindPledgeArgs = {
