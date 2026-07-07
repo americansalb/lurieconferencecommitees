@@ -962,26 +962,33 @@ export default function SponsorsAdminPage() {
                               {s.dietary && <span><span className="text-slate-400">Dietary:</span> {s.dietary}</span>}
                               {s.accessibility && <span><span className="text-slate-400">Access:</span> {s.accessibility}</span>}
                             </div>
-                            {(s.wantsLogo || s.logo) && (
-                              <div className="mt-2 flex items-center gap-3 flex-wrap">
-                                {s.logo ? (
-                                  // eslint-disable-next-line @next/next/no-img-element
-                                  <img src={`/api/sponsors/${s.id}/logo`} alt={`${s.companyName} logo`} className="h-10 w-auto max-w-[140px] object-contain bg-white rounded border border-slate-200 p-1" />
-                                ) : (
-                                  <span className="text-[11px] font-semibold text-amber-600">Wants logo shown (no file uploaded yet)</span>
-                                )}
-                                {isAdmin && (
-                                  <button
-                                    onClick={() => requestLogo(s.id)}
-                                    disabled={requestingLogoId === s.id}
-                                    className="text-[11px] font-bold px-2.5 py-1 rounded-lg border border-[#0066B3]/20 bg-white text-[#0066B3] hover:bg-[#0066B3]/[0.06] inline-flex items-center gap-1 disabled:opacity-50"
-                                    title="Email them asking for a higher-resolution logo, with a one-click upload link"
-                                  >
-                                    {requestingLogoId === s.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3" />}
-                                    {s.logo ? "Request better logo" : "Request logo"}
-                                  </button>
-                                )}
-                              </div>
+                          </div>
+                        )}
+                        {/* Logo strip: every engaged sponsor gets website logo
+                            recognition, so surface the logo state — and the
+                            "Request logo" email button — whether or not they
+                            ticked "show my logo" during signup. Prospects who
+                            haven't responded yet are left out (it'd be noise). */}
+                        {(s.paid || ["submitted", "awaiting_payment", "in_conversation", "paid", "confirmed"].includes(s.status)) && (
+                          <div className="mt-2 ml-12 flex items-center gap-3 flex-wrap">
+                            {s.logo ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={`/api/sponsors/${s.id}/logo`} alt={`${s.companyName} logo`} className="h-10 w-auto max-w-[140px] object-contain bg-white rounded border border-slate-200 p-1" />
+                            ) : (
+                              <span className="text-[11px] font-semibold text-amber-600">
+                                No logo on file{s.wantsLogo ? " (they asked to be shown)" : ""} — can&rsquo;t feature them on the website yet
+                              </span>
+                            )}
+                            {isAdmin && (
+                              <button
+                                onClick={() => requestLogo(s.id)}
+                                disabled={requestingLogoId === s.id}
+                                className="text-[11px] font-bold px-2.5 py-1 rounded-lg border border-[#0066B3]/20 bg-white text-[#0066B3] hover:bg-[#0066B3]/[0.06] inline-flex items-center gap-1 disabled:opacity-50"
+                                title="Email them asking for their logo, with a one-click upload link to their portal"
+                              >
+                                {requestingLogoId === s.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3" />}
+                                {s.logo ? "Request better logo" : "Request logo by email"}
+                              </button>
                             )}
                           </div>
                         )}

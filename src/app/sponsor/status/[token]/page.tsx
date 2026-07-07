@@ -123,7 +123,7 @@ export default async function SponsorStatusPage({ params }: { params: { token: s
             <PostPaymentDetailsForm token={params.token} accent={accent} />
           )}
 
-          {(sponsor.tier === "exhibitor" || isInKind || sponsor.wantsLogo || sponsor.logo) && (
+          {(sponsor.tier === "exhibitor" || isInKind || sponsor.wantsLogo || sponsor.logo || sponsor.paid) && (
             <div className="mt-6 rounded-xl border border-slate-100 bg-slate-50/70 p-4">
               <div className="text-[10px] font-bold tracking-widest uppercase text-slate-400 mb-3">
                 {isInKind ? "Feature your organization" : "Your logo"}
