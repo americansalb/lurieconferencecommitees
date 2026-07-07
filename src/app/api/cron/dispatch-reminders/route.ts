@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
-import { dispatchToUser, PushChannel } from "@/lib/push";
+import { dispatchDueReminders } from "@/lib/reminders";
 import { runEmailQueue } from "@/lib/email-queue";
 
 function authorized(req: Request): boolean {
@@ -26,60 +25,12 @@ export async function GET(req: Request) {
   return handle();
 }
 
+// The in-app scheduler (src/lib/scheduler.ts) now ticks these same jobs every
+// minute from inside the web service, so this endpoint is redundancy for an
+// external cron rather than the only thing keeping mail moving. Both jobs
+// claim work atomically, so overlap is harmless.
 async function handle() {
-  const now = new Date();
-  const due = await prisma.scheduledNotification.findMany({
-    where: { status: "pending", scheduledFor: { lte: now } },
-    orderBy: { scheduledFor: "asc" },
-    take: 200,
-  });
-
-  let delivered = 0;
-  let failed = 0;
-  for (const item of due) {
-    const claim = await prisma.scheduledNotification.updateMany({
-      where: { id: item.id, status: "pending" },
-      data: { status: "in_progress" },
-    });
-    if (claim.count === 0) continue;
-    try {
-      const result = await dispatchToUser(item.userId, {
-        channel: item.channel as PushChannel,
-        title: item.title,
-        body: item.body,
-        data: item.payload ? safeParse(item.payload) : undefined,
-      });
-      await prisma.scheduledNotification.update({
-        where: { id: item.id },
-        data: {
-          status: result.delivered > 0 ? "sent" : result.skipped ? "skipped" : "failed",
-          sentAt: new Date(),
-        },
-      });
-      if (result.delivered > 0) delivered++;
-      else failed++;
-    } catch (e) {
-      console.error("[cron/dispatch-reminders] error", e);
-      await prisma.scheduledNotification.update({
-        where: { id: item.id },
-        data: { status: "failed", sentAt: new Date() },
-      });
-      failed++;
-    }
-  }
-
-  // This is the only endpoint wired to the every-minute Render cron, so it also
-  // drains the email queue (bulk attendee/sponsor invites). Without this they
-  // would sit "pending" forever and never reach Resend.
+  const reminders = await dispatchDueReminders();
   const emails = await runEmailQueue();
-
-  return NextResponse.json({ processed: due.length, delivered, failed, emails });
-}
-
-function safeParse(s: string): Record<string, string> | undefined {
-  try {
-    const parsed = JSON.parse(s);
-    if (parsed && typeof parsed === "object") return parsed;
-  } catch {}
-  return undefined;
+  return NextResponse.json({ ...reminders, emails });
 }

@@ -18,31 +18,35 @@ export type SubjectVariant = { id: string; label: string; make: (first: string) 
 // earlier, cheesier set. Each reads as a dignified invitation to attend in
 // person in Chicago or online. Append new ones to the end; do not reorder or
 // remove.
+//
+// These go to AALB alumni, students, and former students — people who know
+// AALB, not necessarily Lurie — so every line names AALB up front. Leading
+// with "Lurie Children's" read as a stranger's email and went unopened.
 export const ALUMNI_SUBJECT_VARIANTS: SubjectVariant[] = [
   {
     id: "invitation",
     label: "Invitation",
-    make: (f) => `${f}, your invitation to the 2026 Lurie Children's & AALB Conference`,
+    make: (f) => `${f}, your invitation to the 2026 AALB & Lurie Children's Conference`,
   },
   {
     id: "in-person-or-online",
     label: "In person or online",
-    make: (f) => `${f}, we invite you to join us in Chicago, in person or online, this August`,
+    make: (f) => `${f}, AALB invites you to join us in Chicago, in person or online, this August`,
   },
   {
     id: "formal",
     label: "Formal",
-    make: (f) => `An invitation for ${f} to the Second Joint Lurie Children's & AALB Conference`,
+    make: (f) => `An invitation for ${f} to the Second Joint AALB & Lurie Children's Conference`,
   },
   {
     id: "join-us",
     label: "Join us",
-    make: (f) => `${f}, you are invited to join us in Chicago on August 15 and 16`,
+    make: (f) => `${f}, AALB invites you to Chicago on August 15 and 16`,
   },
   {
     id: "dates",
     label: "Formal with dates",
-    make: (f) => `${f}, your invitation to join us in Chicago, August 15 and 16`,
+    make: (f) => `${f}, your AALB invitation for Chicago, August 15 and 16`,
   },
 ];
 

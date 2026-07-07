@@ -2,6 +2,11 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { Providers } from "./providers";
+// Side-effect import: db.ts bootstraps the in-app scheduler (email queue +
+// reminders). Pulling it into the root layout guarantees the ticker starts
+// even on a fresh deploy with no dynamic traffic — at the latest when the
+// homepage's hourly revalidation renders this layout server-side.
+import "@/lib/db";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",

@@ -1,3 +1,9 @@
+# OPTIONAL redundancy. The web service now runs its own in-app scheduler
+# (src/lib/scheduler.ts via src/instrumentation.ts) that drains the email
+# queue and due reminders every 60 seconds — mail flows even if this cron
+# service was never created or stops running. If you do keep the cron,
+# note it now exits non-zero on an HTTP failure so a broken run shows red
+# in the Render dashboard instead of silently "succeeding".
 services:
   - type: cron
     name: lurie-dispatch-reminders
@@ -5,7 +11,7 @@ services:
     schedule: "* * * * *"
     buildCommand: "echo no build needed"
     startCommand: |
-      node -e "fetch(process.env.SCHEDULER_URL, { method: 'POST', headers: { 'x-cron-secret': process.env.CRON_SECRET || '' } }).then(r => r.text()).then(t => { console.log(t); process.exit(0) }).catch(e => { console.error(e); process.exit(1) })"
+      node -e "fetch(process.env.SCHEDULER_URL, { method: 'POST', headers: { 'x-cron-secret': process.env.CRON_SECRET || '' } }).then(r => r.text().then(t => { console.log(r.status, t); process.exit(r.ok ? 0 : 1) })).catch(e => { console.error(e); process.exit(1) })"
     envVars:
       - key: SCHEDULER_URL
         value: https://conference.aalb.org/api/cron/dispatch-reminders
