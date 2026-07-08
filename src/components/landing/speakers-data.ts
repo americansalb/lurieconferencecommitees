@@ -79,6 +79,14 @@ export const SPEAKERS: Speaker[] = [
     photo: "/speakers/daniel-gutierrez-mena.webp",
   },
   {
+    slug: "liz-even",
+    name: "Liz Even",
+    title: "Senior Director, Field Operations",
+    org: "The Joint Commission",
+    bio: "Liz Even is a nurse with over 20 years of clinical and leadership experience who currently serves as Senior Director of Field Operations for the Division of Accreditation and Certification Operations at The Joint Commission. In this role, she provides strategic and operational leadership for ACO field operations, including strategic planning, budgeting and financial management, workforce planning, talent acquisition and retention, employee engagement, education, and the execution of field-based programs and activities. Her work supports the organization’s strategic direction and advances consistent, high-quality, and customer-focused accreditation and certification operations.",
+    photo: "/speakers/liz-even.webp",
+  },
+  {
     slug: "patricia-alonzo",
     name: "Patricia A. Alonzo",
     credentials: "EdD",
