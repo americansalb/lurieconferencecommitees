@@ -56,9 +56,9 @@ export function ambassadorUnsubHeaders(token: string): Record<string, string> {
 // drop by does.
 export type AmbassadorRegion = "chicago" | "midwest" | "far";
 const METRO_CHICAGO =
-  /\b(chicago(land)?|uic|depaul|northwestern|loyola|evanston|cicero|berwyn|oak park|maywood|forest park|river grove|skokie|niles|morton grove|wilmette|winnetka|northbrook|glenview|des plaines|palatine|arlington heights|schaumburg|elgin|waukegan|grayslake|crystal lake|mchenry|wheaton|glen ellyn|lisle|naperville|downers grove|aurora|joliet|romeoville|bolingbrook|orland park|palos|tinley park|streeterville|pilsen|little village|humboldt park|back of the yards|bronzeville|albany park|rogers park|hyde park|cook county|dupage|hammond|gary|munster|valparaiso)\b/i;
+  /\b(chicago(land)?|uic|depaul|northwestern|loyola|evanston|cicero|berwyn|oak park|maywood|forest park|river grove|skokie|niles|morton grove|wilmette|winnetka|northbrook|glenview|des plaines|palatine|arlington heights|schaumburg|elgin|waukegan|grayslake|crystal lake|mchenry|wheaton|glen ellyn|lisle|naperville|downers grove|aurora|joliet|romeoville|bolingbrook|orland park|palos|tinley park|river forest|elmhurst|streeterville|pilsen|little village|humboldt park|back of the yards|bronzeville|albany park|rogers park|hyde park|cook county|dupage|hammond|gary|munster|valparaiso)\b/i;
 const DRIVABLE_MIDWEST =
-  /\b(illinois|peoria|champaign|rockford|springfield|bloomington-normal|dekalb|midwest region|wisconsin|milwaukee|madison|indiana(polis)?|mishawaka|south bend|notre dame|michigan|detroit|lansing|livonia|ann arbor|kalamazoo|iowa|missouri|st\.?\s?louis|ohio|columbus|cincinnati|cleveland|dayton|kentucky|louisville)\b/i;
+  /\b(illinois|peoria|champaign|rockford|springfield|bloomington-normal|dekalb|bourbonnais|kankakee|midwest region|wisconsin|milwaukee|madison|indiana(polis)?|mishawaka|south bend|notre dame|michigan|detroit|lansing|livonia|ann arbor|kalamazoo|iowa|missouri|st\.?\s?louis|ohio|columbus|cincinnati|cleveland|dayton|kentucky|louisville)\b/i;
 export function ambassadorRegion(orgName: string, audience?: string | null): AmbassadorRegion {
   const hay = `${orgName} ${audience || ""}`;
   if (METRO_CHICAGO.test(hay)) return "chicago";
