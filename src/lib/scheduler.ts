@@ -1,15 +1,15 @@
-import { runEmailQueue } from "./email-queue";
+import { runEmailQueue, TICK_MS } from "./email-queue";
 import { dispatchDueReminders } from "./reminders";
 
 // The in-app scheduler: the web service ticks its own queues instead of
 // depending on an external cron reaching an HTTP endpoint. Discovered the
 // hard way: the Render cron defined in render.yaml was never actually
 // running, so queued invites sat "pending" until someone clicked "send this
-// one" by hand. runEmailQueue keeps its own pacing governor (one message per
-// tick, hourly/daily caps, business-hours schedule), so a 60-second tick can
-// never blast the queue — and both jobs claim rows atomically, so the cron
-// endpoints staying alive alongside this (or a second app instance) is safe.
-const TICK_MS = 60_000;
+// one" by hand. runEmailQueue keeps its own pacing governor (a per-tick
+// release budget derived from the configured hourly rate, hourly/daily caps,
+// business-hours schedule), so a tick can never blast the queue — and both
+// jobs claim rows atomically, so the cron endpoints staying alive alongside
+// this (or a second app instance) is safe.
 
 declare global {
   // Survives Next.js module re-evaluation so only one ticker ever runs

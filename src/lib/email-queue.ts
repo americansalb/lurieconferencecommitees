@@ -4,6 +4,10 @@ import { attendeeFromHeader, attendeeReplyTo, attendeeBcc, attendeeUnsubHeaders 
 import { sponsorFromHeader, sponsorLetterReplyTo, sponsorUnsubHeaders } from "./sponsors";
 import { ambassadorUnsubHeaders } from "./ambassadors";
 
+// How often the in-app scheduler ticks the queue. The runner sizes its
+// per-tick release budget from this, so rates above one-a-minute work.
+export const TICK_MS = 60_000;
+
 // Default sending policy. Tunable via SystemSetting keys with the same names.
 export const DEFAULT_POLICY = {
   maxPerHour: 10,
@@ -106,48 +110,32 @@ function clampToBusinessHours(when: Date, policy: SendPolicy): Date {
   return cursor;
 }
 
-// Computes a fresh send schedule for `count` new queue rows, anchored on the
-// latest currently-scheduled item (or now) and respecting per-hour/per-day caps.
-export async function planSendTimes(count: number, policy: SendPolicy): Promise<Date[]> {
-  if (count <= 0) return [];
-
-  // Anchor on the latest currently-scheduled pending item, or now.
-  const latest = await prisma.emailQueue.findFirst({
-    where: { status: { in: ["pending", "sending"] } },
-    orderBy: { scheduledFor: "desc" },
-    select: { scheduledFor: true },
-  });
-  let cursor = latest?.scheduledFor
-    ? new Date(Math.max(latest.scheduledFor.getTime(), Date.now()))
-    : new Date();
-  cursor = clampToBusinessHours(cursor, policy);
-
-  // Per-hour and per-day caps tracked by histogramming planned times.
+// Shared planning core: walk a cursor forward one gap at a time, keeping each
+// slot inside business hours and under the hour/day caps. The gap is derived
+// from the SELECTED hourly rate (its period, jittered ±25% so sends don't land
+// on a metronome) — not a fixed band — so the plan actually delivers the rate
+// the admin picked. minGapSeconds still floors the jitter for slow rates, but
+// never overrides a rate faster than one-a-minute: the selected rate wins.
+function planCursor(count: number, policy: SendPolicy, startAt: Date, seed: Date[]): Date[] {
   const hourBuckets = new Map<string, number>();
   const dayBuckets = new Map<string, number>();
-  // Seed buckets with already-scheduled items so caps include them.
-  const upcoming = await prisma.emailQueue.findMany({
-    where: { status: { in: ["pending", "sending"] }, scheduledFor: { gte: new Date(Date.now() - 2 * 24 * 3600 * 1000) } },
-    select: { scheduledFor: true },
-  });
-  for (const u of upcoming) {
-    bumpBuckets(u.scheduledFor, hourBuckets, dayBuckets);
-  }
+  for (const t of seed) bumpBuckets(t, hourBuckets, dayBuckets);
 
+  const targetGapSec = 3600 / Math.max(1, policy.maxPerHour);
+  const floorSec = Math.min(policy.minGapSeconds, targetGapSec);
+
+  let cursor = clampToBusinessHours(startAt, policy);
   const results: Date[] = [];
   for (let i = 0; i < count; i++) {
-    // Jitter between min/max gap.
-    const gapSec = policy.minGapSeconds + Math.random() * (policy.maxGapSeconds - policy.minGapSeconds);
+    const gapSec = Math.max(floorSec, targetGapSec * (0.75 + Math.random() * 0.5));
     cursor = new Date(cursor.getTime() + gapSec * 1000);
     cursor = clampToBusinessHours(cursor, policy);
 
     // Enforce caps; advance cursor until allowed.
     let safety = 0;
     while (safety++ < 24 * 7) {
-      const hk = hourKey(cursor);
-      const dk = dayKey(cursor);
-      const hUsed = hourBuckets.get(hk) || 0;
-      const dUsed = dayBuckets.get(dk) || 0;
+      const hUsed = hourBuckets.get(hourKey(cursor)) || 0;
+      const dUsed = dayBuckets.get(dayKey(cursor)) || 0;
       if (hUsed < policy.maxPerHour && dUsed < policy.maxPerDay) break;
       // Jump to next hour or next day boundary as appropriate.
       const jumpHours = dUsed >= policy.maxPerDay ? 24 : 1;
@@ -159,6 +147,59 @@ export async function planSendTimes(count: number, policy: SendPolicy): Promise<
     results.push(new Date(cursor.getTime()));
   }
   return results;
+}
+
+// Computes a fresh send schedule for `count` new queue rows, anchored on the
+// latest currently-scheduled item (or now) and respecting per-hour/per-day caps.
+export async function planSendTimes(count: number, policy: SendPolicy): Promise<Date[]> {
+  if (count <= 0) return [];
+
+  // Anchor on the latest currently-scheduled pending item, or now.
+  const latest = await prisma.emailQueue.findFirst({
+    where: { status: { in: ["pending", "sending"] } },
+    orderBy: { scheduledFor: "desc" },
+    select: { scheduledFor: true },
+  });
+  const start = latest?.scheduledFor
+    ? new Date(Math.max(latest.scheduledFor.getTime(), Date.now()))
+    : new Date();
+
+  // Seed the caps with already-scheduled items so the new batch stacks on top.
+  const upcoming = await prisma.emailQueue.findMany({
+    where: { status: { in: ["pending", "sending"] }, scheduledFor: { gte: new Date(Date.now() - 2 * 24 * 3600 * 1000) } },
+    select: { scheduledFor: true },
+  });
+  return planCursor(count, policy, start, upcoming.map((u) => u.scheduledFor));
+}
+
+// Re-plans every pending row from NOW under the given policy, preserving the
+// current send order. This is what makes the "Emails per hour" control honest:
+// without it, a saved rate only applies to future batches while everything
+// already queued keeps dripping on the schedule stamped at queue time. Caps are
+// seeded with the last 24h of actual sends so a mid-hour rate change can't
+// overshoot the new ceiling.
+export async function repaceQueue(policy: SendPolicy): Promise<number> {
+  const pending = await prisma.emailQueue.findMany({
+    where: { status: "pending" },
+    orderBy: [{ scheduledFor: "asc" }, { createdAt: "asc" }],
+    select: { id: true },
+  });
+  if (!pending.length) return 0;
+
+  const recentSent = await prisma.emailQueue.findMany({
+    where: { status: "sent", sentAt: { gte: new Date(Date.now() - 24 * 3600 * 1000) } },
+    select: { sentAt: true },
+  });
+  const times = planCursor(
+    pending.length,
+    policy,
+    new Date(),
+    recentSent.map((r) => r.sentAt!).filter(Boolean),
+  );
+  await prisma.$transaction(
+    pending.map((p, i) => prisma.emailQueue.update({ where: { id: p.id }, data: { scheduledFor: times[i] } })),
+  );
+  return pending.length;
 }
 
 // The honest "next send" moment. A backed-up queue has items whose scheduledFor
@@ -179,7 +220,7 @@ export async function estimateNextSend(): Promise<{ at: string | null; reason: s
   });
   if (!earliest) return { at: null, reason: "empty" };
 
-  const effGapMs = Math.max(policy.minGapSeconds, Math.ceil(3600 / Math.max(1, policy.maxPerHour))) * 1000;
+  const effGapMs = Math.ceil(3600_000 / Math.max(1, policy.maxPerHour));
   const [hourWin, dayWin] = await Promise.all([
     prisma.emailQueue.findMany({ where: { status: "sent", sentAt: { gte: new Date(now - 3600_000) } }, orderBy: { sentAt: "asc" }, select: { sentAt: true } }),
     prisma.emailQueue.findMany({ where: { status: "sent", sentAt: { gte: new Date(now - 24 * 3600_000) } }, orderBy: { sentAt: "asc" }, select: { sentAt: true } }),
@@ -221,15 +262,13 @@ export async function runEmailQueue(): Promise<{ processed: number; sent: number
   const now = new Date();
   const policy = await getPolicy();
 
-  // The real governor: a minimum wall-clock gap between deliveries, derived from
-  // both the explicit min gap and the rate implied by maxPerHour. This is what
-  // makes the queue DRIP instead of bursting. Each invocation releases at most
-  // ONE message, and only once this gap has elapsed since the last send. So no
-  // matter how the trigger behaves, fired every minute, fired in bunches, or
-  // catching up after the cron was down, it can never dump the whole hourly
-  // budget at once. (The admin "Send now" flush is a separate path that
+  // The real governor: a minimum wall-clock gap between deliveries, the period
+  // of the selected hourly rate. This is what makes the queue DRIP instead of
+  // bursting. So no matter how the trigger behaves — fired every minute, fired
+  // in bunches, or catching up after downtime — it can never dump the whole
+  // hourly budget at once. (The admin "Send now" flush is a separate path that
   // intentionally ignores all of this.)
-  const effGapMs = Math.max(policy.minGapSeconds, Math.ceil(3600 / Math.max(1, policy.maxPerHour))) * 1000;
+  const effGapMs = Math.ceil(3600_000 / Math.max(1, policy.maxPerHour));
 
   const lastSent = await prisma.emailQueue.findFirst({
     where: { status: "sent", sentAt: { not: null } },
@@ -240,7 +279,7 @@ export async function runEmailQueue(): Promise<{ processed: number; sent: number
     return { processed: 0, sent: 0, failed: 0, throttled: true };
   }
 
-  // Hourly / daily caps as a safety ceiling on top of the gap.
+  // Hourly / daily caps as a hard ceiling on top of the gap.
   const [sentHour, sentDay] = await Promise.all([
     prisma.emailQueue.count({ where: { status: "sent", sentAt: { gte: new Date(now.getTime() - 3600_000) } } }),
     prisma.emailQueue.count({ where: { status: "sent", sentAt: { gte: new Date(now.getTime() - 24 * 3600_000) } } }),
@@ -249,10 +288,17 @@ export async function runEmailQueue(): Promise<{ processed: number; sent: number
     return { processed: 0, sent: 0, failed: 0, throttled: true };
   }
 
+  // Per-invocation budget: enough releases per tick to sustain the selected
+  // rate. At or below one-a-minute that's exactly 1 per tick, gated by the gap
+  // above; faster rates release a small burst each tick (e.g. 120/hr = 2),
+  // bounded by the remaining hour/day headroom and a hard sanity ceiling.
+  const perTick = Math.min(30, Math.max(1, Math.round(TICK_MS / effGapMs)));
+  const take = Math.min(perTick, policy.maxPerHour - sentHour, policy.maxPerDay - sentDay);
+
   const due = await prisma.emailQueue.findMany({
     where: { status: "pending", scheduledFor: { lte: now } },
     orderBy: { scheduledFor: "asc" },
-    take: 1,
+    take,
   });
 
   let sent = 0;

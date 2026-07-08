@@ -45,16 +45,19 @@ export default function QueueSettingsModal({ onClose, onChanged }: { onClose: ()
   }
   useEffect(() => { refresh(); }, []);
 
-  async function patch(body: Record<string, unknown>, label: string) {
+  async function patch(body: Record<string, unknown>, label: string): Promise<Record<string, unknown>> {
     setBusy(label); setMsg(null);
     try {
-      await fetch("/api/admin/email-queue", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const r = await fetch("/api/admin/email-queue", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const j = await r.json().catch(() => ({}));
       await refresh(); onChanged?.();
+      return j;
     } finally { setBusy(null); }
   }
   async function saveSettings() {
-    await patch({ policy: { maxPerHour: perHour, maxPerDay: perDay, sendStartHour: startHour, sendEndHour: endHour, sendDays: days } }, "save");
-    setMsg("Settings saved.");
+    const j = await patch({ policy: { maxPerHour: perHour, maxPerDay: perDay, sendStartHour: startHour, sendEndHour: endHour, sendDays: days } }, "save");
+    const repaced = typeof j?.repaced === "number" ? j.repaced : 0;
+    setMsg(repaced > 0 ? `Settings saved — ${repaced} queued send${repaced === 1 ? "" : "s"} re-paced to the new rate.` : "Settings saved.");
   }
   async function flush(limit: number, label: string) {
     setBusy(label); setMsg(null);
@@ -123,7 +126,10 @@ export default function QueueSettingsModal({ onClose, onChanged }: { onClose: ()
                 <NumField label="Emails per hour" value={perHour} onChange={setPerHour} />
                 <NumField label="Emails per day" value={perDay} onChange={setPerDay} />
               </div>
-              <p className="text-[11px] text-slate-400 mt-1.5">The background sender releases up to this many. Lower it for a gentle trickle; raise it to drain the queue faster.</p>
+              <p className="text-[11px] text-slate-400 mt-1.5">
+                That&rsquo;s about one every <strong>{paceLabel(perHour)}</strong> while the window is open, up to {perDay}/day.
+                Saving re-paces everything already in the queue to this rate.
+              </p>
             </div>
 
             <div>
@@ -197,6 +203,12 @@ export default function QueueSettingsModal({ onClose, onChanged }: { onClose: ()
       </div>
     </div>
   );
+}
+
+// "one every X" for an hourly rate, e.g. 10/hr -> "6 min", 120/hr -> "30s".
+function paceLabel(perHour: number) {
+  const sec = Math.ceil(3600 / Math.max(1, perHour));
+  return sec >= 90 ? `${Math.round(sec / 60)} min` : `${sec}s`;
 }
 
 function NumField({ label, value, onChange }: { label: string; value: number; onChange: (n: number) => void }) {

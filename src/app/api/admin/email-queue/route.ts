@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { isPaused, setPaused, getPolicy, savePolicy, queueEnvelope, afterQueueSend, runEmailQueue, estimateNextSend, prepareQueueDelivery } from "@/lib/email-queue";
+import { isPaused, setPaused, getPolicy, savePolicy, repaceQueue, queueEnvelope, afterQueueSend, runEmailQueue, estimateNextSend, prepareQueueDelivery } from "@/lib/email-queue";
 import { sendMail } from "@/lib/mail";
 import { buildAttendeeInvite } from "@/lib/attendees";
 
@@ -106,8 +106,18 @@ export async function PATCH(req: Request) {
   if (typeof body?.paused === "boolean") {
     await setPaused(body.paused);
   }
-  const policy = body?.policy && typeof body.policy === "object" ? await savePolicy(body.policy) : await getPolicy();
-  return NextResponse.json({ ok: true, policy, paused: await isPaused() });
+  // Saving a policy also re-paces everything already queued: the pending rows
+  // carry send times stamped under the OLD policy, so without this a new rate
+  // only applies to future batches and the queue keeps dripping at the old pace.
+  let repaced = 0;
+  let policy;
+  if (body?.policy && typeof body.policy === "object") {
+    policy = await savePolicy(body.policy);
+    repaced = await repaceQueue(policy);
+  } else {
+    policy = await getPolicy();
+  }
+  return NextResponse.json({ ok: true, policy, paused: await isPaused(), repaced });
 }
 
 // Admin-triggered queue flush. With { force: true } it ignores scheduledFor

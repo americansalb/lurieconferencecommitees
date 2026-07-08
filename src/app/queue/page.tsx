@@ -231,10 +231,9 @@ export default function EmailQueuePage() {
   const typeCounts = pending.reduce<Record<string, number>>((acc, p) => ((acc[p.recipientType] = (acc[p.recipientType] || 0) + 1), acc), {});
   const shown = typeFilter === "all" ? pending : pending.filter((p) => p.recipientType === typeFilter);
   const overdueCount = pending.filter((p) => isOverdue(p.scheduledFor)).length;
-  // The effective drip gap, mirroring runEmailQueue: the greater of the min gap
-  // and the rate implied by the hourly cap. This is why past-due items don't all
-  // fire at once.
-  const effGapSec = data ? Math.max(data.policy.minGapSeconds, Math.ceil(3600 / Math.max(1, data.policy.maxPerHour))) : 0;
+  // The effective drip gap, mirroring runEmailQueue: the period of the
+  // configured hourly rate. This is why past-due items don't all fire at once.
+  const effGapSec = data ? Math.ceil(3600 / Math.max(1, data.policy.maxPerHour)) : 0;
   const paceLabel = effGapSec >= 60 ? `${Math.round(effGapSec / 60)} min` : `${effGapSec}s`;
   const nextHint = data?.paused ? undefined : NEXT_REASON_HINT[data?.nextSend?.reason || ""];
 
@@ -298,7 +297,7 @@ export default function EmailQueuePage() {
                 )}
               </div>
               <div className="mt-3 text-[11px] text-slate-400">
-                Drains oldest scheduled time first, across all types together. Pacing: max {data?.policy.maxPerHour}/hr, {data?.policy.maxPerDay}/day · {data?.policy.minGapSeconds}–{data?.policy.maxGapSeconds}s between sends · {data?.policy.sendStartHour}:00–{data?.policy.sendEndHour}:00 {data?.policy.sendTimezone}.
+                Drains oldest scheduled time first, across all types together. Pacing: {data?.policy.maxPerHour}/hr (about one every {paceLabel}), max {data?.policy.maxPerDay}/day · {data?.policy.sendStartHour}:00–{data?.policy.sendEndHour}:00 {data?.policy.sendTimezone}.
               </div>
               {note && <div className="mt-2 text-xs font-semibold text-teal-700">{note}</div>}
             </div>
