@@ -1171,21 +1171,11 @@ function ConfirmScreen({
   saving: boolean;
   error: string | null;
 }) {
-  // Recording consent is satisfied EITHER by agreeing to be recorded OR by
-  // confirming a prior written no-record agreement from AALB & Lurie.
-  const recordingOk = !!fields.agreedToRecord || !!fields.recordingWaived;
-  const canSubmit =
-    !!fields.agreedToTerms &&
-    !!headshotPreview &&
-    recordingOk &&
-    !!fields.agreedToPhoto &&
-    !!fields.agreedToCe;
-  const missing: string[] = [];
-  if (!headshotPreview) missing.push("a photo");
-  if (!fields.agreedToTerms) missing.push("the participation confirmation");
-  if (!recordingOk || !fields.agreedToPhoto || !fields.agreedToCe) {
-    missing.push("the presenter permissions");
-  }
+  // The permissions and the participation tick are all optional — some sessions
+  // aren't recorded, and no presenter should be blocked at the finish line over
+  // a consent box. Whatever they do check is still saved. A photo is the one
+  // thing the program needs, and it was already collected back in step 1.
+  const canSubmit = !!headshotPreview;
 
   return (
     <ScreenShell
@@ -1198,12 +1188,6 @@ function ConfirmScreen({
           {error && (
             <div className="flex items-center gap-2 text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
               <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {error}
-            </div>
-          )}
-          {!canSubmit && missing.length > 0 && (
-            <div className="flex items-center gap-2 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-              <span>Still need {missing.join(" and ")} above.</span>
             </div>
           )}
           <div className="flex items-center justify-between gap-4">
@@ -1244,22 +1228,25 @@ function ConfirmScreen({
               className="mt-0.5 w-4 h-4 rounded border-slate-300 text-[#0066B3] focus:ring-[#0066B3]"
             />
             <span className="text-sm text-slate-700 leading-relaxed">
-              I confirm I will participate in the 2026 Lurie Children&rsquo;s and AALB Conference on August 15 and 16, 2026, in person, and the details above are accurate.
+              I confirm I will participate in the 2026 Lurie Children&rsquo;s and AALB Conference on August 15 and 16, 2026, in person, and the details above are accurate. <span className="text-slate-400">(Optional — submitting confirms your participation either way.)</span>
             </span>
           </div>
         </label>
 
         <div className="space-y-3">
-          <div className="text-sm font-semibold text-slate-900">Presenter permissions</div>
-          <p className="text-xs text-slate-500 -mt-2">Please confirm the photo and continuing-education permissions. Recording consent is required <em>unless</em> AALB &amp; Lurie have already agreed, in writing, not to record your session.</p>
+          <div className="flex items-baseline gap-2">
+            <div className="text-sm font-semibold text-slate-900">Presenter permissions</div>
+            <span className="text-[11px] font-medium text-slate-400">All optional</span>
+          </div>
+          <p className="text-xs text-slate-500 -mt-2">Check whatever applies and leave the rest. If your session is not being recorded, just leave the recording box unchecked, or flag it below so the A/V team knows.</p>
           <SoftToggle
             checked={!!fields.agreedToRecord}
             label="My session may be recorded and shared with registered attendees"
             onToggle={() => {
               const next = !fields.agreedToRecord;
               set("agreedToRecord", next);
-              // Consenting to record and a no-record agreement are mutually
-              // exclusive — turning one on clears the other.
+              // "Record" and "not being recorded" are opposites — turning one
+              // on clears the other.
               if (next) set("recordingWaived", false);
             }}
           />
@@ -1275,7 +1262,7 @@ function ConfirmScreen({
               className="mt-0.5 w-4 h-4 rounded border-slate-300 text-[#0066B3] focus:ring-[#0066B3]"
             />
             <span className="text-[13px] text-slate-600 leading-relaxed">
-              AALB &amp; Lurie have agreed, in prior written communication, <strong>not to record</strong> my session. (Check this only if you have that agreement; it replaces the recording consent above.)
+              My session is <strong>not being recorded</strong> — flag it so the A/V team leaves it off.
             </span>
           </label>
           <SoftToggle

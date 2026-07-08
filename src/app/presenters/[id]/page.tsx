@@ -330,7 +330,7 @@ export default function PresenterDetailPage() {
                   <Section title="Tech & A/V">
                     {presenter.recordingWaived && (
                       <div className="col-span-2 mb-1 rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-[13px] font-semibold text-rose-800">
-                        Do NOT record this session — the presenter has a prior written no-record agreement with AALB &amp; Lurie.
+                        Do NOT record this session — flagged as not being recorded.
                       </div>
                     )}
                     <KV label="Microphone" value={yesno(presenter.needsMic)} />
