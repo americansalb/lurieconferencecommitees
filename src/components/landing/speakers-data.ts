@@ -19,12 +19,12 @@ export type Speaker = {
 
 export const SPEAKERS: Speaker[] = [
   {
-    slug: "michael-mule",
-    name: "Michael Mulé",
-    title: "Civil Rights Attorney, Language Access Expert",
-    org: "Formerly U.S. Department of Justice, Civil Rights Division",
-    bio: "Michael Mulé is a civil rights attorney with twenty years of experience advancing the rights of people who communicate in languages other than English. For fifteen years, he led national Title VI and language access initiatives at the U.S. Department of Justice (DOJ) in the Civil Rights Division (CRT) and the Office of Justice Programs.",
-    photo: "/speakers/michael-mule.webp",
+    slug: "liz-even",
+    name: "Elizabeth Even",
+    title: "Senior Director, Field Operations",
+    org: "The Joint Commission",
+    bio: "Elizabeth Even is a nurse with over 20 years of clinical and leadership experience who currently serves as Senior Director of Field Operations for the Division of Accreditation and Certification Operations at The Joint Commission. In this role, she provides strategic and operational leadership for ACO field operations, including strategic planning, budgeting and financial management, workforce planning, talent acquisition and retention, employee engagement, education, and the execution of field-based programs and activities. Her work supports the organization’s strategic direction and advances consistent, high-quality, and customer-focused accreditation and certification operations.",
+    photo: "/speakers/liz-even.webp",
   },
   {
     slug: "danilo-formolo",
@@ -63,6 +63,14 @@ export const SPEAKERS: Speaker[] = [
     photo: "/speakers/marisa-rueda-will.webp",
   },
   {
+    slug: "michael-mule",
+    name: "Michael Mulé",
+    title: "Civil Rights Attorney, Language Access Expert",
+    org: "Formerly U.S. Department of Justice, Civil Rights Division",
+    bio: "Michael Mulé is a civil rights attorney with twenty years of experience advancing the rights of people who communicate in languages other than English. For fifteen years, he led national Title VI and language access initiatives at the U.S. Department of Justice (DOJ) in the Civil Rights Division (CRT) and the Office of Justice Programs.",
+    photo: "/speakers/michael-mule.webp",
+  },
+  {
     slug: "wilma-alvarado-little",
     name: "Wilma Alvarado-Little",
     title: "Associate Commissioner",
@@ -77,14 +85,6 @@ export const SPEAKERS: Speaker[] = [
     org: "Rush University Medical Center",
     bio: "Daniel Gutiérrez Mena, founder of AlbaHealth.us, blends yoga, mindfulness, and global healthcare experience to create transformative wellness education that connects individuals to their physical, mental, and spiritual dimensions. From his journey immigrating from Lima to Chicago to his work across clinical care, research, and health innovation, he integrates modern science with indigenous wisdom to help others rediscover their relationship with health and the Earth.",
     photo: "/speakers/daniel-gutierrez-mena.webp",
-  },
-  {
-    slug: "liz-even",
-    name: "Liz Even",
-    title: "Senior Director, Field Operations",
-    org: "The Joint Commission",
-    bio: "Liz Even is a nurse with over 20 years of clinical and leadership experience who currently serves as Senior Director of Field Operations for the Division of Accreditation and Certification Operations at The Joint Commission. In this role, she provides strategic and operational leadership for ACO field operations, including strategic planning, budgeting and financial management, workforce planning, talent acquisition and retention, employee engagement, education, and the execution of field-based programs and activities. Her work supports the organization’s strategic direction and advances consistent, high-quality, and customer-focused accreditation and certification operations.",
-    photo: "/speakers/liz-even.webp",
   },
   {
     slug: "patricia-alonzo",
