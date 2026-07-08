@@ -50,8 +50,13 @@ export function ambassadorShareUrl(code: string, base = appUrl()) {
   return `${base.replace(/\/$/, "")}/register?code=${encodeURIComponent(code)}`;
 }
 
+// Institution-first, no discount language: the subject should read like
+// correspondence between institutions, not marketing. A "20% off" subject was
+// the salesiest thing in the old letter. Long program suffixes ("Org — Program
+// name") are trimmed to the institution so the subject stays scannable.
 export function ambassadorSubject(orgName: string): string {
-  return `An invitation to share: 20% off the 2026 Lurie Children's & AALB Conference for ${orgName}`;
+  const shortOrg = orgName.split("—")[0].trim() || orgName.trim();
+  return `The 2026 Lurie Children's & AALB Conference — an invitation for ${shortOrg}`;
 }
 
 export const AMBASSADOR_STATUS_LABELS: Record<string, { label: string; color: string }> = {

@@ -1427,7 +1427,7 @@ export function ambassadorInviteEmail({
 <meta name="x-apple-disable-message-reformatting">
 <meta name="color-scheme" content="light">
 <meta name="supported-color-schemes" content="light">
-<title>An Invitation to Share &middot; 2026 Lurie Children&rsquo;s &amp; AALB Conference</title>
+<title>An Invitation &middot; 2026 Lurie Children&rsquo;s &amp; AALB Conference</title>
 <!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
 <style>
   body{margin:0;padding:0;}
@@ -1445,7 +1445,7 @@ export function ambassadorInviteEmail({
 </style>
 </head>
 <body style="margin:0;padding:0;width:100%;background-color:#ECE6D7;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
-<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#ECE6D7;">A personal 20% code for the people you teach and lead: the 2026 Lurie Children&rsquo;s &amp; AALB Conference on language access, August 15 and 16, in Chicago and online.</div>
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#ECE6D7;">Two days on language access in American healthcare &mdash; August 15 and 16 at Lurie Children&rsquo;s in Chicago, with full virtual attendance.</div>
 
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#ECE6D7;background-image:linear-gradient(180deg,#F0EBDD 0%,#E6DECB 100%);">
 <tr><td align="center" style="padding:34px 14px 44px 14px;">
@@ -1454,7 +1454,7 @@ export function ambassadorInviteEmail({
 
     <tr><td align="center" bgcolor="${TEAL_DEEP}" class="sl-head" style="background-color:${TEAL_DEEP};background-image:linear-gradient(160deg,${TEAL} 0%,${TEAL_DEEP} 100%);padding:44px 40px 34px 40px;">
       <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;line-height:18px;letter-spacing:4px;text-transform:uppercase;color:${GOLD_SOFT};font-weight:bold;">Lurie Children&rsquo;s &middot; AALB</div>
-      <div style="font-family:Helvetica,Arial,sans-serif;font-size:9px;line-height:16px;letter-spacing:3px;text-transform:uppercase;color:#7FA7B1;padding-top:6px;">An Invitation to Share</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:9px;line-height:16px;letter-spacing:3px;text-transform:uppercase;color:#7FA7B1;padding-top:6px;">An Invitation</div>
       <div style="font-family:Helvetica,Arial,sans-serif;font-size:8px;line-height:10px;letter-spacing:4px;text-transform:uppercase;color:${GOLD};font-weight:bold;padding:22px 0 8px 0;">&middot;&nbsp;Second Joint Conference&nbsp;&middot;</div>
 
       <!--[if !mso]><!-->
@@ -1490,27 +1490,31 @@ export function ambassadorInviteEmail({
       ${p(`Dear ${escapeHtml(greeting)},`)}
 
       <p style="margin:0 0 18px 0;font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.85;color:${INK};">
-        <span class="sl-dropcap" style="float:left;font-family:Georgia,'Times New Roman',serif;font-size:54px;line-height:42px;color:${TEAL};padding:6px 11px 0 0;">O</span>n behalf of Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers, we are writing to you not to ask for sponsorship, but for something better suited to who you are: help putting this conference in front of the people you teach and lead.
+        <span class="sl-dropcap" style="float:left;font-family:Georgia,'Times New Roman',serif;font-size:54px;line-height:42px;color:${TEAL};padding:6px 11px 0 0;">O</span>n August 15 and 16, 2026, Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers will convene <em>True Language Access: Yesterday, Today, and Tomorrow</em> &mdash; the second joint conference of our two institutions, and two days on how language access in American healthcare is practiced, taught, and advanced.
       </p>
 
-      ${p(`This August 15 and 16, in Chicago and online, we are gathering the interpreters, clinicians, and advocates who make healthcare understandable to every family. The people who would gain the most from being in that room are often the ones just starting out, and they hear about opportunities like this from someone they trust. That is you.`)}
+      ${p(`The program is built around working practitioners: sessions on spoken-language interpreting, ASL access, clinician&ndash;interpreter teamwork, and health equity, with ten or more CEU hours planned and accreditation sought from CCHI, NBCMI, RID, and ATA. The conference meets at Lurie Children&rsquo;s in downtown Chicago, with a full virtual option for those attending from farther away.`)}
 
       ${notePanel}
 
-      ${eyebrow("A gift for your people")}
+      ${p(`For a student or early-career interpreter, it is an uncommon room &mdash; the people who shaped this field and the people who will carry it forward, seated at the same tables. We would be pleased to see members of your community among them.`)}
+
+      ${p(`As is customary between institutions that share this work, a courtesy rate has been set aside for your students and members; the code below already stands in their name.`)}
+
+      ${eyebrow("Reserved for your community")}
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 14px 0;">
         <tr><td align="center" bgcolor="#FBF4E2" style="background-color:#FBF4E2;border:1px solid #EAD9AE;border-radius:10px;padding:20px 20px 18px 20px;">
           <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:${GOLD};font-weight:bold;">Your personal code</div>
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:10px auto 6px auto;"><tr>
             <td bgcolor="#FBF8F1" style="background-color:#FBF8F1;border:1.5px dashed ${GOLD};border-radius:8px;padding:10px 22px;font-family:'Courier New',Courier,monospace;font-size:20px;letter-spacing:3px;font-weight:bold;color:#3C2E10;">${escapeHtml(code)}</td>
           </tr></table>
-          <div style="font-family:Georgia,'Times New Roman',serif;font-size:13.5px;line-height:1.7;color:#3C2E10;">20% off any ticket &middot; unlimited uses &middot; valid through August 10, 2026</div>
-          <div style="font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:12.5px;line-height:1.6;color:#8a744a;padding-top:4px;">It works for you too, and we would love to have you there.</div>
+          <div style="font-family:Georgia,'Times New Roman',serif;font-size:13.5px;line-height:1.7;color:#3C2E10;">20% below the standard rate &middot; in person or virtual &middot; unlimited uses &middot; through August 10, 2026</div>
+          <div style="font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:12.5px;line-height:1.6;color:#8a744a;padding-top:4px;">The code is yours as well, should you care to join us in Chicago or online.</div>
         </td></tr>
       </table>
 
       ${eyebrow("Ready to forward")}
-      ${p(`Sharing takes one email. Here is a blurb you can paste into a message, a newsletter, or a syllabus announcement, exactly as it is:`, 12)}
+      ${p(`The note below is ready to place in an email, a newsletter, or a course page as written:`, 12)}
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 22px 0;">
         <tr>
           <td style="width:3px;background-color:${GOLD};font-size:0;line-height:0;">&nbsp;</td>
@@ -1538,9 +1542,9 @@ export function ambassadorInviteEmail({
         </td></tr>
       </table>
 
-      ${p(`That is the whole ask. If you would like flyers, a slide, or anything else that makes sharing easier, reply anytime, straight to us at <a href="mailto:kevin@aalb.org" style="color:${LINK};text-decoration:none;">kevin@aalb.org</a>.`, 22)}
+      ${p(`The full program is at <a href="${site}" style="color:${LINK};text-decoration:none;">conference.aalb.org</a>. Should a syllabus line, newsletter note, or slide be useful, write to Kevin at <a href="mailto:kevin@aalb.org" style="color:${LINK};text-decoration:none;">kevin@aalb.org</a> and we will send materials sized to fit.`, 22)}
 
-      <div style="font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.85;color:${INK};padding-bottom:16px;">With gratitude,</div>
+      <div style="font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.85;color:${INK};padding-bottom:16px;">With respect,</div>
 
       ${sig("kevin.png", "Kevin Thakkar", "Founder & Executive Director, Americans Against Language Barriers")}
       <div style="height:20px;line-height:20px;font-size:0;">&nbsp;</div>
