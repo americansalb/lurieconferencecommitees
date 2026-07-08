@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { assertPublicBaseUrl } from "@/lib/sponsor-invite";
 import { ambassadorInviteEmail } from "@/lib/mail-templates";
-import { ambassadorNearChicago, ambassadorShareUrl, ambassadorSubject, ambassadorUnsubscribeUrl } from "@/lib/ambassadors";
+import { ambassadorRegion, ambassadorShareUrl, ambassadorSubject, ambassadorUnsubscribeUrl } from "@/lib/ambassadors";
 import { appUrl } from "@/lib/presenters";
 
 function letterDate() {
@@ -49,7 +49,7 @@ export async function POST() {
       learnMoreUrl: base,
       unsubscribeUrl: ambassadorUnsubscribeUrl(a.token),
       dateLabel: letterDate(),
-      nearChicago: ambassadorNearChicago(a.orgName, a.audience),
+      region: ambassadorRegion(a.orgName, a.audience),
       assetBase: base,
     });
     await prisma.emailQueue.update({

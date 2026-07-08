@@ -45,16 +45,25 @@ export function ambassadorUnsubHeaders(token: string): Record<string, string> {
   };
 }
 
-// Whether an ambassador's community is within realistic driving reach of
-// Chicago. The letter leads with the city for them ("a short trip, not a
-// travel budget") and with the livestream for everyone else ("the virtual
-// seat is a full seat"). Heuristic over the org name + audience text;
-// anything unmatched defaults to far, because virtual-first never reads
-// wrong while telling Californians to drop by does.
-const NEAR_CHICAGO =
-  /\b(chicago(land)?|illinois|uic|depaul|northwestern|loyola|evanston|peoria|champaign|rockford|naperville|aurora|cicero|morton|streeterville|midwest region|wisconsin|milwaukee|madison|indiana(polis)?|mishawaka|south bend|notre dame|michigan|detroit|lansing|livonia|ann arbor|kalamazoo|iowa|missouri|st\.?\s?louis|ohio|columbus|cincinnati|cleveland|dayton|kentucky|louisville)\b/i;
-export function ambassadorNearChicago(orgName: string, audience?: string | null): boolean {
-  return NEAR_CHICAGO.test(`${orgName} ${audience || ""}`);
+// Which letter an ambassador's community gets, by distance from the venue:
+//   chicago — metro Chicagoland: the conference is in THEIR city, lead with it
+//   midwest — drivable (IL beyond metro, WI, IN, MI, OH, KY, IA, MO): "a
+//             short trip, not a travel budget"
+//   far     — everyone else: the livestream leads ("the virtual seat is a
+//             full seat")
+// Heuristic over the org name + audience text; anything unmatched defaults to
+// far, because virtual-first never reads wrong while telling Californians to
+// drop by does.
+export type AmbassadorRegion = "chicago" | "midwest" | "far";
+const METRO_CHICAGO =
+  /\b(chicago(land)?|uic|depaul|northwestern|loyola|evanston|cicero|berwyn|oak park|maywood|forest park|river grove|skokie|niles|morton grove|wilmette|winnetka|northbrook|glenview|des plaines|palatine|arlington heights|schaumburg|elgin|waukegan|grayslake|crystal lake|mchenry|wheaton|glen ellyn|lisle|naperville|downers grove|aurora|joliet|romeoville|bolingbrook|orland park|palos|tinley park|streeterville|pilsen|little village|humboldt park|back of the yards|bronzeville|albany park|rogers park|hyde park|cook county|dupage|hammond|gary|munster|valparaiso)\b/i;
+const DRIVABLE_MIDWEST =
+  /\b(illinois|peoria|champaign|rockford|springfield|bloomington-normal|dekalb|midwest region|wisconsin|milwaukee|madison|indiana(polis)?|mishawaka|south bend|notre dame|michigan|detroit|lansing|livonia|ann arbor|kalamazoo|iowa|missouri|st\.?\s?louis|ohio|columbus|cincinnati|cleveland|dayton|kentucky|louisville)\b/i;
+export function ambassadorRegion(orgName: string, audience?: string | null): AmbassadorRegion {
+  const hay = `${orgName} ${audience || ""}`;
+  if (METRO_CHICAGO.test(hay)) return "chicago";
+  if (DRIVABLE_MIDWEST.test(hay)) return "midwest";
+  return "far";
 }
 
 // The link ambassadors forward: registration with their code prefilled.

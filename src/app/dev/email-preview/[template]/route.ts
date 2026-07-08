@@ -164,7 +164,23 @@ export async function GET(
         learnMoreUrl: base,
         unsubscribeUrl: `${base}/api/ambassadors/unsubscribe/preview-token`,
         dateLabel: "July 3, 2026",
-        nearChicago: true,
+        region: "chicago",
+        assetBase: base,
+      });
+      break;
+    // The drivable-Midwest variant ("a short trip, not a travel budget").
+    case "ambassador-midwest":
+      html = ambassadorInviteEmail({
+        contactName: "Jenn Sheppard",
+        orgName: "Madison College — Healthcare Interpreting Program",
+        note:
+          "Your two-semester program already carries students through the 40-hour training required for the CCHI exam, and a healthcare language-access conference at a children's hospital is a natural next step for them.",
+        code: "SHEPPARD20",
+        shareUrl: `${base}/register?code=SHEPPARD20`,
+        learnMoreUrl: base,
+        unsubscribeUrl: `${base}/api/ambassadors/unsubscribe/preview-token`,
+        dateLabel: "July 3, 2026",
+        region: "midwest",
         assetBase: base,
       });
       break;
@@ -180,7 +196,7 @@ export async function GET(
         learnMoreUrl: base,
         unsubscribeUrl: `${base}/api/ambassadors/unsubscribe/preview-token`,
         dateLabel: "July 3, 2026",
-        nearChicago: false,
+        region: "far",
         assetBase: base,
       });
       break;

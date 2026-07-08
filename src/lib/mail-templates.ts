@@ -1372,9 +1372,9 @@ type AmbassadorInviteArgs = {
   unsubscribeUrl?: string;
   // Pre-formatted date string; computed by the caller.
   dateLabel: string;
-  // Drivable distance from Chicago (see ambassadorNearChicago): near leads
-  // with the city, far leads with the livestream.
-  nearChicago?: boolean;
+  // Distance tier (see ambassadorRegion): "chicago" = their own city,
+  // "midwest" = a short trip, "far" = the livestream leads.
+  region?: "chicago" | "midwest" | "far";
   assetBase?: string;
 };
 
@@ -1386,7 +1386,7 @@ type AmbassadorInviteArgs = {
 // two short paragraphs (Chicago-first for drivable orgs, livestream-first
 // for far ones), and lands the 20% code as a standing courtesy.
 export function ambassadorInviteEmail({
-  contactName, orgName, note, code, shareUrl, learnMoreUrl, unsubscribeUrl, dateLabel, nearChicago, assetBase,
+  contactName, orgName, note, code, shareUrl, learnMoreUrl, unsubscribeUrl, dateLabel, region, assetBase,
 }: AmbassadorInviteArgs) {
   const postalAddress = process.env.MAIL_POSTAL_ADDRESS?.trim() || "Americans Against Language Barriers, Chicago, IL";
   const TEAL_DEEP = "#0C3B4B", INK = "#0B1F25", SOFT = "#5A6E76", GOLD_SOFT = "#F4E9CD", LINK = "#1E6FA2";
@@ -1423,9 +1423,12 @@ export function ambassadorInviteEmail({
   const openingRest = escapeHtml(opening.slice(1));
   const extraNoteParas = noteParas.slice(1);
 
-  // The one geo-aware paragraph: Chicago is the point for drivable orgs, the
-  // livestream is the point for everyone else.
-  const convenePara = nearChicago
+  // The one geo-aware paragraph: for metro Chicago the conference is in THEIR
+  // city; for the drivable Midwest it is a short trip; for everyone else the
+  // livestream is the point.
+  const convenePara = region === "chicago"
+    ? `That is why we are writing. On August 15 and 16, Lurie Children&rsquo;s and Americans Against Language Barriers convene <em>True Language Access: Yesterday, Today, and Tomorrow</em> at Lurie Children&rsquo;s in Streeterville &mdash; in your own city, a ride downtown. Two days with the people who shaped this field and the people who will carry it forward, ten-plus CEU hours planned (CCHI, NBCMI, RID, and ATA accreditation sought), and not a single travel budget between your community and the room. Chicago is where this conversation is happening; your people should be in it.`
+    : region === "midwest"
     ? `That is why we are writing. On August 15 and 16, Lurie Children&rsquo;s and Americans Against Language Barriers convene <em>True Language Access: Yesterday, Today, and Tomorrow</em> in the heart of Chicago &mdash; the people who shaped this field and the people who will carry it forward, two days, ten-plus CEU hours planned (CCHI, NBCMI, RID, and ATA accreditation sought). For your community it is a short trip, not a travel budget &mdash; and every session also streams live for those who stay put.`
     : `That is why we are writing. On August 15 and 16, Lurie Children&rsquo;s and Americans Against Language Barriers convene <em>True Language Access: Yesterday, Today, and Tomorrow</em> in Chicago &mdash; and the whole program streams live. The virtual seat is a full seat: the same sessions among the people who shaped this field and the people who will carry it forward, the same ten-plus CEU hours planned (CCHI, NBCMI, RID, and ATA accreditation sought), without an airfare between your community and the room.`;
 
@@ -1460,7 +1463,7 @@ export function ambassadorInviteEmail({
 </style>
 </head>
 <body style="margin:0;padding:0;width:100%;background-color:#ECE6D7;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
-<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#ECE6D7;">${nearChicago ? `August 15 and 16 at Lurie Children&rsquo;s, in the heart of Chicago &mdash; two days on language access in healthcare, in your city.` : `Every session streams live &mdash; join the 2026 Lurie Children&rsquo;s &amp; AALB Conference from anywhere, August 15 and 16.`}</div>
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#ECE6D7;">${region === "chicago" ? `August 15 and 16 at Lurie Children&rsquo;s &mdash; two days on language access in healthcare, in your own city, a ride downtown.` : region === "midwest" ? `August 15 and 16 at Lurie Children&rsquo;s in Chicago &mdash; two days on language access in healthcare, an easy trip away.` : `Every session streams live &mdash; join the 2026 Lurie Children&rsquo;s &amp; AALB Conference from anywhere, August 15 and 16.`}</div>
 
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#ECE6D7;background-image:linear-gradient(180deg,#F0EBDD 0%,#E6DECB 100%);">
 <tr><td align="center" style="padding:34px 14px 44px 14px;">
@@ -1521,7 +1524,7 @@ export function ambassadorInviteEmail({
             <td bgcolor="#FBF8F1" style="background-color:#FBF8F1;border:1.5px dashed ${GOLD};border-radius:8px;padding:10px 22px;font-family:'Courier New',Courier,monospace;font-size:20px;letter-spacing:3px;font-weight:bold;color:#3C2E10;">${escapeHtml(code)}</td>
           </tr></table>
           <div style="font-family:Georgia,'Times New Roman',serif;font-size:13.5px;line-height:1.7;color:#3C2E10;">20% below the standard rate &middot; in person or virtual &middot; unlimited uses &middot; through August 10, 2026</div>
-          <div style="font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:12.5px;line-height:1.6;color:#8a744a;padding-top:4px;">${nearChicago ? `It seats you too &mdash; we would be glad to see you at Lurie Children&rsquo;s.` : `It covers the virtual seat as well as the Chicago one &mdash; and it is yours too.`}</div>
+          <div style="font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:12.5px;line-height:1.6;color:#8a744a;padding-top:4px;">${region === "far" ? `It covers the virtual seat as well as the Chicago one &mdash; and it is yours too.` : `It seats you too &mdash; we would be glad to see you at Lurie Children&rsquo;s.`}</div>
         </td></tr>
       </table>
 
