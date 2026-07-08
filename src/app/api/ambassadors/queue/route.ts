@@ -7,7 +7,7 @@ import { assertPublicBaseUrl } from "@/lib/sponsor-invite";
 import { ambassadorInviteEmail } from "@/lib/mail-templates";
 import {
   AMBASSADOR_DISCOUNT_PCT, AMBASSADOR_CODE_EXPIRES,
-  ambassadorShareUrl, ambassadorSubject, ambassadorUnsubscribeUrl,
+  ambassadorNearChicago, ambassadorShareUrl, ambassadorSubject, ambassadorUnsubscribeUrl,
 } from "@/lib/ambassadors";
 import { appUrl } from "@/lib/presenters";
 
@@ -99,6 +99,7 @@ export async function POST(req: Request) {
       learnMoreUrl: base,
       unsubscribeUrl: ambassadorUnsubscribeUrl(a.token),
       dateLabel: letterDate(),
+      nearChicago: ambassadorNearChicago(a.orgName, a.audience),
       assetBase: base,
     });
 

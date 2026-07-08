@@ -45,6 +45,18 @@ export function ambassadorUnsubHeaders(token: string): Record<string, string> {
   };
 }
 
+// Whether an ambassador's community is within realistic driving reach of
+// Chicago. The letter leads with the city for them ("a short trip, not a
+// travel budget") and with the livestream for everyone else ("the virtual
+// seat is a full seat"). Heuristic over the org name + audience text;
+// anything unmatched defaults to far, because virtual-first never reads
+// wrong while telling Californians to drop by does.
+const NEAR_CHICAGO =
+  /\b(chicago(land)?|illinois|uic|depaul|northwestern|loyola|evanston|peoria|champaign|rockford|naperville|aurora|cicero|morton|streeterville|midwest region|wisconsin|milwaukee|madison|indiana(polis)?|mishawaka|south bend|notre dame|michigan|detroit|lansing|livonia|ann arbor|kalamazoo|iowa|missouri|st\.?\s?louis|ohio|columbus|cincinnati|cleveland|dayton|kentucky|louisville)\b/i;
+export function ambassadorNearChicago(orgName: string, audience?: string | null): boolean {
+  return NEAR_CHICAGO.test(`${orgName} ${audience || ""}`);
+}
+
 // The link ambassadors forward: registration with their code prefilled.
 export function ambassadorShareUrl(code: string, base = appUrl()) {
   return `${base.replace(/\/$/, "")}/register?code=${encodeURIComponent(code)}`;

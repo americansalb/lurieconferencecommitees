@@ -164,6 +164,23 @@ export async function GET(
         learnMoreUrl: base,
         unsubscribeUrl: `${base}/api/ambassadors/unsubscribe/preview-token`,
         dateLabel: "July 3, 2026",
+        nearChicago: true,
+        assetBase: base,
+      });
+      break;
+    // The virtual-first variant a far-from-Chicago ambassador receives.
+    case "ambassador-far":
+      html = ambassadorInviteEmail({
+        contactName: "",
+        orgName: "CHIA — California Healthcare Interpreting Association",
+        note:
+          "CHIA's whole mission is healthcare interpreting, so a two-day conference hosted with Lurie Children's is about as on-target for your members as an event can be. Many of them work the clinics and hospital floors where language access succeeds or fails, and this is their national conversation.",
+        code: "CHIA20",
+        shareUrl: `${base}/register?code=CHIA20`,
+        learnMoreUrl: base,
+        unsubscribeUrl: `${base}/api/ambassadors/unsubscribe/preview-token`,
+        dateLabel: "July 3, 2026",
+        nearChicago: false,
         assetBase: base,
       });
       break;

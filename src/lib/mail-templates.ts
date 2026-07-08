@@ -1359,7 +1359,10 @@ export function sponsorAslLetterEmail(args: SponsorFoodLetterArgs) {
 type AmbassadorInviteArgs = {
   contactName: string;
   orgName: string;
-  // The individually written "why we thought of you" paragraph(s).
+  // The individually written paragraph about THEIR program. It opens the
+  // letter, set in the same roman type as everything else — a decorated
+  // quote box reads as mail-merge; a letter that simply starts with the
+  // recipient does not.
   note?: string | null;
   // Their personal share code (e.g. GARCIA20) and the register link that
   // prefills it.
@@ -1369,18 +1372,21 @@ type AmbassadorInviteArgs = {
   unsubscribeUrl?: string;
   // Pre-formatted date string; computed by the caller.
   dateLabel: string;
+  // Drivable distance from Chicago (see ambassadorNearChicago): near leads
+  // with the city, far leads with the livestream.
+  nearChicago?: boolean;
   assetBase?: string;
 };
 
 // The engraved gold-foil letter for AMBASSADORS: educators, program
 // directors, and association leaders we ask to share the conference with
 // their students and members (not to sponsor it). Same visual language as
-// the sponsor letters — teal letterhead, gold seal, serif drop cap, gold
-// pull-quote — but the gift here is a personal 20% code (unlimited uses,
-// through August 10) plus a ready-to-forward blurb, so saying yes takes one
-// forwarded email.
+// the sponsor letters — teal letterhead, gold seal, serif drop cap — but the
+// letter opens with the personalized paragraph about them, keeps the body to
+// two short paragraphs (Chicago-first for drivable orgs, livestream-first
+// for far ones), and lands the 20% code as a standing courtesy.
 export function ambassadorInviteEmail({
-  contactName, orgName, note, code, shareUrl, learnMoreUrl, unsubscribeUrl, dateLabel, assetBase,
+  contactName, orgName, note, code, shareUrl, learnMoreUrl, unsubscribeUrl, dateLabel, nearChicago, assetBase,
 }: AmbassadorInviteArgs) {
   const postalAddress = process.env.MAIL_POSTAL_ADDRESS?.trim() || "Americans Against Language Barriers, Chicago, IL";
   const TEAL_DEEP = "#0C3B4B", INK = "#0B1F25", SOFT = "#5A6E76", GOLD_SOFT = "#F4E9CD", LINK = "#1E6FA2";
@@ -1391,7 +1397,11 @@ export function ambassadorInviteEmail({
   const isPerson = !!cn && cn.toLowerCase() !== orgName.trim().toLowerCase();
   const honorific = /^(dr|mr|mrs|ms|prof|rev|hon|sr|fr)\.?$/i;
   const firstNameOf = (n: string) => { const t = n.replace(/,.*$/, "").trim().split(/\s+/); return honorific.test(t[0]) ? (t[1] || t[0]) : t[0]; };
-  const greeting = (isPerson ? firstNameOf(cn) : orgName.replace(/\s*\([^)]*\)\s*$/, "").trim()) || "there";
+  // Org-addressed letters greet the short institution name ("Dear CHIA,"),
+  // not the full "Org — Program" row label.
+  const greeting = (isPerson
+    ? firstNameOf(cn)
+    : orgName.split("—")[0].replace(/\s*\([^)]*\)\s*$/, "").trim()) || "there";
 
   const p = (html: string, mb = 18) =>
     `<p style="margin:0 0 ${mb}px 0;font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.85;color:${INK};">${html}</p>`;
@@ -1403,16 +1413,21 @@ export function ambassadorInviteEmail({
   const eyebrow = (text: string) =>
     `<div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:${GOLD};font-weight:bold;margin:26px 0 12px 0;">${text}</div>`;
 
-  const notePanel = (note && note.trim()) ? `
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 22px 0;">
-        <tr>
-          <td style="width:3px;background-color:${GOLD};font-size:0;line-height:0;">&nbsp;</td>
-          <td style="padding:2px 0 2px 20px;">
-            <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:${GOLD};font-weight:bold;padding-bottom:8px;">Why we thought of you</div>
-            ${escapeHtml(note.trim()).split(/\n\s*\n/).map((para, i, a) => `<p style="margin:0 0 ${i === a.length - 1 ? 0 : 12}px 0;font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:15.5px;line-height:1.8;color:#284752;">${para.replace(/\n/g, "<br>")}</p>`).join("")}
-          </td>
-        </tr>
-      </table>` : "";
+  // The personalized paragraph IS the opening of the letter. First letter
+  // carries the drop cap; any further note paragraphs render as body text.
+  // Falls back to a general opening when no note was written.
+  const noteParas = (note || "").trim().split(/\n\s*\n/).filter(Boolean);
+  const opening = noteParas[0] ||
+    `You lead people this conference was built for — the interpreters, clinicians, and students who make American healthcare understandable in every language.`;
+  const openingFirst = opening.charAt(0);
+  const openingRest = escapeHtml(opening.slice(1));
+  const extraNoteParas = noteParas.slice(1);
+
+  // The one geo-aware paragraph: Chicago is the point for drivable orgs, the
+  // livestream is the point for everyone else.
+  const convenePara = nearChicago
+    ? `That is why we are writing. On August 15 and 16, Lurie Children&rsquo;s and Americans Against Language Barriers convene <em>True Language Access: Yesterday, Today, and Tomorrow</em> in the heart of Chicago &mdash; the people who shaped this field and the people who will carry it forward, two days, ten-plus CEU hours planned (CCHI, NBCMI, RID, and ATA accreditation sought). For your community it is a short trip, not a travel budget &mdash; and every session also streams live for those who stay put.`
+    : `That is why we are writing. On August 15 and 16, Lurie Children&rsquo;s and Americans Against Language Barriers convene <em>True Language Access: Yesterday, Today, and Tomorrow</em> in Chicago &mdash; and the whole program streams live. The virtual seat is a full seat: the same sessions among the people who shaped this field and the people who will carry it forward, the same ten-plus CEU hours planned (CCHI, NBCMI, RID, and ATA accreditation sought), without an airfare between your community and the room.`;
 
   // Plain-text forwardable blurb: everything a student or member needs, in
   // one paragraph the ambassador can paste into an email or newsletter.
@@ -1445,7 +1460,7 @@ export function ambassadorInviteEmail({
 </style>
 </head>
 <body style="margin:0;padding:0;width:100%;background-color:#ECE6D7;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
-<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#ECE6D7;">Two days on language access in American healthcare &mdash; August 15 and 16 at Lurie Children&rsquo;s in Chicago, with full virtual attendance.</div>
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#ECE6D7;">${nearChicago ? `August 15 and 16 at Lurie Children&rsquo;s, in the heart of Chicago &mdash; two days on language access in healthcare, in your city.` : `Every session streams live &mdash; join the 2026 Lurie Children&rsquo;s &amp; AALB Conference from anywhere, August 15 and 16.`}</div>
 
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#ECE6D7;background-image:linear-gradient(180deg,#F0EBDD 0%,#E6DECB 100%);">
 <tr><td align="center" style="padding:34px 14px 44px 14px;">
@@ -1490,16 +1505,13 @@ export function ambassadorInviteEmail({
       ${p(`Dear ${escapeHtml(greeting)},`)}
 
       <p style="margin:0 0 18px 0;font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.85;color:${INK};">
-        <span class="sl-dropcap" style="float:left;font-family:Georgia,'Times New Roman',serif;font-size:54px;line-height:42px;color:${TEAL};padding:6px 11px 0 0;">O</span>n August 15 and 16, 2026, Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers will convene <em>True Language Access: Yesterday, Today, and Tomorrow</em> &mdash; the second joint conference of our two institutions, and two days on how language access in American healthcare is practiced, taught, and advanced.
+        <span class="sl-dropcap" style="float:left;font-family:Georgia,'Times New Roman',serif;font-size:54px;line-height:42px;color:${TEAL};padding:6px 11px 0 0;">${escapeHtml(openingFirst)}</span>${openingRest}
       </p>
+      ${extraNoteParas.map((para) => p(escapeHtml(para))).join("\n")}
 
-      ${p(`The program is built around working practitioners: sessions on spoken-language interpreting, ASL access, clinician&ndash;interpreter teamwork, and health equity, with ten or more CEU hours planned and accreditation sought from CCHI, NBCMI, RID, and ATA. The conference meets at Lurie Children&rsquo;s in downtown Chicago, with a full virtual option for those attending from farther away.`)}
+      ${p(convenePara)}
 
-      ${notePanel}
-
-      ${p(`For a student or early-career interpreter, it is an uncommon room &mdash; the people who shaped this field and the people who will carry it forward, seated at the same tables. We would be pleased to see members of your community among them.`)}
-
-      ${p(`As is customary between institutions that share this work, a courtesy rate has been set aside for your students and members; the code below already stands in their name.`)}
+      ${p(`As is customary between institutions that share this work, a courtesy rate stands for your students and members &mdash; the code below is already in their name.`)}
 
       ${eyebrow("Reserved for your community")}
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 14px 0;">
@@ -1509,7 +1521,7 @@ export function ambassadorInviteEmail({
             <td bgcolor="#FBF8F1" style="background-color:#FBF8F1;border:1.5px dashed ${GOLD};border-radius:8px;padding:10px 22px;font-family:'Courier New',Courier,monospace;font-size:20px;letter-spacing:3px;font-weight:bold;color:#3C2E10;">${escapeHtml(code)}</td>
           </tr></table>
           <div style="font-family:Georgia,'Times New Roman',serif;font-size:13.5px;line-height:1.7;color:#3C2E10;">20% below the standard rate &middot; in person or virtual &middot; unlimited uses &middot; through August 10, 2026</div>
-          <div style="font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:12.5px;line-height:1.6;color:#8a744a;padding-top:4px;">The code is yours as well, should you care to join us in Chicago or online.</div>
+          <div style="font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:12.5px;line-height:1.6;color:#8a744a;padding-top:4px;">${nearChicago ? `It seats you too &mdash; we would be glad to see you at Lurie Children&rsquo;s.` : `It covers the virtual seat as well as the Chicago one &mdash; and it is yours too.`}</div>
         </td></tr>
       </table>
 
