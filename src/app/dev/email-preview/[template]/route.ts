@@ -8,6 +8,8 @@ import {
   bookingInviteEmail,
   bookingConfirmedInviteeEmail,
   ambassadorInviteEmail,
+  attendeeInviteEmail,
+  attendeeAlumniInviteEmail,
 } from "@/lib/mail-templates";
 import { fullBenefits } from "@/lib/sponsors";
 
@@ -151,6 +153,39 @@ export async function GET(
         tz: "America/Chicago",
         joinUrl: null,
         title: "Conversation about your proposal",
+      });
+      break;
+    case "attendee":
+      html = attendeeInviteEmail({
+        firstName: "Jordan",
+        url: `${base}/register?code=JORDAN25`,
+        inviteMessage: null,
+        discountPercent: 25,
+        inPersonOriginalCents: 21000,
+        inPersonDiscountedCents: 15750,
+        virtualOriginalCents: 10500,
+        virtualDiscountedCents: 7875,
+        personalCode: "JORDAN25",
+        mainSiteUrl: base,
+        unsubscribeUrl: `${base}/api/attendees/unsubscribe/preview-token`,
+      });
+      break;
+    case "attendee-alumni":
+      html = attendeeAlumniInviteEmail({
+        firstName: "Jordan",
+        url: `${base}/register?code=JORDAN25`,
+        inviteMessage: null,
+        discountPercent: 25,
+        personalCode: "JORDAN25",
+        mainSiteUrl: base,
+        learnMoreUrl: base,
+        dateLabel: "July 8, 2026",
+        assetBase: base,
+        unsubscribeUrl: `${base}/api/attendees/unsubscribe/preview-token`,
+        inPersonOriginalCents: 21000,
+        inPersonDiscountedCents: 15750,
+        virtualOriginalCents: 10500,
+        virtualDiscountedCents: 7875,
       });
       break;
     case "ambassador":

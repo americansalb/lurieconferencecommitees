@@ -405,6 +405,29 @@ function attendeeSpeakerCards() {
     `<p style="font-size:13px;line-height:1.6;color:${MUTED};margin:6px 0 0 0;">With more speakers to be announced.</p>`;
 }
 
+// Two designed images for the sign-up emails. The Joint Commission keynote is
+// the single strongest reason to attend, so we lead with the spotlight graphic;
+// the group photo from a past convening is social proof of the community. Both
+// link to registration; the alt text carries the full message for clients that
+// block images, and assetBase lets previews override the host.
+function keynoteSpotlight(href: string, assetBase = ASSET_BASE) {
+  const b = assetBase.replace(/\/$/, "");
+  return `
+  <a href="${href}" style="text-decoration:none;display:block;margin:0 0 8px 0;">
+    <img src="${b}/email/keynote-even.jpg" width="600" alt="Keynote Speaker Spotlight — The Standards That Protect Patients: A Joint Commission View on Language Access, with Elizabeth Even, Senior Director of Field Operations at The Joint Commission. 2026 Lurie Children&rsquo;s &amp; AALB Conference, August 15 and 16, 2026, Chicago and virtual, 10+ CEU hours." style="display:block;width:100%;max-width:600px;height:auto;border-radius:12px;border:1px solid #E4DAC4;" />
+  </a>
+  <p style="font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:13px;line-height:1.6;color:${MUTED};margin:0 0 22px 0;text-align:center;">Our keynote from The Joint Commission &mdash; the body that accredits America&rsquo;s hospitals &mdash; on the standards that make language access a matter of patient safety.</p>`;
+}
+
+function communityPhoto(href: string, assetBase = ASSET_BASE) {
+  const b = assetBase.replace(/\/$/, "");
+  return `
+  <a href="${href}" style="text-decoration:none;display:block;margin:0 0 8px 0;">
+    <img src="${b}/email/community.jpg" width="600" alt="Attendees of a past AALB conference gathered together in Chicago." style="display:block;width:100%;max-width:600px;height:auto;border-radius:12px;border:1px solid #E4DAC4;" />
+  </a>
+  <p style="font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:13px;line-height:1.6;color:${MUTED};margin:0 0 22px 0;text-align:center;">Colleagues from a past AALB convening in Chicago.</p>`;
+}
+
 export function attendeeInviteEmail({
   firstName,
   url,
@@ -433,11 +456,15 @@ export function attendeeInviteEmail({
     </p>
     ${extra}
 
+    ${keynoteSpotlight(url)}
+
     ${sectionHeading("Conference at a Glance")}
     ${glanceCard(GLANCE_ROWS)}
 
     ${sectionHeading("A Few of This Year&rsquo;s Voices")}
     ${attendeeSpeakerCards()}
+
+    ${communityPhoto(url)}
 
     ${sectionHeading("Why Attend")}
     ${bulletList([
@@ -629,9 +656,13 @@ export function attendeeAlumniInviteEmail({
 
       ${p(`We have gathered like this twice before, and both times the very best part was watching colleagues who had only ever met on a screen finally shake hands in person, interpreters and trainers and friends from every corner of the country, all under one roof.`)}
 
+      ${communityPhoto(url, base)}
+
       ${p(`And if Chicago is too far this year, you can still be with us. The whole conference streams <strong>live</strong>, in real time, not recordings after the fact, so you can take part in the sessions and the conversation from wherever you are. This year&rsquo;s theme is <span style="font-style:italic;color:${TEAL};">True Language Access: Yesterday, Today, and Tomorrow.</span>`)}
 
       ${noteBlock}
+
+      ${keynoteSpotlight(url, base)}
 
       ${ratePanel}
 
