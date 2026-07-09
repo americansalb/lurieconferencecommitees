@@ -9,11 +9,11 @@ import { TOKENS, CONFERENCE } from "./tokens";
 // Drop each logo file in /public/partners/. If a logo file is missing, the
 // card falls back to the partner's name so nothing renders broken.
 const PARTNERS: { name: string; logo: string; role?: string; url?: string }[] = [
+  { name: "Certification Commission for Healthcare Interpreters", logo: "/partners/cchi.webp", role: "Exhibitor", url: "https://cchicertification.org" },
+  { name: "The Chicago Diner", logo: "/partners/chicago-diner.png", role: "Food Sponsor", url: "https://www.veggiediner.com" },
   { name: "LanguageLine Solutions", logo: "/partners/languageline.png", role: "Exhibitor", url: "https://www.languageline.com" },
   { name: "CommunityHealth", logo: "/partners/communityhealth.webp", role: "Exhibitor", url: "https://www.communityhealth.org" },
   { name: "Multilingual Connections", logo: "/partners/multilingual-connections.svg", role: "Exhibitor", url: "https://multilingualconnections.com" },
-  { name: "Certification Commission for Healthcare Interpreters", logo: "/partners/cchi.webp", role: "Exhibitor", url: "https://cchicertification.org" },
-  { name: "The Chicago Diner", logo: "/partners/chicago-diner.png", role: "Food Sponsor", url: "https://www.veggiediner.com" },
 ];
 
 const BENEFITS = [
