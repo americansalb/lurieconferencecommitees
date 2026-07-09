@@ -866,10 +866,15 @@ export function sponsorInviteEmail({
     </p>
     ${compCallout}
 
+    ${keynoteSpotlight(site, site)}
+
     ${sectionHeading("Featured Speakers")}
     <p style="font-size:14px;line-height:1.6;color:${MUTED};margin:0 0 12px 0;">You&rsquo;d be joining a program that already features:</p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${speakerRows}</table>
     <p style="font-size:13.5px;line-height:1.6;margin:14px 0 0 0;"><a href="${site}/#speakers" style="color:${BLUE};font-weight:600;text-decoration:none;">See the full lineup at conference.aalb.org &rarr;</a></p>
+
+    ${sectionHeading("The Room Your Brand Reaches")}
+    ${communityPhoto(site, site)}
 
     ${tierLine ? `<p style="font-size:14.5px;line-height:1.7;color:${TEXT};margin:20px 0 0 0;">${tierLine}</p>` : `<div style="height:8px;line-height:8px;">&nbsp;</div>`}
 
@@ -1062,6 +1067,8 @@ export function sponsorLetterEmail({
       </table>
 
       ${p(`Americans Against Language Barriers has trained roughly three thousand medical interpreters nationwide, and Lurie Children&rsquo;s, one of the nation&rsquo;s leading children&rsquo;s hospitals, cares for families across Chicago in dozens of languages every day. Together we present this conference, and your support may be tax-deductible. To learn more or to confirm, the links below will take you there, or simply reply, and it reaches us directly at <a href="mailto:kevin@aalb.org" style="color:${LINK};text-decoration:none;">kevin@aalb.org</a>.`, 22)}
+
+      ${keynoteSpotlight(site, base)}
 
       ${discountBlock}
 
@@ -1544,6 +1551,8 @@ export function ambassadorInviteEmail({
       ${extraNoteParas.map((para) => p(escapeHtml(para))).join("\n")}
 
       ${p(convenePara)}
+
+      ${keynoteSpotlight(shareUrl, base)}
 
       ${p(`As is customary between institutions that share this work, a courtesy rate stands for your students and members &mdash; the code below is already in their name.`)}
 
