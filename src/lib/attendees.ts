@@ -66,7 +66,7 @@ export function buildAttendeeInvite(opts: {
     subject = picked.subject;
     subjectVariant = picked.id;
   } else {
-    subject = `${opts.firstName}, your invite to the 2026 Lurie Children's & AALB Conference`;
+    subject = `${opts.firstName}, the Joint Commission is keynoting on language access this August`;
   }
   return { subject, html, template, subjectVariant };
 }

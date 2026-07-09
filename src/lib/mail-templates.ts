@@ -413,10 +413,14 @@ function attendeeSpeakerCards() {
 function keynoteSpotlight(href: string, assetBase = ASSET_BASE) {
   const b = assetBase.replace(/\/$/, "");
   return `
-  <a href="${href}" style="text-decoration:none;display:block;margin:0 0 8px 0;">
-    <img src="${b}/email/keynote-even.jpg" width="600" alt="Keynote Speaker Spotlight — The Standards That Protect Patients: A Joint Commission View on Language Access, with Elizabeth Even, Senior Director of Field Operations at The Joint Commission. 2026 Lurie Children&rsquo;s &amp; AALB Conference, August 15 and 16, 2026, Chicago and virtual, 10+ CEU hours." style="display:block;width:100%;max-width:600px;height:auto;border-radius:12px;border:1px solid #E4DAC4;" />
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 2px 0;"><tr><td align="center" style="text-align:center;">
+    <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:0.24em;font-weight:bold;color:${GOLD};text-transform:uppercase;">&#10022;&nbsp;Keynote Announcement&nbsp;&#10022;</div>
+    <div style="font-family:Georgia,'Times New Roman',serif;font-size:22px;line-height:1.3;font-weight:bold;color:${TEAL};padding:10px 0 14px 0;">The people who write the standards &mdash;<br>and the people who enforce them.</div>
+  </td></tr></table>
+  <a href="${href}" style="text-decoration:none;display:block;margin:0 0 10px 0;">
+    <img src="${b}/email/keynote-even.jpg" width="600" alt="Keynote Announcement — The Standards That Protect Patients: A Joint Commission View on Language Access, with Elizabeth Even, Senior Director of Field Operations at The Joint Commission. The 2026 Lurie Children&rsquo;s &amp; AALB Conference, August 15 and 16, 2026, in Chicago and virtual, 10+ CEU hours." style="display:block;width:100%;max-width:600px;height:auto;border-radius:12px;border:1px solid ${GOLD};" />
   </a>
-  <p style="font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:13px;line-height:1.6;color:${MUTED};margin:0 0 22px 0;text-align:center;">Our keynote from The Joint Commission &mdash; the body that accredits America&rsquo;s hospitals &mdash; on the standards that make language access a matter of patient safety.</p>`;
+  <p style="font-family:Georgia,'Times New Roman',serif;font-size:14.5px;line-height:1.7;color:#26363B;margin:0 0 24px 0;text-align:center;">The <strong>Joint Commission</strong> &mdash; whose standards nearly every hospital in America must meet &mdash; takes the keynote stage on language access. So does <strong>Michael Mul&eacute;</strong>, who led language-access enforcement at the U.S. Department of Justice. The people who set the standard and the people who enforce it, together at Lurie Children&rsquo;s, one of the nation&rsquo;s leading children&rsquo;s hospitals.</p>`;
 }
 
 function communityPhoto(href: string, assetBase = ASSET_BASE) {
@@ -451,12 +455,13 @@ export function attendeeInviteEmail({
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
       I hope this finds you well. I&rsquo;m writing to invite you to the <strong>2026 Lurie Children&rsquo;s &amp; AALB Conference</strong>, August 15 and 16, 2026, held in person at Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago, with full virtual attendance also available.
     </p>
+
+    ${keynoteSpotlight(url)}
+
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
       This year&rsquo;s theme, <em>True Language Access: Yesterday, Today, and Tomorrow</em>, brings together interpreters, clinicians, language service providers, advocates, and policymakers for two days of sessions on where the field stands and where it&rsquo;s headed. Across three lenses, <strong>Yesterday</strong> honors the work that built language access as a civil right, <strong>Today</strong> confronts the gap between policy and practice at the bedside, and <strong>Tomorrow</strong> imagines the systems, training, and technology that make it the default for every patient.
     </p>
     ${extra}
-
-    ${keynoteSpotlight(url)}
 
     ${sectionHeading("Conference at a Glance")}
     ${glanceCard(GLANCE_ROWS)}
@@ -468,6 +473,7 @@ export function attendeeInviteEmail({
 
     ${sectionHeading("Why Attend")}
     ${bulletList([
+      "Keynotes from The Joint Commission and a former U.S. Department of Justice language-access leader &mdash; the people who set the standards and the people who enforce them",
       "Practice-focused sessions on the standards, technology, and policy reshaping language access",
       "10+ accredited CEUs (CCHI, NBCMI, RID, and ATA accreditation sought)",
       "A national gathering of interpreters, clinicians, language service providers, advocates, and policymakers",
@@ -492,7 +498,7 @@ export function attendeeInviteEmail({
     ${signOff()}
     ${logoLockup()}
     ${unsubscribeUrl ? `<p style="font-size:11px;line-height:1.6;color:${MUTED};margin:16px 0 0 0;text-align:center;">Don&rsquo;t want these invitations? <a href="${unsubscribeUrl}" style="color:${MUTED};text-decoration:underline;">Unsubscribe</a>.</p>` : ""}
-  `);
+  `, "The Joint Commission and a former U.S. DOJ language-access leader are keynoting. August 15 and 16, in Chicago and online.");
 }
 
 // A warm, personal letter to the AALB alumni community, set as the same
@@ -608,7 +614,7 @@ export function attendeeAlumniInviteEmail({
 </style>
 </head>
 <body style="margin:0;padding:0;width:100%;background-color:#ECE6D7;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
-<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#ECE6D7;">You trained with us, and we would love to see you again, in Chicago or live online, at the Second Joint Conference on language access, August 15 and 16, 2026.</div>
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#ECE6D7;">The Joint Commission and a former U.S. DOJ language-access leader are keynoting. Come reconnect in Chicago or online, August 15 and 16, 2026.</div>
 
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#ECE6D7;background-image:linear-gradient(180deg,#F0EBDD 0%,#E6DECB 100%);">
 <tr><td align="center" style="padding:34px 14px 44px 14px;">

@@ -25,8 +25,8 @@ export type SubjectVariant = { id: string; label: string; make: (first: string) 
 export const ALUMNI_SUBJECT_VARIANTS: SubjectVariant[] = [
   {
     id: "invitation",
-    label: "Invitation",
-    make: (f) => `${f}, your invitation to the 2026 AALB & Lurie Children's Conference`,
+    label: "Joint Commission keynote",
+    make: (f) => `${f}, the Joint Commission is keynoting our 2026 AALB conference`,
   },
   {
     id: "in-person-or-online",
@@ -35,8 +35,8 @@ export const ALUMNI_SUBJECT_VARIANTS: SubjectVariant[] = [
   },
   {
     id: "formal",
-    label: "Formal",
-    make: (f) => `An invitation for ${f} to the Second Joint AALB & Lurie Children's Conference`,
+    label: "Standards and enforcement",
+    make: (f) => `${f}, the Joint Commission and a former DOJ leader on language access`,
   },
   {
     id: "join-us",
