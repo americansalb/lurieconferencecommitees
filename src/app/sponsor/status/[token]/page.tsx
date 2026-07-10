@@ -33,7 +33,16 @@ export default async function SponsorStatusPage({ params }: { params: { token: s
   // letter asks for) instead of a payment. The exhibitor path has its own
   // wizard above.
   const isInKind = sponsor.tier === "food" || sponsor.tier === "asl";
-  const inKindKind: "food" | "asl" = sponsor.tier === "asl" ? "asl" : "food";
+  // Welcome Kit (invite-only remote) sponsors pay, but we also need their
+  // materials: logo, website, brochure plan, and — on the Spotlight tier — the
+  // contact we announce to virtual attendees. Shown alongside the pay button
+  // so the asks are visible before and after payment.
+  const isWelcomeKit = sponsor.tier === "welcome-kit" || sponsor.tier === "welcome-kit-plus";
+  const logisticsKind: "food" | "asl" | "welcome-kit" | "welcome-kit-plus" =
+    sponsor.tier === "asl" ? "asl"
+    : sponsor.tier === "welcome-kit" ? "welcome-kit"
+    : sponsor.tier === "welcome-kit-plus" ? "welcome-kit-plus"
+    : "food";
   // sponsor.logistics is stored as a JSON string map; narrow it for the form.
   const logistics =
     sponsor.logistics && typeof sponsor.logistics === "object" && !Array.isArray(sponsor.logistics)
@@ -123,20 +132,20 @@ export default async function SponsorStatusPage({ params }: { params: { token: s
             <PostPaymentDetailsForm token={params.token} accent={accent} />
           )}
 
-          {(sponsor.tier === "exhibitor" || isInKind || sponsor.wantsLogo || sponsor.logo || sponsor.paid) && (
+          {(sponsor.tier === "exhibitor" || isInKind || isWelcomeKit || sponsor.wantsLogo || sponsor.logo || sponsor.paid) && (
             <div className="mt-6 rounded-xl border border-slate-100 bg-slate-50/70 p-4">
               <div className="text-[10px] font-bold tracking-widest uppercase text-slate-400 mb-3">
-                {isInKind ? "Feature your organization" : "Your logo"}
+                {isInKind || isWelcomeKit ? "Feature your organization" : "Your logo"}
               </div>
               <LogoUploader token={params.token} sponsorId={sponsor.id} companyName={sponsor.companyName} hasLogo={!!sponsor.logo} />
-              {isInKind && (
+              {(isInKind || isWelcomeKit) && (
                 <div className="mt-4 pt-4 border-t border-slate-200/70">
                   <WebsiteField token={params.token} initial={sponsor.website || ""} />
                 </div>
               )}
-              {isInKind && (
+              {(isInKind || isWelcomeKit) && (
                 <div className="mt-4 pt-4 border-t border-slate-200/70">
-                  <LogisticsForm token={params.token} kind={inKindKind} initial={logistics} />
+                  <LogisticsForm token={params.token} kind={logisticsKind} initial={logistics} />
                 </div>
               )}
               {(sponsor.registreeName || sponsor.dietary || sponsor.accessibility) && (
