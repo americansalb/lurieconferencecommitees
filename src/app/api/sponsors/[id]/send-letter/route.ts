@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { enqueueSponsorInvite } from "@/lib/sponsor-invite";
+import { tierById } from "@/lib/sponsors";
 import { appUrl } from "@/lib/presenters";
 
 // Per-org "Queue + 20% off" button: the same invitation letter, but with the
@@ -27,6 +28,11 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
   // donate in kind, so a discount is meaningless; use Queue invite instead.
   if (sponsor.tier === "food" || sponsor.tier === "asl") {
     return NextResponse.json({ ok: false, queued: false, error: "The 20% offer does not apply to in-kind food or ASL sponsors. Use Queue invite instead." }, { status: 400 });
+  }
+  // Invite-only (arranged) tiers were priced by agreement; a discount would
+  // change the deal. Queue the normal arranged invite instead.
+  if (tierById(sponsor.tier)?.inviteOnly) {
+    return NextResponse.json({ ok: false, queued: false, error: "This is an arranged, invite-only level with an agreed price. Use Queue invite instead." }, { status: 400 });
   }
 
   // VIP courtesy: 20% off any paid level, including the exhibitor table. Only a

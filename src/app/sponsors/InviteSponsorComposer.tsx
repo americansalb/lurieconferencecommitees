@@ -23,6 +23,10 @@ export default function InviteSponsorComposer({
   const [contactRole, setContactRole] = useState("");
   const [contactPhone, setContactPhone] = useState("");
   const [website, setWebsite] = useState("");
+  // Preset level for the invite ("" = invitee picks on the landing page).
+  // Required for invite-only tiers (Welcome Kit), which the public pages never
+  // show — the invite is the only way in.
+  const [singleTier, setSingleTier] = useState("");
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
 
@@ -56,7 +60,7 @@ export default function InviteSponsorComposer({
       const res = await fetch("/api/sponsors/invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ companyName, contactName, contactEmail, contactRole, contactPhone, website, inviteMessage, compExhibitor }),
+        body: JSON.stringify({ companyName, contactName, contactEmail, contactRole, contactPhone, website, inviteMessage, compExhibitor, tier: compExhibitor ? undefined : (singleTier || undefined) }),
       });
       const json = await res.json();
       if (res.ok && json.sent) {
@@ -127,6 +131,26 @@ export default function InviteSponsorComposer({
               <Field label="Website (optional)" value={website} onChange={setWebsite} placeholder="https://" className="sm:col-span-2" />
             </div>
             <CompToggle checked={compExhibitor} onChange={setCompExhibitor} />
+            {!compExhibitor && (
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wide text-slate-500 mb-1">Sponsorship level</label>
+                <select
+                  value={singleTier}
+                  onChange={(e) => setSingleTier(e.target.value)}
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-teal-500 bg-white"
+                >
+                  <option value="">They choose on the invitation page (default)</option>
+                  {TIERS.map((t) => (
+                    <option key={t.id} value={t.id}>{t.name}, {t.amountLabel}{t.inviteOnly ? " · invite-only" : ""}</option>
+                  ))}
+                </select>
+                {TIERS.find((t) => t.id === singleTier)?.inviteOnly && (
+                  <p className="mt-1 text-[11px] text-slate-500">
+                    Invite-only level: it never appears on the public sponsor pages, and the email confirms the arranged deal (&ldquo;as we discussed&rdquo;) with a link straight to payment.
+                  </p>
+                )}
+              </div>
+            )}
             <MessageField value={inviteMessage} onChange={setInviteMessage} contactName={contactName} />
             {result && <ResultBanner ok={result.ok} message={result.message} />}
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
@@ -168,7 +192,7 @@ export default function InviteSponsorComposer({
                     <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Suggested level (optional)</span>
                     <select value={bulkTier} onChange={(e) => setBulkTier(e.target.value)} className="mt-1 w-full px-3 py-2.5 text-sm border border-slate-200 rounded-lg outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 bg-white">
                       <option value="">Let them choose on the page</option>
-                      {TIERS.map((t) => <option key={t.id} value={t.id}>{t.name}, {t.amountLabel}</option>)}
+                      {TIERS.map((t) => <option key={t.id} value={t.id}>{t.name}, {t.amountLabel}{t.inviteOnly ? " · invite-only" : ""}</option>)}
                     </select>
                   </label>
                 )}

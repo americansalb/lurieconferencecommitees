@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
-import { newSponsorToken, tierById, sponsorFromHeader, sponsorReplyTo, sponsorLetterReplyTo, sponsorInviteSubject, sponsorFoodSubject, sponsorAslSubject, sponsorUnsubHeaders, sponsorUnsubscribeUrl, isOfficialPartner, sponsorFirstName } from "@/lib/sponsors";
+import { newSponsorToken, tierById, sponsorFromHeader, sponsorReplyTo, sponsorLetterReplyTo, sponsorInviteSubject, sponsorFoodSubject, sponsorAslSubject, sponsorArrangedSubject, sponsorUnsubHeaders, sponsorUnsubscribeUrl, isOfficialPartner, sponsorFirstName } from "@/lib/sponsors";
 import { sponsorInviteEmail, sponsorLetterEmail, sponsorFoodLetterEmail, sponsorAslLetterEmail } from "@/lib/mail-templates";
 
 // The formal letter is the standard sponsor invitation. Complimentary
@@ -146,6 +146,22 @@ export async function POST(req: Request) {
       unsubscribeUrl: sponsorUnsubscribeUrl(token),
     });
     subject = sponsorInviteSubject(sponsor.companyName, { comp: true });
+  } else if (suggested?.inviteOnly) {
+    // Invite-only tiers (Welcome Kit options) were agreed over email first:
+    // the email confirms the arranged deal and links straight to it, rather
+    // than pitching the sponsorship levels.
+    html = sponsorInviteEmail({
+      contactFirstName: sponsorFirstName(sponsor.contactName, sponsor.companyName),
+      companyName: sponsor.companyName,
+      suggestedTier: suggested,
+      inviteMessage: sponsor.inviteMessage,
+      landingUrl,
+      assetBase: appUrl(),
+      isPartner: partner,
+      arranged: true,
+      unsubscribeUrl: sponsorUnsubscribeUrl(token),
+    });
+    subject = sponsorArrangedSubject(sponsor.companyName, suggested.name);
   } else {
     html = sponsorLetterEmail({
       contactName: sponsor.contactName,

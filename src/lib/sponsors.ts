@@ -43,6 +43,11 @@ export type SponsorTier = {
   // figure as the approximate VALUE of that donation (a sense of scale), not a
   // price, and `payAlternative` is the secondary "or just fund it" option.
   inKind?: { action: string; valueLabel: string; requirement: string; payAlternative: string };
+  // Invite-only tiers never appear on the public sponsor pages; they exist for
+  // deals arranged over email (e.g. the Welcome Kit options offered to an org
+  // that can't attend in person). The admin invites them with the tier preset,
+  // and the invitation email frames it as "as discussed", not a pitch.
+  inviteOnly?: boolean;
 };
 
 // Pricing and benefits straight from the 2026 Sponsorship & Exhibitor Prospectus.
@@ -174,6 +179,40 @@ export const TIERS: SponsorTier[] = [
       "Listing in the conference program",
     ],
   },
+  // Invite-only: a remote presence for organizations that can't attend in
+  // person, arranged over email (first offered to En-Vision America). Never
+  // shown on the public sponsor pages; admins invite with the tier preset.
+  {
+    id: "welcome-kit",
+    name: "Welcome Kit Sponsor",
+    amountCents: 20000,
+    amountLabel: "$200",
+    ticketsIncluded: 0,
+    tagline: "Your brochure in every attendee's hands.",
+    variant: "supporter",
+    accent: "#047857",
+    accentSoft: "#D1FAE5",
+    inviteOnly: true,
+    benefits: [
+      "One brochure or promotional insert in the welcome kit given to every in-person attendee",
+    ],
+  },
+  {
+    id: "welcome-kit-plus",
+    name: "Welcome Kit + Virtual Spotlight",
+    amountCents: 30000,
+    amountLabel: "$300",
+    ticketsIncluded: 0,
+    tagline: "In every welcome kit, and in front of the virtual audience.",
+    variant: "supporter",
+    accent: "#047857",
+    accentSoft: "#D1FAE5",
+    inviteOnly: true,
+    benefits: [
+      "One brochure or promotional insert in the welcome kit given to every in-person attendee",
+      "A live acknowledgment immediately before the virtual networking session, with your organization's name, website, and contact information shared with virtual attendees",
+    ],
+  },
 ];
 
 export function tierById(id: string): SponsorTier | undefined {
@@ -273,6 +312,13 @@ export function isAslProspect(s: { tier: string }): boolean {
 export function sponsorAslSubject(companyName: string): string {
   const co = (companyName || "").trim() || "Your team";
   return `${co}: an invitation to be an ASL Interpreter Sponsor of the 2026 Lurie Children's & AALB Conference`;
+}
+
+// Subject for an invite-only (arranged) tier: the deal was agreed over email,
+// so the subject confirms it rather than pitching it.
+export function sponsorArrangedSubject(companyName: string, tierName: string): string {
+  const co = (companyName || "").trim() || "Your organization";
+  return `${co}: confirming your ${tierName} sponsorship of the 2026 Lurie Children's & AALB Conference`;
 }
 
 // Subject for the in-kind acceptance / welcome letter, sent when an admin

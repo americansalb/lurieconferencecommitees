@@ -880,7 +880,7 @@ export default function SponsorsAdminPage() {
                               {s.status === "prospect" ? "Queue invite" : "Re-queue"}
                             </button>
                           )}
-                          {isAdmin && (s.status === "prospect" || s.status === "invited") && s.tier !== "food" && s.tier !== "asl" && (
+                          {isAdmin && (s.status === "prospect" || s.status === "invited") && s.tier !== "food" && s.tier !== "asl" && !TIERS.find((t) => t.id === s.tier)?.inviteOnly && (
                             <button
                               onClick={() => sendLetter(s.id)}
                               disabled={sendingLetterId === s.id}
