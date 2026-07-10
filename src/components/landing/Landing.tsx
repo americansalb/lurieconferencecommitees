@@ -4,7 +4,6 @@ import Theme from "./Theme";
 import Speakers from "./Speakers";
 import Venue from "./Venue";
 import Pricing from "./Pricing";
-import CallForPresenters from "./CallForPresenters";
 import SponsorsBlock from "./SponsorsBlock";
 import FAQ from "./FAQ";
 import Hosts from "./Hosts";
@@ -93,7 +92,6 @@ export default function Landing() {
         <Speakers />
         <Venue />
         <Pricing />
-        <CallForPresenters />
         <SponsorsBlock />
         <FAQ />
         <Hosts />

@@ -69,6 +69,14 @@ export default function SpeakerCard({ speaker, accent }: { speaker: Speaker; acc
 
           <span className="mt-3 mb-3.5 block h-[3px] w-9 rounded-full" style={{ background: accent }} />
 
+          {/* The session title is the headline when we have it: what they're
+              presenting matters more to attendees than their job title. */}
+          {s.talk && (
+            <div className="mb-2.5 text-[15px] font-semibold italic leading-snug line-clamp-3" style={{ color: TOKENS.ink }}>
+              &ldquo;{s.talk}&rdquo;
+            </div>
+          )}
+
           {/* Reserve two lines for the title so one-line and two-line titles
               don't stagger the org/bio baselines across the row. */}
           <div className="min-h-[2.75em] text-[12.5px] font-bold uppercase tracking-wide leading-snug line-clamp-2" style={{ color: accent }} title={s.title}>
@@ -168,6 +176,12 @@ export function KeynoteCard({ speaker }: { speaker: Speaker }) {
               {s.title}
             </div>
 
+            {s.talk && (
+              <div className="mt-5 text-lg sm:text-xl font-semibold italic leading-snug text-white max-w-2xl">
+                &ldquo;{s.talk}&rdquo;
+              </div>
+            )}
+
             <p className="mt-5 text-[15px] leading-relaxed text-white/85 line-clamp-3 max-w-2xl">
               {s.bio}
             </p>
@@ -250,6 +264,12 @@ function SpeakerModal({ speaker: s, accent, onClose }: { speaker: Speaker; accen
             {s.title}
           </div>
           <div className="text-[13.5px]" style={{ color: TOKENS.muted }}>{s.org}</div>
+
+          {s.talk && (
+            <div className="mt-4 text-[16px] font-semibold italic leading-snug" style={{ color: TOKENS.ink }}>
+              &ldquo;{s.talk}&rdquo;
+            </div>
+          )}
 
           <div className="mt-5 mb-5 h-px w-full" style={{ background: TOKENS.hairline }} />
 

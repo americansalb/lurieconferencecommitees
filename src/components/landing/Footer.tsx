@@ -1,7 +1,6 @@
 import { TOKENS, CONFERENCE } from "./tokens";
 
 const QUICK_LINKS = [
-  { href: "/proposal", label: "Submit a Proposal" },
   { href: "/register", label: "Register" },
   { href: "/sponsor", label: "Become a Sponsor" },
   { href: "#faq", label: "FAQ" },

@@ -15,6 +15,9 @@ export type Speaker = {
   org: string;
   bio: string;
   photo: string;
+  // The title of their session, highlighted on the card when we have it
+  // (quoted, above the role). Leave unset until the talk is confirmed.
+  talk?: string;
   // The keynote gets the full-width feature treatment at the top of the
   // Speakers section instead of a card in the grid.
   keynote?: boolean;
