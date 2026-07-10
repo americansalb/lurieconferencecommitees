@@ -15,6 +15,9 @@ export type Speaker = {
   org: string;
   bio: string;
   photo: string;
+  // The keynote gets the full-width feature treatment at the top of the
+  // Speakers section instead of a card in the grid.
+  keynote?: boolean;
 };
 
 export const SPEAKERS: Speaker[] = [
@@ -23,8 +26,17 @@ export const SPEAKERS: Speaker[] = [
     name: "Elizabeth Even",
     title: "Senior Director, Field Operations",
     org: "The Joint Commission",
+    keynote: true,
     bio: "Elizabeth Even is a nurse with over 20 years of clinical and leadership experience who currently serves as Senior Director of Field Operations for the Division of Accreditation and Certification Operations at The Joint Commission. In this role, she provides strategic and operational leadership for ACO field operations, including strategic planning, budgeting and financial management, workforce planning, talent acquisition and retention, employee engagement, education, and the execution of field-based programs and activities. Her work supports the organization’s strategic direction and advances consistent, high-quality, and customer-focused accreditation and certification operations.",
     photo: "/speakers/liz-even.webp",
+  },
+  {
+    slug: "michael-mule",
+    name: "Michael Mulé",
+    title: "Civil Rights Attorney, Language Access Expert",
+    org: "Formerly U.S. Department of Justice, Civil Rights Division",
+    bio: "Michael Mulé is a civil rights attorney with twenty years of experience advancing the rights of people who communicate in languages other than English. For fifteen years, he led national Title VI and language access initiatives at the U.S. Department of Justice (DOJ) in the Civil Rights Division (CRT) and the Office of Justice Programs.",
+    photo: "/speakers/michael-mule.webp",
   },
   {
     slug: "danilo-formolo",
@@ -61,14 +73,6 @@ export const SPEAKERS: Speaker[] = [
     org: "Tica Interpreter Training & Translations",
     bio: "Marisa Rueda Will is a veteran medical interpreter and trainer with over 18 years of experience at Mayo Clinic, where she rose to Level III and served as a Simulation Center Instructor. A certified Spanish healthcare interpreter (CHI™-Spanish) and Licensed Interpreter Trainer, Marisa holds a degree from Luther College and recently completed her Master’s in Interpreting Studies at Western Oregon University. She is actively involved in the industry, serving on the NCIHC Webinars Work Group and as a CCHI Commissioner, and presenting at major national conferences including ATA, CHIA, and CCHI. Today, she owns Tica Interpreter Training and Translations, where she specializes in education through storytelling, delivering professional training rooted in real patient experiences.",
     photo: "/speakers/marisa-rueda-will.webp",
-  },
-  {
-    slug: "michael-mule",
-    name: "Michael Mulé",
-    title: "Civil Rights Attorney, Language Access Expert",
-    org: "Formerly U.S. Department of Justice, Civil Rights Division",
-    bio: "Michael Mulé is a civil rights attorney with twenty years of experience advancing the rights of people who communicate in languages other than English. For fifteen years, he led national Title VI and language access initiatives at the U.S. Department of Justice (DOJ) in the Civil Rights Division (CRT) and the Office of Justice Programs.",
-    photo: "/speakers/michael-mule.webp",
   },
   {
     slug: "wilma-alvarado-little",
