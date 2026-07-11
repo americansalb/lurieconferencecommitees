@@ -88,8 +88,8 @@ export default function Landing() {
       <Nav />
       <main>
         <Hero />
-        <Theme />
         <Speakers />
+        <Theme />
         <Venue />
         <Pricing />
         <SponsorsBlock />
