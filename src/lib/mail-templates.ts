@@ -1928,7 +1928,7 @@ export function sponsorInKindPledgeEmail({ kind, contactName, companyName, provi
 }
 
 type SponsorInKindAcceptanceArgs = {
-  kind: "food" | "asl";
+  kind: "food" | "asl" | "captioning";
   contactName: string;
   companyName: string;
   // The pledge summary we hold (from sponsor.message), reflected back so the
@@ -1965,7 +1965,8 @@ export function sponsorInKindAcceptanceEmail({
   const site = (learnMoreUrl || base).replace(/\/$/, "");
   const today = dateLabel || new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   const isAsl = kind === "asl";
-  const sponsorLabel = isAsl ? "ASL Interpreter Sponsor" : "Food Sponsor";
+  const isCaptioning = kind === "captioning";
+  const sponsorLabel = isAsl ? "ASL Interpreter Sponsor" : isCaptioning ? "Captioning Sponsor" : "Food Sponsor";
 
   // Greeting: a person's first name when we have one, otherwise the org name
   // (sans a trailing "(ABBR)").
@@ -1977,19 +1978,23 @@ export function sponsorInKindAcceptanceEmail({
 
   const mission = isAsl
     ? "helping us keep every session of the conference accessible in American Sign Language, so that Deaf and hard-of-hearing attendees are full participants and never an afterthought"
+    : isCaptioning
+    ? "helping us make every session accessible with live captioning, for the in-person and virtual audiences alike, so no one misses a word"
     : "helping us hold the line on a fully plant-based, meat-free conference, where every meal honors the same promise these two days are about";
-  const pledgeLabel = isAsl ? "The interpreting you are providing" : "What you are providing";
+  const pledgeLabel = isAsl ? "The interpreting you are providing" : isCaptioning ? "The captioning you are providing" : "What you are providing";
   // A plain-language summary of what the portal form asks, so the letter names
   // the details without turning into a reply-by-email checklist.
   const detailsSummary = isAsl
     ? "your coverage, how many interpreters, on-site or remote, a day-of contact, and any materials to send ahead"
+    : isCaptioning
+    ? "your coverage, how the captions are delivered for the room and the stream, any technical needs, a day-of contact, and any materials to send ahead"
     : "what you are providing, which day and meal, delivery or pickup, a day-of contact, allergen notes, and any setup needs";
-  const recognitionLast = isAsl
+  const recognitionLast = isAsl || isCaptioning
     ? "An honorable mention during opening remarks"
     : "An honorable mention at the opening and at the meal you provide, before a national audience of interpreters, clinicians, and advocates";
   // Careful, accurate tax language: donated services are not deductible under
   // IRS rules, and the acknowledgment describes the gift without valuing it.
-  const taxLine = isAsl
+  const taxLine = isAsl || isCaptioning
     ? "Out-of-pocket costs connected to your donation may be tax-deductible as a charitable contribution to a 501(c)(3); the value of donated services themselves generally is not"
     : "Your in-kind food donation may be tax-deductible as a charitable contribution to a 501(c)(3)";
 

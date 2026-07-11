@@ -59,6 +59,16 @@ const ASL_FIELDS: Field[] = [
   { key: "materials", label: "Materials to send in advance", type: "textarea", placeholder: "Agenda, slides, or a glossary, so your interpreters can prepare" },
 ];
 
+// Captioning sponsors (in-kind, e.g. the National Captioning Institute):
+// coverage, how captions reach the room and the stream, tech, and prep.
+const CAPTIONING_FIELDS: Field[] = [
+  { key: "coverage", label: "Coverage you can provide", type: "textarea", placeholder: "Which sessions, day, or the full event", hint: "Both days stream live to a virtual audience alongside the in-person program." },
+  { key: "mode", label: "How the captions are delivered", type: "text", placeholder: "e.g. embedded in the live stream, CART screen in the room, both" },
+  { key: "equipment", label: "Technical needs", type: "text", placeholder: "Audio feed, platform access, bandwidth — whatever your team needs" },
+  { key: "dayOfContact", label: "Day-of contact", type: "text", placeholder: "Name and cell number for the day" },
+  { key: "materials", label: "Materials to send in advance", type: "textarea", placeholder: "Agenda, slides, or a glossary, so your captioners can prepare" },
+];
+
 // Welcome Kit sponsors (invite-only, remote presence): what we need is their
 // brochure and, on the Spotlight tier, the contact details we announce to
 // virtual attendees. No ticket section — these tiers include none.
@@ -80,12 +90,13 @@ export default function LogisticsForm({
   token, kind, initial,
 }: {
   token: string;
-  kind: "food" | "asl" | "welcome-kit" | "welcome-kit-plus";
+  kind: "food" | "asl" | "captioning" | "welcome-kit" | "welcome-kit-plus";
   initial: Record<string, string> | null;
 }) {
   const isWelcome = kind === "welcome-kit" || kind === "welcome-kit-plus";
   const detailFields =
     kind === "asl" ? ASL_FIELDS
+    : kind === "captioning" ? CAPTIONING_FIELDS
     : kind === "welcome-kit" ? WELCOME_FIELDS
     : kind === "welcome-kit-plus" ? [...WELCOME_FIELDS, ...SPOTLIGHT_FIELDS]
     : FOOD_FIELDS;
@@ -178,7 +189,7 @@ export default function LogisticsForm({
       )}
 
       <div className={`text-sm font-semibold text-slate-700 ${isWelcome ? "" : "mt-5 pt-4 border-t border-slate-200/70"}`}>
-        {kind === "asl" ? "Interpretation details" : isWelcome ? "Welcome kit details" : "Food details"}
+        {kind === "asl" ? "Interpretation details" : kind === "captioning" ? "Captioning details" : isWelcome ? "Welcome kit details" : "Food details"}
       </div>
       <p className="text-xs text-slate-500 mt-0.5">
         Fill in whatever you can now; you can come back and update it anytime.

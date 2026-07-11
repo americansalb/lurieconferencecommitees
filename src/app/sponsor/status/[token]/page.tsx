@@ -32,14 +32,15 @@ export default async function SponsorStatusPage({ params }: { params: { token: s
   // website link, and the coordination logistics (the things the acceptance
   // letter asks for) instead of a payment. The exhibitor path has its own
   // wizard above.
-  const isInKind = sponsor.tier === "food" || sponsor.tier === "asl";
+  const isInKind = sponsor.tier === "food" || sponsor.tier === "asl" || sponsor.tier === "captioning";
   // Welcome Kit (invite-only remote) sponsors pay, but we also need their
   // materials: logo, website, brochure plan, and — on the Spotlight tier — the
   // contact we announce to virtual attendees. Shown alongside the pay button
   // so the asks are visible before and after payment.
   const isWelcomeKit = sponsor.tier === "welcome-kit" || sponsor.tier === "welcome-kit-plus";
-  const logisticsKind: "food" | "asl" | "welcome-kit" | "welcome-kit-plus" =
+  const logisticsKind: "food" | "asl" | "captioning" | "welcome-kit" | "welcome-kit-plus" =
     sponsor.tier === "asl" ? "asl"
+    : sponsor.tier === "captioning" ? "captioning"
     : sponsor.tier === "welcome-kit" ? "welcome-kit"
     : sponsor.tier === "welcome-kit-plus" ? "welcome-kit-plus"
     : "food";

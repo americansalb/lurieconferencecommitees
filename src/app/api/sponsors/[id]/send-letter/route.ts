@@ -26,7 +26,7 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
   }
   // The 20% courtesy is for paid sponsorships. Food/ASL sponsors are asked to
   // donate in kind, so a discount is meaningless; use Queue invite instead.
-  if (sponsor.tier === "food" || sponsor.tier === "asl") {
+  if (sponsor.tier === "food" || sponsor.tier === "asl" || sponsor.tier === "captioning") {
     return NextResponse.json({ ok: false, queued: false, error: "The 20% offer does not apply to in-kind food or ASL sponsors. Use Queue invite instead." }, { status: 400 });
   }
   // Invite-only (arranged) tiers were priced by agreement; a discount would

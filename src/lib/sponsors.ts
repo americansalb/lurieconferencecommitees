@@ -163,6 +163,26 @@ export const TIERS: SponsorTier[] = [
       "One flyer or material distributed to attendees",
     ],
   },
+  // In-kind accessibility partner (arranged over email, e.g. the National
+  // Captioning Institute): live captioning donated for the event. Not on the
+  // public pickers (allowlists), no charge; the value is the service.
+  {
+    id: "captioning",
+    name: "Captioning Sponsor",
+    amountCents: 0,
+    amountLabel: "In kind",
+    ticketsIncluded: 2,
+    tagline: "Donate live captioning for the full event.",
+    variant: "asl",
+    accent: "#0E7490",
+    accentSoft: "#CFFAFE",
+    benefits: [
+      "Company info and logo on the conference website",
+      "Honorable mention during opening remarks",
+      "Name and logo displayed at the conference",
+      "Social media thank you posts",
+    ],
+  },
   {
     id: "exhibitor",
     name: "Exhibitor Table",
@@ -309,6 +329,11 @@ export function isAslProspect(s: { tier: string }): boolean {
   return s.tier === "asl";
 }
 
+// A captioning prospect: an organization donating live captioning in kind.
+export function isCaptioningProspect(s: { tier: string }): boolean {
+  return s.tier === "captioning";
+}
+
 export function sponsorAslSubject(companyName: string): string {
   const co = (companyName || "").trim() || "Your team";
   return `${co}: an invitation to be an ASL Interpreter Sponsor of the 2026 Lurie Children's & AALB Conference`;
@@ -324,9 +349,9 @@ export function sponsorArrangedSubject(companyName: string, tierName: string): s
 // Subject for the in-kind acceptance / welcome letter, sent when an admin
 // accepts a pledged Food or ASL sponsor from the dashboard. Leads with the good
 // news and the organization's own name.
-export function sponsorInKindAcceptanceSubject(companyName: string, kind: "food" | "asl"): string {
+export function sponsorInKindAcceptanceSubject(companyName: string, kind: "food" | "asl" | "captioning"): string {
   const co = (companyName || "").trim() || "Your organization";
-  const role = kind === "asl" ? "ASL Interpreter Sponsor" : "Food Sponsor";
+  const role = kind === "asl" ? "ASL Interpreter Sponsor" : kind === "captioning" ? "Captioning Sponsor" : "Food Sponsor";
   return `It's official: ${co} is a ${role} of the 2026 Lurie Children's & AALB Conference`;
 }
 

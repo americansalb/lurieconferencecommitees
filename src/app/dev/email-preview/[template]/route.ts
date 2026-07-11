@@ -108,6 +108,17 @@ export async function GET(
         assetBase: base,
       });
       break;
+    case "inkind-accepted-captioning":
+      html = sponsorInKindAcceptanceEmail({
+        kind: "captioning",
+        contactName: "Lydy Pinzón-Dadley",
+        companyName: "National Captioning Institute",
+        pledge: "Live captioning for the full event, in-person and virtual audiences · Arrangement: donated in kind",
+        materialsUrl: `${base}/sponsor/status/demo-token`,
+        unsubscribeUrl: `${base}/api/sponsors/unsubscribe/demo-token`,
+        assetBase: base,
+      });
+      break;
     case "inkind-accepted-asl":
       html = sponsorInKindAcceptanceEmail({
         kind: "asl",
