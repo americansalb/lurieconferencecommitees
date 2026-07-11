@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { activePriceCents } from "@/components/landing/pricing-data";
+import { activePriceCents, oneDayVirtualPriceCents } from "@/components/landing/pricing-data";
 import { computePrice } from "@/lib/attendees";
 import { prisma } from "@/lib/db";
 import {
@@ -17,6 +17,9 @@ export async function POST(req: Request) {
     ? body.attendanceMode
     : null;
   const token = typeof body.token === "string" ? body.token : null;
+  // One-day virtual ticket (public funnel only): base the preview on the
+  // one-day price so the shown total matches checkout.
+  const attendDay = body.attendDay === "sat" || body.attendDay === "sun" ? body.attendDay : null;
 
   if (!attendanceMode) {
     return NextResponse.json({ ok: false, error: "Choose in-person or virtual first." }, { status: 400 });
@@ -42,7 +45,9 @@ export async function POST(req: Request) {
     const { finalCents } = computePrice(attendanceMode, attendee.discountPercent);
     baseCents = finalCents ?? activePriceCents(attendanceMode);
   } else {
-    baseCents = activePriceCents(attendanceMode);
+    baseCents = attendDay && attendanceMode === "virtual"
+      ? oneDayVirtualPriceCents()
+      : activePriceCents(attendanceMode);
   }
 
   const outcome = await validateAndApply(code, baseCents, attendanceMode);

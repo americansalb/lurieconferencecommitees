@@ -394,6 +394,9 @@ model Attendee {
   cohortOrder Int?
 
   attendanceMode     String?
+  // One-day virtual ticket: "sat" or "sun" when the attendee registered for a
+  // single day (66% price, virtual only); null means both days.
+  attendDay          String?
   needsParking       Boolean?
   accessibilityNotes String?
   dietary            String?
