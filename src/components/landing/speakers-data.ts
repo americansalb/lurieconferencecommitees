@@ -107,7 +107,7 @@ export const SPEAKERS: Speaker[] = [
     credentials: "EdD",
     title: "Director of Strategic Partnerships",
     org: "Equiti Health",
-    talk: "True Language Access: Yesterday, Today, and Tomorrow: The Persistent Gap Between Policy, Practice, and Professional Medical Interpreting",
+    talk: "The Persistent Gap Between Policy, Practice, and Professional Medical Interpreting",
     bio: "Dr. Patricia A. Alonzo is a trilingual medical interpreter (English, Spanish, and ASL) with a Bachelor’s in ASL Interpreting, a Master’s in Educational Leadership, and an EdD in Organizational Leadership focused on the health outcomes of Limited English Proficient patients in healthcare settings. Currently Director of Strategic Partnerships at Equiti Health, she combines interpreting expertise with strategic leadership. Her interpreting career began in Chicago as a trilingual freelance interpreter and continued at Moffitt Cancer Center, providing critical language services to LEP patients. During her decade at Stratus/AMN Healthcare she grew through a range of roles, and as VP of Language Operations at Universal Language Services she led the organization through transformational growth. Dr. Alonzo holds CMI national certification and frequently speaks on language access, cultural competency, and legislation.",
     photo: "/speakers/patricia-alonzo.webp",
   },

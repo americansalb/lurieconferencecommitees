@@ -70,9 +70,11 @@ export default function SpeakerCard({ speaker, accent }: { speaker: Speaker; acc
           <span className="mt-3 mb-3.5 block h-[3px] w-9 rounded-full" style={{ background: accent }} />
 
           {/* The session title is the headline when we have it: what they're
-              presenting matters more to attendees than their job title. */}
+              presenting matters more to attendees than their job title. Shown
+              in full, never truncated — a cut-off talk title is worse than an
+              uneven card. */}
           {s.talk && (
-            <div className="mb-2.5 text-[15px] font-semibold italic leading-snug line-clamp-3" style={{ color: TOKENS.ink }}>
+            <div className="mb-2.5 text-[15px] font-semibold italic leading-snug" style={{ color: TOKENS.ink }}>
               &ldquo;{s.talk}&rdquo;
             </div>
           )}
