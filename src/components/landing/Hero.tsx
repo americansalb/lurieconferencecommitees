@@ -1,4 +1,4 @@
-import { Calendar, Globe, Ticket, Award, ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import { TOKENS } from "./tokens";
 import { activeTier, PRICES } from "./pricing-data";
 
@@ -89,33 +89,19 @@ export default function Hero() {
           </div>
         </div>
 
-        {/* Info cards: single row at desktop, 2x2 mobile. */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-12 max-w-4xl mx-auto">
-          <InfoCard
-            icon={Calendar}
-            label="When"
-            primary="August 15 and 16"
-            secondary={<>Aug 15: 9:30 a.m.&ndash;6:30 p.m.<br />Aug 16: 9:00 a.m.&ndash;4:00 p.m. CDT</>}
-          />
-          <InfoCard
-            icon={Globe}
-            label="Format"
-            primary="Hybrid Conference"
-            secondary="In-Person and Virtual"
-            accent
-          />
-          <InfoCard
-            icon={Ticket}
-            label="Tickets"
-            primary={`$${live.inPerson} / $${live.virtual}`}
-            secondary="In-person / Virtual"
-          />
-          <InfoCard
-            icon={Award}
-            label="Accreditation"
-            primary="10+ hours of CEUs"
-            secondary="Certificate for both days"
-          />
+        {/* One-line key facts. The full when/format/tickets/CEUs cards live in
+            ConferenceDetails, below the speakers, so the lineup leads. */}
+        <div
+          className="mb-12 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-[15px] sm:text-base font-semibold"
+          style={{ color: "rgba(255,255,255,0.88)" }}
+        >
+          <span>August 15&ndash;16, 2026</span>
+          <span aria-hidden style={{ color: TOKENS.gold }}>&middot;</span>
+          <span>Chicago + Virtual</span>
+          <span aria-hidden style={{ color: TOKENS.gold }}>&middot;</span>
+          <span>${live.inPerson} / ${live.virtual}</span>
+          <span aria-hidden style={{ color: TOKENS.gold }}>&middot;</span>
+          <span>10+ CEU hours</span>
         </div>
 
         {/* Single CTA: registration is the focus. */}
@@ -157,96 +143,5 @@ function Dot({ top, left, size, color }: { top: string; left: string; size: numb
         boxShadow: color.includes("201,161,75") ? `0 0 ${size * 2}px ${color}` : undefined,
       }}
     />
-  );
-}
-
-function InfoCard({
-  icon: Icon, label, primary, secondary, badge, accent,
-}: {
-  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
-  label: string;
-  primary: string;
-  secondary: React.ReactNode;
-  badge?: string;
-  accent?: boolean;
-}) {
-  return (
-    <div
-      className="relative rounded-2xl p-6 flex flex-col text-left overflow-hidden transition-transform hover:-translate-y-0.5"
-      style={{
-        background: accent
-          ? "linear-gradient(160deg, rgba(201,161,75,0.18) 0%, rgba(201,161,75,0.06) 100%)"
-          : "linear-gradient(160deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.02) 100%)",
-        border: accent
-          ? "1px solid rgba(201,161,75,0.50)"
-          : "1px solid rgba(255,255,255,0.12)",
-        boxShadow: accent
-          ? "0 16px 40px -16px rgba(201,161,75,0.45), inset 0 1px 0 rgba(255,255,255,0.10)"
-          : "inset 0 1px 0 rgba(255,255,255,0.06)",
-      }}
-    >
-      {/* Subtle radial highlight in the top-left corner of each card. */}
-      <div
-        aria-hidden
-        className="absolute -top-12 -left-12 w-32 h-32 rounded-full pointer-events-none"
-        style={{
-          background: accent
-            ? "radial-gradient(circle, rgba(201,161,75,0.25) 0%, transparent 70%)"
-            : "radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%)",
-        }}
-      />
-
-      {/* Label row with bigger icon tile */}
-      <div className="relative flex items-center justify-between mb-5">
-        <span
-          className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-          style={{
-            background: accent ? "rgba(201,161,75,0.25)" : "rgba(255,255,255,0.10)",
-            color: TOKENS.gold,
-            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.10)",
-          }}
-        >
-          <Icon className="w-5 h-5" />
-        </span>
-        <span
-          className="text-[9px] font-bold tracking-[0.28em] uppercase"
-          style={{ color: accent ? "rgba(244,233,205,0.85)" : "rgba(255,255,255,0.45)" }}
-        >
-          {label}
-        </span>
-      </div>
-
-      {/* Big primary value */}
-      <div
-        className="relative text-[26px] sm:text-[28px] font-bold leading-[1.05] mb-2 tracking-tight"
-        style={{
-          color: "white",
-          textShadow: accent ? "0 0 24px rgba(201,161,75,0.30)" : undefined,
-        }}
-      >
-        {primary}
-      </div>
-
-      <div className="relative text-[13px] leading-snug" style={{ color: "rgba(255,255,255,0.68)" }}>
-        {secondary}
-      </div>
-
-      {badge && (
-        <div
-          className="relative inline-flex items-center gap-1.5 mt-4 px-2.5 py-1 rounded-full text-[9px] font-bold tracking-[0.18em] uppercase self-start"
-          style={{
-            background: "rgba(201,161,75,0.30)",
-            color: "#FBEFCE",
-            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.12), 0 0 12px rgba(201,161,75,0.20)",
-          }}
-        >
-          <span
-            className="w-1 h-1 rounded-full"
-            style={{ background: TOKENS.gold, boxShadow: `0 0 6px ${TOKENS.gold}` }}
-          />
-          {badge}
-        </div>
-      )}
-    </div>
   );
 }

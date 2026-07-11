@@ -1,5 +1,6 @@
 import Nav from "./Nav";
 import Hero from "./Hero";
+import ConferenceDetails from "./ConferenceDetails";
 import Theme from "./Theme";
 import Speakers from "./Speakers";
 import Venue from "./Venue";
@@ -89,6 +90,7 @@ export default function Landing() {
       <main>
         <Hero />
         <Speakers />
+        <ConferenceDetails />
         <Theme />
         <Venue />
         <Pricing />
