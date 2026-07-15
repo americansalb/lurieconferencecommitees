@@ -74,6 +74,16 @@ export const SPEAKERS: Speaker[] = [
     photo: "/speakers/yuri-takabatake.webp",
   },
   {
+    slug: "jane-kontrimas",
+    name: "Jane Crandall Kontrimas",
+    credentials: "CoreCHI™, MS",
+    title: "National Ethics and Standards Work Group Chair",
+    org: "National Council on Interpreting in Health Care",
+    talk: "Revising the National Code of Ethics for Interpreters in Health Care: What’s New?",
+    bio: "Jane Crandall Kontrimas worked as a Russian interpreter from 1978 to 2025. She was a founding member of the Massachusetts Medical Interpreter Association (MMIA), now the International Medical Interpreter Association (IMIA), and chaired its Standards of Practice Committee while the Standards of Practice for Medical Interpreters (1996) was written. She co-wrote Interpreter Advocacy in Healthcare Encounters: A Closer Look with the National Standards of Practice Work Group of the National Council on Interpreting in Health Care (NCIHC), and currently chairs the NCIHC National Ethics and Standards Work Group revising the Code of Ethics for Interpreters in Health Care. She has expressed her passion for interpreting by training interpreters, medical students and faculty, and social workers. Her Day 2 workshop puts outcome-based ethical reasoning to work on real case scenarios.",
+    photo: "/speakers/jane-kontrimas.webp",
+  },
+  {
     slug: "marisa-rueda-will",
     name: "Marisa Rueda Will",
     credentials: "CHI™-Spanish",
@@ -91,6 +101,14 @@ export const SPEAKERS: Speaker[] = [
     talk: "Empowering Communication: Lessons from Language Access Past, Present, and Future",
     bio: "Ms. Alvarado-Little has focused on racial and health equity from a linguistic and cultural perspective, alongside interests in public policy, research, health literacy, and health disparities prevention. As Associate Commissioner and Director of the Office of Minority Health and Health Disparities Prevention at the New York State Department of Health, she leads health literacy and language access initiatives and has been instrumental in developing and implementing hospital- and clinic-based programs and policy. As former co-chair of the board of the National Council on Interpreting in Health Care (NCIHC), she helped the Council achieve the first National Certification for healthcare interpreters, the National Standards of Practice, and the National Code of Ethics. She serves on the HHS Office of Minority Health’s National Project Advisory Committee for the review of the CLAS Standards, has served on the National Academies’ Roundtable on Health Literacy, and chaired the New York State Office of Mental Health Multicultural Advisory Committee. With more than 40 years of experience, she has been a strong voice for linguistically appropriate healthcare at the national, state, and local levels, participating in efforts led by the Joint Commission, the American Medical Association, and the HHS Office of Minority Health. Prior to becoming an independent consultant, she and SUNY colleagues received a 2009 National Institutes of Health grant supporting the Center for the Elimination of Minority Health Disparities at the University at Albany, SUNY, where she served as PI and Director of Community Engagement and Outreach.",
     photo: "/speakers/wilma-alvarado-little.webp",
+  },
+  {
+    slug: "linda-coronado",
+    name: "Linda G. Coronado",
+    title: "Pioneer of Hospital Interpreter Services",
+    org: "Stroger Hospital of Cook County · Day 1 Panelist",
+    bio: "Linda G. Coronado spent 21 years at the Stroger Hospital of Cook County, where she was responsible for developing the first hospital-based interpreter services in Cook County (1984–2005), and went on to help create the Language Access Resource Center (LARC) in DuPage County. As an instructor at the City Colleges of Chicago, she facilitated the first — and only — medical interpreter training program at the college level. Her civic leadership runs just as deep: she served as member and chairperson of the Mayor’s Advisory Commission on Latino Affairs during the Harold Washington administration, co-convenes the 7th Cook County District Health Task Force, serves on the Board of Directors of the Brighton Park Neighborhood Council, and is an active member of the Peace and Education Coalition in the Back of the Yards — the neighborhood where she has lived her whole life. She holds a Bachelor’s in Spanish Secondary Education from Northeastern Illinois University and a Master’s from Roosevelt University.",
+    photo: "/speakers/linda-coronado.webp",
   },
   {
     slug: "daniel-gutierrez-mena",
@@ -148,24 +166,6 @@ export const SPEAKERS: Speaker[] = [
     talk: "Elevating the Role of Healthcare Interpreters: Contributing to Positive Health Outcomes",
     bio: "Dr. Tatiana González-Cestari has 23 years of combined experience as a pharmacologist, researcher, professor, leader, and remote interpreter. She is the Director of Language Service Advocacy at Equiti, where she focuses on hospitals’ language access best practices and their impact on quality, compliance, and financial metrics. Tatiana serves on the NCIHC board and its Policy, Education and Research Committee, and is a co-author of The Remote Interpreter textbook. She has mentored interpreters, developed training, presented at national and international events, published peer-reviewed and non-peer-reviewed articles, and lectured at various universities. She earned her pharmacy degree and her PhD in pharmacology from Universidad Central de Venezuela.",
     photo: "/speakers/tatiana-cestari.webp",
-  },
-  {
-    slug: "jane-kontrimas",
-    name: "Jane Crandall Kontrimas",
-    credentials: "CoreCHI™, MS",
-    title: "National Ethics and Standards Work Group Chair",
-    org: "National Council on Interpreting in Health Care",
-    talk: "Revising the National Code of Ethics for Interpreters in Health Care: What’s New?",
-    bio: "Jane Crandall Kontrimas worked as a Russian interpreter from 1978 to 2025. She was a founding member of the Massachusetts Medical Interpreter Association (MMIA), now the International Medical Interpreter Association (IMIA), and chaired its Standards of Practice Committee while the Standards of Practice for Medical Interpreters (1996) was written. She co-wrote Interpreter Advocacy in Healthcare Encounters: A Closer Look with the National Standards of Practice Work Group of the National Council on Interpreting in Health Care (NCIHC), and currently chairs the NCIHC National Ethics and Standards Work Group revising the Code of Ethics for Interpreters in Health Care. She has expressed her passion for interpreting by training interpreters, medical students and faculty, and social workers. Her Day 2 workshop puts outcome-based ethical reasoning to work on real case scenarios.",
-    photo: "/speakers/jane-kontrimas.webp",
-  },
-  {
-    slug: "linda-coronado",
-    name: "Linda G. Coronado",
-    title: "Pioneer of Hospital Interpreter Services",
-    org: "Stroger Hospital of Cook County · Day 1 Panelist",
-    bio: "Linda G. Coronado spent 21 years at the Stroger Hospital of Cook County, where she was responsible for developing the first hospital-based interpreter services in Cook County (1984–2005), and went on to help create the Language Access Resource Center (LARC) in DuPage County. As an instructor at the City Colleges of Chicago, she facilitated the first — and only — medical interpreter training program at the college level. Her civic leadership runs just as deep: she served as member and chairperson of the Mayor’s Advisory Commission on Latino Affairs during the Harold Washington administration, co-convenes the 7th Cook County District Health Task Force, serves on the Board of Directors of the Brighton Park Neighborhood Council, and is an active member of the Peace and Education Coalition in the Back of the Yards — the neighborhood where she has lived her whole life. She holds a Bachelor’s in Spanish Secondary Education from Northeastern Illinois University and a Master’s from Roosevelt University.",
-    photo: "/speakers/linda-coronado.webp",
   },
 
 ];
