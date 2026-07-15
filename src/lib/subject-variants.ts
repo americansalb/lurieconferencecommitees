@@ -65,40 +65,43 @@ export function pickAlumniSubject(firstName: string, token: string): { id: strin
 
 // Reunion invite subject lines for the 2024 conference roster, A/B-tested the
 // same way (stable by token; append, never reorder). Two sets: people who
-// actually attended in 2024 get "come back" language; people who only signed
-// up (or started a checkout) get "the seat you reserved" language.
+// actually attended in 2024, and people who only signed up or started a
+// checkout. The slots are stable; the copy was rewritten in place after the
+// first batch — the original lines read like infomercials ("it is back, and
+// bigger", "your seat is still open"). These now match the formal-invitation
+// register of the alumni set: institution names, dates, dignity.
 export const RETURNING_PAID_SUBJECT_VARIANTS: SubjectVariant[] = [
   {
     id: "ret-paid-back",
-    label: "Come back",
-    make: (f) => `${f}, you were there for the first one — come back for the second`,
+    label: "Join us again",
+    make: (f) => `${f}, you were with us in 2024 — join us again this August`,
   },
   {
     id: "ret-paid-jc",
-    label: "JC keynotes our reunion",
-    make: (f) => `The Joint Commission keynotes our reunion, ${f}`,
+    label: "JC keynote",
+    make: (f) => `${f}, the Joint Commission is keynoting our second conference`,
   },
   {
     id: "ret-paid-reunion",
-    label: "JC at second conference",
-    make: (f) => `The Joint Commission is coming to our second conference, ${f}`,
+    label: "Invitation to return",
+    make: (f) => `${f}, your invitation to return: Chicago, August 15 and 16`,
   },
 ];
 export const RETURNING_LEAD_SUBJECT_VARIANTS: SubjectVariant[] = [
   {
     id: "ret-lead-seat",
-    label: "Seat still open + JC",
-    make: () => `Your seat from 2024 is still open — and The Joint Commission is keynoting`,
+    label: "Formal invitation",
+    make: (f) => `${f}, your invitation to the 2026 Lurie Children's & AALB Conference`,
   },
   {
     id: "ret-lead-jc",
-    label: "JC on your conference",
-    make: (f) => `${f}, the Joint Commission is keynoting the conference you signed up for`,
+    label: "JC keynote",
+    make: (f) => `${f}, the Joint Commission is keynoting our 2026 conference`,
   },
   {
     id: "ret-lead-second",
-    label: "Back and bigger",
-    make: (f) => `${f}, you raised your hand for this in 2024 — it is back, and bigger`,
+    label: "It returns",
+    make: (f) => `${f}, the conference you signed up for returns August 15 and 16`,
   },
 ];
 

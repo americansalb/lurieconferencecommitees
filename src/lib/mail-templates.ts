@@ -812,21 +812,23 @@ export function attendeeReturningInviteEmail({
   const preheader = paid
     ? "The second joint Lurie Children&rsquo;s &amp; AALB conference &mdash; August 15 and 16, 2026, keynoted by The Joint Commission. Welcome back."
     : "The conference you signed up to hear about in 2024 returns &mdash; with The Joint Commission and the DOJ on stage. In person or live online.";
-  // Judged copy (three-draft panel, composite of the winner + grafts): each
-  // opening does genuinely different work per segment. Drop cap = first letter.
+  // Each opening does genuinely different work per segment, in the same
+  // formal-invitation register as the alumni letter: institutions, dates,
+  // dignity. No slogans, no "your seat is waiting" salesmanship. Drop cap =
+  // first letter.
   const opening = paid
     ? (inPerson
-      ? `Two summers ago, you took a seat in the room where Lurie Children&rsquo;s and Americans Against Language Barriers held their first joint conference. Firsts are fragile things; they only become traditions when the people who were there come back. The second one is set, and it is not the same without you.`
-      : `From wherever you were in the summer of 2024, you joined the live stream of the first joint conference &mdash; part of the founding audience that proved a stream could feel like a room, and present in every way that mattered. The second gathering is set, and we are beginning our invitations with the people who were there for the first.`)
+      ? `Two summers ago, you took a seat in the room where Lurie Children&rsquo;s and Americans Against Language Barriers held their first joint conference. The second is set for August 15 and 16, and we wanted your invitation to be among the first to go out.`
+      : `In the summer of 2024, you joined the live stream of the first joint conference &mdash; present in every way that mattered. The second gathering is set for August 15 and 16, and we are beginning our invitations with the people who were there for the first.`)
     : returning2024 === "attempted"
-    ? `In 2024, you came right up to the door of the first joint conference &mdash; closer than almost anyone who did not walk in. What was on the other side of that door has grown considerably since. Your seat is still open, and this letter is us holding it.`
-    : `In 2024, when a joint conference between one of the nation&rsquo;s leading children&rsquo;s hospitals and a language-access nonprofit was still just an idea, you put your name down to hear more. That first gathering happened, and it worked. Now the second one is set, and we are going back through the names of everyone who believed early.`;
+    ? `In 2024, you began a registration for the first joint conference, and your name has been on our list since. The second conference is set for August 15 and 16, and this letter is your invitation to complete what you started.`
+    : `In 2024, when a joint conference between one of the nation&rsquo;s leading children&rsquo;s hospitals and a language-access nonprofit was still just an idea, you put your name down to hear more. The first gathering has come and gone; the second is set for August 15 and 16, and we are writing first to the people who signed up before there was anything to see.`;
   const dropCap = opening.charAt(0);
   const openingRest = opening.slice(1);
   const memoryLine = paid
     ? (inPerson
-      ? `It was the handshakes and the hallway conversations, as much as the sessions, that made the first one what it was &mdash; and the room is being set again.`
-      : `You were with us through the screen last time; this year we would be glad to finally put a handshake to the name in Chicago &mdash; and the live stream will be there for you either way.`)
+      ? `It was the handshakes and the hallway conversations, as much as the sessions, that made the first one what it was.`
+      : `You were with us through the screen last time; we would be glad to finally shake your hand in Chicago &mdash; and the live stream will be there for you either way.`)
     : "";
   const languagesLine = languagesWorthNaming(primaryLanguages)
     ? `The work you carry between your languages &mdash; ${escapeHtml((primaryLanguages || "").trim())} &mdash; is precisely the work those standards were written to protect.`
@@ -976,8 +978,8 @@ export function attendeeReturningInviteEmail({
       ${codeBlock}
 
       ${p(paid
-        ? `The second conference will happen either way &mdash; but reunions are measured by who returns. If any question stands between you and August, reply to this letter; it reaches the three of us, not a machine.`
-        : `We are holding the date, the stage, and a place with your name on it. If any question stands between you and August, reply to this letter; it reaches the three of us, not a machine.`, 22)}
+        ? `We would be glad to have you with us again. If any question stands between you and August, reply to this letter; it reaches the three of us, not a machine.`
+        : `The program, your rate, and your personal code are ready whenever you are. If any question stands between you and August, reply to this letter; it reaches the three of us, not a machine.`, 22)}
 
       <div style="font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.85;color:${INK};padding-bottom:16px;">Until August,</div>
 
