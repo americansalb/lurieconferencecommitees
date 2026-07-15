@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { newAttendeeToken, parseAttendeeCsv, parseEmailList, nameFromEmail, attendeeFromHeader, attendeeReplyTo, attendeeBcc, attendeeUnsubHeaders, buildAttendeeInvite } from "@/lib/attendees";
-import { pickAlumniSubject } from "@/lib/subject-variants";
+import { pickAlumniSubject, pickStudentSubject } from "@/lib/subject-variants";
 import { ensureFirstNameCode } from "@/lib/discounts";
 import { getPolicy, planSendTimes } from "@/lib/email-queue";
 import { sendMail } from "@/lib/mail";
@@ -26,11 +26,17 @@ export async function GET() {
     where: { isTest: false },
     orderBy: { createdAt: "desc" },
   });
-  // Attach the alumni A/B subject variant (derived from the token) so the
-  // dashboard can report click rate per subject line.
+  // Attach the A/B subject variant (derived from the token) so the dashboard
+  // can report click rate per subject line. Alumni and students draw from
+  // different variant sets.
   const attendees = rows.map((a) => ({
     ...a,
-    subjectVariant: a.inviteTemplate === "alumni" ? pickAlumniSubject("", a.inviteToken).id : null,
+    subjectVariant:
+      a.inviteTemplate === "alumni"
+        ? pickAlumniSubject("", a.inviteToken).id
+        : a.inviteTemplate === "student" || a.inviteTemplate === "former-student"
+        ? pickStudentSubject("", a.inviteToken).id
+        : null,
   }));
 
   const queueCounts = await prisma.emailQueue.groupBy({

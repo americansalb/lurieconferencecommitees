@@ -529,18 +529,37 @@ export function attendeeAlumniInviteEmail({
   const today = dateLabel || new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   const hasDiscount = discountPercent > 0;
 
-  // Relationship framing. The letter, layout, and 25% courtesy are identical for
-  // everyone who trained with AALB; only the opening line and the courtesy label
-  // change, and none of the wording implies anyone is lesser for not certifying.
+  // Relationship framing. Alumni (certificate holders) keep the formal
+  // reconnection letter. Students and former students get a career-first
+  // rework: the formal version earned ~2% clicks from them, because it never
+  // answered what the conference does for someone turning training into paid
+  // work. Same engraved shell, different spine.
   const rel = relationship || "alumnus";
-  // Text after the drop-cap "Y" (every opening begins with "You").
-  const openingRest =
+  const isStudentLetter = rel !== "alumnus";
+  // Full opening paragraph; the first letter renders as the drop cap.
+  const opening =
     rel === "student"
-      ? "ou are part of the AALB community, training with us toward your medical interpreter certification, and as we plan our next conference you are exactly the person we hoped would be in the room, so we wanted to write to you directly."
+      ? `You are training for a profession that gathers in one room this August &mdash; and you belong in it. <strong>The Joint Commission</strong>, whose standards nearly every American hospital answers to, delivers the keynote on language access at Lurie Children&rsquo;s, and the employers who hire interpreters will be steps away on the exhibit floor. You could be in that room the same year you enter the field${hasDiscount ? ` &mdash; and as an AALB student, your seat comes with a personal ${discountPercent}% off` : ""}.`
       : rel === "former-student"
-      ? "ou trained with us, and you have been part of this community ever since. As we plan our next conference, you are exactly the person we hoped would be in the room, so we wanted to write to you directly."
-      : "ou trained with us, you earned your certificate with us, and you have stayed part of this community ever since. As we plan our next conference, you are exactly the person we hoped would be in the room, so we wanted to write to you directly.";
+      ? `You did the forty hours. Now the profession you trained for is gathering in one room: this August, <strong>The Joint Commission</strong> takes the stage on language access at Lurie Children&rsquo;s, alongside the man who led its enforcement at the U.S. Department of Justice &mdash; and the employers who hire interpreters will be there in person.${hasDiscount ? ` Your AALB training earned you a personal ${discountPercent}% off the door.` : ""}`
+      : "You trained with us, you earned your certificate with us, and you have stayed part of this community ever since. As we plan our next conference, you are exactly the person we hoped would be in the room, so we wanted to write to you directly.";
   const courtesyLabel = rel === "alumnus" ? "Your alumni courtesy" : "Your AALB student courtesy";
+
+  // Students act from the first screen: one primary button directly under the
+  // opening paragraph, above every photo and spotlight. On a phone the old
+  // letter's first button sat several screens down. Alumni keep the original
+  // single CTA row lower in the letter.
+  const earlyCta = isStudentLetter ? `
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:2px 0 24px 0;">
+        <tr><td align="center">
+          <table role="presentation" class="sl-cta" cellpadding="0" cellspacing="0" border="0" style="display:inline-block;vertical-align:middle;margin:4px;"><tr>
+            <td align="center" bgcolor="${TEAL}" style="background-color:${TEAL};border-radius:9px;">
+              <a href="${url}" style="display:inline-block;padding:15px 30px;font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:bold;letter-spacing:0.4px;color:#ffffff;text-decoration:none;border-radius:9px;">Claim my seat${hasDiscount ? ` &mdash; ${discountPercent}% off` : ""} &nbsp;&rarr;</a>
+            </td>
+          </tr></table>
+          <div style="font-family:Georgia,'Times New Roman',serif;font-size:13px;line-height:1.6;color:#5A6E76;padding:8px 4px 0 4px;">${hasDiscount ? "Your personal code is applied automatically &mdash; " : ""}August 15&ndash;16, in person in Chicago or live online.</div>
+        </td></tr>
+      </table>` : "";
 
   // The recipient's personal note, shown as a gold-ruled pull-quote when present.
   const noteParas = (inviteMessage || "").trim()
@@ -614,7 +633,7 @@ export function attendeeAlumniInviteEmail({
 </style>
 </head>
 <body style="margin:0;padding:0;width:100%;background-color:#ECE6D7;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
-<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#ECE6D7;">The Joint Commission and a former U.S. DOJ language-access leader are keynoting. Come reconnect in Chicago or online, August 15 and 16, 2026.</div>
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#ECE6D7;">${isStudentLetter ? "The Joint Commission is keynoting, the employers who hire interpreters are at the tables, and your personal code is inside. Chicago or live online, August 15 and 16." : "The Joint Commission and a former U.S. DOJ language-access leader are keynoting. Come reconnect in Chicago or online, August 15 and 16, 2026."}</div>
 
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#ECE6D7;background-image:linear-gradient(180deg,#F0EBDD 0%,#E6DECB 100%);">
 <tr><td align="center" style="padding:34px 14px 44px 14px;">
@@ -655,16 +674,24 @@ export function attendeeAlumniInviteEmail({
       ${p(`Dear ${escapeHtml(first)},`)}
 
       <p style="margin:0 0 18px 0;font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.85;color:${INK};">
-        <span class="sl-dropcap" style="float:left;font-family:Georgia,'Times New Roman',serif;font-size:54px;line-height:42px;color:${TEAL};padding:6px 11px 0 0;">Y</span>${openingRest}
+        <span class="sl-dropcap" style="float:left;font-family:Georgia,'Times New Roman',serif;font-size:54px;line-height:42px;color:${TEAL};padding:6px 11px 0 0;">${opening.charAt(0)}</span>${opening.slice(1)}
       </p>
 
+      ${earlyCta}
+
+      ${isStudentLetter ? `
+      ${p(`Look at who is in this room. <strong>Elizabeth Even</strong> of <strong>The Joint Commission</strong> &mdash; the body that writes the standards nearly every U.S. hospital must meet &mdash; gives the keynote, joined by <strong>Michael Mul&eacute;</strong>, who led language-access enforcement at the U.S. Department of Justice. At the exhibitor tables: <strong>Martti</strong> and <strong>LanguageLine</strong>, employers who staff hospitals nationwide, alongside hospital language-access directors who hire people with your exact training. For someone turning training into paid work, there is no shorter path than this room.`)}
+
+      ${communityPhoto(url, base)}
+
+      ${p(`The craft sessions are taught by people who do the job. Staff interpreters from major hospitals teach <em>Beyond Accuracy: The Invisible Skills in Healthcare Interpreting</em>; the interpreter supervisor at <strong>Harborview Medical Center</strong> presents a health-equity case study; and the chair of the <strong>NCIHC</strong> ethics workgroup runs a hands-on workshop on the newly revised National Code of Ethics &mdash; plus a session on building a career that doesn&rsquo;t burn you out. Over ten hours of continuing-education content across two days, or every minute of it streamed live, wherever you are. This year&rsquo;s theme: <span style="font-style:italic;color:${TEAL};">True Language Access: Yesterday, Today, and Tomorrow.</span>`)}` : `
       ${p(`We would love for you to join us at the <strong>2026 Lurie Children&rsquo;s &amp; AALB Conference</strong> in Chicago on August 15 and 16. More than the sessions, what we are really after is the chance to be together again, to put faces to names and reconnect with the people you came up alongside.`)}
 
       ${p(`We have gathered like this twice before, and both times the very best part was watching colleagues who had only ever met on a screen finally shake hands in person, interpreters and trainers and friends from every corner of the country, all under one roof.`)}
 
       ${communityPhoto(url, base)}
 
-      ${p(`And if Chicago is too far this year, you can still be with us. The whole conference streams <strong>live</strong>, in real time, not recordings after the fact, so you can take part in the sessions and the conversation from wherever you are. This year&rsquo;s theme is <span style="font-style:italic;color:${TEAL};">True Language Access: Yesterday, Today, and Tomorrow.</span>`)}
+      ${p(`And if Chicago is too far this year, you can still be with us. The whole conference streams <strong>live</strong>, in real time, not recordings after the fact, so you can take part in the sessions and the conversation from wherever you are. This year&rsquo;s theme is <span style="font-style:italic;color:${TEAL};">True Language Access: Yesterday, Today, and Tomorrow.</span>`)}`}
 
       ${noteBlock}
 
@@ -692,7 +719,11 @@ export function attendeeAlumniInviteEmail({
 
       ${codeBlock}
 
-      ${p(`Whichever way you join us, it would mean a great deal to have you there. If you have any questions, just reply to this note and it comes straight to us at <a href="mailto:kevin@aalb.org" style="color:${LINK};text-decoration:none;">kevin@aalb.org</a>. And if there is someone from your cohort who should be on this list, send us their name.`, 22)}
+      ${isStudentLetter
+        ? p(`${rel === "student"
+            ? "You are doing the hard part right now &mdash; this is the room where it starts to pay off"
+            : "You did the hard part when you finished the training &mdash; this is the room where it pays off"}${hasDiscount ? ", and your discount is already waiting" : ""}. Reply to this letter and it reaches real people at <a href="mailto:kevin@aalb.org" style="color:${LINK};text-decoration:none;">kevin@aalb.org</a>. And if there is someone from your cohort who should be on this list, send us their name.`, 22)
+        : p(`Whichever way you join us, it would mean a great deal to have you there. If you have any questions, just reply to this note and it comes straight to us at <a href="mailto:kevin@aalb.org" style="color:${LINK};text-decoration:none;">kevin@aalb.org</a>. And if there is someone from your cohort who should be on this list, send us their name.`, 22)}
 
       <div style="font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.85;color:${INK};padding-bottom:16px;">Warmly, and hoping to see you in Chicago,</div>
 

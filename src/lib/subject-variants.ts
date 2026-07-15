@@ -108,6 +108,39 @@ export function pickReturningSubject(firstName: string, token: string, paid: boo
   return { id: v.id, subject: v.make((firstName || "there").trim()) };
 }
 
+// Student / former-student subject lines, career-first. The first blast sent
+// students the formal alumni invitation lines and ~2% clicked; this set leads
+// with what the conference does for someone turning training into paid work
+// (the hiring room, the standards-writers, the date) instead of ceremony.
+// Same stable-by-token rules: append, never reorder or remove.
+export const STUDENT_SUBJECT_VARIANTS: SubjectVariant[] = [
+  {
+    id: "stu-hired",
+    label: "Hiring room",
+    make: (f) => `${f}, this is the room where interpreters get hired`,
+  },
+  {
+    id: "stu-gathers",
+    label: "Profession gathers",
+    make: (f) => `You trained for this, ${f} — the profession gathers August 15`,
+  },
+  {
+    id: "stu-jc",
+    label: "JC keynote",
+    make: () => `The Joint Commission is keynoting your profession's conference`,
+  },
+  {
+    id: "stu-seat",
+    label: "Seat earned",
+    make: (f) => `Your training earned you a seat, ${f} — Chicago or live online`,
+  },
+];
+
+export function pickStudentSubject(firstName: string, token: string): { id: string; subject: string } {
+  const v = STUDENT_SUBJECT_VARIANTS[hashStr(token || "") % STUDENT_SUBJECT_VARIANTS.length];
+  return { id: v.id, subject: v.make((firstName || "there").trim()) };
+}
+
 export function alumniVariant(id: string | null | undefined): SubjectVariant | null {
   return ALUMNI_SUBJECT_VARIANTS.find((v) => v.id === id) || null;
 }

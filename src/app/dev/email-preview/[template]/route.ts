@@ -220,6 +220,27 @@ export async function GET(
       });
       break;
     }
+    // Student / former-student re-engagement letter (career-first rework).
+    case "attendee-student":
+    case "attendee-former":
+      html = attendeeAlumniInviteEmail({
+        firstName: "Lyan",
+        url: `${base}/attend/preview-token`,
+        inviteMessage: null,
+        discountPercent: 25,
+        personalCode: "LYAN25",
+        mainSiteUrl: `${base}/register`,
+        learnMoreUrl: base,
+        dateLabel: "July 15, 2026",
+        assetBase: base,
+        unsubscribeUrl: `${base}/api/attendees/unsubscribe/preview-token`,
+        inPersonOriginalCents: 21000,
+        inPersonDiscountedCents: 15750,
+        virtualOriginalCents: 10500,
+        virtualDiscountedCents: 7875,
+        relationship: template === "attendee-student" ? "student" : "former-student",
+      });
+      break;
     case "attendee-alumni":
       html = attendeeAlumniInviteEmail({
         firstName: "Jordan",

@@ -2,7 +2,7 @@ import { randomBytes } from "crypto";
 import { appUrl } from "./presenters";
 import { attendeeInviteEmail, attendeeAlumniInviteEmail, attendeeReturningInviteEmail } from "./mail-templates";
 import { firstNameToCode } from "./codes";
-import { pickAlumniSubject, pickReturningSubject } from "./subject-variants";
+import { pickAlumniSubject, pickReturningSubject, pickStudentSubject } from "./subject-variants";
 
 export type AttendeeTemplate = "standard" | "alumni" | "student" | "former-student" | "returning";
 export const ATTENDEE_TEMPLATES: { id: AttendeeTemplate; label: string; description: string }[] = [
@@ -79,10 +79,16 @@ export function buildAttendeeInvite(opts: {
     const picked = pickReturningSubject(opts.firstName, opts.inviteToken, opts.returning?.status === "paid");
     subject = picked.subject;
     subjectVariant = picked.id;
-  } else if (relationship) {
-    // Alumni, student, and former-student all rotate through the formal
-    // invitation subject lines (A/B), assigned stably by token.
+  } else if (relationship === "alumnus") {
+    // Alumni rotate through the formal invitation subject lines (A/B),
+    // assigned stably by token.
     const picked = pickAlumniSubject(opts.firstName, opts.inviteToken);
+    subject = picked.subject;
+    subjectVariant = picked.id;
+  } else if (relationship) {
+    // Students and former students get the career-first set: the formal
+    // alumni lines earned ~2% clicks from this audience.
+    const picked = pickStudentSubject(opts.firstName, opts.inviteToken);
     subject = picked.subject;
     subjectVariant = picked.id;
   } else {

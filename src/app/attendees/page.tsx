@@ -462,10 +462,14 @@ export default function AttendeesPage() {
     });
   }
 
-  async function reinviteNonResponders() {
+  async function reinviteNonResponders(templates?: string[]) {
     setReinvite({ sending: true, note: null });
     try {
-      const res = await fetch("/api/attendees/resend-bulk", { method: "POST" });
+      const res = await fetch("/api/attendees/resend-bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(templates && templates.length ? { templates } : {}),
+      });
       const json = await res.json().catch(() => ({}));
       if (res.ok) {
         setReinvite({
@@ -496,6 +500,12 @@ export default function AttendeesPage() {
   // show a live count without an extra round trip.
   const reinvitable = attendees.filter(
     (a) => !a.paid && (a.status === "invited" || a.status === "viewed" || a.status === "rsvp_pending")
+  ).length;
+  // Students and former students specifically: the segment the career-first
+  // letter rework targets.
+  const studentReinvitable = attendees.filter(
+    (a) => !a.paid && (a.status === "invited" || a.status === "viewed" || a.status === "rsvp_pending")
+      && (a.inviteTemplate === "student" || a.inviteTemplate === "former-student")
   ).length;
 
   return (
@@ -718,20 +728,36 @@ export default function AttendeesPage() {
                           or signed up is skipped, and no BCC is attached. Paced through the queue to protect the domain.
                         </p>
                       </div>
-                      <button
-                        onClick={() => setConfirmDialog({
-                          title: `Re-invite ${reinvitable} ${reinvitable === 1 ? "person" : "people"}?`,
-                          message: "Everyone we invited who hasn't registered will be re-queued and sent paced over the next while. Anyone who already paid or signed up is skipped, and no BCC is attached.",
-                          confirmLabel: "Re-queue invites",
-                          onConfirm: () => { setConfirmDialog(null); void reinviteNonResponders(); },
-                        })}
-                        disabled={reinvite.sending || reinvitable === 0}
-                        className="px-4 py-2 rounded-lg text-sm font-bold text-white shadow-sm inline-flex items-center gap-1.5 disabled:opacity-50 shrink-0"
-                        style={{ background: "#0E5566" }}
-                      >
-                        {reinvite.sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                        {reinvitable === 0 ? "No one to re-invite" : "Re-invite them"}
-                      </button>
+                      <div className="flex flex-col gap-2 shrink-0">
+                        <button
+                          onClick={() => setConfirmDialog({
+                            title: `Re-invite ${reinvitable} ${reinvitable === 1 ? "person" : "people"}?`,
+                            message: "Everyone we invited who hasn't registered will be re-queued and sent paced over the next while. Anyone who already paid or signed up is skipped, and no BCC is attached.",
+                            confirmLabel: "Re-queue invites",
+                            onConfirm: () => { setConfirmDialog(null); void reinviteNonResponders(); },
+                          })}
+                          disabled={reinvite.sending || reinvitable === 0}
+                          className="px-4 py-2 rounded-lg text-sm font-bold text-white shadow-sm inline-flex items-center gap-1.5 disabled:opacity-50"
+                          style={{ background: "#0E5566" }}
+                        >
+                          {reinvite.sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                          {reinvitable === 0 ? "No one to re-invite" : "Re-invite them"}
+                        </button>
+                        <button
+                          onClick={() => setConfirmDialog({
+                            title: `Re-send to ${studentReinvitable} student${studentReinvitable === 1 ? "" : "s"}?`,
+                            message: "Only students and former students get this one, each with the reworked career-first letter and the new subject lines. Alumni and the 2024 reunion batch are left alone. Paced through the queue.",
+                            confirmLabel: "Send the new letter",
+                            onConfirm: () => { setConfirmDialog(null); void reinviteNonResponders(["student", "former-student"]); },
+                          })}
+                          disabled={reinvite.sending || studentReinvitable === 0}
+                          className="px-4 py-2 rounded-lg text-sm font-bold inline-flex items-center gap-1.5 disabled:opacity-50 border"
+                          style={{ color: "#0E5566", borderColor: "#0E5566", background: "white" }}
+                        >
+                          {reinvite.sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <GraduationCap className="w-4 h-4" />}
+                          Students only — new letter
+                        </button>
+                      </div>
                     </div>
                     {reinvite.note && <div className="mt-2 text-xs font-semibold text-teal-700">{reinvite.note}</div>}
                   </div>

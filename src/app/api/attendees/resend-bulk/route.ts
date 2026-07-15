@@ -15,26 +15,49 @@ function isAdmin(role?: string) {
 // and the still-queued (those just haven't gone out the first time yet).
 const RESENDABLE = ["invited", "viewed", "rsvp_pending"];
 
-export async function GET() {
+export async function GET(req: Request) {
   const session = await getServerSession(authOptions);
   if (!isAdmin((session?.user as { role?: string })?.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
+  // ?templates=student,former-student narrows the count to those segments.
+  const tpl = new URL(req.url).searchParams.get("templates");
+  const templates = tpl ? tpl.split(",").map((s) => s.trim()).filter(Boolean) : null;
   const count = await prisma.attendee.count({
-    where: { paid: false, isTest: false, unsubscribedAt: null, status: { in: RESENDABLE } },
+    where: {
+      paid: false,
+      isTest: false,
+      unsubscribedAt: null,
+      status: { in: RESENDABLE },
+      ...(templates && templates.length ? { inviteTemplate: { in: templates } } : {}),
+    },
   });
   return NextResponse.json({ count });
 }
 
-export async function POST() {
+export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!isAdmin((session?.user as { role?: string })?.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const adminEmail = session?.user?.email || null;
 
+  // Optional segment filter, e.g. { templates: ["student", "former-student"] }
+  // to re-touch only the students with the reworked letter and leave alumni
+  // (or the 2024 reunion batch) alone.
+  const body = await req.json().catch(() => ({} as { templates?: unknown }));
+  const templates = Array.isArray((body as { templates?: unknown }).templates)
+    ? ((body as { templates: unknown[] }).templates.filter((t): t is string => typeof t === "string"))
+    : null;
+
   const targets = await prisma.attendee.findMany({
-    where: { paid: false, isTest: false, unsubscribedAt: null, status: { in: RESENDABLE } },
+    where: {
+      paid: false,
+      isTest: false,
+      unsubscribedAt: null,
+      status: { in: RESENDABLE },
+      ...(templates && templates.length ? { inviteTemplate: { in: templates } } : {}),
+    },
     orderBy: { invitedAt: "asc" },
   });
   if (!targets.length) return NextResponse.json({ queued: 0 });
