@@ -29,6 +29,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     firstName: attendee.firstName, inviteToken: attendee.inviteToken,
     discountPercent: attendee.discountPercent, inviteMessage: attendee.inviteMessage,
     template: attendee.inviteTemplate,
+    returning: { status: attendee.returning2024, mode: attendee.attended2024Mode, languages: attendee.primaryLanguages },
   });
   return NextResponse.json({ source: "rendered", to: attendee.email, subject, html, status: attendee.status, sentAt: null, scheduledFor: null });
 }

@@ -68,6 +68,7 @@ export async function POST(req: Request) {
       discountPercent: a.discountPercent,
       inviteMessage: a.inviteMessage,
       template: a.inviteTemplate,
+      returning: { status: a.returning2024, mode: a.attended2024Mode, languages: a.primaryLanguages },
     });
     return {
       batchId,

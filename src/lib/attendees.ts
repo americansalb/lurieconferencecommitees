@@ -1,15 +1,16 @@
 import { randomBytes } from "crypto";
 import { appUrl } from "./presenters";
-import { attendeeInviteEmail, attendeeAlumniInviteEmail } from "./mail-templates";
+import { attendeeInviteEmail, attendeeAlumniInviteEmail, attendeeReturningInviteEmail } from "./mail-templates";
 import { firstNameToCode } from "./codes";
-import { pickAlumniSubject } from "./subject-variants";
+import { pickAlumniSubject, pickReturningSubject } from "./subject-variants";
 
-export type AttendeeTemplate = "standard" | "alumni" | "student" | "former-student";
+export type AttendeeTemplate = "standard" | "alumni" | "student" | "former-student" | "returning";
 export const ATTENDEE_TEMPLATES: { id: AttendeeTemplate; label: string; description: string }[] = [
   { id: "standard", label: "Standard invite", description: "Concise personal invitation with the discounted rate." },
   { id: "alumni", label: "AALB alumni", description: "Gold letter for certificate holders (alumni courtesy)." },
   { id: "student", label: "AALB student", description: "Gold letter for current or recently-finished students." },
   { id: "former-student", label: "Former AALB student", description: "Gold letter for past students without a certificate." },
+  { id: "returning", label: "2024 reunion", description: "Gold reunion letter for people from the 2024 conference roster." },
 ];
 
 // The three AALB-community templates all render the same gold letter; only the
@@ -28,16 +29,18 @@ export function buildAttendeeInvite(opts: {
   discountPercent: number;
   inviteMessage?: string | null;
   template?: string | null;
+  // For the "returning" reunion letter: their 2024 relationship. status is
+  // "paid" | "attempted" | "lead"; mode is "in-person" | "virtual".
+  returning?: { status?: string | null; mode?: string | null; languages?: string | null };
 }): { subject: string; html: string; template: AttendeeTemplate; subjectVariant: string | null } {
   const template: AttendeeTemplate =
-    opts.template === "alumni" || opts.template === "student" || opts.template === "former-student"
+    opts.template === "alumni" || opts.template === "student" || opts.template === "former-student" || opts.template === "returning"
       ? opts.template
       : "standard";
   const inPerson = computePrice("in-person", opts.discountPercent);
   const virtual = computePrice("virtual", opts.discountPercent);
   const relationship = GOLD_TEMPLATES[template];
-  const render = relationship ? attendeeAlumniInviteEmail : attendeeInviteEmail;
-  const html = render({
+  const common = {
     firstName: opts.firstName,
     url: attendeeFunnelUrl(opts.inviteToken),
     inviteMessage: opts.inviteMessage ?? null,
@@ -48,18 +51,35 @@ export function buildAttendeeInvite(opts: {
     virtualDiscountedCents: virtual.finalCents || 0,
     personalCode: firstNameToCode(opts.firstName),
     mainSiteUrl: `${appUrl()}/register`,
-    // Used by the engraved alumni letter (ignored by the standard invite).
+    // Used by the engraved letters (ignored by the standard invite).
     learnMoreUrl: appUrl(),
     assetBase: appUrl(),
     dateLabel: new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
     unsubscribeUrl: attendeeUnsubscribeUrl(opts.inviteToken),
-    relationship,
-  });
-  // Alumni sends rotate through several subject lines (A/B), assigned by token
-  // so the choice is stable across resends and measurable on the dashboard.
+  };
+  let html: string;
+  if (template === "returning") {
+    html = attendeeReturningInviteEmail({
+      ...common,
+      returning2024: (opts.returning?.status as "paid" | "attempted" | "lead" | undefined) || "lead",
+      attended2024Mode: (opts.returning?.mode as "in-person" | "virtual" | undefined) || null,
+      primaryLanguages: opts.returning?.languages || null,
+    });
+  } else if (relationship) {
+    html = attendeeAlumniInviteEmail({ ...common, relationship });
+  } else {
+    html = attendeeInviteEmail(common);
+  }
+  // Alumni and reunion sends rotate through several subject lines (A/B),
+  // assigned by token so the choice is stable across resends and measurable
+  // on the dashboard.
   let subject: string;
   let subjectVariant: string | null = null;
-  if (relationship) {
+  if (template === "returning") {
+    const picked = pickReturningSubject(opts.firstName, opts.inviteToken, opts.returning?.status === "paid");
+    subject = picked.subject;
+    subjectVariant = picked.id;
+  } else if (relationship) {
     // Alumni, student, and former-student all rotate through the formal
     // invitation subject lines (A/B), assigned stably by token.
     const picked = pickAlumniSubject(opts.firstName, opts.inviteToken);
@@ -288,7 +308,7 @@ export function parseAttendeeCsv(input: string): { rows: CsvParseRow[]; errors: 
   const rows: CsvParseRow[] = [];
   const errors: string[] = [];
   const lines = input.split(/\r?\n/);
-  const allowedTemplates = new Set(["standard", "alumni", "student", "former-student"]);
+  const allowedTemplates = new Set(["standard", "alumni", "student", "former-student", "returning"]);
   let lineNum = 0;
   for (const raw of lines) {
     lineNum++;

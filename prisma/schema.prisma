@@ -393,6 +393,13 @@ model Attendee {
   cohort      String?
   cohortOrder Int?
 
+  // 2024 conference relationship, for the returning reunion letters: "paid"
+  // (registered and paid in 2024), "attempted" (started a checkout, never
+  // finished), or "lead" (left their info only). attended2024Mode is how they
+  // joined or planned to join: "in-person" | "virtual". Null for everyone else.
+  returning2024    String?
+  attended2024Mode String?
+
   attendanceMode     String?
   // One-day virtual ticket: "sat" or "sun" when the attendee registered for a
   // single day (66% price, virtual only); null means both days.

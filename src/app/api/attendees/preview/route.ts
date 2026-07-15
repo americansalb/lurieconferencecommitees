@@ -21,6 +21,8 @@ export async function POST(req: Request) {
   const { subject, html } = buildAttendeeInvite({
     firstName, inviteToken: "PREVIEW", discountPercent: pct,
     inviteMessage: b?.inviteMessage ? String(b.inviteMessage) : null, template,
+    // Demo 2024 facts so the reunion template previews fully personalized.
+    returning: { status: "paid", mode: "in-person", languages: "Spanish, English" },
   });
   return NextResponse.json({ subject, html, template });
 }

@@ -729,6 +729,260 @@ export function attendeeAlumniInviteEmail({
 </html>`;
 }
 
+// The REUNION letter for the 2024 conference roster: same engraved gold shell
+// as the alumni letter, but every opening is written to the person's actual
+// 2024 relationship — paid & in the room, paid & on the livestream, started a
+// checkout (never shamed, never mentioned), or signed the interest form — and
+// weaves in their language pair when we know it. "We remember you" is the
+// whole point of this template.
+type AttendeeReturningArgs = AttendeeInviteArgs & {
+  returning2024: "paid" | "attempted" | "lead";
+  attended2024Mode?: "in-person" | "virtual" | null;
+  primaryLanguages?: string | null;
+};
+
+// True when a languages string says more than just "English" — the language
+// line should only appear when it can name a real pair.
+function languagesWorthNaming(s: string | null | undefined): boolean {
+  const t = (s || "").trim();
+  if (!t) return false;
+  const tokens = t.split(/[\s,\/&+-]+/).filter(Boolean);
+  if (!tokens.length) return false;
+  return !tokens.every((w) => /^(english|and|eng)$/i.test(w));
+}
+
+export function attendeeReturningInviteEmail({
+  firstName,
+  url,
+  inviteMessage,
+  discountPercent,
+  personalCode,
+  mainSiteUrl,
+  learnMoreUrl,
+  dateLabel,
+  assetBase,
+  unsubscribeUrl,
+  returning2024,
+  attended2024Mode,
+  primaryLanguages,
+}: AttendeeReturningArgs) {
+  const TEAL_DEEP = "#0C3B4B", INK = "#0B1F25", SOFT = "#5A6E76", GOLD_SOFT = "#F4E9CD", LINK = "#1E6FA2";
+  const base = (assetBase || ASSET_BASE).replace(/\/$/, "");
+  const site = learnMoreUrl || base;
+  const first = (firstName || "there").trim();
+  const today = dateLabel || new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+  const hasDiscount = discountPercent > 0;
+  const paid = returning2024 === "paid";
+  const inPerson = attended2024Mode === "in-person";
+
+  // Segment-specific pieces. Every opening starts with a "T"-less remainder —
+  // the engraved drop cap letter is computed per segment below.
+  const eyebrowLine = paid ? "An Invitation to Return" : "An Invitation, Renewed";
+  const preheader = paid
+    ? "The second joint Lurie Children&rsquo;s &amp; AALB conference &mdash; August 15 and 16, 2026, keynoted by The Joint Commission. Welcome back."
+    : "The conference you signed up to hear about in 2024 returns &mdash; with The Joint Commission and the DOJ on stage. In person or live online.";
+  // Judged copy (three-draft panel, composite of the winner + grafts): each
+  // opening does genuinely different work per segment. Drop cap = first letter.
+  const opening = paid
+    ? (inPerson
+      ? `Two summers ago, you took a seat in the room where Lurie Children&rsquo;s and Americans Against Language Barriers held their first joint conference. Firsts are fragile things; they only become traditions when the people who were there come back. The second one is set, and it is not the same without you.`
+      : `From wherever you were in the summer of 2024, you joined the live stream of the first joint conference &mdash; part of the founding audience that proved a stream could feel like a room, and present in every way that mattered. The second gathering is set, and we are beginning our invitations with the people who were there for the first.`)
+    : returning2024 === "attempted"
+    ? `In 2024, you came right up to the door of the first joint conference &mdash; closer than almost anyone who did not walk in. What was on the other side of that door has grown considerably since. Your seat is still open, and this letter is us holding it.`
+    : `In 2024, when a joint conference between one of the nation&rsquo;s leading children&rsquo;s hospitals and a language-access nonprofit was still just an idea, you put your name down to hear more. That first gathering happened, and it worked. Now the second one is set, and we are going back through the names of everyone who believed early.`;
+  const dropCap = opening.charAt(0);
+  const openingRest = opening.slice(1);
+  const memoryLine = paid
+    ? (inPerson
+      ? `It was the handshakes and the hallway conversations, as much as the sessions, that made the first one what it was &mdash; and the room is being set again.`
+      : `You were with us through the screen last time; this year we would be glad to finally put a handshake to the name in Chicago &mdash; and the live stream will be there for you either way.`)
+    : "";
+  const languagesLine = languagesWorthNaming(primaryLanguages)
+    ? `The work you carry between your languages &mdash; ${escapeHtml((primaryLanguages || "").trim())} &mdash; is precisely the work those standards were written to protect.`
+    : "";
+
+  const notePersonal = (inviteMessage || "").trim();
+  const noteBlock = notePersonal ? `
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 22px 0;">
+        <tr>
+          <td style="width:3px;background-color:${GOLD};font-size:0;line-height:0;">&nbsp;</td>
+          <td style="padding:2px 0 2px 20px;">
+            <p style="margin:0;font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:15.5px;line-height:1.8;color:#284752;">${escapeHtml(notePersonal)}</p>
+          </td>
+        </tr>
+      </table>` : "";
+
+  const ratePanel = hasDiscount ? `
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 22px 0;">
+        <tr><td bgcolor="#FBF4E2" style="background-color:#FBF4E2;border:1px solid #EAD9AE;border-radius:10px;padding:20px 18px;text-align:center;">
+          <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:${GOLD};font-weight:bold;padding-bottom:8px;">Your reunion rate</div>
+          <div style="font-family:Georgia,'Times New Roman',serif;font-size:23px;line-height:1.25;color:#3C2E10;">${discountPercent}% off your registration</div>
+          <div style="font-family:Georgia,'Times New Roman',serif;font-size:13.5px;line-height:1.6;color:#6B5A33;padding:8px 6px 0 6px;">In the room in Chicago or on the live stream &mdash; because your name was on the 2024 list. Applied automatically at checkout.</div>
+        </td></tr>
+      </table>` : "";
+
+  const codeBlock = (personalCode && hasDiscount) ? `
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 22px 0;">
+        <tr><td style="border:1px dashed #D9C690;border-radius:10px;padding:14px 18px;background-color:#FCFAF4;">
+          <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:${GOLD};font-weight:bold;">Your personal code</div>
+          <div style="font-family:Georgia,'Times New Roman',serif;font-size:20px;letter-spacing:1px;color:${INK};font-weight:bold;padding:3px 0 5px 0;">${escapeHtml(personalCode)}</div>
+          <div style="font-family:Georgia,'Times New Roman',serif;font-size:13px;line-height:1.6;color:${SOFT};">It is already built into your button above, so there is nothing to enter. Prefer to look around first? Register anytime on <a href="${mainSiteUrl}" style="color:${LINK};text-decoration:none;">our main site</a> with this code for the same ${discountPercent}% off. It is personal to you, so please keep it to yourself.</div>
+        </td></tr>
+      </table>` : "";
+
+  const sig = (img: string, name: string, title: string) => `
+        <img src="${base}/sig/${img}" alt="${escapeHtml(name)}" height="40" style="height:40px;width:auto;display:block;margin:0 0 4px 0;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="width:140px;height:1px;background-color:${GOLD};font-size:0;line-height:0;">&nbsp;</td></tr></table>
+        <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:${INK};font-weight:bold;padding-top:8px;">${escapeHtml(name)}</div>
+        <div style="font-family:Helvetica,Arial,sans-serif;font-size:12px;line-height:1.5;color:${SOFT};padding-top:2px;">${escapeHtml(title)}</div>`;
+
+  const p = (html: string, mb = 18) =>
+    `<p style="margin:0 0 ${mb}px 0;font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.85;color:${INK};">${html}</p>`;
+
+  return `<!doctype html>
+<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="x-apple-disable-message-reformatting">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<title>An Invitation to Return &middot; 2026 Lurie Children&rsquo;s &amp; AALB Conference</title>
+<!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
+<style>
+  body{margin:0;padding:0;}
+  a{color:${LINK};}
+  @media only screen and (max-width:600px){
+    .sl-card{width:100%!important;}
+    .sl-body{padding:32px 24px 30px 24px!important;}
+    .sl-head{padding:36px 22px 30px 22px!important;}
+    .sl-foot{padding:24px 22px!important;}
+    .sl-display{font-size:25px!important;line-height:31px!important;}
+    .sl-seal{width:96px!important;height:96px!important;}
+    .sl-dropcap{font-size:46px!important;line-height:36px!important;}
+    .sl-cta{display:block!important;width:100%!important;}
+  }
+</style>
+</head>
+<body style="margin:0;padding:0;width:100%;background-color:#ECE6D7;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#ECE6D7;">${preheader}</div>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#ECE6D7;background-image:linear-gradient(180deg,#F0EBDD 0%,#E6DECB 100%);">
+<tr><td align="center" style="padding:34px 14px 44px 14px;">
+
+  <table role="presentation" class="sl-card" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background-color:#FBF8F1;border:1px solid #E4DAC4;box-shadow:0 18px 48px rgba(12,59,75,0.18);">
+
+    <tr><td align="center" bgcolor="${TEAL_DEEP}" class="sl-head" style="background-color:${TEAL_DEEP};background-image:linear-gradient(160deg,${TEAL} 0%,${TEAL_DEEP} 100%);padding:44px 40px 34px 40px;">
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;line-height:18px;letter-spacing:4px;text-transform:uppercase;color:${GOLD_SOFT};font-weight:bold;">Lurie Children&rsquo;s &middot; AALB</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:9px;line-height:16px;letter-spacing:3px;text-transform:uppercase;color:#7FA7B1;padding-top:6px;">${eyebrowLine}</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:8px;line-height:10px;letter-spacing:4px;text-transform:uppercase;color:${GOLD};font-weight:bold;padding:22px 0 8px 0;">&middot;&nbsp;Second Joint Conference&nbsp;&middot;</div>
+
+      <!--[if !mso]><!-->
+      <div class="sl-seal" style="width:116px;height:116px;border-radius:50%;background-color:${GOLD};background-image:linear-gradient(135deg,#F4E9CD 0%,#D9B863 28%,#C9A14B 52%,#9C7A2E 78%,#E7D5A4 100%);border:2px solid #F4E9CD;box-shadow:0 6px 16px rgba(0,0,0,0.30),inset 0 1px 2px rgba(255,255,255,0.55);display:inline-block;">
+        <table role="presentation" width="116" height="116" cellpadding="0" cellspacing="0" border="0" style="width:116px;height:116px;"><tr><td align="center" valign="middle" style="text-align:center;">
+          <div style="font-family:Georgia,'Times New Roman',serif;font-size:31px;line-height:30px;color:#3C2E10;font-weight:bold;letter-spacing:1px;">2026</div>
+        </td></tr></table>
+      </div>
+      <!--<![endif]-->
+      <!--[if mso]>
+      <v:oval fill="true" stroke="true" strokecolor="#F4E9CD" strokeweight="2px" style="width:116px;height:116px;">
+        <v:fill type="solid" color="#C9A14B"/>
+        <v:textbox inset="0,0,0,0"><center><div style="font-family:Georgia,serif;font-size:30px;color:#3C2E10;font-weight:bold;">2026</div></center></v:textbox>
+      </v:oval>
+      <![endif]-->
+
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:9px;line-height:13px;letter-spacing:3px;text-transform:uppercase;color:${GOLD};padding:10px 0 0 0;">True Language Access</div>
+      <div class="sl-display" style="font-family:Georgia,'Times New Roman',serif;font-size:31px;line-height:38px;color:#FFFFFF;padding:18px 0 0 0;">The Second Joint Conference</div>
+      <div style="font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:15px;line-height:22px;color:#A9C6CD;padding:7px 0 0 0;">on Language Access in American Healthcare</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;line-height:16px;letter-spacing:3px;text-transform:uppercase;color:#7FA7B1;padding:14px 0 0 0;">August 15&ndash;16, 2026 &middot; Chicago, Illinois</div>
+    </td></tr>
+
+    <tr><td style="height:3px;line-height:3px;font-size:0;background-color:${GOLD};background-image:linear-gradient(90deg,#9C7A2E 0%,#F4E9CD 50%,#9C7A2E 100%);">&nbsp;</td></tr>
+
+    <tr><td class="sl-body" style="padding:40px 52px 36px 52px;background-color:#FBF8F1;">
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2.5px;text-transform:uppercase;color:${SOFT};">${escapeHtml(today)}</div>
+      <div style="height:18px;line-height:18px;font-size:0;">&nbsp;</div>
+
+      ${p(`Dear ${escapeHtml(first)},`)}
+
+      <p style="margin:0 0 18px 0;font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.85;color:${INK};">
+        <span class="sl-dropcap" style="float:left;font-family:Georgia,'Times New Roman',serif;font-size:54px;line-height:42px;color:${TEAL};padding:6px 11px 0 0;">${escapeHtml(dropCap)}</span>${openingRest}
+      </p>
+
+      ${memoryLine ? p(memoryLine) : ""}
+
+      ${communityPhoto(url, base)}
+
+      ${p(`On <strong>August 15 and 16, 2026</strong>, Lurie Children&rsquo;s and AALB convene their second joint conference &mdash; at the hospital in downtown Chicago, with a full live virtual stream. <strong>Elizabeth Even of The Joint Commission</strong>, whose standards nearly every hospital in America must meet, gives the keynote; <strong>Michael Mul&eacute;</strong>, who led language-access enforcement at the U.S. Department of Justice, speaks alongside her. <em>The people who write the standards, and the people who enforce them.</em> This year&rsquo;s theme: <span style="font-style:italic;color:${TEAL};">True Language Access: Yesterday, Today, and Tomorrow.</span>`)}
+
+      ${languagesLine ? p(languagesLine) : ""}
+
+      ${noteBlock}
+
+      ${keynoteSpotlight(url, base)}
+
+      ${ratePanel}
+
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:2px 0 22px 0;">
+        <tr><td align="center">
+          <!--[if mso]><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
+          <table role="presentation" class="sl-cta" cellpadding="0" cellspacing="0" border="0" style="display:inline-block;vertical-align:middle;margin:6px;"><tr>
+            <td align="center" bgcolor="${TEAL}" style="background-color:${TEAL};border-radius:9px;">
+              <a href="${url}" style="display:inline-block;padding:15px 30px;font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:bold;letter-spacing:0.4px;color:#ffffff;text-decoration:none;border-radius:9px;">${paid ? "Reserve my seat again" : "Claim my seat"} &nbsp;&rarr;</a>
+            </td>
+          </tr></table>
+          <!--[if mso]></td><td><![endif]-->
+          <table role="presentation" class="sl-cta" cellpadding="0" cellspacing="0" border="0" style="display:inline-block;vertical-align:middle;margin:6px;"><tr>
+            <td align="center" bgcolor="#FBF8F1" style="background-color:#FBF8F1;border:1.5px solid ${GOLD};border-radius:9px;">
+              <a href="${site}" style="display:inline-block;padding:13.5px 28px;font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:bold;letter-spacing:0.4px;color:${TEAL};text-decoration:none;border-radius:9px;">See the full program</a>
+            </td>
+          </tr></table>
+          <!--[if mso]></td></tr></table><![endif]-->
+        </td></tr>
+      </table>
+
+      ${codeBlock}
+
+      ${p(paid
+        ? `The second conference will happen either way &mdash; but reunions are measured by who returns. If any question stands between you and August, reply to this letter; it reaches the three of us, not a machine.`
+        : `We are holding the date, the stage, and a place with your name on it. If any question stands between you and August, reply to this letter; it reaches the three of us, not a machine.`, 22)}
+
+      <div style="font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.85;color:${INK};padding-bottom:16px;">Until August,</div>
+
+      ${sig("kevin.png", "Kevin Thakkar", "Founder & Executive Director, Americans Against Language Barriers")}
+      <div style="height:20px;line-height:20px;font-size:0;">&nbsp;</div>
+      ${sig("iris.png", "Iris Laffitte", "Operations Manager, Americans Against Language Barriers")}
+      <div style="height:20px;line-height:20px;font-size:0;">&nbsp;</div>
+      ${sig("zachary.png", "Zachary Paul Romansky", "Lurie Children’s Language Services Department")}
+
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:34px 0 0 0;border-top:1px solid #ECE3D0;">
+        <tr><td align="center" style="padding:24px 0 4px 0;">
+          <div style="font-family:Helvetica,Arial,sans-serif;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#9A8B6A;padding-bottom:16px;">Presented Jointly By</div>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+            <td align="center" style="padding:0 18px;"><img src="${base}/logos/aalb.png" alt="Americans Against Language Barriers" height="40" style="height:40px;width:auto;display:block;"></td>
+            <td style="border-left:1px solid #E0D5BD;width:1px;font-size:0;">&nbsp;</td>
+            <td align="center" style="padding:0 18px;"><img src="${base}/logos/lurie.png" alt="Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago" height="34" style="height:34px;width:auto;display:block;"></td>
+          </tr></table>
+        </td></tr>
+      </table>
+    </td></tr>
+
+    <tr><td class="sl-foot" align="center" bgcolor="${TEAL_DEEP}" style="background-color:${TEAL_DEEP};background-image:linear-gradient(180deg,${TEAL_DEEP} 0%,#0A3340 100%);padding:26px 40px 28px 40px;">
+      <div style="font-family:Georgia,'Times New Roman',serif;font-size:13px;letter-spacing:0.5px;color:${GOLD_SOFT};">2026 Lurie Children&rsquo;s &amp; AALB Conference</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;line-height:18px;color:#9FB6BC;padding-top:8px;">August 15&ndash;16, 2026 &middot; Chicago, Illinois</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;line-height:18px;color:#9FB6BC;">conference.aalb.org &middot; contact@aalb.org</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;line-height:16px;letter-spacing:0.5px;color:#5F7E86;padding-top:8px;">501(c)(3) &middot; EINs 83-3016421 and 36-2170833</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;line-height:16px;color:#5F7E86;padding-top:10px;">You are receiving this because you registered your interest in the 2024 conference. ${unsubscribeUrl ? `Prefer not to hear from us? <a href="${unsubscribeUrl}" style="color:#9FB6BC;text-decoration:underline;">Unsubscribe</a>.` : "If you would rather not hear from us, just reply and let us know."}</div>
+    </td></tr>
+
+  </table>
+</td></tr>
+</table>
+</body>
+</html>`;
+}
+
 export function attendeeConfirmedEmail({
   firstName,
   url,

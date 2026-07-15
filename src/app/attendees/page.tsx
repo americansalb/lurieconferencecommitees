@@ -224,6 +224,78 @@ export default function AttendeesPage() {
     }
   }
 
+  // One click: load the 2024 conference roster (501 people — 120 paid, 66
+  // started a checkout, 315 left info) into the pipeline. New people are
+  // created as queued; anyone already on the list is re-tagged for the
+  // "returning" reunion letter. Nothing sends until the queue step.
+  async function load2024Roster() {
+    setRosterLoading(true);
+    setRosterNote(null);
+    try {
+      const res = await fetch("/api/attendees/load-2024", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "load", discountPercent: 25 }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setRosterNote(`2024 roster loaded: ${json.created || 0} added, ${json.retagged || 0} re-tagged for the reunion letter, ${json.leftAlone || 0} left alone (paid, declined, or unsubscribed). Nothing has been emailed — use "Queue reunion letters" when ready.`);
+        await load();
+      } else {
+        setRosterNote(json.error || "Could not load the 2024 roster.");
+      }
+    } catch {
+      setRosterNote("Network error while loading the 2024 roster.");
+    } finally {
+      setRosterLoading(false);
+      setTimeout(() => setRosterNote(null), 15000);
+    }
+  }
+
+  async function queue2024Reunion() {
+    setRosterLoading(true);
+    setRosterNote(null);
+    try {
+      const res = await fetch("/api/attendees/load-2024", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "queue" }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setRosterNote(json.queued > 0
+          ? `${json.queued} reunion letter${json.queued === 1 ? "" : "s"} added to the paced queue${json.skipped ? ` (${json.skipped} already queued or not eligible)` : ""}. They'll drip out at the queue's rate.`
+          : `Nothing new to queue${json.skipped ? ` — ${json.skipped} already queued or not eligible` : ""}.`);
+        await load();
+      } else {
+        setRosterNote(json.error || "Could not queue the reunion letters.");
+      }
+    } catch {
+      setRosterNote("Network error while queueing the reunion letters.");
+    } finally {
+      setRosterLoading(false);
+      setTimeout(() => setRosterNote(null), 15000);
+    }
+  }
+
+  function confirmLoad2024() {
+    setConfirmDialog({
+      title: "Load the 2024 conference roster (501 people)?",
+      message: "Everyone who filled out the 2024 form joins the list: 120 paid attendees, 66 who started a checkout, 315 who left their info. New people are added as queued; anyone already on the list is re-tagged to get the personalized reunion letter instead. Paid, declined, and unsubscribed people are left alone. Nothing sends yet.",
+      confirmLabel: "Load the roster",
+      onConfirm: () => { setConfirmDialog(null); void load2024Roster(); },
+    });
+  }
+
+  function confirmQueue2024() {
+    setConfirmDialog({
+      title: "Queue the 2024 reunion letters?",
+      message: "Every returning-tagged person who hasn't paid, declined, or unsubscribed gets their personalized reunion letter dripped out through the paced email queue — including people already emailed once with a different invite. No one is double-queued.",
+      confirmLabel: "Queue them",
+      onConfirm: () => { setConfirmDialog(null); void queue2024Reunion(); },
+    });
+  }
+
   // Shared confirm gate for the roster load, used by both the header shortcut
   // and the full card on the Invite tab.
   function confirmLoadStudents() {
@@ -444,6 +516,16 @@ export default function AttendeesPage() {
               {isAdmin && (
                 <button onClick={confirmLoadStudents} disabled={rosterLoading} className="px-3 py-1.5 rounded-lg text-xs font-bold text-white inline-flex items-center gap-1.5 disabled:opacity-50 shadow-sm" style={{ background: "#9A7B2E" }} title={`Add all ${STUDENT_ROSTER_COUNT.toLocaleString()} AALB students to the list as queued (nothing emailed)`}>
                   {rosterLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <GraduationCap className="w-3.5 h-3.5" />} Load students
+                </button>
+              )}
+              {isAdmin && (
+                <button onClick={confirmLoad2024} disabled={rosterLoading} className="px-3 py-1.5 rounded-lg text-xs font-bold text-white inline-flex items-center gap-1.5 disabled:opacity-50 shadow-sm" style={{ background: "#0E5566" }} title="Load the 501-person 2024 conference roster (120 paid, 66 attempted, 315 leads) — nothing emailed">
+                  {rosterLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Users className="w-3.5 h-3.5" />} Load 2024 roster
+                </button>
+              )}
+              {isAdmin && (
+                <button onClick={confirmQueue2024} disabled={rosterLoading} className="px-3 py-1.5 rounded-lg text-xs font-bold text-white inline-flex items-center gap-1.5 disabled:opacity-50 shadow-sm" style={{ background: "#0066B3" }} title="Drip the personalized reunion letter to every returning-tagged person via the paced queue">
+                  {rosterLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />} Queue reunion letters
                 </button>
               )}
               {isAdmin && (

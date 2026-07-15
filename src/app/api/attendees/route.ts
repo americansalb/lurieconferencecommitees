@@ -59,7 +59,7 @@ export async function POST(req: Request) {
   const pct = Math.max(0, Math.min(100, Number.isFinite(discountPercent) ? discountPercent : 25));
   // Any of the four community/standard templates is valid; anything else falls
   // back to the plain standard invite. buildAttendeeInvite handles all four.
-  const VALID_TEMPLATES = new Set(["standard", "alumni", "student", "former-student"]);
+  const VALID_TEMPLATES = new Set(["standard", "alumni", "student", "former-student", "returning"]);
   const template = VALID_TEMPLATES.has(payload.template) ? String(payload.template) : "standard";
 
   // Single-recipient mode: send immediately, bypass the queue.

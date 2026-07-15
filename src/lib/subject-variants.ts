@@ -63,6 +63,51 @@ export function pickAlumniSubject(firstName: string, token: string): { id: strin
   return { id: v.id, subject: v.make((firstName || "there").trim()) };
 }
 
+// Reunion invite subject lines for the 2024 conference roster, A/B-tested the
+// same way (stable by token; append, never reorder). Two sets: people who
+// actually attended in 2024 get "come back" language; people who only signed
+// up (or started a checkout) get "the seat you reserved" language.
+export const RETURNING_PAID_SUBJECT_VARIANTS: SubjectVariant[] = [
+  {
+    id: "ret-paid-back",
+    label: "Come back",
+    make: (f) => `${f}, you were there for the first one — come back for the second`,
+  },
+  {
+    id: "ret-paid-jc",
+    label: "JC keynotes our reunion",
+    make: (f) => `The Joint Commission keynotes our reunion, ${f}`,
+  },
+  {
+    id: "ret-paid-reunion",
+    label: "JC at second conference",
+    make: (f) => `The Joint Commission is coming to our second conference, ${f}`,
+  },
+];
+export const RETURNING_LEAD_SUBJECT_VARIANTS: SubjectVariant[] = [
+  {
+    id: "ret-lead-seat",
+    label: "Seat still open + JC",
+    make: () => `Your seat from 2024 is still open — and The Joint Commission is keynoting`,
+  },
+  {
+    id: "ret-lead-jc",
+    label: "JC on your conference",
+    make: (f) => `${f}, the Joint Commission is keynoting the conference you signed up for`,
+  },
+  {
+    id: "ret-lead-second",
+    label: "Back and bigger",
+    make: (f) => `${f}, you raised your hand for this in 2024 — it is back, and bigger`,
+  },
+];
+
+export function pickReturningSubject(firstName: string, token: string, paid: boolean): { id: string; subject: string } {
+  const set = paid ? RETURNING_PAID_SUBJECT_VARIANTS : RETURNING_LEAD_SUBJECT_VARIANTS;
+  const v = set[hashStr(token || "") % set.length];
+  return { id: v.id, subject: v.make((firstName || "there").trim()) };
+}
+
 export function alumniVariant(id: string | null | undefined): SubjectVariant | null {
   return ALUMNI_SUBJECT_VARIANTS.find((v) => v.id === id) || null;
 }

@@ -32,6 +32,7 @@ export async function POST() {
       discountPercent: a.discountPercent,
       inviteMessage: a.inviteMessage,
       template: a.inviteTemplate,
+      returning: { status: a.returning2024, mode: a.attended2024Mode, languages: a.primaryLanguages },
     });
     await prisma.emailQueue.update({ where: { id: row.id }, data: { subject, html } });
     refreshed++;

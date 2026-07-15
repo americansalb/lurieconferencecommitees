@@ -193,6 +193,33 @@ export async function GET(
         unsubscribeUrl: `${base}/api/attendees/unsubscribe/preview-token`,
       });
       break;
+    case "returning-paid-inperson":
+    case "returning-paid-virtual":
+    case "returning-attempted":
+    case "returning-lead": {
+      const seg = template.replace("returning-", "");
+      const { attendeeReturningInviteEmail } = await import("@/lib/mail-templates");
+      html = attendeeReturningInviteEmail({
+        firstName: "Lyan",
+        url: `${base}/attend/preview-token`,
+        inviteMessage: null,
+        discountPercent: 25,
+        inPersonOriginalCents: 21000,
+        inPersonDiscountedCents: 15750,
+        virtualOriginalCents: 10500,
+        virtualDiscountedCents: 7875,
+        personalCode: "LYAN25",
+        mainSiteUrl: `${base}/register`,
+        learnMoreUrl: base,
+        dateLabel: "July 15, 2026",
+        assetBase: base,
+        unsubscribeUrl: `${base}/api/attendees/unsubscribe/preview-token`,
+        returning2024: seg.startsWith("paid") ? "paid" : (seg as "attempted" | "lead"),
+        attended2024Mode: seg === "paid-inperson" ? "in-person" : seg === "paid-virtual" ? "virtual" : "virtual",
+        primaryLanguages: "Spanish, English",
+      });
+      break;
+    }
     case "attendee-alumni":
       html = attendeeAlumniInviteEmail({
         firstName: "Jordan",
