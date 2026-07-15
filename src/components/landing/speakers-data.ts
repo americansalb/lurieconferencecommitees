@@ -139,13 +139,13 @@ export const SPEAKERS: Speaker[] = [
     photo: "/speakers/hugo-juarez.webp",
   },
   {
-    slug: "mercedes-marti",
-    name: "Mercedes Marti",
+    slug: "mercedes-martin",
+    name: "Mercedes Martin",
     title: "Certified Medical Interpreter (Spanish)",
     org: "Nationally ranked pediatric hospital, Chicago",
     talk: "Beyond Accuracy: The Invisible Skills in Healthcare Interpreting",
-    bio: "Mercedes Marti is a certified Spanish medical interpreter working at a nationally ranked pediatric hospital in Chicago. She holds a BS in Community Health & American Studies from Tufts University. Her Day 1 session identifies and names the invisible practices in-person interpreters use every day to turn accurate interpretation into effective communication — and explores how those practices carry over to remote interpretation.",
-    photo: "/speakers/mercedes-marti.webp",
+    bio: "Mercedes Martin is a certified Spanish medical interpreter working at a nationally ranked pediatric hospital in Chicago. She holds a BS in Community Health & American Studies from Tufts University. Her Day 1 session identifies and names the invisible practices in-person interpreters use every day to turn accurate interpretation into effective communication — and explores how those practices carry over to remote interpretation.",
+    photo: "/speakers/mercedes-martin.webp",
   },
   {
     slug: "sarah-stockler-rex",

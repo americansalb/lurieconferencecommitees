@@ -1,6 +1,6 @@
 import { randomBytes } from "crypto";
 import { appUrl } from "./presenters";
-import { attendeeInviteEmail, attendeeAlumniInviteEmail, attendeeReturningInviteEmail } from "./mail-templates";
+import { plainStandardInviteEmail, plainCommunityInviteEmail, plainReturningInviteEmail } from "./mail-templates";
 import { firstNameToCode } from "./codes";
 import { pickAlumniSubject, pickReturningSubject, pickStudentSubject } from "./subject-variants";
 
@@ -57,18 +57,23 @@ export function buildAttendeeInvite(opts: {
     dateLabel: new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
     unsubscribeUrl: attendeeUnsubscribeUrl(opts.inviteToken),
   };
+  // Every attendee invite now sends as a PLAIN personal note (white
+  // background, no images, one text link): the engraved letters read as
+  // marketing to Gmail's Promotions classifier and to recipients, and
+  // converted poorly. The engraved renderers remain in mail-templates for
+  // occasions that call for ceremony.
   let html: string;
   if (template === "returning") {
-    html = attendeeReturningInviteEmail({
+    html = plainReturningInviteEmail({
       ...common,
       returning2024: (opts.returning?.status as "paid" | "attempted" | "lead" | undefined) || "lead",
       attended2024Mode: (opts.returning?.mode as "in-person" | "virtual" | undefined) || null,
       primaryLanguages: opts.returning?.languages || null,
     });
   } else if (relationship) {
-    html = attendeeAlumniInviteEmail({ ...common, relationship });
+    html = plainCommunityInviteEmail({ ...common, relationship });
   } else {
-    html = attendeeInviteEmail(common);
+    html = plainStandardInviteEmail(common);
   }
   // Alumni and reunion sends rotate through several subject lines (A/B),
   // assigned by token so the choice is stable across resends and measurable

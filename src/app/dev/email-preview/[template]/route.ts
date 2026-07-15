@@ -8,8 +8,8 @@ import {
   bookingInviteEmail,
   bookingConfirmedInviteeEmail,
   ambassadorInviteEmail,
-  attendeeInviteEmail,
-  attendeeAlumniInviteEmail,
+  plainStandardInviteEmail,
+  plainCommunityInviteEmail,
 } from "@/lib/mail-templates";
 import { fullBenefits } from "@/lib/sponsors";
 
@@ -179,7 +179,7 @@ export async function GET(
       });
       break;
     case "attendee":
-      html = attendeeInviteEmail({
+      html = plainStandardInviteEmail({
         firstName: "Jordan",
         url: `${base}/register?code=JORDAN25`,
         inviteMessage: null,
@@ -198,8 +198,8 @@ export async function GET(
     case "returning-attempted":
     case "returning-lead": {
       const seg = template.replace("returning-", "");
-      const { attendeeReturningInviteEmail } = await import("@/lib/mail-templates");
-      html = attendeeReturningInviteEmail({
+      const { plainReturningInviteEmail } = await import("@/lib/mail-templates");
+      html = plainReturningInviteEmail({
         firstName: "Lyan",
         url: `${base}/attend/preview-token`,
         inviteMessage: null,
@@ -220,10 +220,10 @@ export async function GET(
       });
       break;
     }
-    // Student / former-student re-engagement letter (career-first rework).
+    // Student / former-student re-engagement note (plain personal email).
     case "attendee-student":
     case "attendee-former":
-      html = attendeeAlumniInviteEmail({
+      html = plainCommunityInviteEmail({
         firstName: "Lyan",
         url: `${base}/attend/preview-token`,
         inviteMessage: null,
@@ -242,7 +242,7 @@ export async function GET(
       });
       break;
     case "attendee-alumni":
-      html = attendeeAlumniInviteEmail({
+      html = plainCommunityInviteEmail({
         firstName: "Jordan",
         url: `${base}/register?code=JORDAN25`,
         inviteMessage: null,
