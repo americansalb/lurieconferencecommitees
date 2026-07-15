@@ -105,8 +105,37 @@ export const RETURNING_LEAD_SUBJECT_VARIANTS: SubjectVariant[] = [
   },
 ];
 
-export function pickReturningSubject(firstName: string, token: string, paid: boolean): { id: string; subject: string } {
-  const set = paid ? RETURNING_PAID_SUBJECT_VARIANTS : RETURNING_LEAD_SUBJECT_VARIANTS;
+// People who were physically in the room in 2024 get Chicago in the subject
+// line — the city is the memory. Virtual attendees keep the venue-neutral
+// paid set, since "return to Chicago" would ring false to someone who joined
+// from home.
+export const RETURNING_PAID_INPERSON_SUBJECT_VARIANTS: SubjectVariant[] = [
+  {
+    id: "ret-paid-chi-back",
+    label: "Chicago 2024",
+    make: (f) => `${f}, you joined us in Chicago in 2024 — the second conference is August 15–16`,
+  },
+  {
+    id: "ret-paid-chi-jc",
+    label: "JC in Chicago",
+    make: (f) => `${f}, the Joint Commission keynotes your second conference in Chicago`,
+  },
+  {
+    id: "ret-paid-chi-return",
+    label: "Back to Chicago",
+    make: (f) => `${f}, your invitation back to Chicago — the Lurie Children's & AALB conference`,
+  },
+];
+
+export function pickReturningSubject(
+  firstName: string,
+  token: string,
+  paid: boolean,
+  inPerson = false
+): { id: string; subject: string } {
+  const set = paid
+    ? (inPerson ? RETURNING_PAID_INPERSON_SUBJECT_VARIANTS : RETURNING_PAID_SUBJECT_VARIANTS)
+    : RETURNING_LEAD_SUBJECT_VARIANTS;
   const v = set[hashStr(token || "") % set.length];
   return { id: v.id, subject: v.make((firstName || "there").trim()) };
 }

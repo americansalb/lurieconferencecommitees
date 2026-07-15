@@ -76,7 +76,12 @@ export function buildAttendeeInvite(opts: {
   let subject: string;
   let subjectVariant: string | null = null;
   if (template === "returning") {
-    const picked = pickReturningSubject(opts.firstName, opts.inviteToken, opts.returning?.status === "paid");
+    const picked = pickReturningSubject(
+      opts.firstName,
+      opts.inviteToken,
+      opts.returning?.status === "paid",
+      opts.returning?.mode === "in-person"
+    );
     subject = picked.subject;
     subjectVariant = picked.id;
   } else if (relationship === "alumnus") {

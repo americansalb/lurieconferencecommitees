@@ -818,7 +818,7 @@ export function attendeeReturningInviteEmail({
   // first letter.
   const opening = paid
     ? (inPerson
-      ? `Two summers ago, you took a seat in the room where Lurie Children&rsquo;s and Americans Against Language Barriers held their first joint conference. The second is set for August 15 and 16, and we wanted your invitation to be among the first to go out.`
+      ? `Two summers ago in Chicago, you took a seat in the room where Lurie Children&rsquo;s and Americans Against Language Barriers held their first joint conference. The second is set for August 15 and 16, in the same city, and we wanted your invitation to be among the first to go out.`
       : `In the summer of 2024, you joined the live stream of the first joint conference &mdash; present in every way that mattered. The second gathering is set for August 15 and 16, and we are beginning our invitations with the people who were there for the first.`)
     : returning2024 === "attempted"
     ? `In 2024, you began a registration for the first joint conference, and your name has been on our list since. The second conference is set for August 15 and 16, and this letter is your invitation to complete what you started.`
