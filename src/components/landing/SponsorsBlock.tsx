@@ -17,6 +17,7 @@ const PARTNERS: { name: string; logo: string; role?: string; url?: string }[] = 
   { name: "The Chicago Diner", logo: "/partners/chicago-diner.png", role: "Food Sponsor", url: "https://www.veggiediner.com" },
   { name: "LanguageLine Solutions", logo: "/partners/languageline.png", role: "Exhibitor", url: "https://www.languageline.com" },
   { name: "Multilingual Connections", logo: "/partners/multilingual-connections.svg", role: "Exhibitor", url: "https://multilingualconnections.com" },
+  { name: "Martti, an Equiti Solution", logo: "/partners/martti.png", role: "Exhibitor", url: "https://equitihealth.com" },
 ];
 
 const BENEFITS = [
