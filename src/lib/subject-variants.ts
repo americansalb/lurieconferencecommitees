@@ -73,18 +73,18 @@ export function pickAlumniSubject(firstName: string, token: string): { id: strin
 export const RETURNING_PAID_SUBJECT_VARIANTS: SubjectVariant[] = [
   {
     id: "ret-paid-back",
-    label: "Join us again",
-    make: (f) => `${f}, you were with us in 2024 — join us again this August`,
+    label: "Your second conference",
+    make: (f) => `${f}, an invitation to your second Lurie Children's & AALB conference`,
   },
   {
     id: "ret-paid-jc",
     label: "JC keynote",
-    make: (f) => `${f}, the Joint Commission is keynoting our second conference`,
+    make: (f) => `${f}, the Joint Commission keynotes your second conference, August 15–16`,
   },
   {
     id: "ret-paid-reunion",
     label: "Invitation to return",
-    make: (f) => `${f}, your invitation to return: Chicago, August 15 and 16`,
+    make: (f) => `${f}, your invitation to return to the Lurie Children's & AALB conference`,
   },
 ];
 export const RETURNING_LEAD_SUBJECT_VARIANTS: SubjectVariant[] = [
@@ -96,12 +96,12 @@ export const RETURNING_LEAD_SUBJECT_VARIANTS: SubjectVariant[] = [
   {
     id: "ret-lead-jc",
     label: "JC keynote",
-    make: (f) => `${f}, the Joint Commission is keynoting our 2026 conference`,
+    make: (f) => `${f}, the Joint Commission is keynoting on language access this August`,
   },
   {
     id: "ret-lead-second",
     label: "It returns",
-    make: (f) => `${f}, the conference you signed up for returns August 15 and 16`,
+    make: (f) => `${f}, the language-access conference you signed up for returns August 15–16`,
   },
 ];
 
