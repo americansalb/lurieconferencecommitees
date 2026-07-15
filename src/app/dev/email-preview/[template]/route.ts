@@ -85,12 +85,35 @@ export async function GET(
         assetBase: base,
       });
       break;
+    case "arranged-welcome-kit":
+      html = sponsorInviteEmail({
+        contactFirstName: "Sharla",
+        companyName: "En-Vision America",
+        suggestedTier: { name: "Welcome Kit + Virtual Spotlight", amountLabel: "$300", ticketsIncluded: 0, tagline: "" },
+        inviteMessage: "Thank you again for your interest in supporting our conference. As promised, here is everything you need to confirm the option we discussed.",
+        landingUrl: `${base}/sponsor/invited/demo-token`,
+        assetBase: base,
+        arranged: true,
+        unsubscribeUrl: `${base}/api/sponsors/unsubscribe/demo-token`,
+      });
+      break;
     case "inkind-accepted-food":
       html = sponsorInKindAcceptanceEmail({
         kind: "food",
         contactName: "Jules",
         companyName: "The Chicago Diner",
         pledge: "Food pledge: A tray of vegan comfort-food entrees for lunch · Est: 60 servings · Arrangement: Donate part, we purchase the rest",
+        materialsUrl: `${base}/sponsor/status/demo-token`,
+        unsubscribeUrl: `${base}/api/sponsors/unsubscribe/demo-token`,
+        assetBase: base,
+      });
+      break;
+    case "inkind-accepted-captioning":
+      html = sponsorInKindAcceptanceEmail({
+        kind: "captioning",
+        contactName: "Lydy Pinzón-Dadley",
+        companyName: "National Captioning Institute",
+        pledge: "Live captioning for the full event, in-person and virtual audiences · Arrangement: donated in kind",
         materialsUrl: `${base}/sponsor/status/demo-token`,
         unsubscribeUrl: `${base}/api/sponsors/unsubscribe/demo-token`,
         assetBase: base,

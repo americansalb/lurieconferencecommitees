@@ -1,7 +1,6 @@
-import { ArrowRight } from "lucide-react";
 import { TOKENS } from "./tokens";
 import { SPEAKERS } from "./speakers-data";
-import SpeakerCard from "./SpeakerCard";
+import SpeakerCard, { KeynoteCard } from "./SpeakerCard";
 
 // Confirmed speaker lineup. Replaces the old "coming soon" callout that used
 // to live at the foot of the Theme section. Cards cycle the brand chord
@@ -37,33 +36,28 @@ export default function Speakers() {
           </p>
         </div>
 
+        {/* The keynote gets the full-width feature treatment above the grid. */}
+        {SPEAKERS.filter((s) => s.keynote).map((s) => (
+          <div key={s.slug} className="max-w-5xl mx-auto mb-10">
+            <KeynoteCard speaker={s} />
+          </div>
+        ))}
+
         {/* Centered wrapping (not a grid) so a partial last row — e.g. 7 cards
             as 3+3+1 — centers its leftovers instead of stranding them left.
             Default stretch alignment keeps every card in a row the same height. */}
         <div className="flex flex-wrap justify-center gap-6 max-w-5xl mx-auto">
-          {SPEAKERS.map((s, i) => (
+          {SPEAKERS.filter((s) => !s.keynote).map((s, i) => (
             <div key={s.slug} className="w-full sm:w-[calc(50%-0.75rem)] lg:w-[calc(33.333%-1rem)]">
               <SpeakerCard speaker={s} accent={ACCENTS[i % ACCENTS.length]} />
             </div>
           ))}
         </div>
 
-        {/* More to come + proposal CTA (carried over from the old callout). */}
         <div className="mt-16 text-center">
           <p className="text-[15px] font-medium" style={{ color: TOKENS.muted }}>
-            More speakers to be announced. Want to be one of them?
+            More speakers to be announced.
           </p>
-          <a
-            href="/proposal"
-            className="mt-5 inline-flex items-center gap-2 px-6 py-3.5 rounded-full font-bold text-sm transition-all hover:gap-3"
-            style={{
-              background: `linear-gradient(135deg, #D4B266 0%, ${TOKENS.gold} 100%)`,
-              color: "#3C2E10",
-              boxShadow: "0 10px 24px -10px rgba(201,161,75,0.55)",
-            }}
-          >
-            Submit a Speaker Proposal <ArrowRight className="w-4 h-4" />
-          </a>
         </div>
       </div>
     </section>

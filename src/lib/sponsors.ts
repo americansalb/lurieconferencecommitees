@@ -43,6 +43,11 @@ export type SponsorTier = {
   // figure as the approximate VALUE of that donation (a sense of scale), not a
   // price, and `payAlternative` is the secondary "or just fund it" option.
   inKind?: { action: string; valueLabel: string; requirement: string; payAlternative: string };
+  // Invite-only tiers never appear on the public sponsor pages; they exist for
+  // deals arranged over email (e.g. the Welcome Kit options offered to an org
+  // that can't attend in person). The admin invites them with the tier preset,
+  // and the invitation email frames it as "as discussed", not a pitch.
+  inviteOnly?: boolean;
 };
 
 // Pricing and benefits straight from the 2026 Sponsorship & Exhibitor Prospectus.
@@ -158,6 +163,26 @@ export const TIERS: SponsorTier[] = [
       "One flyer or material distributed to attendees",
     ],
   },
+  // In-kind accessibility partner (arranged over email, e.g. the National
+  // Captioning Institute): live captioning donated for the event. Not on the
+  // public pickers (allowlists), no charge; the value is the service.
+  {
+    id: "captioning",
+    name: "Captioning Sponsor",
+    amountCents: 0,
+    amountLabel: "In kind",
+    ticketsIncluded: 2,
+    tagline: "Donate live captioning for the full event.",
+    variant: "asl",
+    accent: "#0E7490",
+    accentSoft: "#CFFAFE",
+    benefits: [
+      "Company info and logo on the conference website",
+      "Honorable mention during opening remarks",
+      "Name and logo displayed at the conference",
+      "Social media thank you posts",
+    ],
+  },
   {
     id: "exhibitor",
     name: "Exhibitor Table",
@@ -172,6 +197,40 @@ export const TIERS: SponsorTier[] = [
       "Exhibitor table in the conference hall",
       "One conference ticket included",
       "Listing in the conference program",
+    ],
+  },
+  // Invite-only: a remote presence for organizations that can't attend in
+  // person, arranged over email (first offered to En-Vision America). Never
+  // shown on the public sponsor pages; admins invite with the tier preset.
+  {
+    id: "welcome-kit",
+    name: "Welcome Kit Sponsor",
+    amountCents: 20000,
+    amountLabel: "$200",
+    ticketsIncluded: 0,
+    tagline: "Your brochure in every attendee's hands.",
+    variant: "supporter",
+    accent: "#047857",
+    accentSoft: "#D1FAE5",
+    inviteOnly: true,
+    benefits: [
+      "One brochure or promotional insert in the welcome kit given to every in-person attendee",
+    ],
+  },
+  {
+    id: "welcome-kit-plus",
+    name: "Welcome Kit + Virtual Spotlight",
+    amountCents: 30000,
+    amountLabel: "$300",
+    ticketsIncluded: 0,
+    tagline: "In every welcome kit, and in front of the virtual audience.",
+    variant: "supporter",
+    accent: "#047857",
+    accentSoft: "#D1FAE5",
+    inviteOnly: true,
+    benefits: [
+      "One brochure or promotional insert in the welcome kit given to every in-person attendee",
+      "A live acknowledgment immediately before the virtual networking session, with your organization's name, website, and contact information shared with virtual attendees",
     ],
   },
 ];
@@ -270,17 +329,29 @@ export function isAslProspect(s: { tier: string }): boolean {
   return s.tier === "asl";
 }
 
+// A captioning prospect: an organization donating live captioning in kind.
+export function isCaptioningProspect(s: { tier: string }): boolean {
+  return s.tier === "captioning";
+}
+
 export function sponsorAslSubject(companyName: string): string {
   const co = (companyName || "").trim() || "Your team";
   return `${co}: an invitation to be an ASL Interpreter Sponsor of the 2026 Lurie Children's & AALB Conference`;
 }
 
+// Subject for an invite-only (arranged) tier: the deal was agreed over email,
+// so the subject confirms it rather than pitching it.
+export function sponsorArrangedSubject(companyName: string, tierName: string): string {
+  const co = (companyName || "").trim() || "Your organization";
+  return `${co}: confirming your ${tierName} sponsorship of the 2026 Lurie Children's & AALB Conference`;
+}
+
 // Subject for the in-kind acceptance / welcome letter, sent when an admin
 // accepts a pledged Food or ASL sponsor from the dashboard. Leads with the good
 // news and the organization's own name.
-export function sponsorInKindAcceptanceSubject(companyName: string, kind: "food" | "asl"): string {
+export function sponsorInKindAcceptanceSubject(companyName: string, kind: "food" | "asl" | "captioning"): string {
   const co = (companyName || "").trim() || "Your organization";
-  const role = kind === "asl" ? "ASL Interpreter Sponsor" : "Food Sponsor";
+  const role = kind === "asl" ? "ASL Interpreter Sponsor" : kind === "captioning" ? "Captioning Sponsor" : "Food Sponsor";
   return `It's official: ${co} is a ${role} of the 2026 Lurie Children's & AALB Conference`;
 }
 

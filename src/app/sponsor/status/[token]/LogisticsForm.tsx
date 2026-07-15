@@ -5,7 +5,7 @@ import { Loader2, Check } from "lucide-react";
 
 type Field =
   | { key: string; label: string; type: "text" | "textarea"; placeholder?: string; hint?: string }
-  | { key: string; label: string; type: "select"; options: { value: string; label: string }[] };
+  | { key: string; label: string; type: "select"; options: { value: string; label: string }[]; hint?: string };
 
 // The complimentary-tickets / attendance questions, shown to every in-kind
 // sponsor first: Food and ASL sponsorships include two seats (see TIERS), so
@@ -59,15 +59,51 @@ const ASL_FIELDS: Field[] = [
   { key: "materials", label: "Materials to send in advance", type: "textarea", placeholder: "Agenda, slides, or a glossary, so your interpreters can prepare" },
 ];
 
+// Captioning sponsors (in-kind, e.g. the National Captioning Institute):
+// coverage, how captions reach the room and the stream, tech, and prep.
+const CAPTIONING_FIELDS: Field[] = [
+  { key: "coverage", label: "Coverage you can provide", type: "textarea", placeholder: "Which sessions, day, or the full event", hint: "Both days stream live to a virtual audience alongside the in-person program." },
+  { key: "mode", label: "How the captions are delivered", type: "text", placeholder: "e.g. embedded in the live stream, CART screen in the room, both" },
+  { key: "equipment", label: "Technical needs", type: "text", placeholder: "Audio feed, platform access, bandwidth — whatever your team needs" },
+  { key: "dayOfContact", label: "Day-of contact", type: "text", placeholder: "Name and cell number for the day" },
+  { key: "materials", label: "Materials to send in advance", type: "textarea", placeholder: "Agenda, slides, or a glossary, so your captioners can prepare" },
+];
+
+// Welcome Kit sponsors (invite-only, remote presence): what we need is their
+// brochure and, on the Spotlight tier, the contact details we announce to
+// virtual attendees. No ticket section — these tiers include none.
+const WELCOME_FIELDS: Field[] = [
+  { key: "brochure", label: "Your brochure", type: "select", options: [
+    { value: "", label: "How will you get it to us?" },
+    { value: "We'll ship printed brochures", label: "We'll ship printed brochures to you" },
+    { value: "We'll send print-ready artwork", label: "We'll send print-ready artwork for you to print" },
+    { value: "Not sure yet", label: "Not sure yet — let's coordinate by email" },
+  ], hint: "We expect about 70–80 in-person attendees; one insert goes into every welcome kit." },
+  { key: "brochureNotes", label: "Brochure notes", type: "textarea", placeholder: "Format, size, quantity you can send, shipping timing — anything we should know" },
+];
+const SPOTLIGHT_FIELDS: Field[] = [
+  { key: "spotlightContact", label: "How should virtual attendees reach you?", type: "text", placeholder: "e.g. info@yourorg.com · (800) 555-0100", hint: "We'll share your name, website, and this contact right before the virtual networking session." },
+  { key: "spotlightNotes", label: "Anything you'd like mentioned", type: "textarea", placeholder: "A sentence about your services, an offer for attendees — optional" },
+];
+
 export default function LogisticsForm({
   token, kind, initial,
 }: {
   token: string;
-  kind: "food" | "asl";
+  kind: "food" | "asl" | "captioning" | "welcome-kit" | "welcome-kit-plus";
   initial: Record<string, string> | null;
 }) {
-  const detailFields = kind === "asl" ? ASL_FIELDS : FOOD_FIELDS;
-  const fields = [...ATTEND_FIELDS, ...detailFields];
+  const isWelcome = kind === "welcome-kit" || kind === "welcome-kit-plus";
+  const detailFields =
+    kind === "asl" ? ASL_FIELDS
+    : kind === "captioning" ? CAPTIONING_FIELDS
+    : kind === "welcome-kit" ? WELCOME_FIELDS
+    : kind === "welcome-kit-plus" ? [...WELCOME_FIELDS, ...SPOTLIGHT_FIELDS]
+    : FOOD_FIELDS;
+  // The complimentary-ticket section only applies to food/ASL (two seats each);
+  // Welcome Kit tiers include no tickets.
+  const attendFields = isWelcome ? [] : ATTEND_FIELDS;
+  const fields = [...attendFields, ...detailFields];
   const seed = () => {
     const o: Record<string, string> = {};
     for (const f of fields) o[f.key] = initial?.[f.key] || "";
@@ -140,16 +176,20 @@ export default function LogisticsForm({
 
   return (
     <div>
-      <div className="text-sm font-semibold text-slate-700">Your seats at the conference</div>
-      <p className="text-xs text-slate-500 mt-0.5">
-        Your sponsorship includes two complimentary tickets — we&rsquo;d love to have you there, in person or online. Entirely optional.
-      </p>
-      <div className="mt-3 grid grid-cols-1 gap-3">
-        {ATTEND_FIELDS.map(renderField)}
-      </div>
+      {!isWelcome && (
+        <>
+          <div className="text-sm font-semibold text-slate-700">Your seats at the conference</div>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Your sponsorship includes two complimentary tickets — we&rsquo;d love to have you there, in person or online. Entirely optional.
+          </p>
+          <div className="mt-3 grid grid-cols-1 gap-3">
+            {ATTEND_FIELDS.map(renderField)}
+          </div>
+        </>
+      )}
 
-      <div className="mt-5 pt-4 border-t border-slate-200/70 text-sm font-semibold text-slate-700">
-        {kind === "asl" ? "Interpretation details" : "Food details"}
+      <div className={`text-sm font-semibold text-slate-700 ${isWelcome ? "" : "mt-5 pt-4 border-t border-slate-200/70"}`}>
+        {kind === "asl" ? "Interpretation details" : kind === "captioning" ? "Captioning details" : isWelcome ? "Welcome kit details" : "Food details"}
       </div>
       <p className="text-xs text-slate-500 mt-0.5">
         Fill in whatever you can now; you can come back and update it anytime.

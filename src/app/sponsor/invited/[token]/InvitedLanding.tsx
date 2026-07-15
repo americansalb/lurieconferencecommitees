@@ -99,6 +99,15 @@ export default function InvitedLanding({ token, sponsor }: { token: string; spon
         return;
       }
 
+      // Invite-only (arranged) tiers like the Welcome Kit: their portal page
+      // shows the materials we need (logo, website, brochure plan, spotlight
+      // contact) right next to the pay button, so route there instead of
+      // jumping straight into Stripe with nothing asked.
+      if (selected.inviteOnly) {
+        window.location.href = `/sponsor/status/${token}`;
+        return;
+      }
+
       // Paid tier: start Stripe Checkout and redirect.
       const ck = await fetch("/api/sponsors/checkout", {
         method: "POST",

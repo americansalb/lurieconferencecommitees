@@ -824,21 +824,28 @@ type SponsorInviteArgs = {
   assetBase?: string;
   compExhibitor?: boolean;
   isPartner?: boolean;
+  // The tier was agreed over email beforehand (invite-only tiers like the
+  // Welcome Kit options): frame the email as confirming the arrangement, not
+  // pitching levels. Requires suggestedTier.
+  arranged?: boolean;
   // One-click unsubscribe URL for this recipient (CAN-SPAM footer link).
   unsubscribeUrl?: string;
 };
 
 export function sponsorInviteEmail({
-  contactFirstName, companyName, suggestedTier, inviteMessage, landingUrl, assetBase, compExhibitor = false, isPartner = false, unsubscribeUrl,
+  contactFirstName, companyName, suggestedTier, inviteMessage, landingUrl, assetBase, compExhibitor = false, isPartner = false, arranged = false, unsubscribeUrl,
 }: SponsorInviteArgs) {
   const postalAddress = process.env.MAIL_POSTAL_ADDRESS?.trim() || "Americans Against Language Barriers, Chicago, IL";
   const first = contactFirstName || "there";
   const site = assetBase || "https://conference.aalb.org";
-  const ctaLabel = compExhibitor ? "Claim your table" : "See sponsorship levels";
+  const ctaLabel = compExhibitor ? "Claim your table" : arranged ? "Confirm &amp; complete payment" : "See sponsorship levels";
+  const ticketsClause = (n: number) => (n > 0 ? `, ${n} ticket${n === 1 ? "" : "s"} included` : "");
   const tierLine = compExhibitor
     ? `Your exhibitor table is on us, there is nothing to pay. Just confirm a couple of details and you&rsquo;re all set.`
+    : arranged && suggestedTier
+    ? `As we discussed, we have set aside the <strong>${escapeHtml(suggestedTier.name)}</strong> option (${escapeHtml(suggestedTier.amountLabel)}) for ${escapeHtml(companyName)}. The button below takes you straight to it to confirm and complete payment, and our team will coordinate the details with you from there.`
     : suggestedTier
-    ? `We thought the <strong>${escapeHtml(suggestedTier.name)}</strong> level (${escapeHtml(suggestedTier.amountLabel)}, ${suggestedTier.ticketsIncluded} ticket${suggestedTier.ticketsIncluded === 1 ? "" : "s"} included) might be a natural fit, but please choose whichever works best for ${escapeHtml(companyName)}.`
+    ? `We thought the <strong>${escapeHtml(suggestedTier.name)}</strong> level (${escapeHtml(suggestedTier.amountLabel)}${ticketsClause(suggestedTier.ticketsIncluded)}) might be a natural fit, but please choose whichever works best for ${escapeHtml(companyName)}.`
     : "";
   const compCallout = compExhibitor
     ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:18px 0 0 0;"><tr><td style="background:#f7f3ea;border-left:3px solid ${GOLD};padding:16px 18px;border-radius:6px;">
@@ -859,6 +866,8 @@ export function sponsorInviteEmail({
   }
   const preheader = compExhibitor
     ? `A complimentary exhibitor table for ${escapeHtml(companyName)} at the 2026 Lurie Children's & AALB Conference, August 15 and 16 in Chicago.`
+    : arranged && suggestedTier
+    ? `Confirming ${escapeHtml(companyName)}'s ${escapeHtml(suggestedTier.name)} sponsorship of the 2026 Lurie Children's & AALB Conference, as discussed.`
     : `An invitation for ${escapeHtml(companyName)} to sponsor the 2026 Lurie Children's & AALB Conference, August 15 and 16 in Chicago.`;
   return shell(`
     ${heroBanner()}
@@ -1919,7 +1928,7 @@ export function sponsorInKindPledgeEmail({ kind, contactName, companyName, provi
 }
 
 type SponsorInKindAcceptanceArgs = {
-  kind: "food" | "asl";
+  kind: "food" | "asl" | "captioning";
   contactName: string;
   companyName: string;
   // The pledge summary we hold (from sponsor.message), reflected back so the
@@ -1956,7 +1965,8 @@ export function sponsorInKindAcceptanceEmail({
   const site = (learnMoreUrl || base).replace(/\/$/, "");
   const today = dateLabel || new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   const isAsl = kind === "asl";
-  const sponsorLabel = isAsl ? "ASL Interpreter Sponsor" : "Food Sponsor";
+  const isCaptioning = kind === "captioning";
+  const sponsorLabel = isAsl ? "ASL Interpreter Sponsor" : isCaptioning ? "Captioning Sponsor" : "Food Sponsor";
 
   // Greeting: a person's first name when we have one, otherwise the org name
   // (sans a trailing "(ABBR)").
@@ -1968,19 +1978,23 @@ export function sponsorInKindAcceptanceEmail({
 
   const mission = isAsl
     ? "helping us keep every session of the conference accessible in American Sign Language, so that Deaf and hard-of-hearing attendees are full participants and never an afterthought"
+    : isCaptioning
+    ? "helping us make every session accessible with live captioning, for the in-person and virtual audiences alike, so no one misses a word"
     : "helping us hold the line on a fully plant-based, meat-free conference, where every meal honors the same promise these two days are about";
-  const pledgeLabel = isAsl ? "The interpreting you are providing" : "What you are providing";
+  const pledgeLabel = isAsl ? "The interpreting you are providing" : isCaptioning ? "The captioning you are providing" : "What you are providing";
   // A plain-language summary of what the portal form asks, so the letter names
   // the details without turning into a reply-by-email checklist.
   const detailsSummary = isAsl
     ? "your coverage, how many interpreters, on-site or remote, a day-of contact, and any materials to send ahead"
+    : isCaptioning
+    ? "your coverage, how the captions are delivered for the room and the stream, any technical needs, a day-of contact, and any materials to send ahead"
     : "what you are providing, which day and meal, delivery or pickup, a day-of contact, allergen notes, and any setup needs";
-  const recognitionLast = isAsl
+  const recognitionLast = isAsl || isCaptioning
     ? "An honorable mention during opening remarks"
     : "An honorable mention at the opening and at the meal you provide, before a national audience of interpreters, clinicians, and advocates";
   // Careful, accurate tax language: donated services are not deductible under
   // IRS rules, and the acknowledgment describes the gift without valuing it.
-  const taxLine = isAsl
+  const taxLine = isAsl || isCaptioning
     ? "Out-of-pocket costs connected to your donation may be tax-deductible as a charitable contribution to a 501(c)(3); the value of donated services themselves generally is not"
     : "Your in-kind food donation may be tax-deductible as a charitable contribution to a 501(c)(3)";
 

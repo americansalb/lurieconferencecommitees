@@ -5,8 +5,8 @@ import { Menu, X } from "lucide-react";
 import { TOKENS } from "./tokens";
 
 const links = [
-  { href: "#theme", label: "Theme" },
   { href: "#speakers", label: "Speakers" },
+  { href: "#theme", label: "Theme" },
   { href: "#venue", label: "Venue" },
   { href: "#pricing", label: "Pricing" },
   { href: "#sponsors", label: "Sponsors" },

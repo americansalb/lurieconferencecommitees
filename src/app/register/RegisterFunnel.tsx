@@ -13,6 +13,8 @@ import {
 
 type Mode = "in-person" | "virtual";
 
+type AttendDay = "" | "sat" | "sun";
+
 type Form = {
   firstName: string;
   lastName: string;
@@ -20,13 +22,15 @@ type Form = {
   phone: string;
   primaryLanguages: string;
   attendanceMode: Mode | "";
+  // One-day virtual ticket: "sat"/"sun" when set; "" means both days.
+  attendDay: AttendDay;
   accessibilityNotes: string;
   dietary: string;
 };
 
 const EMPTY: Form = {
   firstName: "", lastName: "", email: "", phone: "",
-  primaryLanguages: "", attendanceMode: "",
+  primaryLanguages: "", attendanceMode: "", attendDay: "",
   accessibilityNotes: "", dietary: "",
 };
 
@@ -34,12 +38,14 @@ const STEPS = ["Attendance", "Your name", "Contact", "Personalize", "Review"];
 const emailOk = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
 
 export default function RegisterFunnel({
-  tierLabel, tierEnd, inPersonPrice, virtualPrice, initialCode,
+  tierLabel, tierEnd, inPersonPrice, virtualPrice, oneDayPrice, initialCode,
 }: {
   tierLabel: string;
   tierEnd: string;
   inPersonPrice: number;
   virtualPrice: number;
+  // One-day virtual ticket price (66% of the full virtual rate).
+  oneDayPrice: number;
   // A shared discount code carried in the URL (?code=GARCIA20 from an
   // ambassador's share link); prefills the review-step code field.
   initialCode?: string;
@@ -58,7 +64,7 @@ export default function RegisterFunnel({
   const [applied, setApplied] = useState<{ code: string; label: string; finalCents: number; discountCents: number } | null>(null);
 
   const price = form.attendanceMode === "in-person" ? inPersonPrice
-    : form.attendanceMode === "virtual" ? virtualPrice : null;
+    : form.attendanceMode === "virtual" ? (form.attendDay ? oneDayPrice : virtualPrice) : null;
   const isInPerson = form.attendanceMode === "in-person";
 
   async function applyCode() {
@@ -70,7 +76,7 @@ export default function RegisterFunnel({
       const res = await fetch("/api/discounts/validate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code, attendanceMode: form.attendanceMode }),
+        body: JSON.stringify({ code, attendanceMode: form.attendanceMode, attendDay: form.attendDay || undefined }),
       });
       const json = await res.json();
       if (json.ok) {
@@ -106,6 +112,14 @@ export default function RegisterFunnel({
   // Picking a mode auto-advances after a beat so the selection registers.
   function pickMode(m: Mode) {
     set("attendanceMode", m);
+    set("attendDay", "");
+    setError(null);
+    setTimeout(() => setStep(1), 360);
+  }
+
+  // One-day virtual: picking a day is the selection; then advance.
+  function pickOneDay(day: Exclude<AttendDay, "">) {
+    setForm((f) => ({ ...f, attendanceMode: "virtual", attendDay: day }));
     setError(null);
     setTimeout(() => setStep(1), 360);
   }
@@ -180,7 +194,7 @@ export default function RegisterFunnel({
               onClick={() => pickMode("in-person")}
             />
             <ChoiceCard
-              selected={form.attendanceMode === "virtual"}
+              selected={form.attendanceMode === "virtual" && !form.attendDay}
               accent={C.blue}
               icon={Monitor}
               title="Virtual"
@@ -189,6 +203,53 @@ export default function RegisterFunnel({
               features={["Live stream", "CEU certificate", "On-demand replays"]}
               onClick={() => pickMode("virtual")}
             />
+
+            {/* One-day virtual: 66% of the full virtual rate. Picking a day is
+                the whole selection, so the two day buttons advance directly. */}
+            <div
+              className="rounded-2xl p-5 bg-white"
+              style={{
+                border: `1.5px solid ${form.attendDay ? C.blue : C.hairline}`,
+                boxShadow: form.attendDay ? `0 14px 34px -20px ${C.blue}66` : "0 10px 28px -22px rgba(11,31,37,0.25)",
+              }}
+            >
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div>
+                  <div className="font-bold text-[15px]" style={{ color: C.ink }}>
+                    Virtual, one day only
+                  </div>
+                  <div className="text-[12.5px] mt-0.5" style={{ color: C.muted }}>
+                    Can&rsquo;t make both days? Join the live stream for just the day you can.
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xl font-bold tabular-nums" style={{ color: C.ink }}>${oneDayPrice}</div>
+                  <div className="text-[11px] font-semibold" style={{ color: C.blue }}>34% off the virtual rate</div>
+                </div>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => pickOneDay("sat")}
+                  className="rounded-xl px-3 py-2.5 text-sm font-bold transition-colors"
+                  style={form.attendDay === "sat"
+                    ? { background: C.blue, color: "white" }
+                    : { border: `1px solid ${C.hairline}`, color: C.ink, background: "white" }}
+                >
+                  Saturday, Aug 15
+                </button>
+                <button
+                  type="button"
+                  onClick={() => pickOneDay("sun")}
+                  className="rounded-xl px-3 py-2.5 text-sm font-bold transition-colors"
+                  style={form.attendDay === "sun"
+                    ? { background: C.blue, color: "white" }
+                    : { border: `1px solid ${C.hairline}`, color: C.ink, background: "white" }}
+                >
+                  Sunday, Aug 16
+                </button>
+              </div>
+            </div>
           </div>
           <Hint>Tap a card to continue. You can change this later.</Hint>
         </StepFrame>
@@ -276,8 +337,12 @@ export default function RegisterFunnel({
                 {isInPerson ? <MapPin className="w-5 h-5" /> : <Monitor className="w-5 h-5" />}
               </span>
               <div className="flex-1">
-                <div className="text-white font-bold text-[15px]">{isInPerson ? "In-person" : "Virtual"} registration</div>
-                <div className="text-[12px]" style={{ color: "rgba(255,255,255,0.7)" }}>{tierLabel} pricing · August 15 and 16, 2026</div>
+                <div className="text-white font-bold text-[15px]">
+                  {isInPerson ? "In-person" : form.attendDay ? `Virtual · ${form.attendDay === "sat" ? "Saturday only" : "Sunday only"}` : "Virtual"} registration
+                </div>
+                <div className="text-[12px]" style={{ color: "rgba(255,255,255,0.7)" }}>
+                  {tierLabel} pricing · {form.attendDay === "sat" ? "August 15, 2026" : form.attendDay === "sun" ? "August 16, 2026" : "August 15 and 16, 2026"}
+                </div>
               </div>
               <div className="text-right">
                 {applied ? (

@@ -1,8 +1,8 @@
 import { prisma } from "@/lib/db";
 import {
   isFoodProspect, isAslProspect, isCompExhibitor, isOfficialPartner,
-  sponsorInviteSubject, sponsorFoodSubject, sponsorAslSubject, sponsorUnsubscribeUrl,
-  sponsorFirstName,
+  sponsorInviteSubject, sponsorFoodSubject, sponsorAslSubject, sponsorArrangedSubject,
+  sponsorUnsubscribeUrl, sponsorFirstName, tierById,
 } from "@/lib/sponsors";
 import { sponsorLetterEmail, sponsorFoodLetterEmail, sponsorAslLetterEmail, sponsorInviteEmail } from "@/lib/mail-templates";
 
@@ -70,6 +70,15 @@ export function renderSponsorInvite(
     return {
       subject: sponsorInviteSubject(s.companyName, { comp: true }),
       html: sponsorInviteEmail({ contactFirstName: sponsorFirstName(s.contactName, s.companyName), companyName: s.companyName, suggestedTier: null, inviteMessage: s.inviteMessage, landingUrl, assetBase: base, compExhibitor: true, isPartner: partner, unsubscribeUrl: unsub }),
+    };
+  }
+  // Invite-only (arranged) tiers, e.g. the Welcome Kit options: the deal was
+  // agreed over email, so the message confirms it and links straight to it.
+  const arrangedTier = tierById(s.tier);
+  if (arrangedTier?.inviteOnly) {
+    return {
+      subject: sponsorArrangedSubject(s.companyName, arrangedTier.name),
+      html: sponsorInviteEmail({ contactFirstName: sponsorFirstName(s.contactName, s.companyName), companyName: s.companyName, suggestedTier: arrangedTier, inviteMessage: s.inviteMessage, landingUrl, assetBase: base, isPartner: partner, arranged: true, unsubscribeUrl: unsub }),
     };
   }
   return {

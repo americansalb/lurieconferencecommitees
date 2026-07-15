@@ -69,6 +69,16 @@ export default function SpeakerCard({ speaker, accent }: { speaker: Speaker; acc
 
           <span className="mt-3 mb-3.5 block h-[3px] w-9 rounded-full" style={{ background: accent }} />
 
+          {/* The session title is the headline when we have it: what they're
+              presenting matters more to attendees than their job title. Shown
+              in full, never truncated — a cut-off talk title is worse than an
+              uneven card. */}
+          {s.talk && (
+            <div className="mb-2.5 text-[15px] font-semibold italic leading-snug" style={{ color: TOKENS.ink }}>
+              &ldquo;{s.talk}&rdquo;
+            </div>
+          )}
+
           {/* Reserve two lines for the title so one-line and two-line titles
               don't stagger the org/bio baselines across the row. */}
           <div className="min-h-[2.75em] text-[12.5px] font-bold uppercase tracking-wide leading-snug line-clamp-2" style={{ color: accent }} title={s.title}>
@@ -97,6 +107,100 @@ export default function SpeakerCard({ speaker, accent }: { speaker: Speaker; acc
       </article>
 
       {open && <SpeakerModal speaker={s} accent={accent} onClose={() => setOpen(false)} />}
+    </>
+  );
+}
+
+// The keynote feature: a full-width card above the grid, on the brand's deep
+// teal, so the headliner and their organization read at a glance instead of
+// as one more tile. Reuses the same full-bio modal as the grid cards.
+export function KeynoteCard({ speaker }: { speaker: Speaker }) {
+  const [open, setOpen] = useState(false);
+  const [imgError, setImgError] = useState(false);
+  const s = speaker;
+  const GOLD = "#C9A14B";
+
+  return (
+    <>
+      <article
+        className="relative rounded-3xl overflow-hidden text-white"
+        style={{
+          background: `linear-gradient(135deg, ${TOKENS.teal} 0%, ${TOKENS.tealDeep} 100%)`,
+          boxShadow: "0 24px 60px -24px rgba(12,59,75,0.55), 0 4px 12px -6px rgba(11,31,37,0.2)",
+        }}
+      >
+        {/* Gold keynote rail across the top, echoing the letterhead rule. */}
+        <div
+          className="h-1.5 w-full"
+          style={{ background: `linear-gradient(90deg, #9C7A2E 0%, #F4E9CD 50%, #9C7A2E 100%)` }}
+        />
+        <div className="flex flex-col sm:flex-row">
+          <div className="relative sm:w-[38%] lg:w-[32%] shrink-0 bg-slate-800">
+            {s.photo && !imgError ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={s.photo}
+                alt={s.name}
+                onError={() => setImgError(true)}
+                className="w-full h-72 sm:h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-72 sm:h-full flex items-center justify-center bg-white/10">
+                <span className="text-7xl font-bold tracking-tight text-white/80">{initials(s.name)}</span>
+              </div>
+            )}
+            <div
+              aria-hidden
+              className="absolute inset-0 pointer-events-none hidden sm:block"
+              style={{ background: `linear-gradient(90deg, transparent 70%, ${TOKENS.tealDeep}55 100%)` }}
+            />
+          </div>
+
+          <div className="flex-1 p-8 sm:p-10 lg:p-12 flex flex-col justify-center">
+            <div className="inline-flex items-center gap-2.5">
+              <span className="w-8 h-px" style={{ background: GOLD }} />
+              <span className="text-[11px] font-bold tracking-[0.32em] uppercase" style={{ color: "#F4E9CD" }}>
+                Keynote Speaker
+              </span>
+              <span className="w-8 h-px" style={{ background: GOLD }} />
+            </div>
+
+            <h3 className="mt-4 text-3xl sm:text-4xl font-bold tracking-tight leading-tight">
+              {s.name}
+              {s.credentials ? <span className="font-semibold text-white/60">, {s.credentials}</span> : null}
+            </h3>
+
+            {/* The organization is the headline credential: give it real size. */}
+            <div className="mt-3 text-xl sm:text-2xl font-semibold" style={{ color: "#F4E9CD" }}>
+              {s.org}
+            </div>
+            <div className="mt-1 text-[13px] font-bold uppercase tracking-wide text-white/70">
+              {s.title}
+            </div>
+
+            {s.talk && (
+              <div className="mt-5 text-lg sm:text-xl font-semibold italic leading-snug text-white max-w-2xl">
+                &ldquo;{s.talk}&rdquo;
+              </div>
+            )}
+
+            <p className="mt-5 text-[15px] leading-relaxed text-white/85 line-clamp-3 max-w-2xl">
+              {s.bio}
+            </p>
+
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              className="mt-6 inline-flex items-center gap-1.5 self-start px-5 py-2.5 rounded-full text-sm font-bold transition-all hover:gap-2.5"
+              style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(244,233,205,0.45)", color: "#F4E9CD" }}
+            >
+              Read full bio <ArrowUpRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </article>
+
+      {open && <SpeakerModal speaker={s} accent={TOKENS.teal} onClose={() => setOpen(false)} />}
     </>
   );
 }
@@ -162,6 +266,12 @@ function SpeakerModal({ speaker: s, accent, onClose }: { speaker: Speaker; accen
             {s.title}
           </div>
           <div className="text-[13.5px]" style={{ color: TOKENS.muted }}>{s.org}</div>
+
+          {s.talk && (
+            <div className="mt-4 text-[16px] font-semibold italic leading-snug" style={{ color: TOKENS.ink }}>
+              &ldquo;{s.talk}&rdquo;
+            </div>
+          )}
 
           <div className="mt-5 mb-5 h-px w-full" style={{ background: TOKENS.hairline }} />
 

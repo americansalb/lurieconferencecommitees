@@ -61,10 +61,13 @@ const PIPELINE_TABS: { key: string; label: string; statuses: string[] }[] = [
 // portal, so the dashboard can show their answers compactly.
 const LOGISTICS_LABELS: Record<string, string> = {
   attend: "Attending", attendeeName: "Ticket for", attendeeEmail: "Ticket email",
+  attendee2Name: "2nd ticket for", attendee2Email: "2nd ticket email",
   provide: "Providing", day: "Day", meal: "Meal", fulfillment: "Fulfillment",
   window: "Window", dayOfContact: "Day-of contact", allergens: "Allergens",
   setup: "Setup", coverage: "Coverage", interpreters: "Interpreters",
   mode: "Mode", equipment: "Equipment", materials: "Materials",
+  brochure: "Brochure", brochureNotes: "Brochure notes",
+  spotlightContact: "Spotlight contact", spotlightNotes: "Spotlight mention",
 };
 
 function fmtCountdown(secs: number) {
@@ -512,7 +515,7 @@ export default function SponsorsAdminPage() {
   // (which already lists the "confirmed" status), so this is what routes them
   // there and what the Paid count reflects, keeping the card and tab in sync.
   const isWon = (s: Sponsor) => isClosed(s) || s.status === "confirmed";
-  const isInKind = (s: Sponsor) => s.tier === "food" || s.tier === "asl";
+  const isInKind = (s: Sponsor) => s.tier === "food" || s.tier === "asl" || s.tier === "captioning";
   // A live lead: an org actually in conversation or owing payment. Cold
   // prospects, queued, and merely-invited orgs are NOT engaged. This is exactly
   // the "In discussion" + "Awaiting payment" tabs, so the Engaged card and those
@@ -880,7 +883,7 @@ export default function SponsorsAdminPage() {
                               {s.status === "prospect" ? "Queue invite" : "Re-queue"}
                             </button>
                           )}
-                          {isAdmin && (s.status === "prospect" || s.status === "invited") && s.tier !== "food" && s.tier !== "asl" && (
+                          {isAdmin && (s.status === "prospect" || s.status === "invited") && s.tier !== "food" && s.tier !== "asl" && s.tier !== "captioning" && !TIERS.find((t) => t.id === s.tier)?.inviteOnly && (
                             <button
                               onClick={() => sendLetter(s.id)}
                               disabled={sendingLetterId === s.id}
@@ -891,7 +894,7 @@ export default function SponsorsAdminPage() {
                               Queue + 20% off
                             </button>
                           )}
-                          {isAdmin && (s.tier === "food" || s.tier === "asl") && (s.status === "in_conversation" || s.status === "submitted") && (
+                          {isAdmin && (s.tier === "food" || s.tier === "asl" || s.tier === "captioning") && (s.status === "in_conversation" || s.status === "submitted") && (
                             <button
                               onClick={() => acceptInKind(s.id)}
                               disabled={acceptingId === s.id}
@@ -992,10 +995,10 @@ export default function SponsorsAdminPage() {
                             )}
                           </div>
                         )}
-                        {isInKind(s) && s.logistics && Object.keys(s.logistics).length > 0 && (
+                        {(isInKind(s) || s.tier.startsWith("welcome-kit")) && s.logistics && Object.keys(s.logistics).length > 0 && (
                           <div className="mt-2 ml-12 rounded-lg border border-emerald-600/15 bg-emerald-50/40 px-3 py-2">
                             <div className="text-[10px] font-bold uppercase tracking-wide text-emerald-700 mb-1">
-                              {s.tier === "asl" ? "Interpretation details" : "Food details"}
+                              {s.tier === "asl" ? "Interpretation details" : s.tier === "captioning" ? "Captioning details" : s.tier.startsWith("welcome-kit") ? "Welcome kit details" : "Food details"}
                             </div>
                             <div className="flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-slate-600">
                               {Object.entries(s.logistics).map(([k, v]) => (

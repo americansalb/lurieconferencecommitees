@@ -3,10 +3,13 @@ import { prisma } from "@/lib/db";
 
 // The fields the in-kind logistics form collects, per kind. Anything outside
 // this whitelist is ignored, so the portal can't write arbitrary keys.
-const SHARED_KEYS = ["attend", "attendeeName", "attendeeEmail"];
+const SHARED_KEYS = ["attend", "attendeeName", "attendeeEmail", "attendee2Name", "attendee2Email"];
 const FOOD_KEYS = ["provide", "day", "meal", "fulfillment", "window", "dayOfContact", "allergens", "setup"];
 const ASL_KEYS = ["coverage", "interpreters", "mode", "equipment", "dayOfContact", "materials"];
-const ALLOWED = new Set([...SHARED_KEYS, ...FOOD_KEYS, ...ASL_KEYS]);
+// Welcome Kit (invite-only remote) sponsors: brochure logistics + the contact
+// we announce before the virtual networking session on the Spotlight tier.
+const WELCOME_KEYS = ["brochure", "brochureNotes", "spotlightContact", "spotlightNotes"];
+const ALLOWED = new Set([...SHARED_KEYS, ...FOOD_KEYS, ...ASL_KEYS, ...WELCOME_KEYS]);
 
 // Public (token-gated) logistics save. Lets an in-kind Food or ASL sponsor fill
 // in the coordination details (what they're providing, day, delivery, day-of

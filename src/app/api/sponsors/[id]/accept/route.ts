@@ -34,11 +34,14 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
 
   // Accept is the in-kind path only. Paid sponsors are accepted via the
   // "Awaiting payment" transition, which sends its own acceptance + pay email.
-  const kind: "food" | "asl" | null =
-    sponsor.tier === "asl" ? "asl" : sponsor.tier === "food" ? "food" : null;
+  const kind: "food" | "asl" | "captioning" | null =
+    sponsor.tier === "asl" ? "asl"
+    : sponsor.tier === "food" ? "food"
+    : sponsor.tier === "captioning" ? "captioning"
+    : null;
   if (!kind) {
     return NextResponse.json(
-      { ok: false, sent: false, error: "Accept is for in-kind Food or ASL sponsors. Use the payment flow for paid tiers." },
+      { ok: false, sent: false, error: "Accept is for in-kind (Food, ASL, Captioning) sponsors. Use the payment flow for paid tiers." },
       { status: 400 },
     );
   }

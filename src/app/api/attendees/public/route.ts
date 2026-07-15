@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { newAttendeeToken } from "@/lib/attendees";
 import { createCheckoutSession, isStripeConfigured } from "@/lib/stripe";
 import { appUrl } from "@/lib/presenters";
-import { activePriceCents, activeTier, registrationClosed } from "@/components/landing/pricing-data";
+import { activePriceCents, activeTier, oneDayVirtualPriceCents, registrationClosed } from "@/components/landing/pricing-data";
 import { validateAndApply, DISCOUNT_ERROR_MESSAGES } from "@/lib/discounts";
 import { confirmFreeAttendee } from "@/lib/attendee-mail";
 
@@ -45,6 +45,12 @@ export async function POST(req: Request) {
   if (attendanceMode !== "in-person" && attendanceMode !== "virtual") {
     return NextResponse.json({ error: "Please choose in-person or virtual attendance." }, { status: 400 });
   }
+  // One-day tickets: virtual only, "sat" or "sun"; null/absent means both days.
+  const attendDay: "sat" | "sun" | null =
+    body.attendDay === "sat" || body.attendDay === "sun" ? body.attendDay : null;
+  if (attendDay && attendanceMode !== "virtual") {
+    return NextResponse.json({ error: "One-day tickets are available for virtual attendance only." }, { status: 400 });
+  }
 
   const normalizedEmail = email.trim().toLowerCase();
 
@@ -58,7 +64,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const priceCents = activePriceCents(attendanceMode);
+  const priceCents = attendDay ? oneDayVirtualPriceCents() : activePriceCents(attendanceMode);
   const tier = activeTier(new Date());
 
   // Optional shared discount code. Validated and priced entirely here; the
@@ -89,6 +95,7 @@ export async function POST(req: Request) {
         phone: phone?.trim() || null,
         primaryLanguages: primaryLanguages?.trim() || null,
         attendanceMode,
+        attendDay,
 
         accessibilityNotes: accessibilityNotes?.trim() || null,
         dietary: dietary?.trim() || null,
@@ -108,6 +115,7 @@ export async function POST(req: Request) {
         phone: phone?.trim() || null,
         primaryLanguages: primaryLanguages?.trim() || null,
         attendanceMode,
+        attendDay,
 
         accessibilityNotes: accessibilityNotes?.trim() || null,
         dietary: dietary?.trim() || null,
@@ -169,9 +177,13 @@ export async function POST(req: Request) {
     customerEmail: attendee.email,
     productName: attendanceMode === "in-person"
       ? `Conference 2026: In-Person Registration (${tier.label})`
+      : attendDay
+      ? `Conference 2026: Virtual One-Day Registration, ${attendDay === "sat" ? "Saturday Aug 15" : "Sunday Aug 16"} (${tier.label})`
       : `Conference 2026: Virtual Registration (${tier.label})`,
     productDescription: (attendanceMode === "in-person"
       ? "Two-day in-person ticket at Lurie Children's, Chicago. August 15 and 16, 2026. Includes lunch, materials, and a CEU certificate for both days."
+      : attendDay
+      ? `One-day virtual ticket for ${attendDay === "sat" ? "Saturday, August 15" : "Sunday, August 16"}, 2026, with live streamed sessions, on-demand recordings, and a CEU certificate for that day.`
       : "Two-day virtual ticket with live streamed sessions, on-demand recordings, and a CEU certificate for both days.") + codeSuffix,
     successUrl: `${appUrl()}/register/success/${attendee.inviteToken}?cs={CHECKOUT_SESSION_ID}`,
     cancelUrl: `${appUrl()}/register?resume=${attendee.inviteToken}`,
@@ -179,6 +191,7 @@ export async function POST(req: Request) {
       attendeeId: attendee.id,
       attendeeEmail: attendee.email,
       attendanceMode,
+      ...(attendDay ? { attendDay } : {}),
       kind: "public_attendee",
       ...(discountCodeText ? { discountCode: discountCodeText } : {}),
     },

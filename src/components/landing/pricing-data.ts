@@ -33,6 +33,14 @@ export function activePriceCents(mode: "virtual" | "in-person", now = new Date()
   return mode === "in-person" ? price.inPerson * 100 : price.virtual * 100;
 }
 
+// One-day virtual ticket: 66% of the full virtual price, rounded to a whole
+// dollar (Standard $105 -> $69, Late $115 -> $76). Virtual only — in-person
+// pricing covers catering and materials for both days.
+export const ONE_DAY_MULTIPLIER = 0.66;
+export function oneDayVirtualPriceCents(now = new Date()): number {
+  return Math.round((activePriceCents("virtual", now) * ONE_DAY_MULTIPLIER) / 100) * 100;
+}
+
 // Registration closes at the end of the event's final day. Without this, the
 // schedule falls through to "Late" forever: the countdown flatlines at zero
 // and the API keeps selling tickets to a conference that already happened.

@@ -1,5 +1,5 @@
 import RegisterFunnel from "./RegisterFunnel";
-import { activeTier, PRICES, registrationClosed } from "@/components/landing/pricing-data";
+import { activeTier, PRICES, oneDayVirtualPriceCents, registrationClosed } from "@/components/landing/pricing-data";
 
 // Re-render at most hourly so the displayed rate follows the live pricing
 // schedule; checkout charges by the live clock, and the two must agree.
@@ -37,6 +37,7 @@ export default function RegisterPage({ searchParams }: { searchParams?: { code?:
       tierEnd={tier.end}
       inPersonPrice={live.inPerson}
       virtualPrice={live.virtual}
+      oneDayPrice={oneDayVirtualPriceCents() / 100}
       initialCode={searchParams?.code}
     />
   );
