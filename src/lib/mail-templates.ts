@@ -3020,12 +3020,12 @@ const PLAIN_KEYNOTE_PARA = `This year the keynote is from The Joint Commission (
 
 // One CTA paragraph used by every plain note, always the second paragraph:
 // the link and the discount are the point, so they come right after the
-// opener. The "code" is the person's first name by design (they can type it
-// on the main site), which needs saying plainly or it looks like a mail-merge
-// bug ("your code GEISA CRISTINA").
+// opener. The link carries the discount by itself; the first-name fallback
+// code (ensureFirstNameCode) still works on the main site but the email
+// doesn't need to explain it.
 function plainCtaPara(url: string, discountPercent: number): string {
   return discountPercent > 0
-    ? `<strong><a href="${url}" style="${PLAIN_LINK}">Sign up here</a></strong> and ${discountPercent}% comes off automatically. There's no code to enter (if you register from the main site instead, your first name is the code).`
+    ? `<strong><a href="${url}" style="${PLAIN_LINK}">Sign up here</a></strong> and ${discountPercent}% comes off automatically. No code needed.`
     : `<strong><a href="${url}" style="${PLAIN_LINK}">Sign up here</a></strong>.`;
 }
 
