@@ -3018,29 +3018,36 @@ const PLAIN_LINK = "color:#1D4ED8;";
 // Shared keynote paragraph: the one thing every audience should know.
 const PLAIN_KEYNOTE_PARA = `This year the keynote is from The Joint Commission (their standards are the ones nearly every hospital in America has to meet). Michael Mul&eacute;, who ran language access enforcement at the DOJ, is speaking too.`;
 
+// One CTA paragraph used by every plain note, always the second paragraph:
+// the link and the discount are the point, so they come right after the
+// opener. The "code" is the person's first name by design (they can type it
+// on the main site), which needs saying plainly or it looks like a mail-merge
+// bug ("your code GEISA CRISTINA").
+function plainCtaPara(url: string, discountPercent: number): string {
+  return discountPercent > 0
+    ? `<strong><a href="${url}" style="${PLAIN_LINK}">Sign up here</a></strong> and ${discountPercent}% comes off automatically. There's no code to enter (if you register from the main site instead, your first name is the code).`
+    : `<strong><a href="${url}" style="${PLAIN_LINK}">Sign up here</a></strong>.`;
+}
+
 // 2024-roster reunion note: opening keyed to what they actually did in 2024.
 export function plainReturningInviteEmail(args: AttendeeReturningArgs) {
-  const { firstName, url, personalCode, discountPercent, inviteMessage, unsubscribeUrl, returning2024, attended2024Mode } = args;
+  const { firstName, url, discountPercent, inviteMessage, unsubscribeUrl, returning2024, attended2024Mode } = args;
   const paid = returning2024 === "paid";
   const inPerson = attended2024Mode === "in-person";
   const paras: string[] = [];
   paras.push(
     paid
       ? (inPerson
-        ? `You came to our first conference with Lurie Children's back in 2024. We're doing the second one <strong>August 15-16</strong> and I'd love to see you there again.`
-        : `You watched our first conference with Lurie Children's on the live stream in 2024. The second one is <strong>August 15-16</strong>. The stream is back, and if you can make it to Chicago this time it would be great to meet you in person.`)
+        ? `You came to our first conference with Lurie Children's back in 2024. We're doing the second one <strong>August 15-16</strong> in Chicago and I'd love to see you there again.`
+        : `You watched our first conference with Lurie Children's on the live stream in 2024. The second one is <strong>August 15-16</strong>, and the stream is back if you can't make it to Chicago.`)
       : returning2024 === "attempted"
-      ? `You started signing up for our first conference with Lurie Children's back in 2024. We're doing the second one <strong>August 15-16</strong> and I wanted to write you directly this time.`
-      : `You signed up to hear about our first conference with Lurie Children's back in 2024. The second one is set: <strong>August 15-16</strong> at the hospital in Chicago, and the whole thing streams live too.`
+      ? `You started signing up for our first conference with Lurie Children's back in 2024. The second one is <strong>August 15-16</strong> in Chicago, and it streams live too.`
+      : `You signed up to hear about our first conference with Lurie Children's back in 2024. The second one is <strong>August 15-16</strong> in Chicago, and it streams live too.`
   );
   const note = (inviteMessage || "").trim();
   if (note) paras.push(escapeHtml(note).replace(/\n/g, "<br>"));
+  paras.push(plainCtaPara(url, discountPercent));
   paras.push(PLAIN_KEYNOTE_PARA);
-  paras.push(
-    discountPercent > 0
-      ? `Since you were on the 2024 list you get ${discountPercent}% off, applied automatically if you <a href="${url}" style="${PLAIN_LINK}">register here</a>. Your code is ${escapeHtml(personalCode)} if you'd rather sign up from the main site. In person or live stream both work.`
-      : `You can <a href="${url}" style="${PLAIN_LINK}">register here</a>. In person or live stream both work.`
-  );
   return plainNoteEmail({
     firstName,
     paras,
@@ -3051,28 +3058,24 @@ export function plainReturningInviteEmail(args: AttendeeReturningArgs) {
 
 // AALB community note (alumni, current students, former students).
 export function plainCommunityInviteEmail(args: AttendeeInviteArgs) {
-  const { firstName, url, personalCode, discountPercent, inviteMessage, unsubscribeUrl } = args;
+  const { firstName, url, discountPercent, inviteMessage, unsubscribeUrl } = args;
   const rel = args.relationship || "alumnus";
   const paras: string[] = [];
   paras.push(
     rel === "student"
-      ? `You're in our interpreter training right now, so I wanted to invite you personally. We're holding our conference with Lurie Children's on <strong>August 15-16</strong> in Chicago.`
+      ? `You're in our interpreter training right now, so I wanted to invite you personally: we're holding our conference with Lurie Children's on <strong>August 15-16</strong> in Chicago, and it streams live too.`
       : rel === "former-student"
-      ? `You did our 40-hour interpreter training, so I wanted to invite you personally. We're holding our conference with Lurie Children's on <strong>August 15-16</strong> in Chicago.`
-      : `You got your certificate with us, so I wanted to invite you personally. We're holding our conference with Lurie Children's on <strong>August 15-16</strong> in Chicago.`
+      ? `You did our 40-hour interpreter training, so I wanted to invite you personally: we're holding our conference with Lurie Children's on <strong>August 15-16</strong> in Chicago, and it streams live too.`
+      : `You got your certificate with us, so I wanted to invite you personally: we're holding our conference with Lurie Children's on <strong>August 15-16</strong> in Chicago, and it streams live too.`
   );
   const note = (inviteMessage || "").trim();
   if (note) paras.push(escapeHtml(note).replace(/\n/g, "<br>"));
+  paras.push(plainCtaPara(url, discountPercent));
   paras.push(PLAIN_KEYNOTE_PARA);
   paras.push(
     rel === "alumnus"
-      ? `It's also the easiest place all year to catch up with the people you trained with. There's over ten hours of CE content, and the whole thing streams live if you can't make it to Chicago.`
-      : `Martti and LanguageLine will both have exhibit tables, plus the hospital language access directors who actually hire interpreters. The sessions are taught by working interpreters, and there's over ten hours of CE content. If you can't make it to Chicago, the whole thing streams live.`
-  );
-  paras.push(
-    discountPercent > 0
-      ? `As an AALB ${rel === "alumnus" ? "alum" : "student"} you get ${discountPercent}% off, applied automatically if you <a href="${url}" style="${PLAIN_LINK}">register here</a>. Your code is ${escapeHtml(personalCode)}.`
-      : `You can <a href="${url}" style="${PLAIN_LINK}">register here</a>.`
+      ? `It's also the easiest place all year to catch up with the people you trained with, and there's over ten hours of CE content.`
+      : `Martti and LanguageLine will have tables there, plus the hospital language access people who do the hiring. Over ten hours of CE content too.`
   );
   return plainNoteEmail({
     firstName,
@@ -3084,19 +3087,15 @@ export function plainCommunityInviteEmail(args: AttendeeInviteArgs) {
 
 // Standard one-off invite for everyone outside the AALB/2024 rosters.
 export function plainStandardInviteEmail(args: AttendeeInviteArgs) {
-  const { firstName, url, personalCode, discountPercent, inviteMessage, unsubscribeUrl } = args;
+  const { firstName, url, discountPercent, inviteMessage, unsubscribeUrl } = args;
   const paras: string[] = [];
   paras.push(
-    `I'd like to invite you to the conference we're putting on with Lurie Children's about language access in American healthcare. It's <strong>August 15-16</strong> in Chicago, and the whole thing streams live too.`
+    `I'd like to invite you to the conference we're putting on with Lurie Children's about language access in American healthcare. It's <strong>August 15-16</strong> in Chicago, and it streams live too.`
   );
   const note = (inviteMessage || "").trim();
   if (note) paras.push(escapeHtml(note).replace(/\n/g, "<br>"));
+  paras.push(plainCtaPara(url, discountPercent));
   paras.push(PLAIN_KEYNOTE_PARA);
-  paras.push(
-    discountPercent > 0
-      ? `You get ${discountPercent}% off, applied automatically if you <a href="${url}" style="${PLAIN_LINK}">register here</a>. Your code is ${escapeHtml(personalCode)}.`
-      : `You can <a href="${url}" style="${PLAIN_LINK}">register here</a>.`
-  );
   return plainNoteEmail({
     firstName,
     paras,
