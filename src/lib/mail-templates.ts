@@ -2967,11 +2967,12 @@ function escapeHtml(s: string) {
 //
 // The engraved letters photographed beautifully and converted poorly: heavy
 // designed HTML reads as "marketing" both to Gmail's Promotions classifier
-// and to the reader, and the primary action lived screens deep. These render
-// as a short, personally typed email instead — white background, system sans,
-// no images, no buttons, one blue text link, signed by one human. Subjects
-// stay on the same A/B variant sets. The engraved renderers remain above,
-// unused by the send path, for any occasion that truly calls for ceremony.
+// and to the reader. These render as a short email a person typed: white
+// background, system sans, no images, no buttons, one blue text link, signed
+// by one human. Copy rules, learned the hard way: no em dashes, no poetic
+// flourishes, contractions and parentheses like real correspondence, straight
+// apostrophes, hyphenated date ranges. Subjects stay on the same A/B variant
+// sets. The engraved renderers remain above, unused by the send path.
 
 function plainNoteEmail({
   firstName,
@@ -2996,15 +2997,15 @@ function plainNoteEmail({
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>2026 Lurie Children&rsquo;s &amp; AALB Conference</title>
+<title>2026 Lurie Children's &amp; AALB Conference</title>
 </head>
 <body style="margin:0;padding:0;background-color:#ffffff;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center">
   <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:96%;"><tr><td align="left" style="padding:26px 12px 30px 12px;">
     ${p(`Hi ${first},`)}
     ${paras.map((x) => p(x)).join("\n    ")}
-    ${p(`If you have any questions, just reply &mdash; this reaches me directly.`)}
-    ${p(`Kevin<br><span style="font-size:12.5px;color:#6B7280;">Kevin Thakkar &middot; Founder &amp; Executive Director, Americans Against Language Barriers<br>with Iris Laffitte (AALB) and Zachary Romansky (Lurie Children&rsquo;s)</span>`)}
+    ${p(`Any questions, just hit reply. It comes straight to me.`)}
+    ${p(`Kevin<br><span style="font-size:12.5px;color:#6B7280;">Kevin Thakkar<br>Founder &amp; Executive Director, Americans Against Language Barriers<br>conference.aalb.org</span>`)}
     <p style="margin:26px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:11.5px;line-height:1.6;color:#9CA3AF;">${footerReason} ${escapeHtml(postalAddress)}.${unsubscribeUrl ? ` <a href="${unsubscribeUrl}" style="color:#9CA3AF;">Unsubscribe</a>` : ""}</p>
   </td></tr></table>
 </td></tr></table>
@@ -3015,41 +3016,35 @@ function plainNoteEmail({
 const PLAIN_LINK = "color:#1D4ED8;";
 
 // Shared keynote paragraph: the one thing every audience should know.
-const PLAIN_KEYNOTE_PARA = `This year The Joint Commission gives the keynote on language access &mdash; theirs are the standards nearly every hospital in America must meet &mdash; and Michael Mul&eacute;, who led language-access enforcement at the U.S. Department of Justice, speaks as well.`;
+const PLAIN_KEYNOTE_PARA = `This year the keynote is from The Joint Commission (their standards are the ones nearly every hospital in America has to meet). Michael Mul&eacute;, who ran language access enforcement at the DOJ, is speaking too.`;
 
 // 2024-roster reunion note: opening keyed to what they actually did in 2024.
 export function plainReturningInviteEmail(args: AttendeeReturningArgs) {
-  const { firstName, url, personalCode, discountPercent, inviteMessage, unsubscribeUrl, returning2024, attended2024Mode, primaryLanguages } = args;
+  const { firstName, url, personalCode, discountPercent, inviteMessage, unsubscribeUrl, returning2024, attended2024Mode } = args;
   const paid = returning2024 === "paid";
   const inPerson = attended2024Mode === "in-person";
   const paras: string[] = [];
   paras.push(
     paid
       ? (inPerson
-        ? `Two summers ago you came to the first Lurie Children&rsquo;s &amp; AALB conference here in Chicago. We are holding the second on <strong>August 15&ndash;16</strong>, and I would love to see you in that room again.`
-        : `In 2024 you joined the live stream of the first Lurie Children&rsquo;s &amp; AALB conference. The second is <strong>August 15&ndash;16</strong> &mdash; the full live stream is back, and if you can make it to Chicago this time, I would be glad to finally meet you in person.`)
+        ? `You came to our first conference with Lurie Children's back in 2024. We're doing the second one <strong>August 15-16</strong> and I'd love to see you there again.`
+        : `You watched our first conference with Lurie Children's on the live stream in 2024. The second one is <strong>August 15-16</strong>. The stream is back, and if you can make it to Chicago this time it would be great to meet you in person.`)
       : returning2024 === "attempted"
-      ? `In 2024 you began a registration for the first Lurie Children&rsquo;s &amp; AALB conference. The second is set for <strong>August 15&ndash;16</strong>, and I wanted to write to you directly this time.`
-      : `In 2024 you signed up to hear about the first Lurie Children&rsquo;s &amp; AALB conference. The second is set: <strong>August 15&ndash;16</strong>, at the hospital in Chicago, with the whole program streaming live.`
+      ? `You started signing up for our first conference with Lurie Children's back in 2024. We're doing the second one <strong>August 15-16</strong> and I wanted to write you directly this time.`
+      : `You signed up to hear about our first conference with Lurie Children's back in 2024. The second one is set: <strong>August 15-16</strong> at the hospital in Chicago, and the whole thing streams live too.`
   );
   const note = (inviteMessage || "").trim();
   if (note) paras.push(escapeHtml(note).replace(/\n/g, "<br>"));
   paras.push(PLAIN_KEYNOTE_PARA);
-  if (languagesWorthNaming(primaryLanguages)) {
-    // "Spanish, English" reads as a list; the sentence wants "Spanish and English".
-    const langs = (primaryLanguages || "").trim().split(/\s*,\s*/).filter(Boolean);
-    const langPhrase = langs.length > 1 ? `${langs.slice(0, -1).join(", ")} and ${langs[langs.length - 1]}` : langs[0];
-    paras.push(`The work you do between ${escapeHtml(langPhrase)} is exactly what those standards exist to protect.`);
-  }
   paras.push(
     discountPercent > 0
-      ? `Because your name was on the 2024 list, ${discountPercent}% comes off automatically when you <a href="${url}" style="${PLAIN_LINK}">register here</a> &mdash; your code ${escapeHtml(personalCode)} is built into the link. In person or on the live stream, whichever works for you.`
-      : `You can <a href="${url}" style="${PLAIN_LINK}">register here</a> &mdash; in person or on the live stream, whichever works for you.`
+      ? `Since you were on the 2024 list you get ${discountPercent}% off, applied automatically if you <a href="${url}" style="${PLAIN_LINK}">register here</a>. Your code is ${escapeHtml(personalCode)} if you'd rather sign up from the main site. In person or live stream both work.`
+      : `You can <a href="${url}" style="${PLAIN_LINK}">register here</a>. In person or live stream both work.`
   );
   return plainNoteEmail({
     firstName,
     paras,
-    footerReason: "You are receiving this because you registered your interest in the 2024 conference.",
+    footerReason: "You're getting this because you signed up around our 2024 conference.",
     unsubscribeUrl,
   });
 }
@@ -3061,28 +3056,28 @@ export function plainCommunityInviteEmail(args: AttendeeInviteArgs) {
   const paras: string[] = [];
   paras.push(
     rel === "student"
-      ? `You are doing your interpreter training with AALB right now, so I wanted to invite you personally: on <strong>August 15&ndash;16</strong> we hold our conference with Lurie Children&rsquo;s in Chicago, and you could be in that room the same year you enter the field.`
+      ? `You're in our interpreter training right now, so I wanted to invite you personally. We're holding our conference with Lurie Children's on <strong>August 15-16</strong> in Chicago.`
       : rel === "former-student"
-      ? `You did AALB&rsquo;s 40-hour interpreter training, so I wanted to invite you personally to the conference we are holding with Lurie Children&rsquo;s on <strong>August 15&ndash;16</strong> in Chicago.`
-      : `You earned your certificate with AALB, so I wanted to invite you personally to the conference we are holding with Lurie Children&rsquo;s on <strong>August 15&ndash;16</strong> in Chicago.`
+      ? `You did our 40-hour interpreter training, so I wanted to invite you personally. We're holding our conference with Lurie Children's on <strong>August 15-16</strong> in Chicago.`
+      : `You got your certificate with us, so I wanted to invite you personally. We're holding our conference with Lurie Children's on <strong>August 15-16</strong> in Chicago.`
   );
   const note = (inviteMessage || "").trim();
   if (note) paras.push(escapeHtml(note).replace(/\n/g, "<br>"));
   paras.push(PLAIN_KEYNOTE_PARA);
   paras.push(
     rel === "alumnus"
-      ? `It is also simply the best room of the year to catch up with the people you trained alongside &mdash; over ten hours of continuing-education content, in person or on the live stream.`
-      : `The exhibit tables include Martti and LanguageLine alongside the hospital language-access directors who hire people with your training, and the sessions are taught by working interpreters &mdash; over ten hours of continuing-education content, in person or on the live stream.`
+      ? `It's also the easiest place all year to catch up with the people you trained with. There's over ten hours of CE content, and the whole thing streams live if you can't make it to Chicago.`
+      : `Martti and LanguageLine will both have exhibit tables, plus the hospital language access directors who actually hire interpreters. The sessions are taught by working interpreters, and there's over ten hours of CE content. If you can't make it to Chicago, the whole thing streams live.`
   );
   paras.push(
     discountPercent > 0
-      ? `Your ${discountPercent}% ${rel === "alumnus" ? "alumni" : "student"} rate is applied automatically when you <a href="${url}" style="${PLAIN_LINK}">register here</a> &mdash; the code ${escapeHtml(personalCode)} is yours alone.`
+      ? `As an AALB ${rel === "alumnus" ? "alum" : "student"} you get ${discountPercent}% off, applied automatically if you <a href="${url}" style="${PLAIN_LINK}">register here</a>. Your code is ${escapeHtml(personalCode)}.`
       : `You can <a href="${url}" style="${PLAIN_LINK}">register here</a>.`
   );
   return plainNoteEmail({
     firstName,
     paras,
-    footerReason: "You are receiving this because you trained with AALB.",
+    footerReason: "You're getting this because you trained with AALB.",
     unsubscribeUrl,
   });
 }
@@ -3092,20 +3087,20 @@ export function plainStandardInviteEmail(args: AttendeeInviteArgs) {
   const { firstName, url, personalCode, discountPercent, inviteMessage, unsubscribeUrl } = args;
   const paras: string[] = [];
   paras.push(
-    `I would like to invite you to the 2026 Lurie Children&rsquo;s &amp; AALB Conference on language access in American healthcare &mdash; <strong>August 15&ndash;16</strong> at Lurie Children&rsquo;s in Chicago, with the whole program streaming live.`
+    `I'd like to invite you to the conference we're putting on with Lurie Children's about language access in American healthcare. It's <strong>August 15-16</strong> in Chicago, and the whole thing streams live too.`
   );
   const note = (inviteMessage || "").trim();
   if (note) paras.push(escapeHtml(note).replace(/\n/g, "<br>"));
   paras.push(PLAIN_KEYNOTE_PARA);
   paras.push(
     discountPercent > 0
-      ? `${discountPercent}% comes off automatically when you <a href="${url}" style="${PLAIN_LINK}">register here</a> &mdash; your code ${escapeHtml(personalCode)} is built into the link. In person or on the live stream, whichever works for you.`
-      : `You can <a href="${url}" style="${PLAIN_LINK}">register here</a> &mdash; in person or on the live stream, whichever works for you.`
+      ? `You get ${discountPercent}% off, applied automatically if you <a href="${url}" style="${PLAIN_LINK}">register here</a>. Your code is ${escapeHtml(personalCode)}.`
+      : `You can <a href="${url}" style="${PLAIN_LINK}">register here</a>.`
   );
   return plainNoteEmail({
     firstName,
     paras,
-    footerReason: "You are receiving this because we thought this conference would interest you.",
+    footerReason: "You're getting this because we thought this conference might interest you.",
     unsubscribeUrl,
   });
 }

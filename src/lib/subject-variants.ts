@@ -79,7 +79,7 @@ export const RETURNING_PAID_SUBJECT_VARIANTS: SubjectVariant[] = [
   {
     id: "ret-paid-jc",
     label: "JC keynote",
-    make: (f) => `${f}, the Joint Commission keynotes your second conference, August 15–16`,
+    make: (f) => `${f}, the Joint Commission keynotes your second conference, August 15-16`,
   },
   {
     id: "ret-paid-reunion",
@@ -101,7 +101,7 @@ export const RETURNING_LEAD_SUBJECT_VARIANTS: SubjectVariant[] = [
   {
     id: "ret-lead-second",
     label: "It returns",
-    make: (f) => `${f}, the language-access conference you signed up for returns August 15–16`,
+    make: (f) => `${f}, the language access conference you signed up for returns August 15-16`,
   },
 ];
 
@@ -113,7 +113,7 @@ export const RETURNING_PAID_INPERSON_SUBJECT_VARIANTS: SubjectVariant[] = [
   {
     id: "ret-paid-chi-back",
     label: "Chicago 2024",
-    make: (f) => `${f}, you joined us in Chicago in 2024 — the second conference is August 15–16`,
+    make: (f) => `${f}, you joined us in Chicago in 2024. The second one is August 15-16`,
   },
   {
     id: "ret-paid-chi-jc",
@@ -123,7 +123,7 @@ export const RETURNING_PAID_INPERSON_SUBJECT_VARIANTS: SubjectVariant[] = [
   {
     id: "ret-paid-chi-return",
     label: "Back to Chicago",
-    make: (f) => `${f}, your invitation back to Chicago — the Lurie Children's & AALB conference`,
+    make: (f) => `${f}, your invitation back to Chicago for the Lurie Children's & AALB conference`,
   },
 ];
 
@@ -154,7 +154,7 @@ export const STUDENT_SUBJECT_VARIANTS: SubjectVariant[] = [
   {
     id: "stu-gathers",
     label: "Profession gathers",
-    make: (f) => `You trained for this, ${f} — the profession gathers August 15`,
+    make: (f) => `You trained for this, ${f}. The profession gathers August 15`,
   },
   {
     id: "stu-jc",
@@ -164,7 +164,7 @@ export const STUDENT_SUBJECT_VARIANTS: SubjectVariant[] = [
   {
     id: "stu-seat",
     label: "Seat earned",
-    make: (f) => `Your training earned you a seat, ${f} — Chicago or live online`,
+    make: (f) => `Your training earned you a seat, ${f}. Chicago or live online`,
   },
 ];
 
