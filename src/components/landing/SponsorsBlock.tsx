@@ -9,15 +9,16 @@ import { TOKENS, CONFERENCE } from "./tokens";
 // Drop each logo file in /public/partners/. If a logo file is missing, the
 // card falls back to the partner's name so nothing renders broken.
 const PARTNERS: { name: string; logo: string; role?: string; url?: string }[] = [
-  // Order matters: the strip wraps 3-across, so these five render as
-  // [CommunityHealth · CCHI · Chicago Diner] on top and [LanguageLine ·
-  // Multilingual Connections] centered below.
+  // Order matters: the strip wraps 3-across. Exhibitors and the Food Sponsor
+  // lead; partner-level recognitions (Health Education Partner) sit last, so
+  // they land in the row below the exhibitors.
   { name: "CommunityHealth", logo: "/partners/communityhealth.webp", role: "Exhibitor", url: "https://www.communityhealth.org" },
   { name: "Certification Commission for Healthcare Interpreters", logo: "/partners/cchi.webp", role: "Exhibitor", url: "https://cchicertification.org" },
   { name: "The Chicago Diner", logo: "/partners/chicago-diner.png", role: "Food Sponsor", url: "https://www.veggiediner.com" },
   { name: "LanguageLine Solutions", logo: "/partners/languageline.png", role: "Exhibitor", url: "https://www.languageline.com" },
   { name: "Multilingual Connections", logo: "/partners/multilingual-connections.svg", role: "Exhibitor", url: "https://multilingualconnections.com" },
   { name: "Martti, an Equiti Solution", logo: "/partners/martti.png", role: "Exhibitor", url: "https://equitihealth.com" },
+  { name: "Language Lizard", logo: "/partners/language-lizard.png", role: "Health Education Partner", url: "https://www.languagelizard.com" },
 ];
 
 const BENEFITS = [
