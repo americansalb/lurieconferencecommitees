@@ -2968,25 +2968,32 @@ function escapeHtml(s: string) {
 // The engraved letters photographed beautifully and converted poorly: heavy
 // designed HTML reads as "marketing" both to Gmail's Promotions classifier
 // and to the reader. These render as a short email a person typed: white
-// background, system sans, no images, no buttons, one blue text link, signed
-// by one human. Copy rules, learned the hard way: no em dashes, no poetic
-// flourishes, contractions and parentheses like real correspondence, straight
-// apostrophes, hyphenated date ranges. Subjects stay on the same A/B variant
-// sets. The engraved renderers remain above, unused by the send path.
+// background, system sans, no images, no buttons, a couple of plain text
+// links, signed by one human. Copy rules, learned the hard way: no em dashes,
+// no poetic flourishes, contractions and parentheses like real correspondence,
+// straight apostrophes, hyphenated date ranges. Details before the ask: the
+// note gives the keynote, the venue, the CE hours, and a link to browse the
+// program on the conference site, and only then the sign-up link. Subjects
+// stay on the same A/B variant sets. The engraved renderers remain above,
+// unused by the send path.
 
 function plainNoteEmail({
   firstName,
   paras,
   footerReason,
   unsubscribeUrl,
+  siteUrl,
 }: {
   firstName: string;
   // Pre-composed paragraph HTML: composers escape all user-derived text.
   paras: string[];
   footerReason: string;
   unsubscribeUrl?: string | null;
+  // Conference home, for the signature link. Falls back to the public site.
+  siteUrl?: string | null;
 }) {
   const postalAddress = process.env.MAIL_POSTAL_ADDRESS?.trim() || "Americans Against Language Barriers, Chicago, IL";
+  const site = (siteUrl || "https://conference.aalb.org").replace(/\/$/, "");
   const first = escapeHtml((firstName || "there").trim());
   const p = (html: string) =>
     `<p style="margin:0 0 16px 0;font-family:Arial,Helvetica,sans-serif;font-size:14.5px;line-height:1.75;color:#111827;">${html}</p>`;
@@ -3005,7 +3012,7 @@ function plainNoteEmail({
     ${p(`Hi ${first},`)}
     ${paras.map((x) => p(x)).join("\n    ")}
     ${p(`Any questions, just hit reply. It comes straight to me.`)}
-    ${p(`Kevin<br><span style="font-size:12.5px;color:#6B7280;">Kevin Thakkar<br>Founder &amp; Executive Director, Americans Against Language Barriers<br>conference.aalb.org</span>`)}
+    ${p(`Kevin<br><span style="font-size:12.5px;color:#6B7280;">Kevin Thakkar<br>Founder &amp; Executive Director, Americans Against Language Barriers<br><a href="${site}" style="color:#6B7280;">conference.aalb.org</a></span>`)}
     <p style="margin:26px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:11.5px;line-height:1.6;color:#9CA3AF;">${footerReason} ${escapeHtml(postalAddress)}.${unsubscribeUrl ? ` <a href="${unsubscribeUrl}" style="color:#9CA3AF;">Unsubscribe</a>` : ""}</p>
   </td></tr></table>
 </td></tr></table>
@@ -3018,15 +3025,24 @@ const PLAIN_LINK = "color:#1D4ED8;";
 // Shared keynote paragraph: the one thing every audience should know.
 const PLAIN_KEYNOTE_PARA = `This year the keynote is from The Joint Commission (their standards are the ones nearly every hospital in America has to meet). Michael Mul&eacute;, who ran language access enforcement at the DOJ, is speaking too.`;
 
-// One CTA paragraph used by every plain note, always the second paragraph:
-// the link and the discount are the point, so they come right after the
-// opener. The link carries the discount by itself; the first-name fallback
-// code (ensureFirstNameCode) still works on the main site but the email
-// doesn't need to explain it.
+// Where it happens, that there's a stream, the CE hours, and a link to the
+// conference site so the reader can browse speakers and sessions before any
+// ask. Every plain note carries this: an invite whose only link is checkout
+// asks people to pay sight unseen.
+function plainDetailsPara(siteUrl?: string | null): string {
+  const site = (siteUrl || "https://conference.aalb.org").replace(/\/$/, "");
+  return `It's two days at Ann &amp; Robert H. Lurie Children's Hospital of Chicago, with a live stream if you'd rather join from home, and over ten hours of CE. The full speaker lineup and session details are at <a href="${site}" style="${PLAIN_LINK}">conference.aalb.org</a> if you want to look around first.`;
+}
+
+// The ask, always the LAST paragraph before the sign-off: the reader gets the
+// keynote, the details, and a link to browse the program before being asked
+// for anything. The link carries the discount by itself; the first-name
+// fallback code (ensureFirstNameCode) still works on the main site but the
+// email doesn't need to explain it.
 function plainCtaPara(url: string, discountPercent: number): string {
   return discountPercent > 0
-    ? `<strong><a href="${url}" style="${PLAIN_LINK}">Sign up here</a></strong> and ${discountPercent}% comes off automatically. No code needed.`
-    : `<strong><a href="${url}" style="${PLAIN_LINK}">Sign up here</a></strong>.`;
+    ? `When you're ready, <strong><a href="${url}" style="${PLAIN_LINK}">sign up here</a></strong> and ${discountPercent}% comes off automatically. No code needed.`
+    : `When you're ready, you can <strong><a href="${url}" style="${PLAIN_LINK}">sign up here</a></strong>.`;
 }
 
 // 2024-roster reunion note: opening keyed to what they actually did in 2024.
@@ -3046,13 +3062,15 @@ export function plainReturningInviteEmail(args: AttendeeReturningArgs) {
   );
   const note = (inviteMessage || "").trim();
   if (note) paras.push(escapeHtml(note).replace(/\n/g, "<br>"));
-  paras.push(plainCtaPara(url, discountPercent));
   paras.push(PLAIN_KEYNOTE_PARA);
+  paras.push(plainDetailsPara(args.learnMoreUrl));
+  paras.push(plainCtaPara(url, discountPercent));
   return plainNoteEmail({
     firstName,
     paras,
     footerReason: "You're getting this because you signed up around our 2024 conference.",
     unsubscribeUrl,
+    siteUrl: args.learnMoreUrl,
   });
 }
 
@@ -3070,18 +3088,20 @@ export function plainCommunityInviteEmail(args: AttendeeInviteArgs) {
   );
   const note = (inviteMessage || "").trim();
   if (note) paras.push(escapeHtml(note).replace(/\n/g, "<br>"));
-  paras.push(plainCtaPara(url, discountPercent));
   paras.push(PLAIN_KEYNOTE_PARA);
   paras.push(
     rel === "alumnus"
-      ? `It's also the easiest place all year to catch up with the people you trained with, and there's over ten hours of CE content.`
-      : `Martti and LanguageLine will have tables there, plus the hospital language access people who do the hiring. Over ten hours of CE content too.`
+      ? `It's also the easiest place all year to catch up with the people you trained with.`
+      : `Martti and LanguageLine will have tables there, plus the hospital language access people who do the hiring.`
   );
+  paras.push(plainDetailsPara(args.learnMoreUrl));
+  paras.push(plainCtaPara(url, discountPercent));
   return plainNoteEmail({
     firstName,
     paras,
     footerReason: "You're getting this because you trained with AALB.",
     unsubscribeUrl,
+    siteUrl: args.learnMoreUrl,
   });
 }
 
@@ -3094,12 +3114,14 @@ export function plainStandardInviteEmail(args: AttendeeInviteArgs) {
   );
   const note = (inviteMessage || "").trim();
   if (note) paras.push(escapeHtml(note).replace(/\n/g, "<br>"));
-  paras.push(plainCtaPara(url, discountPercent));
   paras.push(PLAIN_KEYNOTE_PARA);
+  paras.push(plainDetailsPara(args.learnMoreUrl));
+  paras.push(plainCtaPara(url, discountPercent));
   return plainNoteEmail({
     firstName,
     paras,
     footerReason: "You're getting this because we thought this conference might interest you.",
     unsubscribeUrl,
+    siteUrl: args.learnMoreUrl,
   });
 }

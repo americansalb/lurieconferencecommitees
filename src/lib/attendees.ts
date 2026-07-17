@@ -102,7 +102,7 @@ export function buildAttendeeInvite(opts: {
     subject = picked.subject;
     subjectVariant = picked.id;
   } else {
-    subject = `${opts.firstName}, the Joint Commission is keynoting on language access this August`;
+    subject = `You're invited: the 2026 Lurie Children's & AALB Conference, Aug 15-16`;
   }
   return { subject, html, template, subjectVariant };
 }

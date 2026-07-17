@@ -70,38 +70,43 @@ export function pickAlumniSubject(firstName: string, token: string): { id: strin
 // first batch — the original lines read like infomercials ("it is back, and
 // bigger", "your seat is still open"). These now match the formal-invitation
 // register of the alumni set: institution names, dates, dignity.
+// Rewritten again after the queue review: every line opened "FirstName, ..."
+// which reads as mail merge when the same stem repeats across an inbox, and
+// the copy pitched ("returns", "your seat") instead of informing. These now
+// state what, where, and when, like a colleague would. Most drop the name;
+// the in-person set keeps one personalized line as its own A/B arm.
 export const RETURNING_PAID_SUBJECT_VARIANTS: SubjectVariant[] = [
   {
     id: "ret-paid-back",
-    label: "Your second conference",
-    make: (f) => `${f}, an invitation to your second Lurie Children's & AALB conference`,
+    label: "Invited back",
+    make: () => `You're invited back: the Lurie Children's & AALB Conference, Aug 15-16`,
   },
   {
     id: "ret-paid-jc",
     label: "JC keynote",
-    make: (f) => `${f}, the Joint Commission keynotes your second conference, August 15-16`,
+    make: () => `The Joint Commission keynotes our 2026 conference, online or in Chicago`,
   },
   {
     id: "ret-paid-reunion",
-    label: "Invitation to return",
-    make: (f) => `${f}, your invitation to return to the Lurie Children's & AALB conference`,
+    label: "Speaker lineup",
+    make: () => `Our 2026 speaker lineup is out. 10+ CE hours, August 15-16`,
   },
 ];
 export const RETURNING_LEAD_SUBJECT_VARIANTS: SubjectVariant[] = [
   {
     id: "ret-lead-seat",
     label: "Formal invitation",
-    make: (f) => `${f}, your invitation to the 2026 Lurie Children's & AALB Conference`,
+    make: () => `You're invited: the 2026 Lurie Children's & AALB Conference, Aug 15-16`,
   },
   {
     id: "ret-lead-jc",
     label: "JC keynote",
-    make: (f) => `${f}, the Joint Commission is keynoting on language access this August`,
+    make: () => `The Joint Commission keynotes the 2026 language access conference`,
   },
   {
     id: "ret-lead-second",
     label: "It returns",
-    make: (f) => `${f}, the language access conference you signed up for returns August 15-16`,
+    make: () => `The conference returns Aug 15-16, at Lurie Children's and online`,
   },
 ];
 
@@ -112,18 +117,18 @@ export const RETURNING_LEAD_SUBJECT_VARIANTS: SubjectVariant[] = [
 export const RETURNING_PAID_INPERSON_SUBJECT_VARIANTS: SubjectVariant[] = [
   {
     id: "ret-paid-chi-back",
-    label: "Chicago 2024",
-    make: (f) => `${f}, you joined us in Chicago in 2024. The second one is August 15-16`,
+    label: "Personalized",
+    make: (f) => `${f}, you're invited back to Lurie Children's, August 15-16`,
   },
   {
     id: "ret-paid-chi-jc",
     label: "JC in Chicago",
-    make: (f) => `${f}, the Joint Commission keynotes your second conference in Chicago`,
+    make: () => `A Joint Commission keynote at Lurie Children's, August 15-16`,
   },
   {
     id: "ret-paid-chi-return",
     label: "Back to Chicago",
-    make: (f) => `${f}, your invitation back to Chicago for the Lurie Children's & AALB conference`,
+    make: () => `Your invitation back to Chicago: August 15-16 at Lurie Children's`,
   },
 ];
 
