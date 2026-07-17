@@ -3054,11 +3054,11 @@ export function plainReturningInviteEmail(args: AttendeeReturningArgs) {
   paras.push(
     paid
       ? (inPerson
-        ? `You came to our first conference with Lurie Children's back in 2024. We're doing the second one <strong>August 15-16</strong> in Chicago and I'd love to see you there again.`
-        : `You watched our first conference with Lurie Children's on the live stream in 2024. The second one is <strong>August 15-16</strong>, and the stream is back if you can't make it to Chicago.`)
+        ? `You came to AALB's first conference with Lurie Children's back in 2024. We're doing the second one <strong>August 15-16</strong> in Chicago and I'd love to see you there again.`
+        : `You watched AALB's first conference with Lurie Children's on the live stream in 2024. The second one is <strong>August 15-16</strong>, and the stream is back if you can't make it to Chicago.`)
       : returning2024 === "attempted"
-      ? `You started signing up for our first conference with Lurie Children's back in 2024. The second one is <strong>August 15-16</strong> in Chicago, and it streams live too.`
-      : `You signed up to hear about our first conference with Lurie Children's back in 2024. The second one is <strong>August 15-16</strong> in Chicago, and it streams live too.`
+      ? `You started signing up for AALB's first conference with Lurie Children's back in 2024. The second one is <strong>August 15-16</strong> in Chicago, and it streams live too.`
+      : `You signed up to hear about AALB's first conference with Lurie Children's back in 2024. The second one is <strong>August 15-16</strong> in Chicago, and it streams live too.`
   );
   const note = (inviteMessage || "").trim();
   if (note) paras.push(escapeHtml(note).replace(/\n/g, "<br>"));
@@ -3081,10 +3081,10 @@ export function plainCommunityInviteEmail(args: AttendeeInviteArgs) {
   const paras: string[] = [];
   paras.push(
     rel === "student"
-      ? `You're in our interpreter training right now, so I wanted to invite you personally: we're holding our conference with Lurie Children's on <strong>August 15-16</strong> in Chicago, and it streams live too.`
+      ? `You're in our interpreter training right now, so I wanted to invite you personally: AALB's conference with Lurie Children's is <strong>August 15-16</strong> in Chicago, and it streams live too.`
       : rel === "former-student"
-      ? `You did our 40-hour interpreter training, so I wanted to invite you personally: we're holding our conference with Lurie Children's on <strong>August 15-16</strong> in Chicago, and it streams live too.`
-      : `You got your certificate with us, so I wanted to invite you personally: we're holding our conference with Lurie Children's on <strong>August 15-16</strong> in Chicago, and it streams live too.`
+      ? `You did our 40-hour interpreter training, so I wanted to invite you personally: AALB's conference with Lurie Children's is <strong>August 15-16</strong> in Chicago, and it streams live too.`
+      : `You got your certificate with us, so I wanted to invite you personally: AALB's conference with Lurie Children's is <strong>August 15-16</strong> in Chicago, and it streams live too.`
   );
   const note = (inviteMessage || "").trim();
   if (note) paras.push(escapeHtml(note).replace(/\n/g, "<br>"));
@@ -3110,7 +3110,7 @@ export function plainStandardInviteEmail(args: AttendeeInviteArgs) {
   const { firstName, url, discountPercent, inviteMessage, unsubscribeUrl } = args;
   const paras: string[] = [];
   paras.push(
-    `I'd like to invite you to the conference we're putting on with Lurie Children's about language access in American healthcare. It's <strong>August 15-16</strong> in Chicago, and it streams live too.`
+    `I'd like to invite you to the conference Americans Against Language Barriers (AALB) is putting on with Lurie Children's about language access in American healthcare. It's <strong>August 15-16</strong> in Chicago, and it streams live too.`
   );
   const note = (inviteMessage || "").trim();
   if (note) paras.push(escapeHtml(note).replace(/\n/g, "<br>"));
