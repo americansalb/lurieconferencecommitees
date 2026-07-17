@@ -3034,6 +3034,18 @@ function plainDetailsPara(siteUrl?: string | null): string {
   return `It's two days at Ann &amp; Robert H. Lurie Children's Hospital of Chicago, with a live stream if you'd rather join from home, and over ten hours of CE. The full speaker lineup and session details are at <a href="${site}" style="${PLAIN_LINK}">conference.aalb.org</a> if you want to look around first.`;
 }
 
+// "Spanish, English" -> "Spanish and English", for the returning roster's
+// language line. Null unless languagesWorthNaming() says the string names a
+// real pair, so the line never renders for blank or English-only records.
+function plainLanguagesList(s: string | null | undefined): string | null {
+  if (!languagesWorthNaming(s)) return null;
+  const parts = (s || "").split(/[,\/&+]+/).map((t) => t.trim()).filter(Boolean);
+  if (!parts.length) return null;
+  const names = parts.map(escapeHtml);
+  if (names.length === 1) return names[0];
+  return names.slice(0, -1).join(", ") + " and " + names[names.length - 1];
+}
+
 // What's actually on the program beyond the keynote. Every name and session
 // here is announced on the landing page; if the lineup changes, change this
 // to match. Named people give the note the texture of someone who knows the
@@ -3085,7 +3097,11 @@ export function plainReturningInviteEmail(args: AttendeeReturningArgs) {
   );
   const note = (inviteMessage || "").trim();
   if (note) paras.push(escapeHtml(note).replace(/\n/g, "<br>"));
-  paras.push(PLAIN_KEYNOTE_PARA);
+  // The 2024 roster told us their language pair; use it. One sentence tying
+  // the keynote's standards to their actual work, only when we can name a
+  // real pair.
+  const langs = plainLanguagesList(args.primaryLanguages);
+  paras.push(langs ? `${PLAIN_KEYNOTE_PARA} The work those standards protect is the interpreting you do in ${langs}.` : PLAIN_KEYNOTE_PARA);
   paras.push(PLAIN_SPEAKERS_PARA);
   paras.push(plainDetailsPara(args.learnMoreUrl));
   paras.push(plainRatePara(args));
