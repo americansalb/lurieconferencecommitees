@@ -3034,6 +3034,29 @@ function plainDetailsPara(siteUrl?: string | null): string {
   return `It's two days at Ann &amp; Robert H. Lurie Children's Hospital of Chicago, with a live stream if you'd rather join from home, and over ten hours of CE. The full speaker lineup and session details are at <a href="${site}" style="${PLAIN_LINK}">conference.aalb.org</a> if you want to look around first.`;
 }
 
+// What's actually on the program beyond the keynote. Every name and session
+// here is announced on the landing page; if the lineup changes, change this
+// to match. Named people give the note the texture of someone who knows the
+// program, not a form letter.
+const PLAIN_SPEAKERS_PARA = `They're joined by Wilma Alvarado-Little, who leads language access for the New York State Department of Health, and Yuliya Speroff, AALB's 2024 Trainer of the Year, with a health equity case study from Harborview Medical Center. There are sessions on revising the national code of ethics for healthcare interpreters, trauma stewardship for working interpreters, and taking front-line experience into federal policy.`;
+
+// The actual numbers, so nobody has to click through to learn the price.
+// Cents figures come straight from the caller's computed pricing, the same
+// ones checkout will charge.
+function plainRatePara(args: {
+  discountPercent: number;
+  inPersonOriginalCents: number;
+  inPersonDiscountedCents: number;
+  virtualOriginalCents: number;
+  virtualDiscountedCents: number;
+}): string {
+  const money = (c: number) => (c % 100 === 0 ? `$${c / 100}` : `$${(c / 100).toFixed(2)}`);
+  const { discountPercent: d, inPersonOriginalCents: ipo, inPersonDiscountedCents: ipd, virtualOriginalCents: vo, virtualDiscountedCents: vd } = args;
+  return d > 0
+    ? `Your rate with the ${d}% off is ${money(ipd)} in person or ${money(vd)} for the live stream (regularly ${money(ipo)} and ${money(vo)}). If you can only make one day, there's a cheaper one-day virtual option as well.`
+    : `Registration is ${money(ipo)} in person or ${money(vo)} for the live stream, and if you can only make one day, there's a cheaper one-day virtual option as well.`;
+}
+
 // The ask, always the LAST paragraph before the sign-off: the reader gets the
 // keynote, the details, and a link to browse the program before being asked
 // for anything. The link carries the discount by itself; the first-name
@@ -3063,7 +3086,9 @@ export function plainReturningInviteEmail(args: AttendeeReturningArgs) {
   const note = (inviteMessage || "").trim();
   if (note) paras.push(escapeHtml(note).replace(/\n/g, "<br>"));
   paras.push(PLAIN_KEYNOTE_PARA);
+  paras.push(PLAIN_SPEAKERS_PARA);
   paras.push(plainDetailsPara(args.learnMoreUrl));
+  paras.push(plainRatePara(args));
   paras.push(plainCtaPara(url, discountPercent));
   return plainNoteEmail({
     firstName,
@@ -3089,12 +3114,14 @@ export function plainCommunityInviteEmail(args: AttendeeInviteArgs) {
   const note = (inviteMessage || "").trim();
   if (note) paras.push(escapeHtml(note).replace(/\n/g, "<br>"));
   paras.push(PLAIN_KEYNOTE_PARA);
+  paras.push(PLAIN_SPEAKERS_PARA);
   paras.push(
     rel === "alumnus"
       ? `It's also the easiest place all year to catch up with the people you trained with.`
       : `Martti and LanguageLine will have tables there, plus the hospital language access people who do the hiring.`
   );
   paras.push(plainDetailsPara(args.learnMoreUrl));
+  paras.push(plainRatePara(args));
   paras.push(plainCtaPara(url, discountPercent));
   return plainNoteEmail({
     firstName,
@@ -3115,7 +3142,9 @@ export function plainStandardInviteEmail(args: AttendeeInviteArgs) {
   const note = (inviteMessage || "").trim();
   if (note) paras.push(escapeHtml(note).replace(/\n/g, "<br>"));
   paras.push(PLAIN_KEYNOTE_PARA);
+  paras.push(PLAIN_SPEAKERS_PARA);
   paras.push(plainDetailsPara(args.learnMoreUrl));
+  paras.push(plainRatePara(args));
   paras.push(plainCtaPara(url, discountPercent));
   return plainNoteEmail({
     firstName,
