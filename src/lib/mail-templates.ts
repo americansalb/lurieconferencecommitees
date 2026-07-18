@@ -822,7 +822,7 @@ export function attendeeReturningInviteEmail({
       : `In the summer of 2024, you joined the live stream of the first joint conference &mdash; present in every way that mattered. The second gathering is set for August 15 and 16, and we are beginning our invitations with the people who were there for the first.`)
     : returning2024 === "attempted"
     ? `In 2024, you began a registration for the first joint conference, and your name has been on our list since. The second conference is set for August 15 and 16, and this letter is your invitation to complete what you started.`
-    : `In 2024, when a joint conference between one of the nation&rsquo;s leading children&rsquo;s hospitals and a language-access nonprofit was still just an idea, you put your name down to hear more. The first gathering has come and gone; the second is set for August 15 and 16, and we are writing first to the people who signed up before there was anything to see.`;
+    : `In 2024, you registered for the first joint conference, though your registration was never completed. The second conference is set for August 15 and 16, and this letter is your invitation to finish what you began.`;
   const dropCap = opening.charAt(0);
   const openingRest = opening.slice(1);
   const memoryLine = paid
@@ -3092,8 +3092,8 @@ export function plainReturningInviteEmail(args: AttendeeReturningArgs) {
         ? `You came to AALB's first conference with Lurie Children's back in 2024. We're doing the second one <strong>August 15-16</strong> in Chicago and I'd love to see you there again.`
         : `You watched AALB's first conference with Lurie Children's on the live stream in 2024. The second one is <strong>August 15-16</strong>, and the stream is back if you can't make it to Chicago.`)
       : returning2024 === "attempted"
-      ? `You started signing up for AALB's first conference with Lurie Children's back in 2024. The second one is <strong>August 15-16</strong> in Chicago, and it streams live too.`
-      : `You signed up to hear about AALB's first conference with Lurie Children's back in 2024. The second one is <strong>August 15-16</strong> in Chicago, and it streams live too.`
+      ? `You started signing up for AALB's first conference with Lurie Children's back in 2024, but the checkout never went through. The second one is <strong>August 15-16</strong> in Chicago, and it streams live too.`
+      : `You registered for AALB's first conference with Lurie Children's back in 2024, though it looks like the registration was never completed. The second one is <strong>August 15-16</strong> in Chicago, and it streams live too.`
   );
   const note = (inviteMessage || "").trim();
   if (note) paras.push(escapeHtml(note).replace(/\n/g, "<br>"));
@@ -3109,7 +3109,7 @@ export function plainReturningInviteEmail(args: AttendeeReturningArgs) {
   return plainNoteEmail({
     firstName,
     paras,
-    footerReason: "You're getting this because you signed up around our 2024 conference.",
+    footerReason: "You're getting this because you registered for our 2024 conference.",
     unsubscribeUrl,
     siteUrl: args.learnMoreUrl,
   });
