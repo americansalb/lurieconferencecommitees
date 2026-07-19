@@ -3091,9 +3091,11 @@ export function plainReturningInviteEmail(args: AttendeeReturningArgs) {
       ? (inPerson
         ? `You came to AALB's first conference with Lurie Children's back in 2024. We're doing the second one <strong>August 15-16</strong> in Chicago and I'd love to see you there again.`
         : `You watched AALB's first conference with Lurie Children's on the live stream in 2024. The second one is <strong>August 15-16</strong>, and the stream is back if you can't make it to Chicago.`)
-      : returning2024 === "attempted"
-      ? `You started signing up for AALB's first conference with Lurie Children's back in 2024, but the checkout never went through. The second one is <strong>August 15-16</strong> in Chicago, and it streams live too.`
-      : `You registered for AALB's first conference with Lurie Children's back in 2024, though it looks like the registration was never completed. The second one is <strong>August 15-16</strong> in Chicago, and it streams live too.`
+      : // Attempted and lead read the same: both signed up and neither made
+        // it, and that's all the reader needs. No checkout talk, no
+        // registration-status talk; nobody wants their payment history
+        // recapped in an invitation.
+        `You signed up for AALB's first conference with Lurie Children's back in 2024, but we didn't get to see you there. The second one is <strong>August 15-16</strong> in Chicago, and it streams live too. I'd love to have you with us this time.`
   );
   const note = (inviteMessage || "").trim();
   if (note) paras.push(escapeHtml(note).replace(/\n/g, "<br>"));
