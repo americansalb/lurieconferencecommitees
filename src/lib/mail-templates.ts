@@ -3092,10 +3092,10 @@ export function plainReturningInviteEmail(args: AttendeeReturningArgs) {
         ? `You came to AALB's first conference with Lurie Children's back in 2024. We're doing the second one <strong>August 15-16</strong> in Chicago and I'd love to see you there again.`
         : `You watched AALB's first conference with Lurie Children's on the live stream in 2024. The second one is <strong>August 15-16</strong>, and the stream is back if you can't make it to Chicago.`)
       : // Attempted and lead read the same. Neither paid, so "signed up" or
-        // "registered" would overstate; what they actually did is leave
-        // their name. No checkout talk, no registration-status talk; nobody
-        // wants their payment history recapped in an invitation.
-        `You put your name down for AALB's first conference with Lurie Children's back in 2024, but we didn't get to see you there. The second one is <strong>August 15-16</strong> in Chicago, and it streams live too. I'd love to have you with us this time.`
+        // "registered" would overstate: they indicated interest, and that's
+        // the phrase (user-chosen). No checkout talk, no registration-status
+        // talk; nobody wants their payment history recapped in an invitation.
+        `You had indicated your interest in AALB's first conference with Lurie Children's back in 2024, but didn't end up signing up. The second one is <strong>August 15-16</strong> in Chicago, and it streams live too. I'd love to have you with us this time.`
   );
   const note = (inviteMessage || "").trim();
   if (note) paras.push(escapeHtml(note).replace(/\n/g, "<br>"));
