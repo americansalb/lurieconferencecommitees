@@ -3039,7 +3039,7 @@ function plainNoteEmail({
 const PLAIN_LINK = "color:#1D4ED8;";
 
 // Shared keynote paragraph: the one thing every audience should know.
-const PLAIN_KEYNOTE_PARA = `This year the keynote is from The Joint Commission, whose standards nearly every hospital in America has to meet: "The Standards That Protect Patients: A Joint Commission View on Language Access." And Michael Mul&eacute;, who led language access enforcement at the U.S. Department of Justice, Civil Rights Division, is speaking too. The people who write the standards and the people who enforced them, in one room.`;
+const PLAIN_KEYNOTE_PARA = `This year the keynote is from The Joint Commission, whose standards nearly every hospital in America has to meet: "The Standards That Protect Patients: A Joint Commission View on Language Access." And Michael Mul&eacute;, who led language access enforcement at the U.S. Department of Justice, Civil Rights Division, is speaking too. Hospital standards and federal civil rights law, on the same stage.`;
 
 // Where it happens, that there's a stream, the CE hours, and a link to the
 // conference site so the reader can browse speakers and sessions before any
