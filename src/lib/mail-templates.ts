@@ -3062,11 +3062,6 @@ function plainLanguagesList(s: string | null | undefined): string | null {
   return names.slice(0, -1).join(", ") + " and " + names[names.length - 1];
 }
 
-// Honest urgency: public pricing stepped up to the Late tier on July 15, but
-// invitation links hold the Standard-tier base. True for every invitee
-// regardless of their personal discount. Remove after the conference.
-const PLAIN_HOLDS_RATE_PARA = `Public pricing went up on July 15. Your invitation keeps the lower rate.`;
-
 // The ask, always last: the note builds the case (keynote, program, venue)
 // BEFORE the price list, and the price before the ask. It names the effort
 // (about two minutes) because unstated effort is friction. The link carries the discount by
@@ -3074,8 +3069,8 @@ const PLAIN_HOLDS_RATE_PARA = `Public pricing went up on July 15. Your invitatio
 // the main site but the email doesn't need to explain it.
 function plainCtaPara(url: string, discountPercent: number): string {
   return discountPercent > 0
-    ? `<strong><a href="${url}" style="${PLAIN_LINK}">Sign up here</a></strong>. It takes about two minutes: pick how you'll attend and pay. Your ${discountPercent}% is already built into the link, so there's no code to enter.`
-    : `<strong><a href="${url}" style="${PLAIN_LINK}">Sign up here</a></strong>. It takes about two minutes: pick how you'll attend and pay.`;
+    ? `<strong><a href="${url}" style="${PLAIN_LINK}">Sign up here</a></strong>. It takes about two minutes, and your personal invitation rate is already built into the link.`
+    : `<strong><a href="${url}" style="${PLAIN_LINK}">Sign up here</a></strong>. It takes about two minutes.`;
 }
 
 // 2024-roster reunion note: opening keyed to what they actually did in 2024.
@@ -3103,7 +3098,6 @@ export function plainReturningInviteEmail(args: AttendeeReturningArgs) {
   const langs = plainLanguagesList(args.primaryLanguages);
   paras.push(langs ? `${PLAIN_KEYNOTE_PARA} The work those standards protect is the interpreting you do in ${langs}.` : PLAIN_KEYNOTE_PARA);
   paras.push(plainDetailsPara(args.learnMoreUrl));
-  paras.push(PLAIN_HOLDS_RATE_PARA);
   paras.push(plainCtaPara(url, discountPercent));
   return plainNoteEmail({
     firstName,
@@ -3135,7 +3129,6 @@ export function plainCommunityInviteEmail(args: AttendeeInviteArgs) {
       : `Martti and LanguageLine will have tables there, plus the hospital language access people who do the hiring.`
   );
   paras.push(plainDetailsPara(args.learnMoreUrl));
-  paras.push(PLAIN_HOLDS_RATE_PARA);
   paras.push(plainCtaPara(url, discountPercent));
   return plainNoteEmail({
     firstName,
@@ -3157,7 +3150,6 @@ export function plainStandardInviteEmail(args: AttendeeInviteArgs) {
   if (note) paras.push(escapeHtml(note).replace(/\n/g, "<br>"));
   paras.push(PLAIN_KEYNOTE_PARA);
   paras.push(plainDetailsPara(args.learnMoreUrl));
-  paras.push(PLAIN_HOLDS_RATE_PARA);
   paras.push(plainCtaPara(url, discountPercent));
   return plainNoteEmail({
     firstName,
