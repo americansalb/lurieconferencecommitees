@@ -3098,8 +3098,9 @@ function plainRatePara(args: {
 // regardless of their personal discount. Remove after the conference.
 const PLAIN_HOLDS_RATE_PARA = `Public pricing went up on July 15. Your invitation keeps the lower rate.`;
 
-// The ask, right after the prices: it names the effort (about two minutes)
-// because unstated effort is friction. The link carries the discount by
+// The ask, always last: the note builds the case (keynote, program, venue)
+// BEFORE the price list, and the price before the ask. It names the effort
+// (about two minutes) because unstated effort is friction. The link carries the discount by
 // itself; the first-name fallback code (ensureFirstNameCode) still works on
 // the main site but the email doesn't need to explain it.
 function plainCtaPara(url: string, discountPercent: number): string {
@@ -3132,10 +3133,10 @@ export function plainReturningInviteEmail(args: AttendeeReturningArgs) {
   // real pair.
   const langs = plainLanguagesList(args.primaryLanguages);
   paras.push(langs ? `${PLAIN_KEYNOTE_PARA} The work those standards protect is the interpreting you do in ${langs}.` : PLAIN_KEYNOTE_PARA);
+  paras.push(plainDetailsPara(args.learnMoreUrl));
   paras.push(plainRatePara(args));
   paras.push(PLAIN_HOLDS_RATE_PARA);
   paras.push(plainCtaPara(url, discountPercent));
-  paras.push(plainDetailsPara(args.learnMoreUrl));
   return plainNoteEmail({
     firstName,
     paras,
@@ -3160,15 +3161,15 @@ export function plainCommunityInviteEmail(args: AttendeeInviteArgs) {
   const note = (inviteMessage || "").trim();
   if (note) paras.push(escapeHtml(note).replace(/\n/g, "<br>"));
   paras.push(PLAIN_KEYNOTE_PARA);
-  paras.push(plainRatePara(args));
-  paras.push(PLAIN_HOLDS_RATE_PARA);
-  paras.push(plainCtaPara(url, discountPercent));
   paras.push(
     rel === "alumnus"
       ? `It's also the easiest place all year to catch up with the people you trained with.`
       : `Martti and LanguageLine will have tables there, plus the hospital language access people who do the hiring.`
   );
   paras.push(plainDetailsPara(args.learnMoreUrl));
+  paras.push(plainRatePara(args));
+  paras.push(PLAIN_HOLDS_RATE_PARA);
+  paras.push(plainCtaPara(url, discountPercent));
   return plainNoteEmail({
     firstName,
     paras,
@@ -3188,10 +3189,10 @@ export function plainStandardInviteEmail(args: AttendeeInviteArgs) {
   const note = (inviteMessage || "").trim();
   if (note) paras.push(escapeHtml(note).replace(/\n/g, "<br>"));
   paras.push(PLAIN_KEYNOTE_PARA);
+  paras.push(plainDetailsPara(args.learnMoreUrl));
   paras.push(plainRatePara(args));
   paras.push(PLAIN_HOLDS_RATE_PARA);
   paras.push(plainCtaPara(url, discountPercent));
-  paras.push(plainDetailsPara(args.learnMoreUrl));
   return plainNoteEmail({
     firstName,
     paras,
