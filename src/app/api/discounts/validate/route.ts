@@ -17,8 +17,8 @@ export async function POST(req: Request) {
     ? body.attendanceMode
     : null;
   const token = typeof body.token === "string" ? body.token : null;
-  // One-day virtual ticket (public funnel only): base the preview on the
-  // one-day price so the shown total matches checkout.
+  // One-day virtual ticket (public and invite funnels): base the preview on
+  // the one-day price so the shown total matches checkout.
   const attendDay = body.attendDay === "sat" || body.attendDay === "sun" ? body.attendDay : null;
 
   if (!attendanceMode) {
@@ -42,8 +42,14 @@ export async function POST(req: Request) {
         { status: 200 }
       );
     }
-    const { finalCents } = computePrice(attendanceMode, attendee.discountPercent);
-    baseCents = finalCents ?? activePriceCents(attendanceMode);
+    // Invited attendees can also take the one-day virtual ticket; the code
+    // preview stacks on their day-adjusted personal price.
+    if (attendDay && attendanceMode === "virtual") {
+      baseCents = Math.round(oneDayVirtualPriceCents() * (100 - attendee.discountPercent) / 100);
+    } else {
+      const { finalCents } = computePrice(attendanceMode, attendee.discountPercent);
+      baseCents = finalCents ?? activePriceCents(attendanceMode);
+    }
   } else {
     baseCents = attendDay && attendanceMode === "virtual"
       ? oneDayVirtualPriceCents()

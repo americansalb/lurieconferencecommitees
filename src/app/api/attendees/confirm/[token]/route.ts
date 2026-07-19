@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { computePrice } from "@/lib/attendees";
+import { oneDayVirtualPriceCents } from "@/components/landing/pricing-data";
 
 export async function GET(_req: Request, { params }: { params: { token: string } }) {
   const attendee = await prisma.attendee.findUnique({
@@ -39,7 +40,7 @@ export async function GET(_req: Request, { params }: { params: { token: string }
 
 const ALLOWED_FIELDS = [
   "firstName", "lastName", "phone", "affiliation", "primaryLanguages",
-  "attendanceMode", "needsParking", "accessibilityNotes", "dietary",
+  "attendanceMode", "attendDay", "needsParking", "accessibilityNotes", "dietary",
 ] as const;
 
 export async function PATCH(req: Request, { params }: { params: { token: string } }) {
@@ -53,10 +54,23 @@ export async function PATCH(req: Request, { params }: { params: { token: string 
   for (const k of ALLOWED_FIELDS) {
     if (body[k] !== undefined) data[k] = body[k];
   }
-  if (data.attendanceMode !== undefined) {
-    const { baseCents, finalCents } = computePrice(data.attendanceMode as string, attendee.discountPercent);
-    data.basePriceCents = baseCents;
-    data.finalPriceCents = finalCents;
+  // One-day tickets are virtual-only; anything else clears the day.
+  if (data.attendDay !== undefined) {
+    data.attendDay = data.attendDay === "sat" || data.attendDay === "sun" ? data.attendDay : null;
+  }
+  const mode = (data.attendanceMode !== undefined ? data.attendanceMode : attendee.attendanceMode) as string | null;
+  if (mode !== "virtual" && data.attendDay) data.attendDay = null;
+  if (data.attendanceMode !== undefined || data.attendDay !== undefined) {
+    const day = (data.attendDay !== undefined ? data.attendDay : attendee.attendDay) as string | null;
+    if (mode === "virtual" && (day === "sat" || day === "sun")) {
+      const base = oneDayVirtualPriceCents();
+      data.basePriceCents = base;
+      data.finalPriceCents = Math.round(base * (100 - attendee.discountPercent) / 100);
+    } else {
+      const { baseCents, finalCents } = computePrice(mode, attendee.discountPercent);
+      data.basePriceCents = baseCents;
+      data.finalPriceCents = finalCents;
+    }
   }
   // Mark progress through funnel.
   if (attendee.status === "invited" || attendee.status === "viewed" || attendee.status === "queued") {

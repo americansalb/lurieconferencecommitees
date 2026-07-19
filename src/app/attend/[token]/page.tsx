@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { computePrice } from "@/lib/attendees";
+import { oneDayVirtualPriceCents } from "@/components/landing/pricing-data";
 import { getEventSettings } from "@/lib/event-settings";
 import AttendeeFunnel from "./AttendeeFunnel";
 import AttendeePortal from "./AttendeePortal";
@@ -25,6 +26,14 @@ export default async function AttendPage({ params }: { params: { token: string }
         finalPriceCents={attendee.finalPriceCents}
         joinUrl={settings.joinUrl}
         agendaUrl={settings.agendaUrl}
+        details={{
+          phone: attendee.phone || "",
+          affiliation: attendee.affiliation || "",
+          primaryLanguages: attendee.primaryLanguages || "",
+          needsParking: attendee.needsParking,
+          accessibilityNotes: attendee.accessibilityNotes || "",
+          dietary: attendee.dietary || "",
+        }}
       />
     );
   }
@@ -45,6 +54,7 @@ export default async function AttendPage({ params }: { params: { token: string }
 
   const inPersonPreview = computePrice("in-person", attendee.discountPercent);
   const virtualPreview = computePrice("virtual", attendee.discountPercent);
+  const oneDayBase = oneDayVirtualPriceCents();
 
   return (
     <AttendeeFunnel
@@ -57,6 +67,7 @@ export default async function AttendPage({ params }: { params: { token: string }
         affiliation: attendee.affiliation || "",
         primaryLanguages: attendee.primaryLanguages || "",
         attendanceMode: attendee.attendanceMode,
+        attendDay: attendee.attendDay,
         needsParking: attendee.needsParking,
         accessibilityNotes: attendee.accessibilityNotes || "",
         dietary: attendee.dietary || "",
@@ -70,6 +81,8 @@ export default async function AttendPage({ params }: { params: { token: string }
         inPersonFinalCents: inPersonPreview.finalCents || 0,
         virtualBaseCents: virtualPreview.baseCents || 0,
         virtualFinalCents: virtualPreview.finalCents || 0,
+        oneDayBaseCents: oneDayBase,
+        oneDayFinalCents: Math.round(oneDayBase * (100 - attendee.discountPercent) / 100),
       }}
     />
   );

@@ -3,6 +3,7 @@ import { Calendar, MapPin, Monitor, Video, CalendarPlus, ListChecks, Mail, Train
 import {
   E, Parchment, TicketCard, GoldRule, Eyebrow, Perforation, FactCell, TicketFooter, HostsLockup, Seal,
 } from "@/components/attend/engraved";
+import PortalDetailsForm from "./PortalDetailsForm";
 
 // The returning home for a paid attendee, set in the same engraved gold-foil
 // language as the invitation letters and the confirmation ticket: their
@@ -10,7 +11,7 @@ import {
 // Presentational so it can be rendered server-side or screenshotted with
 // mock data (see /dev/portal-preview).
 export default function AttendeePortal({
-  token, firstName, email, attendanceMode, finalPriceCents, joinUrl, agendaUrl,
+  token, firstName, email, attendanceMode, finalPriceCents, joinUrl, agendaUrl, details,
 }: {
   token: string;
   firstName: string;
@@ -19,6 +20,17 @@ export default function AttendeePortal({
   finalPriceCents: number | null;
   joinUrl: string | null;
   agendaUrl: string;
+  // Post-payment logistics (parking, dietary, accessibility, …), collected
+  // here instead of before the pay button. Optional so preview harnesses can
+  // omit it.
+  details?: {
+    phone: string;
+    affiliation: string;
+    primaryLanguages: string;
+    needsParking: boolean | null;
+    accessibilityNotes: string;
+    dietary: string;
+  };
 }) {
   const isVirtual = attendanceMode === "virtual";
   const paidLabel =
@@ -163,6 +175,10 @@ export default function AttendeePortal({
               </div>
             </Link>
           </div>
+
+          {details && (
+            <PortalDetailsForm token={token} attendanceMode={attendanceMode} initial={details} />
+          )}
 
           <div className="mt-6 pt-5 text-[11px]" style={{ borderTop: "1px solid #ECE3D0", color: E.soft }}>
             <Mail className="w-3 h-3 inline mr-1 -mt-0.5" />
