@@ -3062,37 +3062,6 @@ function plainLanguagesList(s: string | null | undefined): string | null {
   return names.slice(0, -1).join(", ") + " and " + names[names.length - 1];
 }
 
-// The actual numbers as a scannable list, so nobody has to click through to
-// learn the price or do math from a prose sentence. Cents figures come
-// straight from the caller's computed pricing, the same ones checkout will
-// charge. The one-day line renders only when the caller provides its cents.
-function plainRatePara(args: {
-  discountPercent: number;
-  inPersonOriginalCents: number;
-  inPersonDiscountedCents: number;
-  virtualOriginalCents: number;
-  virtualDiscountedCents: number;
-  oneDayOriginalCents?: number;
-  oneDayDiscountedCents?: number;
-}): string {
-  const money = (c: number) => (c % 100 === 0 ? `$${c / 100}` : `$${(c / 100).toFixed(2)}`);
-  const { discountPercent: d, inPersonOriginalCents: ipo, inPersonDiscountedCents: ipd, virtualOriginalCents: vo, virtualDiscountedCents: vd, oneDayOriginalCents: odo, oneDayDiscountedCents: odd } = args;
-  const lines = d > 0
-    ? [
-        `With your ${d}% off:`,
-        `&bull; In person at Lurie Children's: <strong>${money(ipd)}</strong> (usually ${money(ipo)})`,
-        `&bull; Live stream, both days: <strong>${money(vd)}</strong> (usually ${money(vo)})`,
-        ...(odd ? [`&bull; Live stream, one day only: <strong>${money(odd)}</strong>`] : []),
-      ]
-    : [
-        `Registration:`,
-        `&bull; In person at Lurie Children's: <strong>${money(ipo)}</strong>`,
-        `&bull; Live stream, both days: <strong>${money(vo)}</strong>`,
-        ...(odo ? [`&bull; Live stream, one day only: <strong>${money(odo)}</strong>`] : []),
-      ];
-  return lines.join("<br>");
-}
-
 // Honest urgency: public pricing stepped up to the Late tier on July 15, but
 // invitation links hold the Standard-tier base. True for every invitee
 // regardless of their personal discount. Remove after the conference.
@@ -3134,7 +3103,6 @@ export function plainReturningInviteEmail(args: AttendeeReturningArgs) {
   const langs = plainLanguagesList(args.primaryLanguages);
   paras.push(langs ? `${PLAIN_KEYNOTE_PARA} The work those standards protect is the interpreting you do in ${langs}.` : PLAIN_KEYNOTE_PARA);
   paras.push(plainDetailsPara(args.learnMoreUrl));
-  paras.push(plainRatePara(args));
   paras.push(PLAIN_HOLDS_RATE_PARA);
   paras.push(plainCtaPara(url, discountPercent));
   return plainNoteEmail({
@@ -3167,7 +3135,6 @@ export function plainCommunityInviteEmail(args: AttendeeInviteArgs) {
       : `Martti and LanguageLine will have tables there, plus the hospital language access people who do the hiring.`
   );
   paras.push(plainDetailsPara(args.learnMoreUrl));
-  paras.push(plainRatePara(args));
   paras.push(PLAIN_HOLDS_RATE_PARA);
   paras.push(plainCtaPara(url, discountPercent));
   return plainNoteEmail({
@@ -3190,7 +3157,6 @@ export function plainStandardInviteEmail(args: AttendeeInviteArgs) {
   if (note) paras.push(escapeHtml(note).replace(/\n/g, "<br>"));
   paras.push(PLAIN_KEYNOTE_PARA);
   paras.push(plainDetailsPara(args.learnMoreUrl));
-  paras.push(plainRatePara(args));
   paras.push(PLAIN_HOLDS_RATE_PARA);
   paras.push(plainCtaPara(url, discountPercent));
   return plainNoteEmail({
