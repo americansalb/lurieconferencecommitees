@@ -12,7 +12,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "Is the conference CEU accredited?",
-    a: "Yes. Attendees receive a CEU certificate of attendance for both days of the conference. Additional discipline-specific accreditation details will be announced as the program is finalized.",
+    a: "Yes. The conference offers 10+ hours of CEUs accredited by CCHI and NBCMI, and attendees receive a CEU certificate of attendance for both days. Additional discipline-specific accreditation details will be announced as the program is finalized.",
   },
   {
     q: "How is registration priced?",

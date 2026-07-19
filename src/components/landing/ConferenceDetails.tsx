@@ -45,7 +45,7 @@ export default function ConferenceDetails() {
             icon={Award}
             label="Accreditation"
             primary="10+ hours of CEUs"
-            secondary="Certificate for both days"
+            secondary="CCHI &amp; NBCMI accredited"
           />
         </div>
 

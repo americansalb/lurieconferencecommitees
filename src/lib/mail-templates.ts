@@ -158,7 +158,7 @@ function signOff(closing = "Warm regards,") {
 const GLANCE_ROWS = [
   { label: "Location", value: "Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago, 225 E. Chicago Avenue, Chicago, IL 60611" },
   { label: "Dates", value: "Saturday, August 15 &middot; 9:30 AM&ndash;6:30 PM<br/>Sunday, August 16 &middot; 9:00 AM&ndash;4:00 PM" },
-  { label: "CEUs", value: "10+ CEU hours (CCHI, NBCMI, RID, and ATA accreditation sought)" },
+  { label: "CEUs", value: "10+ CEU hours, accredited by CCHI and NBCMI" },
   { label: "Format", value: "In person, with a virtual option for attendees" },
 ];
 
@@ -475,7 +475,7 @@ export function attendeeInviteEmail({
     ${bulletList([
       "Keynotes from The Joint Commission and a former U.S. Department of Justice language-access leader &mdash; the people who set the standards and the people who enforce them",
       "Practice-focused sessions on the standards, technology, and policy reshaping language access",
-      "10+ accredited CEUs (CCHI, NBCMI, RID, and ATA accreditation sought)",
+      "10+ hours of CEUs accredited by CCHI and NBCMI",
       "A national gathering of interpreters, clinicians, language service providers, advocates, and policymakers",
       "A front-row seat to the conversations shaping the next decade of the field",
     ])}
@@ -1758,14 +1758,14 @@ export function ambassadorInviteEmail({
   // city; for the drivable Midwest it is a short trip; for everyone else the
   // livestream is the point.
   const convenePara = region === "chicago"
-    ? `That is why we are writing. On August 15 and 16, Lurie Children&rsquo;s and Americans Against Language Barriers convene <em>True Language Access: Yesterday, Today, and Tomorrow</em> at Lurie Children&rsquo;s in Streeterville &mdash; in your own city, a ride downtown. Two days with the people who shaped this field and the people who will carry it forward, ten-plus CEU hours planned (CCHI, NBCMI, RID, and ATA accreditation sought), and not a single travel budget between your community and the room. Chicago is where this conversation is happening; your people should be in it.`
+    ? `That is why we are writing. On August 15 and 16, Lurie Children&rsquo;s and Americans Against Language Barriers convene <em>True Language Access: Yesterday, Today, and Tomorrow</em> at Lurie Children&rsquo;s in Streeterville &mdash; in your own city, a ride downtown. Two days with the people who shaped this field and the people who will carry it forward, ten-plus CEU hours accredited by CCHI and NBCMI, and not a single travel budget between your community and the room. Chicago is where this conversation is happening; your people should be in it.`
     : region === "midwest"
-    ? `That is why we are writing. On August 15 and 16, Lurie Children&rsquo;s and Americans Against Language Barriers convene <em>True Language Access: Yesterday, Today, and Tomorrow</em> in the heart of Chicago &mdash; the people who shaped this field and the people who will carry it forward, two days, ten-plus CEU hours planned (CCHI, NBCMI, RID, and ATA accreditation sought). For your community it is a short trip, not a travel budget &mdash; and every session also streams live for those who stay put.`
-    : `That is why we are writing. On August 15 and 16, Lurie Children&rsquo;s and Americans Against Language Barriers convene <em>True Language Access: Yesterday, Today, and Tomorrow</em> in Chicago &mdash; and the whole program streams live. The virtual seat is a full seat: the same sessions among the people who shaped this field and the people who will carry it forward, the same ten-plus CEU hours planned (CCHI, NBCMI, RID, and ATA accreditation sought), without an airfare between your community and the room.`;
+    ? `That is why we are writing. On August 15 and 16, Lurie Children&rsquo;s and Americans Against Language Barriers convene <em>True Language Access: Yesterday, Today, and Tomorrow</em> in the heart of Chicago &mdash; the people who shaped this field and the people who will carry it forward, two days, ten-plus CEU hours accredited by CCHI and NBCMI. For your community it is a short trip, not a travel budget &mdash; and every session also streams live for those who stay put.`
+    : `That is why we are writing. On August 15 and 16, Lurie Children&rsquo;s and Americans Against Language Barriers convene <em>True Language Access: Yesterday, Today, and Tomorrow</em> in Chicago &mdash; and the whole program streams live. The virtual seat is a full seat: the same sessions among the people who shaped this field and the people who will carry it forward, the same ten-plus CEU hours accredited by CCHI and NBCMI, without an airfare between your community and the room.`;
 
   // Plain-text forwardable blurb: everything a student or member needs, in
   // one paragraph the ambassador can paste into an email or newsletter.
-  const blurb = `The 2026 Lurie Children's & AALB Conference — True Language Access: Yesterday, Today, and Tomorrow — is August 15 and 16 at Lurie Children's Hospital in Chicago, with a full virtual option. Two days on language access in American healthcare, with 10+ CEU hours (CCHI, NBCMI, RID, and ATA accreditation sought). Register at ${shareUrl}, where code ${code} takes 20% off any ticket through August 10.`;
+  const blurb = `The 2026 Lurie Children's & AALB Conference — True Language Access: Yesterday, Today, and Tomorrow — is August 15 and 16 at Lurie Children's Hospital in Chicago, with a full virtual option. Two days on language access in American healthcare, with 10+ CEU hours accredited by CCHI and NBCMI. Register at ${shareUrl}, where code ${code} takes 20% off any ticket through August 10.`;
 
   return `<!doctype html>
 <html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
@@ -3042,7 +3042,7 @@ const PLAIN_KEYNOTE_PARA = `This year the keynote is from The Joint Commission (
 // asks people to pay sight unseen.
 function plainDetailsPara(siteUrl?: string | null): string {
   const site = (siteUrl || "https://conference.aalb.org").replace(/\/$/, "");
-  return `It's two days at Ann &amp; Robert H. Lurie Children's Hospital of Chicago, with a live stream if you'd rather join from home, and over ten hours of CE. The full speaker lineup and session details are at <a href="${site}" style="${PLAIN_LINK}">conference.aalb.org</a> if you want to look around first.`;
+  return `It's two days at Ann &amp; Robert H. Lurie Children's Hospital of Chicago, with a live stream if you'd rather join from home, and over ten hours of CEUs accredited by CCHI and NBCMI. The full speaker lineup and session details are at <a href="${site}" style="${PLAIN_LINK}">conference.aalb.org</a> if you want to look around first.`;
 }
 
 // "Spanish, English" -> "Spanish and English", for the returning roster's
