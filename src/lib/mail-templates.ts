@@ -293,6 +293,11 @@ type AttendeeInviteArgs = {
   inPersonDiscountedCents: number;
   virtualOriginalCents: number;
   virtualDiscountedCents: number;
+  // One-day virtual ticket at the invitee's held Standard-tier base. Optional
+  // so older callers and previews without it still render (the one-day line
+  // is simply omitted).
+  oneDayOriginalCents?: number;
+  oneDayDiscountedCents?: number;
   personalCode: string;
   mainSiteUrl: string;
   // Relationship framing for the gold letter: "alumnus" (trained and certified),
@@ -3042,7 +3047,7 @@ const PLAIN_KEYNOTE_PARA = `This year the keynote is from The Joint Commission (
 // asks people to pay sight unseen.
 function plainDetailsPara(siteUrl?: string | null): string {
   const site = (siteUrl || "https://conference.aalb.org").replace(/\/$/, "");
-  return `It's two days at Ann &amp; Robert H. Lurie Children's Hospital of Chicago, with a live stream if you'd rather join from home, and over ten hours of CEUs, which will be accredited by NBCMI and CCHI. The full speaker lineup and session details are at <a href="${site}" style="${PLAIN_LINK}">conference.aalb.org</a> if you want to look around first.`;
+  return `It's two days at Ann &amp; Robert H. Lurie Children's Hospital of Chicago, with a live stream if you'd rather join from home, and over ten hours of CEUs, which will be accredited by NBCMI and CCHI. The full lineup, from Wilma Alvarado-Little (New York State Department of Health) to Yuliya Speroff (AALB's 2024 Trainer of the Year), is at <a href="${site}" style="${PLAIN_LINK}">conference.aalb.org</a> if you want to look around first.`;
 }
 
 // "Spanish, English" -> "Spanish and English", for the returning roster's
@@ -3057,38 +3062,50 @@ function plainLanguagesList(s: string | null | undefined): string | null {
   return names.slice(0, -1).join(", ") + " and " + names[names.length - 1];
 }
 
-// What's actually on the program beyond the keynote. Every name and session
-// here is announced on the landing page; if the lineup changes, change this
-// to match. Named people give the note the texture of someone who knows the
-// program, not a form letter.
-const PLAIN_SPEAKERS_PARA = `They're joined by Wilma Alvarado-Little, who leads language access for the New York State Department of Health, and Yuliya Speroff, AALB's 2024 Trainer of the Year, with a health equity case study from Harborview Medical Center. There are sessions on revising the national code of ethics for healthcare interpreters, trauma stewardship for working interpreters, and taking front-line experience into federal policy.`;
-
-// The actual numbers, so nobody has to click through to learn the price.
-// Cents figures come straight from the caller's computed pricing, the same
-// ones checkout will charge.
+// The actual numbers as a scannable list, so nobody has to click through to
+// learn the price or do math from a prose sentence. Cents figures come
+// straight from the caller's computed pricing, the same ones checkout will
+// charge. The one-day line renders only when the caller provides its cents.
 function plainRatePara(args: {
   discountPercent: number;
   inPersonOriginalCents: number;
   inPersonDiscountedCents: number;
   virtualOriginalCents: number;
   virtualDiscountedCents: number;
+  oneDayOriginalCents?: number;
+  oneDayDiscountedCents?: number;
 }): string {
   const money = (c: number) => (c % 100 === 0 ? `$${c / 100}` : `$${(c / 100).toFixed(2)}`);
-  const { discountPercent: d, inPersonOriginalCents: ipo, inPersonDiscountedCents: ipd, virtualOriginalCents: vo, virtualDiscountedCents: vd } = args;
-  return d > 0
-    ? `Your rate with the ${d}% off is ${money(ipd)} in person or ${money(vd)} for the live stream (regularly ${money(ipo)} and ${money(vo)}). If you can only make one day, there's a cheaper one-day virtual option as well.`
-    : `Registration is ${money(ipo)} in person or ${money(vo)} for the live stream, and if you can only make one day, there's a cheaper one-day virtual option as well.`;
+  const { discountPercent: d, inPersonOriginalCents: ipo, inPersonDiscountedCents: ipd, virtualOriginalCents: vo, virtualDiscountedCents: vd, oneDayOriginalCents: odo, oneDayDiscountedCents: odd } = args;
+  const lines = d > 0
+    ? [
+        `With your ${d}% off:`,
+        `&bull; In person at Lurie Children's: <strong>${money(ipd)}</strong> (usually ${money(ipo)})`,
+        `&bull; Live stream, both days: <strong>${money(vd)}</strong> (usually ${money(vo)})`,
+        ...(odd ? [`&bull; Live stream, one day only: <strong>${money(odd)}</strong>`] : []),
+      ]
+    : [
+        `Registration:`,
+        `&bull; In person at Lurie Children's: <strong>${money(ipo)}</strong>`,
+        `&bull; Live stream, both days: <strong>${money(vo)}</strong>`,
+        ...(odo ? [`&bull; Live stream, one day only: <strong>${money(odo)}</strong>`] : []),
+      ];
+  return lines.join("<br>");
 }
 
-// The ask, always the LAST paragraph before the sign-off: the reader gets the
-// keynote, the details, and a link to browse the program before being asked
-// for anything. The link carries the discount by itself; the first-name
-// fallback code (ensureFirstNameCode) still works on the main site but the
-// email doesn't need to explain it.
+// Honest urgency: public pricing stepped up to the Late tier on July 15, but
+// invitation links hold the Standard-tier base. True for every invitee
+// regardless of their personal discount. Remove after the conference.
+const PLAIN_HOLDS_RATE_PARA = `Public pricing went up on July 15. Your invitation keeps the lower rate.`;
+
+// The ask, right after the prices: it names the effort (about two minutes)
+// because unstated effort is friction. The link carries the discount by
+// itself; the first-name fallback code (ensureFirstNameCode) still works on
+// the main site but the email doesn't need to explain it.
 function plainCtaPara(url: string, discountPercent: number): string {
   return discountPercent > 0
-    ? `When you're ready, <strong><a href="${url}" style="${PLAIN_LINK}">sign up here</a></strong> and ${discountPercent}% comes off automatically. No code needed.`
-    : `When you're ready, you can <strong><a href="${url}" style="${PLAIN_LINK}">sign up here</a></strong>.`;
+    ? `<strong><a href="${url}" style="${PLAIN_LINK}">Sign up here</a></strong>. It takes about two minutes: pick how you'll attend and pay. Your ${discountPercent}% is already built into the link, so there's no code to enter.`
+    : `<strong><a href="${url}" style="${PLAIN_LINK}">Sign up here</a></strong>. It takes about two minutes: pick how you'll attend and pay.`;
 }
 
 // 2024-roster reunion note: opening keyed to what they actually did in 2024.
@@ -3115,10 +3132,10 @@ export function plainReturningInviteEmail(args: AttendeeReturningArgs) {
   // real pair.
   const langs = plainLanguagesList(args.primaryLanguages);
   paras.push(langs ? `${PLAIN_KEYNOTE_PARA} The work those standards protect is the interpreting you do in ${langs}.` : PLAIN_KEYNOTE_PARA);
-  paras.push(PLAIN_SPEAKERS_PARA);
-  paras.push(plainDetailsPara(args.learnMoreUrl));
   paras.push(plainRatePara(args));
+  paras.push(PLAIN_HOLDS_RATE_PARA);
   paras.push(plainCtaPara(url, discountPercent));
+  paras.push(plainDetailsPara(args.learnMoreUrl));
   return plainNoteEmail({
     firstName,
     paras,
@@ -3143,15 +3160,15 @@ export function plainCommunityInviteEmail(args: AttendeeInviteArgs) {
   const note = (inviteMessage || "").trim();
   if (note) paras.push(escapeHtml(note).replace(/\n/g, "<br>"));
   paras.push(PLAIN_KEYNOTE_PARA);
-  paras.push(PLAIN_SPEAKERS_PARA);
+  paras.push(plainRatePara(args));
+  paras.push(PLAIN_HOLDS_RATE_PARA);
+  paras.push(plainCtaPara(url, discountPercent));
   paras.push(
     rel === "alumnus"
       ? `It's also the easiest place all year to catch up with the people you trained with.`
       : `Martti and LanguageLine will have tables there, plus the hospital language access people who do the hiring.`
   );
   paras.push(plainDetailsPara(args.learnMoreUrl));
-  paras.push(plainRatePara(args));
-  paras.push(plainCtaPara(url, discountPercent));
   return plainNoteEmail({
     firstName,
     paras,
@@ -3171,10 +3188,10 @@ export function plainStandardInviteEmail(args: AttendeeInviteArgs) {
   const note = (inviteMessage || "").trim();
   if (note) paras.push(escapeHtml(note).replace(/\n/g, "<br>"));
   paras.push(PLAIN_KEYNOTE_PARA);
-  paras.push(PLAIN_SPEAKERS_PARA);
-  paras.push(plainDetailsPara(args.learnMoreUrl));
   paras.push(plainRatePara(args));
+  paras.push(PLAIN_HOLDS_RATE_PARA);
   paras.push(plainCtaPara(url, discountPercent));
+  paras.push(plainDetailsPara(args.learnMoreUrl));
   return plainNoteEmail({
     firstName,
     paras,

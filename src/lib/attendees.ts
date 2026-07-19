@@ -3,6 +3,7 @@ import { appUrl } from "./presenters";
 import { plainStandardInviteEmail, plainCommunityInviteEmail, plainReturningInviteEmail } from "./mail-templates";
 import { firstNameToCode } from "./codes";
 import { pickAlumniSubject, pickReturningSubject, pickStudentSubject } from "./subject-variants";
+import { ONE_DAY_MULTIPLIER } from "@/components/landing/pricing-data";
 
 export type AttendeeTemplate = "standard" | "alumni" | "student" | "former-student" | "returning";
 export const ATTENDEE_TEMPLATES: { id: AttendeeTemplate; label: string; description: string }[] = [
@@ -39,6 +40,7 @@ export function buildAttendeeInvite(opts: {
       : "standard";
   const inPerson = computePrice("in-person", opts.discountPercent);
   const virtual = computePrice("virtual", opts.discountPercent);
+  const oneDayBase = oneDayInviteBaseCents();
   const relationship = GOLD_TEMPLATES[template];
   const common = {
     firstName: opts.firstName,
@@ -49,6 +51,8 @@ export function buildAttendeeInvite(opts: {
     inPersonDiscountedCents: inPerson.finalCents || 0,
     virtualOriginalCents: virtual.baseCents || 0,
     virtualDiscountedCents: virtual.finalCents || 0,
+    oneDayOriginalCents: oneDayBase,
+    oneDayDiscountedCents: Math.round(oneDayBase * (100 - opts.discountPercent) / 100),
     personalCode: firstNameToCode(opts.firstName),
     mainSiteUrl: `${appUrl()}/register`,
     // Used by the engraved letters (ignored by the standard invite).
@@ -186,6 +190,13 @@ export const PRICING = {
     standardCents: 10500,
   },
 };
+
+// Invited attendees hold the Standard tier even after public pricing steps
+// up (their emails quoted those numbers), so their one-day virtual ticket is
+// derived from the Standard virtual rate too — not from today's public tier.
+export function oneDayInviteBaseCents(): number {
+  return Math.round((PRICING.virtual.standardCents * ONE_DAY_MULTIPLIER) / 100) * 100;
+}
 
 export function computePrice(mode: string | null | undefined, discountPercent: number) {
   if (mode === "in-person") {

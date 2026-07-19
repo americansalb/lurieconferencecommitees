@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { activePriceCents, oneDayVirtualPriceCents } from "@/components/landing/pricing-data";
-import { computePrice } from "@/lib/attendees";
+import { computePrice, oneDayInviteBaseCents } from "@/lib/attendees";
 import { prisma } from "@/lib/db";
 import {
   validateAndApply, normalizeCode, describeDiscount, DISCOUNT_ERROR_MESSAGES,
@@ -45,7 +45,7 @@ export async function POST(req: Request) {
     // Invited attendees can also take the one-day virtual ticket; the code
     // preview stacks on their day-adjusted personal price.
     if (attendDay && attendanceMode === "virtual") {
-      baseCents = Math.round(oneDayVirtualPriceCents() * (100 - attendee.discountPercent) / 100);
+      baseCents = Math.round(oneDayInviteBaseCents() * (100 - attendee.discountPercent) / 100);
     } else {
       const { finalCents } = computePrice(attendanceMode, attendee.discountPercent);
       baseCents = finalCents ?? activePriceCents(attendanceMode);

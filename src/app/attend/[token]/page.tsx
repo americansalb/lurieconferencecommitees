@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { computePrice } from "@/lib/attendees";
-import { oneDayVirtualPriceCents } from "@/components/landing/pricing-data";
+import { computePrice, oneDayInviteBaseCents } from "@/lib/attendees";
 import { getEventSettings } from "@/lib/event-settings";
 import AttendeeFunnel from "./AttendeeFunnel";
 import AttendeePortal from "./AttendeePortal";
@@ -54,7 +53,7 @@ export default async function AttendPage({ params }: { params: { token: string }
 
   const inPersonPreview = computePrice("in-person", attendee.discountPercent);
   const virtualPreview = computePrice("virtual", attendee.discountPercent);
-  const oneDayBase = oneDayVirtualPriceCents();
+  const oneDayBase = oneDayInviteBaseCents();
 
   return (
     <AttendeeFunnel

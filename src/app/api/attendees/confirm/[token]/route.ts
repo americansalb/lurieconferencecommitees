@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { computePrice } from "@/lib/attendees";
-import { oneDayVirtualPriceCents } from "@/components/landing/pricing-data";
+import { computePrice, oneDayInviteBaseCents } from "@/lib/attendees";
 
 export async function GET(_req: Request, { params }: { params: { token: string } }) {
   const attendee = await prisma.attendee.findUnique({
@@ -63,7 +62,7 @@ export async function PATCH(req: Request, { params }: { params: { token: string 
   if (data.attendanceMode !== undefined || data.attendDay !== undefined) {
     const day = (data.attendDay !== undefined ? data.attendDay : attendee.attendDay) as string | null;
     if (mode === "virtual" && (day === "sat" || day === "sun")) {
-      const base = oneDayVirtualPriceCents();
+      const base = oneDayInviteBaseCents();
       data.basePriceCents = base;
       data.finalPriceCents = Math.round(base * (100 - attendee.discountPercent) / 100);
     } else {

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { computePrice } from "@/lib/attendees";
-import { oneDayVirtualPriceCents } from "@/components/landing/pricing-data";
+import { computePrice, oneDayInviteBaseCents } from "@/lib/attendees";
 import { createCheckoutSession, isStripeConfigured } from "@/lib/stripe";
 import { appUrl } from "@/lib/presenters";
 import { validateAndApply, normalizeCode, DISCOUNT_ERROR_MESSAGES } from "@/lib/discounts";
@@ -37,7 +36,7 @@ export async function POST(req: Request) {
   let baseCents: number | null;
   let afterPersonal: number | null;
   if (oneDay) {
-    baseCents = oneDayVirtualPriceCents();
+    baseCents = oneDayInviteBaseCents();
     afterPersonal = Math.round(baseCents * (100 - attendee.discountPercent) / 100);
   } else {
     ({ baseCents, finalCents: afterPersonal } = computePrice(attendee.attendanceMode, attendee.discountPercent));
