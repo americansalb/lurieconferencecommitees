@@ -110,9 +110,13 @@ export function buildAttendeeInvite(opts: {
 // "Personalized" envelope for attendee invitations. The display name appears
 // in the recipient's inbox; the actual sending address stays on the
 // Resend-verified domain so deliverability isn't affected. Replies route to
-// ATTENDEE_REPLY_TO (default: Iris's address derived from ATTENDEE_REPLY_TO
-// env, or whatever MAIL_REPLY_TO is set to).
-export const ATTENDEE_FROM_NAME_DEFAULT = "Iris Laffitte, AALB Operations Manager";
+// ATTENDEE_REPLY_TO (or MAIL_REPLY_TO, or contact@).
+//
+// Kevin is the sender: the 2024 roster and the AALB community know Kevin,
+// and most predate Iris joining, so her name in the inbox reads as a
+// stranger. The plain notes derive their signature from this same name
+// (via ATTENDEE_FROM_NAME), so From and sign-off always match.
+export const ATTENDEE_FROM_NAME_DEFAULT = "Kevin Thakkar, Founder & Executive Director";
 
 function extractAddress(s: string): string {
   const angle = s.match(/<([^>]+)>/);

@@ -2995,6 +2995,17 @@ function plainNoteEmail({
   const postalAddress = process.env.MAIL_POSTAL_ADDRESS?.trim() || "Americans Against Language Barriers, Chicago, IL";
   const site = (siteUrl || "https://conference.aalb.org").replace(/\/$/, "");
   const first = escapeHtml((firstName || "there").trim());
+  // Sign as the person the email is actually From. attendeeFromHeader() puts
+  // ATTENDEE_FROM_NAME (default: Kevin) in the recipient's inbox; an email
+  // displayed as from one person and signed by another reads as fake. The
+  // "Name, Title" format is split for the signature block. Mirrors
+  // ATTENDEE_FROM_NAME_DEFAULT in lib/attendees (importing it here would be
+  // circular).
+  const fromName = (process.env.ATTENDEE_FROM_NAME || "Kevin Thakkar, Founder & Executive Director").trim();
+  const commaAt = fromName.indexOf(",");
+  const signerFull = escapeHtml(commaAt > 0 ? fromName.slice(0, commaAt).trim() : fromName);
+  const signerTitle = escapeHtml(commaAt > 0 ? fromName.slice(commaAt + 1).trim() : "");
+  const signerFirst = escapeHtml((commaAt > 0 ? fromName.slice(0, commaAt) : fromName).trim().split(/\s+/)[0] || "");
   const p = (html: string) =>
     `<p style="margin:0 0 16px 0;font-family:Arial,Helvetica,sans-serif;font-size:14.5px;line-height:1.75;color:#111827;">${html}</p>`;
   // No hidden preheader on purpose: the inbox preview should show the real
@@ -3011,8 +3022,8 @@ function plainNoteEmail({
   <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:96%;"><tr><td align="left" style="padding:26px 12px 30px 12px;">
     ${p(`Hi ${first},`)}
     ${paras.map((x) => p(x)).join("\n    ")}
-    ${p(`Any questions, just hit reply. It comes straight to me.`)}
-    ${p(`Kevin<br><span style="font-size:12.5px;color:#6B7280;">Kevin Thakkar<br>Founder &amp; Executive Director, Americans Against Language Barriers<br><a href="${site}" style="color:#6B7280;">conference.aalb.org</a></span>`)}
+    ${p(`If you have any questions, just reply to this email.`)}
+    ${p(`${signerFirst}<br><span style="font-size:12.5px;color:#6B7280;">${signerFull}${signerTitle ? `<br>${signerTitle}` : ""}<br>Americans Against Language Barriers<br><a href="${site}" style="color:#6B7280;">conference.aalb.org</a></span>`)}
     <p style="margin:26px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:11.5px;line-height:1.6;color:#9CA3AF;">${footerReason} ${escapeHtml(postalAddress)}.${unsubscribeUrl ? ` <a href="${unsubscribeUrl}" style="color:#9CA3AF;">Unsubscribe</a>` : ""}</p>
   </td></tr></table>
 </td></tr></table>
