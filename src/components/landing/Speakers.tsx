@@ -45,10 +45,12 @@ export default function Speakers() {
 
         {/* Centered wrapping (not a grid) so a partial last row — e.g. 7 cards
             as 3+3+1 — centers its leftovers instead of stranding them left.
-            Default stretch alignment keeps every card in a row the same height. */}
-        <div className="flex flex-wrap justify-center gap-6 max-w-5xl mx-auto">
+            Default stretch alignment keeps every card in a row the same height.
+            Phones get two compact cards per row (full-width cards made the
+            section thousands of pixels tall before the conference details). */}
+        <div className="flex flex-wrap justify-center gap-3 sm:gap-6 max-w-5xl mx-auto">
           {SPEAKERS.filter((s) => !s.keynote).map((s, i) => (
-            <div key={s.slug} className="w-full sm:w-[calc(50%-0.75rem)] lg:w-[calc(33.333%-1rem)]">
+            <div key={s.slug} className="w-[calc(50%-0.375rem)] sm:w-[calc(50%-0.75rem)] lg:w-[calc(33.333%-1rem)]">
               <SpeakerCard speaker={s} accent={ACCENTS[i % ACCENTS.length]} />
             </div>
           ))}

@@ -59,50 +59,51 @@ export default function SpeakerCard({ speaker, accent }: { speaker: Speaker; acc
           )}
         </div>
 
-        <div className="flex flex-1 flex-col p-7">
-          <h3 className="text-[21px] font-bold leading-tight tracking-tight" style={{ color: TOKENS.ink }}>
+        <div className="flex flex-1 flex-col p-3.5 sm:p-7">
+          <h3 className="text-[15px] sm:text-[21px] font-bold leading-tight tracking-tight" style={{ color: TOKENS.ink }}>
             {s.name}
             {s.credentials ? (
-              <span className="font-semibold" style={{ color: TOKENS.mutedSoft }}>, <span className="whitespace-nowrap">{s.credentials}</span></span>
+              <span className="font-semibold hidden sm:inline" style={{ color: TOKENS.mutedSoft }}>, <span className="whitespace-nowrap">{s.credentials}</span></span>
             ) : null}
           </h3>
 
-          <span className="mt-3 mb-3.5 block h-[3px] w-9 rounded-full" style={{ background: accent }} />
+          <span className="mt-2 mb-2 sm:mt-3 sm:mb-3.5 block h-[3px] w-9 rounded-full" style={{ background: accent }} />
 
           {/* The session title is the headline when we have it: what they're
               presenting matters more to attendees than their job title. Shown
               in full, never truncated — a cut-off talk title is worse than an
-              uneven card. */}
+              uneven card. On phones the compact two-across cards show only
+              name and role; the talk and bio live in the tap-open modal. */}
           {s.talk && (
-            <div className="mb-2.5 text-[15px] font-semibold italic leading-snug" style={{ color: TOKENS.ink }}>
+            <div className="hidden sm:block mb-2.5 text-[15px] font-semibold italic leading-snug" style={{ color: TOKENS.ink }}>
               &ldquo;{s.talk}&rdquo;
             </div>
           )}
 
           {/* Reserve two lines for the title so one-line and two-line titles
               don't stagger the org/bio baselines across the row. */}
-          <div className="min-h-[2.75em] text-[12.5px] font-bold uppercase tracking-wide leading-snug line-clamp-2" style={{ color: accent }} title={s.title}>
+          <div className="sm:min-h-[2.75em] text-[10px] sm:text-[12.5px] font-bold uppercase tracking-wide leading-snug line-clamp-2" style={{ color: accent }} title={s.title}>
             {s.title}
           </div>
-          <div className="mt-0.5 text-[13px] leading-snug line-clamp-2" style={{ color: TOKENS.muted }}>
+          <div className="mt-0.5 text-[11px] sm:text-[13px] leading-snug line-clamp-2" style={{ color: TOKENS.muted }}>
             {s.org}
           </div>
 
-          <p className="mt-4 text-[14px] leading-relaxed line-clamp-3" style={{ color: TOKENS.inkSoft }}>
+          <p className="hidden sm:block mt-4 text-[14px] leading-relaxed line-clamp-3" style={{ color: TOKENS.inkSoft }}>
             {s.bio}
           </p>
 
-          {isLong && (
-            <button
-              type="button"
-              onClick={() => setOpen(true)}
-              className="mt-auto pt-3 inline-flex items-center gap-1 self-start text-[13px] font-bold tracking-wide hover:gap-1.5 transition-all"
-              style={{ color: accent }}
-            >
-              Read full bio
-              <ArrowUpRight className="w-3.5 h-3.5" />
-            </button>
-          )}
+          {/* On phones the button is the only path to the talk and bio, so it
+              always shows there; on desktop only when the bio is clamped. */}
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className={`mt-auto pt-2 sm:pt-3 inline-flex items-center gap-1 self-start text-[11px] sm:text-[13px] font-bold tracking-wide hover:gap-1.5 transition-all${isLong ? "" : " sm:hidden"}`}
+            style={{ color: accent }}
+          >
+            Read full bio
+            <ArrowUpRight className="w-3.5 h-3.5" />
+          </button>
         </div>
       </article>
 
