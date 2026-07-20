@@ -279,6 +279,42 @@ export default function AttendeesPage() {
     }
   }
 
+  async function queueNbcmi() {
+    setRosterLoading(true);
+    setRosterNote(null);
+    try {
+      const res = await fetch("/api/attendees/queue-invites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ templates: ["cmi"] }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setRosterNote(json.queued > 0
+          ? `${json.queued} NBCMI invite${json.queued === 1 ? "" : "s"} added to the paced queue${json.skipped ? ` (${json.skipped} already queued)` : ""}. They'll drip out at the queue's rate.`
+          : `Nothing new to queue${json.skipped ? ` — ${json.skipped} already queued` : ""}.`);
+        await load();
+      } else {
+        setRosterNote(json.error || "Could not queue the NBCMI invites.");
+      }
+    } catch {
+      setRosterNote("Network error while queueing the NBCMI invites.");
+    } finally {
+      setRosterLoading(false);
+      setTimeout(() => setRosterNote(null), 15000);
+    }
+  }
+
+  function confirmQueueNbcmi() {
+    const staged = attendees.filter((a) => a.inviteTemplate === "cmi" && a.status === "queued").length;
+    setConfirmDialog({
+      title: `Queue ${staged.toLocaleString()} NBCMI invite${staged === 1 ? "" : "s"}?`,
+      message: "Everyone loaded from the NBCMI registry who hasn't been emailed gets the certified-interpreter note through the paced queue, each with 25% off and the shared CertifiedNBCMI code. At the current queue rate this drips out over several days.",
+      confirmLabel: "Queue the invites",
+      onConfirm: () => { setConfirmDialog(null); void queueNbcmi(); },
+    });
+  }
+
   function confirmLoad2024() {
     setConfirmDialog({
       title: "Load the 2024 conference roster (501 people)?",
@@ -577,9 +613,14 @@ export default function AttendeesPage() {
                 </button>
               )}
               {isAdmin && (
-                <button onClick={confirmQueue2024} disabled={rosterLoading} className="px-3 py-1.5 rounded-lg text-xs font-bold text-white inline-flex items-center gap-1.5 disabled:opacity-50 shadow-sm" style={{ background: "#0066B3" }} title="Drip the personalized reunion letter to every returning-tagged person via the paced queue">
-                  {rosterLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />} Queue reunion letters
-                </button>
+                <>
+                  <button onClick={confirmQueueNbcmi} disabled={rosterLoading} className="px-3 py-1.5 rounded-lg text-xs font-bold text-white inline-flex items-center gap-1.5 disabled:opacity-50 shadow-sm" style={{ background: "#4338CA" }} title="Drip the certified-interpreter note to everyone staged from the NBCMI registry via the paced queue">
+                    {rosterLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />} Queue NBCMI invites
+                  </button>
+                  <button onClick={confirmQueue2024} disabled={rosterLoading} className="px-3 py-1.5 rounded-lg text-xs font-bold text-white inline-flex items-center gap-1.5 disabled:opacity-50 shadow-sm" style={{ background: "#0066B3" }} title="Drip the personalized reunion letter to every returning-tagged person via the paced queue">
+                    {rosterLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />} Queue reunion letters
+                  </button>
+                </>
               )}
               {isAdmin && (
                 <button onClick={() => setShowEventSettings(true)} className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 inline-flex items-center gap-1.5" title="Set the attendee portal join link and agenda">

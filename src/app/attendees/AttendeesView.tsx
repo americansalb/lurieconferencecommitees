@@ -40,6 +40,7 @@ const RELATIONSHIP_BADGE: Record<string, { label: string; className: string }> =
   alumni: { label: "Alumnus", className: "bg-amber-50 text-amber-800 border-amber-200" },
   student: { label: "AALB student", className: "bg-teal-50 text-teal-700 border-teal-200" },
   "former-student": { label: "Former student", className: "bg-slate-100 text-slate-600 border-slate-200" },
+  cmi: { label: "NBCMI CMI", className: "bg-indigo-50 text-indigo-700 border-indigo-200" },
 };
 
 // The funnel, left to right, in plain language. Each card owns one or more of
@@ -270,7 +271,7 @@ export default function AttendeesView({
             <Segmented
               value={relFilter}
               onChange={setRelFilter}
-              options={[["all", "Everyone"], ["alumni", "Alumni"], ["student", "Students"], ["former-student", "Former"]]}
+              options={[["all", "Everyone"], ["alumni", "Alumni"], ["student", "Students"], ["former-student", "Former"], ["cmi", "NBCMI"]]}
             />
           )}
           {cohorts.length > 0 && (

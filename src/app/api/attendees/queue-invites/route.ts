@@ -26,6 +26,11 @@ export async function POST(req: Request) {
   const ids = Array.isArray(body?.ids)
     ? (body.ids as unknown[]).filter((x): x is string => typeof x === "string")
     : null;
+  // Optional segment filter, e.g. { templates: ["cmi"] } queues only the
+  // NBCMI cohort and leaves other staged people alone.
+  const templates = Array.isArray(body?.templates)
+    ? (body.templates as unknown[]).filter((x): x is string => typeof x === "string")
+    : null;
 
   // Only ever the not-yet-emailed, real, opted-in people.
   const targets = await prisma.attendee.findMany({
@@ -35,6 +40,7 @@ export async function POST(req: Request) {
       isTest: false,
       unsubscribedAt: null,
       ...(ids && ids.length ? { id: { in: ids } } : {}),
+      ...(templates && templates.length ? { inviteTemplate: { in: templates } } : {}),
     },
   });
   if (!targets.length) return NextResponse.json({ ok: true, queued: 0, skipped: 0 });
