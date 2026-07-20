@@ -132,17 +132,20 @@ function PartnerLogo({ partner }: { partner: { name: string; logo: string; role?
   // a broken image, so a confirmed exhibitor can be listed before their art
   // lands.
   const [logoFailed, setLogoFailed] = useState(false);
+  // Every width here yields to the viewport (max-w-full + min() floors):
+  // wide logos like the 5:1 Multilingual Connections SVG otherwise push the
+  // card past a phone's edges and the gold frame disappears off-screen.
   const inner = (
     <div
-      className="rounded-[22px] p-[1.5px]"
+      className="rounded-[22px] p-[1.5px] max-w-full"
       style={{
         background: `linear-gradient(135deg, ${TOKENS.gold} 0%, ${TOKENS.goldSoft} 48%, ${TOKENS.gold} 100%)`,
         boxShadow: "0 22px 48px -24px rgba(201,161,75,0.42), 0 4px 14px -8px rgba(11,31,37,0.14)",
       }}
     >
       <div
-        className="bg-white rounded-[20px] flex flex-col items-center justify-center px-12 py-9"
-        style={{ minWidth: 300 }}
+        className="bg-white rounded-[20px] flex flex-col items-center justify-center px-6 sm:px-12 py-7 sm:py-9 max-w-full"
+        style={{ minWidth: "min(300px, 100%)" }}
       >
         {logoFailed ? (
           <div className="h-16 sm:h-[78px] flex items-center text-2xl sm:text-[28px] font-extrabold tracking-tight text-center" style={{ color: TOKENS.ink }}>
@@ -150,7 +153,7 @@ function PartnerLogo({ partner }: { partner: { name: string; logo: string; role?
           </div>
         ) : (
           /* eslint-disable-next-line @next/next/no-img-element */
-          <img src={partner.logo} alt={partner.name} onError={() => setLogoFailed(true)} className="h-16 sm:h-[78px] w-auto max-w-[340px] object-contain" />
+          <img src={partner.logo} alt={partner.name} onError={() => setLogoFailed(true)} className="h-16 sm:h-[78px] w-auto max-w-[min(340px,100%)] object-contain" />
         )}
         {partner.role && (
           <>
@@ -164,7 +167,7 @@ function PartnerLogo({ partner }: { partner: { name: string; logo: string; role?
     </div>
   );
   return partner.url
-    ? <a href={partner.url} target="_blank" rel="noopener noreferrer" className="block transition-transform hover:-translate-y-0.5">{inner}</a>
+    ? <a href={partner.url} target="_blank" rel="noopener noreferrer" className="block max-w-full transition-transform hover:-translate-y-0.5">{inner}</a>
     : inner;
 }
 
