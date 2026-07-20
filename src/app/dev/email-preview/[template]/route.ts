@@ -178,6 +178,24 @@ export async function GET(
         title: "Conversation about your proposal",
       });
       break;
+    case "attendee-cmi": {
+      const { plainCmiInviteEmail } = await import("@/lib/mail-templates");
+      html = plainCmiInviteEmail({
+        firstName: "Lyan",
+        url: `${base}/attend/preview-token`,
+        inviteMessage: null,
+        discountPercent: 25,
+        inPersonOriginalCents: 21000,
+        inPersonDiscountedCents: 15750,
+        virtualOriginalCents: 10500,
+        virtualDiscountedCents: 7875,
+        personalCode: "LYAN25",
+        mainSiteUrl: `${base}/register`,
+        learnMoreUrl: base,
+        unsubscribeUrl: `${base}/api/attendees/unsubscribe/preview-token`,
+      });
+      break;
+    }
     case "attendee":
       html = plainStandardInviteEmail({
         firstName: "Jordan",

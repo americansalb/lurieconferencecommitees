@@ -3159,3 +3159,27 @@ export function plainStandardInviteEmail(args: AttendeeInviteArgs) {
     siteUrl: args.learnMoreUrl,
   });
 }
+
+// NBCMI registry note: certified medical interpreters we have no prior
+// relationship with. The opener names their credential (the reason they're
+// hearing from us) and the details paragraph carries the CEU hours, which is
+// what recertification actually runs on.
+export function plainCmiInviteEmail(args: AttendeeInviteArgs) {
+  const { firstName, url, discountPercent, inviteMessage, unsubscribeUrl } = args;
+  const paras: string[] = [];
+  paras.push(
+    `You hold the CMI credential, so I wanted to invite you to the conference Americans Against Language Barriers (AALB) is putting on with Lurie Children's about language access in American healthcare. It's <strong>August 15-16</strong> in Chicago, and it streams live too.`
+  );
+  const note = (inviteMessage || "").trim();
+  if (note) paras.push(escapeHtml(note).replace(/\n/g, "<br>"));
+  paras.push(PLAIN_KEYNOTE_PARA);
+  paras.push(plainDetailsPara(args.learnMoreUrl));
+  paras.push(plainCtaPara(url, discountPercent));
+  return plainNoteEmail({
+    firstName,
+    paras,
+    footerReason: "You're getting this because you're listed on the National Board of Certification for Medical Interpreters public registry.",
+    unsubscribeUrl,
+    siteUrl: args.learnMoreUrl,
+  });
+}

@@ -182,6 +182,39 @@ export function pickStudentSubject(firstName: string, token: string): { id: stri
   return { id: v.id, subject: v.make((firstName || "there").trim()) };
 }
 
+// NBCMI registry subject lines. These go to certified medical interpreters we
+// have no prior relationship with, so every line is concrete about what this
+// is (the conference, the keynoter, the CEU hours, the dates) and none of it
+// presumes familiarity with AALB. Same stable-by-token rules: append, never
+// reorder or remove.
+export const CMI_SUBJECT_VARIANTS: SubjectVariant[] = [
+  {
+    id: "cmi-ceu",
+    label: "CEU hours",
+    make: (f) => `${f}, over ten CEU hours at the Lurie Children's & AALB conference`,
+  },
+  {
+    id: "cmi-jc",
+    label: "JC keynote",
+    make: (f) => `${f}, the Joint Commission is keynoting on language access this August`,
+  },
+  {
+    id: "cmi-cred",
+    label: "For CMIs",
+    make: (f) => `${f}, a conference for certified medical interpreters, August 15-16`,
+  },
+  {
+    id: "cmi-hybrid",
+    label: "Chicago or stream",
+    make: (f) => `${f}, two days on language access, in Chicago or on the live stream`,
+  },
+];
+
+export function pickCmiSubject(firstName: string, token: string): { id: string; subject: string } {
+  const v = CMI_SUBJECT_VARIANTS[hashStr(token || "") % CMI_SUBJECT_VARIANTS.length];
+  return { id: v.id, subject: v.make((firstName || "there").trim()) };
+}
+
 export function alumniVariant(id: string | null | undefined): SubjectVariant | null {
   return ALUMNI_SUBJECT_VARIANTS.find((v) => v.id === id) || null;
 }

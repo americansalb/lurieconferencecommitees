@@ -1,17 +1,18 @@
 import { randomBytes } from "crypto";
 import { appUrl } from "./presenters";
-import { plainStandardInviteEmail, plainCommunityInviteEmail, plainReturningInviteEmail } from "./mail-templates";
+import { plainStandardInviteEmail, plainCommunityInviteEmail, plainReturningInviteEmail, plainCmiInviteEmail } from "./mail-templates";
 import { firstNameToCode } from "./codes";
-import { pickAlumniSubject, pickReturningSubject, pickStudentSubject } from "./subject-variants";
+import { pickAlumniSubject, pickReturningSubject, pickStudentSubject, pickCmiSubject } from "./subject-variants";
 import { ONE_DAY_MULTIPLIER } from "@/components/landing/pricing-data";
 
-export type AttendeeTemplate = "standard" | "alumni" | "student" | "former-student" | "returning";
+export type AttendeeTemplate = "standard" | "alumni" | "student" | "former-student" | "returning" | "cmi";
 export const ATTENDEE_TEMPLATES: { id: AttendeeTemplate; label: string; description: string }[] = [
   { id: "standard", label: "Standard invite", description: "Concise personal invitation with the discounted rate." },
   { id: "alumni", label: "AALB alumni", description: "Gold letter for certificate holders (alumni courtesy)." },
   { id: "student", label: "AALB student", description: "Gold letter for current or recently-finished students." },
   { id: "former-student", label: "Former AALB student", description: "Gold letter for past students without a certificate." },
   { id: "returning", label: "2024 reunion", description: "Gold reunion letter for people from the 2024 conference roster." },
+  { id: "cmi", label: "NBCMI CMI", description: "Plain invite for certified medical interpreters from the NBCMI registry." },
 ];
 
 // The three AALB-community templates all render the same gold letter; only the
@@ -35,7 +36,7 @@ export function buildAttendeeInvite(opts: {
   returning?: { status?: string | null; mode?: string | null; languages?: string | null };
 }): { subject: string; html: string; template: AttendeeTemplate; subjectVariant: string | null } {
   const template: AttendeeTemplate =
-    opts.template === "alumni" || opts.template === "student" || opts.template === "former-student" || opts.template === "returning"
+    opts.template === "alumni" || opts.template === "student" || opts.template === "former-student" || opts.template === "returning" || opts.template === "cmi"
       ? opts.template
       : "standard";
   const inPerson = computePrice("in-person", opts.discountPercent);
@@ -74,6 +75,8 @@ export function buildAttendeeInvite(opts: {
       attended2024Mode: (opts.returning?.mode as "in-person" | "virtual" | undefined) || null,
       primaryLanguages: opts.returning?.languages || null,
     });
+  } else if (template === "cmi") {
+    html = plainCmiInviteEmail(common);
   } else if (relationship) {
     html = plainCommunityInviteEmail({ ...common, relationship });
   } else {
@@ -91,6 +94,10 @@ export function buildAttendeeInvite(opts: {
       opts.returning?.status === "paid",
       opts.returning?.mode === "in-person"
     );
+    subject = picked.subject;
+    subjectVariant = picked.id;
+  } else if (template === "cmi") {
+    const picked = pickCmiSubject(opts.firstName, opts.inviteToken);
     subject = picked.subject;
     subjectVariant = picked.id;
   } else if (relationship === "alumnus") {
@@ -339,7 +346,7 @@ export function parseAttendeeCsv(input: string): { rows: CsvParseRow[]; errors: 
   const rows: CsvParseRow[] = [];
   const errors: string[] = [];
   const lines = input.split(/\r?\n/);
-  const allowedTemplates = new Set(["standard", "alumni", "student", "former-student", "returning"]);
+  const allowedTemplates = new Set(["standard", "alumni", "student", "former-student", "returning", "cmi"]);
   let lineNum = 0;
   for (const raw of lines) {
     lineNum++;

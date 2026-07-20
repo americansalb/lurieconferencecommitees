@@ -9,6 +9,7 @@ import {
   ChevronDown, ChevronRight, Video, Shuffle, GraduationCap,
 } from "lucide-react";
 import { STUDENT_ROSTER_CSV, STUDENT_ROSTER_COUNT, STUDENT_ROSTER_ALUMNI, STUDENT_ROSTER_STUDENT, STUDENT_ROSTER_FORMER } from "@/lib/student-roster";
+import { NBCMI_ROSTER_CSV, NBCMI_ROSTER_COUNT } from "@/lib/nbcmi-roster";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
 import MobileNav from "@/components/layout/MobileNav";
@@ -307,6 +308,42 @@ export default function AttendeesPage() {
     });
   }
 
+  async function loadNbcmi() {
+    setRosterLoading(true);
+    setRosterNote(null);
+    try {
+      const res = await fetch("/api/attendees", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ csv: NBCMI_ROSTER_CSV, draftOnly: true, discountPercent: 25 }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setRosterNote(
+          json.created > 0
+            ? `Loaded ${json.created} certified interpreter${json.created === 1 ? "" : "s"} from the NBCMI registry${json.skipped ? `, ${json.skipped} already there` : ""}. Nothing has been emailed — they're all queued with the "NBCMI CMI" template.`
+            : `Everyone's already on the list${json.skipped ? ` (${json.skipped} skipped)` : ""}. Nothing new to add.`
+        );
+        await load();
+        if (json.created > 0) setTab("attendees");
+      } else {
+        setRosterNote(json.error || "Could not load the NBCMI registry.");
+      }
+    } catch {
+      setRosterNote("Network error while loading the NBCMI registry.");
+    }
+    setRosterLoading(false);
+  }
+
+  function confirmLoadNbcmi() {
+    setConfirmDialog({
+      title: `Load ${NBCMI_ROSTER_COUNT.toLocaleString()} NBCMI-certified interpreters?`,
+      message: "Everyone on the NBCMI public registry export joins the list as queued with the NBCMI CMI template and 25% off. Nothing is emailed until you queue the invites. Anyone already on the list is skipped.",
+      confirmLabel: "Load the registry",
+      onConfirm: () => { setConfirmDialog(null); void loadNbcmi(); },
+    });
+  }
+
   // Emails-only delivery test: paste addresses separated by commas/spaces/lines,
   // no names. Sends each one right away so seed inboxes get it immediately.
   async function sendDeliveryTest() {
@@ -524,9 +561,15 @@ export default function AttendeesPage() {
                 <p className="text-xs text-slate-500">Invite people and track them through to paid attendees</p>
               </div>
               {isAdmin && (
-                <button onClick={confirmLoadStudents} disabled={rosterLoading} className="px-3 py-1.5 rounded-lg text-xs font-bold text-white inline-flex items-center gap-1.5 disabled:opacity-50 shadow-sm" style={{ background: "#9A7B2E" }} title={`Add all ${STUDENT_ROSTER_COUNT.toLocaleString()} AALB students to the list as queued (nothing emailed)`}>
-                  {rosterLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <GraduationCap className="w-3.5 h-3.5" />} Load students
-                </button>
+                <>
+                  <button onClick={confirmLoadNbcmi} disabled={rosterLoading} className="px-3 py-1.5 rounded-lg text-xs font-bold text-white inline-flex items-center gap-1.5 disabled:opacity-50 shadow-sm" style={{ background: "#0E5566" }} title={`Add all ${NBCMI_ROSTER_COUNT.toLocaleString()} NBCMI-certified interpreters to the list as queued (nothing emailed)`}>
+                    {rosterLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <GraduationCap className="w-3.5 h-3.5" />}
+                    Load NBCMI registry
+                  </button>
+                  <button onClick={confirmLoadStudents} disabled={rosterLoading} className="px-3 py-1.5 rounded-lg text-xs font-bold text-white inline-flex items-center gap-1.5 disabled:opacity-50 shadow-sm" style={{ background: "#9A7B2E" }} title={`Add all ${STUDENT_ROSTER_COUNT.toLocaleString()} AALB students to the list as queued (nothing emailed)`}>
+                    {rosterLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <GraduationCap className="w-3.5 h-3.5" />} Load students
+                  </button>
+                </>
               )}
               {isAdmin && (
                 <button onClick={confirmLoad2024} disabled={rosterLoading} className="px-3 py-1.5 rounded-lg text-xs font-bold text-white inline-flex items-center gap-1.5 disabled:opacity-50 shadow-sm" style={{ background: "#0E5566" }} title="Load the 501-person 2024 conference roster (120 paid, 66 attempted, 315 leads) — nothing emailed">

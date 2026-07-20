@@ -7,7 +7,7 @@ import {
   attendeeStep, attendeeStepMoment, attendeeSource,
 } from "@/lib/attendees";
 import { fmtElapsed, medianLabel, countedClickAt } from "@/lib/engagement";
-import { ALUMNI_SUBJECT_VARIANTS, STUDENT_SUBJECT_VARIANTS } from "@/lib/subject-variants";
+import { ALUMNI_SUBJECT_VARIANTS, STUDENT_SUBJECT_VARIANTS, CMI_SUBJECT_VARIANTS } from "@/lib/subject-variants";
 
 export type Attendee = {
   id: string;
@@ -150,6 +150,22 @@ export default function AttendeesView({
     return rows;
   }, [attendees]);
   const stuSent = stuRows.reduce((n, r) => n + r.sent, 0);
+
+  // And for the NBCMI registry cold list.
+  const cmiRows = useMemo(() => {
+    const rows = CMI_SUBJECT_VARIANTS.map((v) => ({ id: v.id, label: v.label, example: v.make("Alex"), sent: 0, clicked: 0 }));
+    const byId = new Map(rows.map((r) => [r.id, r]));
+    for (const a of attendees) {
+      if (a.inviteTemplate !== "cmi" || !a.subjectVariant) continue;
+      if (!(a.invitedAt || a.lastSentAt)) continue;
+      const r = byId.get(a.subjectVariant);
+      if (!r) continue;
+      r.sent++;
+      if (clickAt(a)) r.clicked++;
+    }
+    return rows;
+  }, [attendees]);
+  const cmiSent = cmiRows.reduce((n, r) => n + r.sent, 0);
 
   // One pass: tag every attendee with its precise step, then tally per card.
   const stepOf = useMemo(() => {
@@ -337,6 +353,26 @@ export default function AttendeesView({
                     <span className="flex-1 min-w-0 text-slate-500 truncate" title={r.example}>{r.example.replace(/^Alex,\s*/, "")}</span>
                     <span className="shrink-0 text-slate-400 tabular-nums">{r.clicked}/{r.sent}</span>
                     <span className="w-10 shrink-0 text-right font-bold tabular-nums" style={{ color: "#0E5566" }}>{rate}%</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Subject-line A/B (NBCMI registry) */}
+        {clickedOnly && cmiSent > 0 && (
+          <div className="px-4 py-3 border-b border-slate-100 bg-white">
+            <div className="text-[11px] font-bold uppercase tracking-wide text-slate-500 mb-2">NBCMI subject lines &middot; click rate</div>
+            <div className="space-y-1">
+              {cmiRows.filter((r) => r.sent > 0).sort((a, b) => (b.clicked / b.sent) - (a.clicked / a.sent)).map((r) => {
+                const rate = r.sent ? Math.round((r.clicked / r.sent) * 100) : 0;
+                return (
+                  <div key={r.id} className="flex items-center gap-3 text-xs py-0.5">
+                    <span className="w-16 shrink-0 font-bold text-slate-700">{r.label}</span>
+                    <span className="flex-1 min-w-0 text-slate-500 truncate" title={r.example}>{r.example.replace(/^Alex,\s*/, "")}</span>
+                    <span className="shrink-0 text-slate-400 tabular-nums">{r.clicked}/{r.sent}</span>
+                    <span className="w-10 shrink-0 text-right font-bold tabular-nums" style={{ color: "#7C5C10" }}>{rate}%</span>
                   </div>
                 );
               })}
