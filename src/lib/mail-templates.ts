@@ -3176,11 +3176,12 @@ export function plainCmiInviteEmail(args: AttendeeInviteArgs) {
   if (note) paras.push(escapeHtml(note).replace(/\n/g, "<br>"));
   paras.push(PLAIN_KEYNOTE_PARA);
   paras.push(plainDetailsPara(args.learnMoreUrl));
-  // The cohort shares one memorable code (created at queue time via
-  // ensureCampaignCode) alongside the personal link.
+  // Their code is their own first name (ensureFirstNameCode creates it at
+  // queue time): a branded campaign code reads as a mass blast, a name reads
+  // as an invitation. Shown in normal casing; checkout normalizes.
   paras.push(
     discountPercent > 0
-      ? `<strong><a href="${url}" style="${PLAIN_LINK}">Sign up here</a></strong>. It takes about two minutes, and your ${discountPercent}% comes off automatically. If you'd rather register from the main site, the code <strong>CertifiedNBCMI</strong> takes the same ${discountPercent}% off.`
+      ? `<strong><a href="${url}" style="${PLAIN_LINK}">Sign up here</a></strong>. It takes about two minutes, and your ${discountPercent}% comes off automatically. If you'd rather register from the main site, just use your first name (${escapeHtml((firstName || "").trim())}) as your code for the same ${discountPercent}% off.`
       : `<strong><a href="${url}" style="${PLAIN_LINK}">Sign up here</a></strong>. It takes about two minutes.`
   );
   return plainNoteEmail({
