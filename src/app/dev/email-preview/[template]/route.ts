@@ -188,6 +188,8 @@ export async function GET(
         inPersonDiscountedCents: 15750,
         virtualOriginalCents: 10500,
         virtualDiscountedCents: 7875,
+        oneDayOriginalCents: 6900,
+        oneDayDiscountedCents: 5175,
         personalCode: "JORDAN25",
         mainSiteUrl: base,
         unsubscribeUrl: `${base}/api/attendees/unsubscribe/preview-token`,
@@ -208,6 +210,8 @@ export async function GET(
         inPersonDiscountedCents: 15750,
         virtualOriginalCents: 10500,
         virtualDiscountedCents: 7875,
+        oneDayOriginalCents: 6900,
+        oneDayDiscountedCents: 5175,
         personalCode: "LYAN25",
         mainSiteUrl: `${base}/register`,
         learnMoreUrl: base,
@@ -238,6 +242,8 @@ export async function GET(
         inPersonDiscountedCents: 15750,
         virtualOriginalCents: 10500,
         virtualDiscountedCents: 7875,
+        oneDayOriginalCents: 6900,
+        oneDayDiscountedCents: 5175,
         relationship: template === "attendee-student" ? "student" : "former-student",
       });
       break;
@@ -257,6 +263,8 @@ export async function GET(
         inPersonDiscountedCents: 15750,
         virtualOriginalCents: 10500,
         virtualDiscountedCents: 7875,
+        oneDayOriginalCents: 6900,
+        oneDayDiscountedCents: 5175,
       });
       break;
     case "ambassador":

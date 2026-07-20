@@ -158,7 +158,7 @@ function signOff(closing = "Warm regards,") {
 const GLANCE_ROWS = [
   { label: "Location", value: "Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago, 225 E. Chicago Avenue, Chicago, IL 60611" },
   { label: "Dates", value: "Saturday, August 15 &middot; 9:30 AM&ndash;6:30 PM<br/>Sunday, August 16 &middot; 9:00 AM&ndash;4:00 PM" },
-  { label: "CEUs", value: "10+ CEU hours (CCHI, NBCMI, RID, and ATA accreditation sought)" },
+  { label: "CEUs", value: "10+ CEU hours, will be accredited by NBCMI and CCHI" },
   { label: "Format", value: "In person, with a virtual option for attendees" },
 ];
 
@@ -293,6 +293,11 @@ type AttendeeInviteArgs = {
   inPersonDiscountedCents: number;
   virtualOriginalCents: number;
   virtualDiscountedCents: number;
+  // One-day virtual ticket at the invitee's held Standard-tier base. Optional
+  // so older callers and previews without it still render (the one-day line
+  // is simply omitted).
+  oneDayOriginalCents?: number;
+  oneDayDiscountedCents?: number;
   personalCode: string;
   mainSiteUrl: string;
   // Relationship framing for the gold letter: "alumnus" (trained and certified),
@@ -475,7 +480,7 @@ export function attendeeInviteEmail({
     ${bulletList([
       "Keynotes from The Joint Commission and a former U.S. Department of Justice language-access leader &mdash; the people who set the standards and the people who enforce them",
       "Practice-focused sessions on the standards, technology, and policy reshaping language access",
-      "10+ accredited CEUs (CCHI, NBCMI, RID, and ATA accreditation sought)",
+      "10+ hours of CEUs, will be accredited by NBCMI and CCHI",
       "A national gathering of interpreters, clinicians, language service providers, advocates, and policymakers",
       "A front-row seat to the conversations shaping the next decade of the field",
     ])}
@@ -822,7 +827,7 @@ export function attendeeReturningInviteEmail({
       : `In the summer of 2024, you joined the live stream of the first joint conference &mdash; present in every way that mattered. The second gathering is set for August 15 and 16, and we are beginning our invitations with the people who were there for the first.`)
     : returning2024 === "attempted"
     ? `In 2024, you began a registration for the first joint conference, and your name has been on our list since. The second conference is set for August 15 and 16, and this letter is your invitation to complete what you started.`
-    : `In 2024, when a joint conference between one of the nation&rsquo;s leading children&rsquo;s hospitals and a language-access nonprofit was still just an idea, you put your name down to hear more. The first gathering has come and gone; the second is set for August 15 and 16, and we are writing first to the people who signed up before there was anything to see.`;
+    : `In 2024, you registered for the first joint conference, though your registration was never completed. The second conference is set for August 15 and 16, and this letter is your invitation to finish what you began.`;
   const dropCap = opening.charAt(0);
   const openingRest = opening.slice(1);
   const memoryLine = paid
@@ -1758,14 +1763,14 @@ export function ambassadorInviteEmail({
   // city; for the drivable Midwest it is a short trip; for everyone else the
   // livestream is the point.
   const convenePara = region === "chicago"
-    ? `That is why we are writing. On August 15 and 16, Lurie Children&rsquo;s and Americans Against Language Barriers convene <em>True Language Access: Yesterday, Today, and Tomorrow</em> at Lurie Children&rsquo;s in Streeterville &mdash; in your own city, a ride downtown. Two days with the people who shaped this field and the people who will carry it forward, ten-plus CEU hours planned (CCHI, NBCMI, RID, and ATA accreditation sought), and not a single travel budget between your community and the room. Chicago is where this conversation is happening; your people should be in it.`
+    ? `That is why we are writing. On August 15 and 16, Lurie Children&rsquo;s and Americans Against Language Barriers convene <em>True Language Access: Yesterday, Today, and Tomorrow</em> at Lurie Children&rsquo;s in Streeterville &mdash; in your own city, a ride downtown. Two days with the people who shaped this field and the people who will carry it forward, ten-plus CEU hours, which will be accredited by NBCMI and CCHI, and not a single travel budget between your community and the room. Chicago is where this conversation is happening; your people should be in it.`
     : region === "midwest"
-    ? `That is why we are writing. On August 15 and 16, Lurie Children&rsquo;s and Americans Against Language Barriers convene <em>True Language Access: Yesterday, Today, and Tomorrow</em> in the heart of Chicago &mdash; the people who shaped this field and the people who will carry it forward, two days, ten-plus CEU hours planned (CCHI, NBCMI, RID, and ATA accreditation sought). For your community it is a short trip, not a travel budget &mdash; and every session also streams live for those who stay put.`
-    : `That is why we are writing. On August 15 and 16, Lurie Children&rsquo;s and Americans Against Language Barriers convene <em>True Language Access: Yesterday, Today, and Tomorrow</em> in Chicago &mdash; and the whole program streams live. The virtual seat is a full seat: the same sessions among the people who shaped this field and the people who will carry it forward, the same ten-plus CEU hours planned (CCHI, NBCMI, RID, and ATA accreditation sought), without an airfare between your community and the room.`;
+    ? `That is why we are writing. On August 15 and 16, Lurie Children&rsquo;s and Americans Against Language Barriers convene <em>True Language Access: Yesterday, Today, and Tomorrow</em> in the heart of Chicago &mdash; the people who shaped this field and the people who will carry it forward, two days, ten-plus CEU hours, which will be accredited by NBCMI and CCHI. For your community it is a short trip, not a travel budget &mdash; and every session also streams live for those who stay put.`
+    : `That is why we are writing. On August 15 and 16, Lurie Children&rsquo;s and Americans Against Language Barriers convene <em>True Language Access: Yesterday, Today, and Tomorrow</em> in Chicago &mdash; and the whole program streams live. The virtual seat is a full seat: the same sessions among the people who shaped this field and the people who will carry it forward, the same ten-plus CEU hours, which will be accredited by NBCMI and CCHI, without an airfare between your community and the room.`;
 
   // Plain-text forwardable blurb: everything a student or member needs, in
   // one paragraph the ambassador can paste into an email or newsletter.
-  const blurb = `The 2026 Lurie Children's & AALB Conference — True Language Access: Yesterday, Today, and Tomorrow — is August 15 and 16 at Lurie Children's Hospital in Chicago, with a full virtual option. Two days on language access in American healthcare, with 10+ CEU hours (CCHI, NBCMI, RID, and ATA accreditation sought). Register at ${shareUrl}, where code ${code} takes 20% off any ticket through August 10.`;
+  const blurb = `The 2026 Lurie Children's & AALB Conference — True Language Access: Yesterday, Today, and Tomorrow — is August 15 and 16 at Lurie Children's Hospital in Chicago, with a full virtual option. Two days on language access in American healthcare, with 10+ CEU hours, which will be accredited by NBCMI and CCHI. Register at ${shareUrl}, where code ${code} takes 20% off any ticket through August 10.`;
 
   return `<!doctype html>
 <html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
@@ -2968,26 +2973,44 @@ function escapeHtml(s: string) {
 // The engraved letters photographed beautifully and converted poorly: heavy
 // designed HTML reads as "marketing" both to Gmail's Promotions classifier
 // and to the reader. These render as a short email a person typed: white
-// background, system sans, no images, no buttons, one blue text link, signed
-// by one human. Copy rules, learned the hard way: no em dashes, no poetic
-// flourishes, contractions and parentheses like real correspondence, straight
-// apostrophes, hyphenated date ranges. Subjects stay on the same A/B variant
-// sets. The engraved renderers remain above, unused by the send path.
+// background, system sans, no images, no buttons, a couple of plain text
+// links, signed by one human. Copy rules, learned the hard way: no em dashes,
+// no poetic flourishes, contractions and parentheses like real correspondence,
+// straight apostrophes, hyphenated date ranges. Details before the ask: the
+// note gives the keynote, the venue, the CE hours, and a link to browse the
+// program on the conference site, and only then the sign-up link. Subjects
+// stay on the same A/B variant sets. The engraved renderers remain above,
+// unused by the send path.
 
 function plainNoteEmail({
   firstName,
   paras,
   footerReason,
   unsubscribeUrl,
+  siteUrl,
 }: {
   firstName: string;
   // Pre-composed paragraph HTML: composers escape all user-derived text.
   paras: string[];
   footerReason: string;
   unsubscribeUrl?: string | null;
+  // Conference home, for the signature link. Falls back to the public site.
+  siteUrl?: string | null;
 }) {
   const postalAddress = process.env.MAIL_POSTAL_ADDRESS?.trim() || "Americans Against Language Barriers, Chicago, IL";
+  const site = (siteUrl || "https://conference.aalb.org").replace(/\/$/, "");
   const first = escapeHtml((firstName || "there").trim());
+  // Sign as the person the email is actually From. attendeeFromHeader() puts
+  // ATTENDEE_FROM_NAME (default: Kevin) in the recipient's inbox; an email
+  // displayed as from one person and signed by another reads as fake. The
+  // "Name, Title" format is split for the signature block. Mirrors
+  // ATTENDEE_FROM_NAME_DEFAULT in lib/attendees (importing it here would be
+  // circular).
+  const fromName = (process.env.ATTENDEE_FROM_NAME || "Kevin Thakkar, Founder & Executive Director").trim();
+  const commaAt = fromName.indexOf(",");
+  const signerFull = escapeHtml(commaAt > 0 ? fromName.slice(0, commaAt).trim() : fromName);
+  const signerTitle = escapeHtml(commaAt > 0 ? fromName.slice(commaAt + 1).trim() : "");
+  const signerFirst = escapeHtml((commaAt > 0 ? fromName.slice(0, commaAt) : fromName).trim().split(/\s+/)[0] || "");
   const p = (html: string) =>
     `<p style="margin:0 0 16px 0;font-family:Arial,Helvetica,sans-serif;font-size:14.5px;line-height:1.75;color:#111827;">${html}</p>`;
   // No hidden preheader on purpose: the inbox preview should show the real
@@ -3004,8 +3027,8 @@ function plainNoteEmail({
   <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:96%;"><tr><td align="left" style="padding:26px 12px 30px 12px;">
     ${p(`Hi ${first},`)}
     ${paras.map((x) => p(x)).join("\n    ")}
-    ${p(`Any questions, just hit reply. It comes straight to me.`)}
-    ${p(`Kevin<br><span style="font-size:12.5px;color:#6B7280;">Kevin Thakkar<br>Founder &amp; Executive Director, Americans Against Language Barriers<br>conference.aalb.org</span>`)}
+    ${p(`If you have any questions, just reply to this email.`)}
+    ${p(`${signerFirst}<br><span style="font-size:12.5px;color:#6B7280;">${signerFull}${signerTitle ? `<br>${signerTitle}` : ""}<br>Americans Against Language Barriers<br><a href="${site}" style="color:#6B7280;">conference.aalb.org</a></span>`)}
     <p style="margin:26px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:11.5px;line-height:1.6;color:#9CA3AF;">${footerReason} ${escapeHtml(postalAddress)}.${unsubscribeUrl ? ` <a href="${unsubscribeUrl}" style="color:#9CA3AF;">Unsubscribe</a>` : ""}</p>
   </td></tr></table>
 </td></tr></table>
@@ -3016,17 +3039,38 @@ function plainNoteEmail({
 const PLAIN_LINK = "color:#1D4ED8;";
 
 // Shared keynote paragraph: the one thing every audience should know.
-const PLAIN_KEYNOTE_PARA = `This year the keynote is from The Joint Commission (their standards are the ones nearly every hospital in America has to meet). Michael Mul&eacute;, who ran language access enforcement at the DOJ, is speaking too.`;
+const PLAIN_KEYNOTE_PARA = `This year the keynote is from The Joint Commission, whose standards nearly every hospital in America has to meet: "The Standards That Protect Patients: A Joint Commission View on Language Access." And Michael Mul&eacute;, who led language access enforcement at the U.S. Department of Justice, Civil Rights Division, is speaking too. Hospital standards and federal civil rights law, on the same stage.`;
 
-// One CTA paragraph used by every plain note, always the second paragraph:
-// the link and the discount are the point, so they come right after the
-// opener. The link carries the discount by itself; the first-name fallback
-// code (ensureFirstNameCode) still works on the main site but the email
-// doesn't need to explain it.
+// Where it happens, that there's a stream, the CE hours, and a link to the
+// conference site so the reader can browse speakers and sessions before any
+// ask. Every plain note carries this: an invite whose only link is checkout
+// asks people to pay sight unseen.
+function plainDetailsPara(siteUrl?: string | null): string {
+  const site = (siteUrl || "https://conference.aalb.org").replace(/\/$/, "");
+  return `It's two days at Ann &amp; Robert H. Lurie Children's Hospital of Chicago, with a live stream if you'd rather join from home, and over ten hours of CEUs, which will be accredited by NBCMI and CCHI. The full lineup, from Wilma Alvarado-Little (New York State Department of Health) to Yuliya Speroff (AALB's 2024 Trainer of the Year), is at <a href="${site}" style="${PLAIN_LINK}">conference.aalb.org</a> if you want to look around first.`;
+}
+
+// "Spanish, English" -> "Spanish and English", for the returning roster's
+// language line. Null unless languagesWorthNaming() says the string names a
+// real pair, so the line never renders for blank or English-only records.
+function plainLanguagesList(s: string | null | undefined): string | null {
+  if (!languagesWorthNaming(s)) return null;
+  const parts = (s || "").split(/[,\/&+]+/).map((t) => t.trim()).filter(Boolean);
+  if (!parts.length) return null;
+  const names = parts.map(escapeHtml);
+  if (names.length === 1) return names[0];
+  return names.slice(0, -1).join(", ") + " and " + names[names.length - 1];
+}
+
+// The ask, always last: the note builds the case (keynote, program, venue)
+// BEFORE the price list, and the price before the ask. It names the effort
+// (about two minutes) because unstated effort is friction. The link carries the discount by
+// itself; the first-name fallback code (ensureFirstNameCode) still works on
+// the main site but the email doesn't need to explain it.
 function plainCtaPara(url: string, discountPercent: number): string {
   return discountPercent > 0
-    ? `<strong><a href="${url}" style="${PLAIN_LINK}">Sign up here</a></strong> and ${discountPercent}% comes off automatically. No code needed.`
-    : `<strong><a href="${url}" style="${PLAIN_LINK}">Sign up here</a></strong>.`;
+    ? `<strong><a href="${url}" style="${PLAIN_LINK}">Sign up here</a></strong>. It takes about two minutes, and your personal invitation rate is already built into the link.`
+    : `<strong><a href="${url}" style="${PLAIN_LINK}">Sign up here</a></strong>. It takes about two minutes.`;
 }
 
 // 2024-roster reunion note: opening keyed to what they actually did in 2024.
@@ -3038,21 +3082,29 @@ export function plainReturningInviteEmail(args: AttendeeReturningArgs) {
   paras.push(
     paid
       ? (inPerson
-        ? `You came to our first conference with Lurie Children's back in 2024. We're doing the second one <strong>August 15-16</strong> in Chicago and I'd love to see you there again.`
-        : `You watched our first conference with Lurie Children's on the live stream in 2024. The second one is <strong>August 15-16</strong>, and the stream is back if you can't make it to Chicago.`)
-      : returning2024 === "attempted"
-      ? `You started signing up for our first conference with Lurie Children's back in 2024. The second one is <strong>August 15-16</strong> in Chicago, and it streams live too.`
-      : `You signed up to hear about our first conference with Lurie Children's back in 2024. The second one is <strong>August 15-16</strong> in Chicago, and it streams live too.`
+        ? `You came to AALB's first conference with Lurie Children's back in 2024. We're doing the second one <strong>August 15-16</strong> in Chicago and I'd love to see you there again.`
+        : `You watched AALB's first conference with Lurie Children's on the live stream in 2024. The second one is <strong>August 15-16</strong>, and the stream is back if you can't make it to Chicago.`)
+      : // Attempted and lead read the same. Neither paid, so "signed up" or
+        // "registered" would overstate: they indicated interest, and that's
+        // the phrase (user-chosen). No checkout talk, no registration-status
+        // talk; nobody wants their payment history recapped in an invitation.
+        `You had indicated your interest in AALB's first conference with Lurie Children's back in 2024, but didn't end up signing up. The second one is <strong>August 15-16</strong> in Chicago, and it streams live too. I'd love to have you with us this time.`
   );
   const note = (inviteMessage || "").trim();
   if (note) paras.push(escapeHtml(note).replace(/\n/g, "<br>"));
+  // The 2024 roster told us their language pair; use it. One sentence tying
+  // the keynote's standards to their actual work, only when we can name a
+  // real pair.
+  const langs = plainLanguagesList(args.primaryLanguages);
+  paras.push(langs ? `${PLAIN_KEYNOTE_PARA} The work those standards protect is the interpreting you do in ${langs}.` : PLAIN_KEYNOTE_PARA);
+  paras.push(plainDetailsPara(args.learnMoreUrl));
   paras.push(plainCtaPara(url, discountPercent));
-  paras.push(PLAIN_KEYNOTE_PARA);
   return plainNoteEmail({
     firstName,
     paras,
-    footerReason: "You're getting this because you signed up around our 2024 conference.",
+    footerReason: "You're getting this because you registered for our 2024 conference.",
     unsubscribeUrl,
+    siteUrl: args.learnMoreUrl,
   });
 }
 
@@ -3063,25 +3115,27 @@ export function plainCommunityInviteEmail(args: AttendeeInviteArgs) {
   const paras: string[] = [];
   paras.push(
     rel === "student"
-      ? `You're in our interpreter training right now, so I wanted to invite you personally: we're holding our conference with Lurie Children's on <strong>August 15-16</strong> in Chicago, and it streams live too.`
+      ? `You're in our interpreter training right now, so I wanted to invite you personally: AALB's conference with Lurie Children's is <strong>August 15-16</strong> in Chicago, and it streams live too.`
       : rel === "former-student"
-      ? `You did our 40-hour interpreter training, so I wanted to invite you personally: we're holding our conference with Lurie Children's on <strong>August 15-16</strong> in Chicago, and it streams live too.`
-      : `You got your certificate with us, so I wanted to invite you personally: we're holding our conference with Lurie Children's on <strong>August 15-16</strong> in Chicago, and it streams live too.`
+      ? `You did our 40-hour interpreter training, so I wanted to invite you personally: AALB's conference with Lurie Children's is <strong>August 15-16</strong> in Chicago, and it streams live too.`
+      : `You got your certificate with us, so I wanted to invite you personally: AALB's conference with Lurie Children's is <strong>August 15-16</strong> in Chicago, and it streams live too.`
   );
   const note = (inviteMessage || "").trim();
   if (note) paras.push(escapeHtml(note).replace(/\n/g, "<br>"));
-  paras.push(plainCtaPara(url, discountPercent));
   paras.push(PLAIN_KEYNOTE_PARA);
   paras.push(
     rel === "alumnus"
-      ? `It's also the easiest place all year to catch up with the people you trained with, and there's over ten hours of CE content.`
-      : `Martti and LanguageLine will have tables there, plus the hospital language access people who do the hiring. Over ten hours of CE content too.`
+      ? `It's also the easiest place all year to catch up with the people you trained with.`
+      : `Martti and LanguageLine will have tables there, plus the hospital language access people who do the hiring.`
   );
+  paras.push(plainDetailsPara(args.learnMoreUrl));
+  paras.push(plainCtaPara(url, discountPercent));
   return plainNoteEmail({
     firstName,
     paras,
     footerReason: "You're getting this because you trained with AALB.",
     unsubscribeUrl,
+    siteUrl: args.learnMoreUrl,
   });
 }
 
@@ -3090,16 +3144,18 @@ export function plainStandardInviteEmail(args: AttendeeInviteArgs) {
   const { firstName, url, discountPercent, inviteMessage, unsubscribeUrl } = args;
   const paras: string[] = [];
   paras.push(
-    `I'd like to invite you to the conference we're putting on with Lurie Children's about language access in American healthcare. It's <strong>August 15-16</strong> in Chicago, and it streams live too.`
+    `I'd like to invite you to the conference Americans Against Language Barriers (AALB) is putting on with Lurie Children's about language access in American healthcare. It's <strong>August 15-16</strong> in Chicago, and it streams live too.`
   );
   const note = (inviteMessage || "").trim();
   if (note) paras.push(escapeHtml(note).replace(/\n/g, "<br>"));
-  paras.push(plainCtaPara(url, discountPercent));
   paras.push(PLAIN_KEYNOTE_PARA);
+  paras.push(plainDetailsPara(args.learnMoreUrl));
+  paras.push(plainCtaPara(url, discountPercent));
   return plainNoteEmail({
     firstName,
     paras,
     footerReason: "You're getting this because we thought this conference might interest you.",
     unsubscribeUrl,
+    siteUrl: args.learnMoreUrl,
   });
 }

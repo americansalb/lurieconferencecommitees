@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { computePrice } from "@/lib/attendees";
+import { computePrice, oneDayInviteBaseCents } from "@/lib/attendees";
 import { createCheckoutSession, isStripeConfigured } from "@/lib/stripe";
 import { appUrl } from "@/lib/presenters";
 import { validateAndApply, normalizeCode, DISCOUNT_ERROR_MESSAGES } from "@/lib/discounts";
@@ -28,8 +28,19 @@ export async function POST(req: Request) {
   }
 
   // Personal-invite discount first; a shared code (if any) stacks on top of
-  // that already-reduced price. All computed server-side.
-  const { baseCents, finalCents: afterPersonal } = computePrice(attendee.attendanceMode, attendee.discountPercent);
+  // that already-reduced price. All computed server-side. A one-day virtual
+  // ticket starts from the one-day base instead of the full virtual rate.
+  const oneDay = attendee.attendanceMode === "virtual" && (attendee.attendDay === "sat" || attendee.attendDay === "sun")
+    ? attendee.attendDay
+    : null;
+  let baseCents: number | null;
+  let afterPersonal: number | null;
+  if (oneDay) {
+    baseCents = oneDayInviteBaseCents();
+    afterPersonal = Math.round(baseCents * (100 - attendee.discountPercent) / 100);
+  } else {
+    ({ baseCents, finalCents: afterPersonal } = computePrice(attendee.attendanceMode, attendee.discountPercent));
+  }
   if (!afterPersonal) {
     return NextResponse.json({ error: "Unable to compute price" }, { status: 400 });
   }
@@ -100,6 +111,8 @@ export async function POST(req: Request) {
   const isInPerson = attendee.attendanceMode === "in-person";
   const productName = isInPerson
     ? "Conference 2026: In-Person Registration"
+    : oneDay
+    ? `Conference 2026: Virtual One-Day Registration, ${oneDay === "sat" ? "Saturday Aug 15" : "Sunday Aug 16"}`
     : "Conference 2026: Virtual Registration";
   const personalNote = attendee.discountPercent > 0
     ? ` ${attendee.discountPercent}% personal-invite discount applied.`
@@ -107,6 +120,8 @@ export async function POST(req: Request) {
   const codeNote = discountCodeText ? ` Code ${discountCodeText} applied.` : "";
   const productDescription = (isInPerson
     ? "Two-day in-person ticket, August 15 and 16, 2026."
+    : oneDay
+    ? `One-day virtual ticket with live streamed sessions, ${oneDay === "sat" ? "Saturday, August 15, 2026" : "Sunday, August 16, 2026"}.`
     : "Two-day virtual ticket with live streamed sessions, August 15 and 16, 2026.") + personalNote + codeNote;
 
   const session = await createCheckoutSession({

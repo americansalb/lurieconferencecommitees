@@ -3,8 +3,7 @@
 import { useState } from "react";
 import {
   Check, ChevronRight, ChevronLeft, MapPin, Monitor, Calendar,
-  Sparkles, Car, Accessibility, Utensils, Loader2, CreditCard, AlertCircle,
-  Tag, X,
+  Sparkles, Loader2, CreditCard, AlertCircle, Tag, X, Pencil,
 } from "lucide-react";
 
 type Pricing = {
@@ -12,6 +11,8 @@ type Pricing = {
   inPersonFinalCents: number;
   virtualBaseCents: number;
   virtualFinalCents: number;
+  oneDayBaseCents: number;
+  oneDayFinalCents: number;
 };
 
 type Initial = {
@@ -22,6 +23,7 @@ type Initial = {
   affiliation: string;
   primaryLanguages: string;
   attendanceMode: string | null;
+  attendDay: string | null;
   needsParking: boolean | null;
   accessibilityNotes: string;
   dietary: string;
@@ -32,7 +34,6 @@ type Initial = {
 };
 
 const TEAL = "#0E5566";
-const TEAL_DARK = "#0A3F4D";
 const BLUE = "#0066B3";
 const GOLD = "#C99A2E";
 
@@ -43,6 +44,11 @@ function dollarsNoCents(cents: number): string {
   return `$${(cents / 100).toFixed(0)}`;
 }
 
+// Two steps to payment, on purpose. The email already made the case; the page
+// only needs the decision (how will you attend) and the payment. Everything
+// that used to gate the pay button — phone, organization, languages, parking,
+// dietary, accessibility — is collected AFTER payment in the attendee portal,
+// where it can't cost a registration.
 export default function AttendeeFunnel({
   token,
   initial,
@@ -53,12 +59,13 @@ export default function AttendeeFunnel({
   initial: Initial;
   pricing: Pricing;
   // Optional starting step. Used only by the dev preview harness to land on
-  // the review step without a live DB; production always starts at 0 (or 3
-  // if already paid).
-  startStep?: 0 | 1 | 2 | 3;
+  // the review step without a live DB; production always starts at 0 (or 1
+  // if already paid, though page.tsx renders the portal for paid attendees).
+  startStep?: 0 | 1;
 }) {
-  const [step, setStep] = useState<0 | 1 | 2 | 3>(startStep ?? (initial.paid ? 3 : 0));
+  const [step, setStep] = useState<0 | 1>(startStep ?? (initial.paid ? 1 : 0));
   const [data, setData] = useState(initial);
+  const [editingName, setEditingName] = useState(false);
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,14 +78,20 @@ export default function AttendeeFunnel({
   const [codeError, setCodeError] = useState<string | null>(null);
   const [applied, setApplied] = useState<{ code: string; label: string; finalCents: number; discountCents: number } | null>(null);
 
-  function update<K extends keyof Initial>(key: K, value: Initial[K]) {
-    setData((prev) => ({ ...prev, [key]: value }));
-    // A code is mode-specific; drop it if the mode changes.
-    if (key === "attendanceMode" && applied) {
-      setApplied(null);
-      setCodeInput("");
-      setCodeError(null);
-    }
+  function clearAppliedCode() {
+    setApplied(null);
+    setCodeInput("");
+    setCodeError(null);
+  }
+
+  function pickMode(mode: "in-person" | "virtual") {
+    setData((prev) => ({ ...prev, attendanceMode: mode, attendDay: null }));
+    if (applied) clearAppliedCode();
+  }
+
+  function pickOneDay(day: "sat" | "sun") {
+    setData((prev) => ({ ...prev, attendanceMode: "virtual", attendDay: day }));
+    if (applied) clearAppliedCode();
   }
 
   async function applyCode() {
@@ -91,7 +104,7 @@ export default function AttendeeFunnel({
       const res = await fetch("/api/discounts/validate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code, attendanceMode: data.attendanceMode, token }),
+        body: JSON.stringify({ code, attendanceMode: data.attendanceMode, attendDay: data.attendDay || undefined, token }),
       });
       const json = await res.json();
       if (json.ok) {
@@ -108,12 +121,6 @@ export default function AttendeeFunnel({
     }
   }
 
-  function clearCode() {
-    setApplied(null);
-    setCodeInput("");
-    setCodeError(null);
-  }
-
   async function persist(): Promise<boolean> {
     setSaving(true);
     setError(null);
@@ -124,13 +131,8 @@ export default function AttendeeFunnel({
         body: JSON.stringify({
           firstName: data.firstName,
           lastName: data.lastName,
-          phone: data.phone || null,
-          affiliation: data.affiliation || null,
-          primaryLanguages: data.primaryLanguages || null,
           attendanceMode: data.attendanceMode,
-          needsParking: data.needsParking,
-          accessibilityNotes: data.accessibilityNotes || null,
-          dietary: data.dietary || null,
+          attendDay: data.attendDay,
         }),
       });
       if (!res.ok) {
@@ -144,11 +146,16 @@ export default function AttendeeFunnel({
     }
   }
 
-  async function checkout() {
+  async function advance() {
     if (!data.attendanceMode) {
       setError("Pick how you'd like to attend first.");
       return;
     }
+    const saved = await persist();
+    if (saved) setStep(1);
+  }
+
+  async function checkout() {
     setSubmitting(true);
     setError(null);
     const saved = await persist();
@@ -173,18 +180,18 @@ export default function AttendeeFunnel({
     }
   }
 
-  async function advance() {
-    const saved = await persist();
-    if (saved) setStep((s) => Math.min(3, (s + 1)) as typeof step);
-  }
-
+  const isOneDay = data.attendanceMode === "virtual" && (data.attendDay === "sat" || data.attendDay === "sun");
   const finalCents = data.attendanceMode === "in-person"
     ? pricing.inPersonFinalCents
+    : isOneDay
+    ? pricing.oneDayFinalCents
     : data.attendanceMode === "virtual"
     ? pricing.virtualFinalCents
     : 0;
   const baseCents = data.attendanceMode === "in-person"
     ? pricing.inPersonBaseCents
+    : isOneDay
+    ? pricing.oneDayBaseCents
     : data.attendanceMode === "virtual"
     ? pricing.virtualBaseCents
     : 0;
@@ -192,6 +199,14 @@ export default function AttendeeFunnel({
   // What the attendee actually pays: personal-invite price, minus a code if
   // one is applied. The server recomputes this authoritatively at checkout.
   const payableCents = applied ? applied.finalCents : finalCents;
+
+  const attendanceLabel = data.attendanceMode === "in-person"
+    ? "In-person"
+    : isOneDay
+    ? `Virtual · ${data.attendDay === "sat" ? "Saturday only" : "Sunday only"}`
+    : data.attendanceMode === "virtual"
+    ? "Virtual, both days"
+    : "Not yet selected";
 
   return (
     <div className="min-h-screen" style={{ background: `linear-gradient(135deg, #f7f3ea 0%, #ffffff 60%, #f0f6f7 100%)` }}>
@@ -203,19 +218,19 @@ export default function AttendeeFunnel({
             <Sparkles className="w-3 h-3" /> 2026 Conference Invitation
           </div>
           <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-900 leading-tight tracking-tight">
-            Lurie Children&rsquo;s &amp; AALB Conference
+            AALB &amp; Lurie Children&rsquo;s Conference
           </h1>
           <p className="text-sm sm:text-base text-slate-500 mt-2">
             True Language Access: Yesterday, Today, and Tomorrow
           </p>
           <p className="text-xs text-slate-400 mt-2 inline-flex items-center gap-1.5">
-            <Calendar className="w-3 h-3" /> August 15 &amp; 16, 2026 &middot; Chicago
+            <Calendar className="w-3 h-3" /> August 15 &amp; 16, 2026 &middot; Chicago &amp; live online
           </p>
         </div>
 
-        {/* Progress */}
+        {/* Progress: two steps, pick then pay. */}
         <div className="flex items-center justify-center gap-2 mb-6">
-          {[0, 1, 2, 3].map((i) => (
+          {[0, 1].map((i) => (
             <div
               key={i}
               className="h-1.5 rounded-full transition-all"
@@ -231,99 +246,64 @@ export default function AttendeeFunnel({
         <div className="bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden">
           <div className="h-1.5" style={{ background: `linear-gradient(to right, ${TEAL} 0%, ${TEAL} 50%, ${BLUE} 50%, ${BLUE} 100%)` }} />
 
-          {/* Step 0: Welcome */}
+          {/* Step 0: choose how to attend */}
           {step === 0 && (
             <div className="p-6 sm:p-8">
-              <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 mb-3">
-                Welcome, {data.firstName}.
+              <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 mb-2">
+                Welcome, {data.firstName}. Save your seat.
               </h2>
-              <p className="text-sm sm:text-base text-slate-700 leading-relaxed">
-                The conference is dedicated to language access in healthcare:
-                two days of sessions on current practice and what is shifting
-                in standards, technology, and policy. Held in person at Ann
-                &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago,
-                with full virtual attendance also available.
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Two days on language access in healthcare at Lurie Children&rsquo;s in Chicago, streamed
+                live everywhere, with 10+ CEU hours (will be accredited by NBCMI and CCHI).
+                {data.discountPercent > 0 && (
+                  <> Your personal <strong style={{ color: TEAL }}>{data.discountPercent}% discount</strong> is already applied to every price below.</>
+                )}
               </p>
 
               {data.inviteMessage && (
-                <div className="mt-5 px-4 py-3 rounded-lg border-l-4 text-sm text-slate-700 leading-relaxed"
+                <div className="mt-4 px-4 py-3 rounded-lg border-l-4 text-sm text-slate-700 leading-relaxed"
                   style={{ background: "#f8fafc", borderColor: BLUE }}>
                   {data.inviteMessage}
                 </div>
               )}
 
-              <ul className="mt-6 space-y-2.5 text-sm text-slate-700">
-                {[
-                  "10+ hours of continuing education credit, submitted through CCHI, NBCMI, RID, and ATA",
-                  "Attend in person in Chicago or fully online from anywhere",
-                ].map((item) => (
-                  <li key={item} className="flex items-start gap-2">
-                    <Check className="w-4 h-4 mt-0.5 shrink-0" style={{ color: TEAL }} />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <div className="mt-6 rounded-lg p-4 bg-white"
-                style={{ border: `1px solid #e2e8f0`, borderLeftWidth: 3, borderLeftColor: TEAL }}>
-                <div className="text-[10px] font-bold tracking-widest uppercase" style={{ color: TEAL }}>
-                  {data.discountPercent}% off &middot; your personal rate
-                </div>
-                <div className="mt-2 grid grid-cols-2 gap-3">
-                  <div>
-                    <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">In-person</div>
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="text-xl font-bold text-slate-900">{dollars(pricing.inPersonFinalCents)}</span>
-                      {data.discountPercent > 0 && <span className="text-xs text-slate-400 line-through">{dollarsNoCents(pricing.inPersonBaseCents)}</span>}
-                    </div>
+              {/* Who's registering: prefilled, editable without retyping. */}
+              <div className="mt-5 flex items-center justify-between gap-3 rounded-lg px-4 py-3 bg-slate-50 border border-slate-200">
+                {editingName ? (
+                  <div className="grid grid-cols-2 gap-2 flex-1">
+                    <input
+                      value={data.firstName}
+                      onChange={(e) => setData((p) => ({ ...p, firstName: e.target.value }))}
+                      placeholder="First name"
+                      className="px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-teal-500 bg-white"
+                    />
+                    <input
+                      value={data.lastName}
+                      onChange={(e) => setData((p) => ({ ...p, lastName: e.target.value }))}
+                      placeholder="Last name"
+                      className="px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-teal-500 bg-white"
+                    />
                   </div>
-                  <div>
-                    <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Virtual</div>
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="text-xl font-bold text-slate-900">{dollars(pricing.virtualFinalCents)}</span>
-                      {data.discountPercent > 0 && <span className="text-xs text-slate-400 line-through">{dollarsNoCents(pricing.virtualBaseCents)}</span>}
-                    </div>
+                ) : (
+                  <div className="text-sm text-slate-700 min-w-0">
+                    <span className="font-semibold">{data.firstName} {data.lastName}</span>
+                    <span className="text-slate-400"> &middot; {data.email}</span>
                   </div>
-                </div>
-                <div className="text-xs text-slate-500 mt-2.5">
-                  Your invitation rate, applied automatically at checkout for either option.
-                </div>
-              </div>
-
-              <div className="mt-6 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-end">
+                )}
                 <button
-                  onClick={() => setStep(1)}
-                  className="w-full sm:w-auto px-6 py-3 rounded-xl font-bold text-white shadow-md transition-all hover:shadow-lg"
-                  style={{ background: TEAL }}
+                  onClick={() => setEditingName((v) => !v)}
+                  className="text-xs font-semibold shrink-0 inline-flex items-center gap-1 text-slate-500 hover:text-slate-700"
                 >
-                  Continue
-                  <ChevronRight className="w-4 h-4 inline ml-1 -mt-0.5" />
+                  {editingName ? <><Check className="w-3.5 h-3.5" /> Done</> : <><Pencil className="w-3 h-3" /> Edit</>}
                 </button>
               </div>
-            </div>
-          )}
 
-          {/* Step 1: Contact + attendance mode */}
-          {step === 1 && (
-            <div className="p-6 sm:p-8">
-              <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 mb-1">Your details</h2>
-              <p className="text-sm text-slate-500 mb-5">We&rsquo;ve pre-filled what we have. Please correct anything that&rsquo;s wrong.</p>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Field label="First name" value={data.firstName} onChange={(v) => update("firstName", v)} required />
-                <Field label="Last name" value={data.lastName} onChange={(v) => update("lastName", v)} required />
-                <Field label="Email" value={data.email} disabled className="sm:col-span-2" />
-                <Field label="Phone" value={data.phone} onChange={(v) => update("phone", v)} placeholder="(555) 555-1212" />
-                <Field label="Organization" value={data.affiliation} onChange={(v) => update("affiliation", v)} placeholder="Optional" />
-                <Field label="Working language(s)" value={data.primaryLanguages} onChange={(v) => update("primaryLanguages", v)} placeholder="e.g. English, Spanish, ASL" className="sm:col-span-2" />
-              </div>
-
-              <div className="mt-7">
+              <div className="mt-6">
                 <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">How will you attend?</div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <ModeCard
                     selected={data.attendanceMode === "in-person"}
-                    onClick={() => update("attendanceMode", "in-person")}
+                    onClick={() => pickMode("in-person")}
                     icon={MapPin}
                     title="In-person"
                     subtitle="On site at Lurie Children's, Chicago"
@@ -331,76 +311,63 @@ export default function AttendeeFunnel({
                     badgeOriginal={data.discountPercent > 0 ? dollarsNoCents(pricing.inPersonBaseCents) : undefined}
                   />
                   <ModeCard
-                    selected={data.attendanceMode === "virtual"}
-                    onClick={() => update("attendanceMode", "virtual")}
+                    selected={data.attendanceMode === "virtual" && !isOneDay}
+                    onClick={() => pickMode("virtual")}
                     icon={Monitor}
-                    title="Virtual"
+                    title="Virtual, both days"
                     subtitle="Live stream all sessions"
                     badge={dollars(pricing.virtualFinalCents)}
                     badgeOriginal={data.discountPercent > 0 ? dollarsNoCents(pricing.virtualBaseCents) : undefined}
                   />
                 </div>
+
+                {/* One-day virtual: the cheapest yes. The invite emails mention
+                    it, so it must exist here, not only on the public page. */}
+                <div
+                  className="mt-3 rounded-xl border-2 p-4 transition-all"
+                  style={{
+                    borderColor: isOneDay ? TEAL : "#e2e8f0",
+                    background: isOneDay ? TEAL + "08" : "#fff",
+                  }}
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="font-bold text-slate-900 text-sm flex items-center gap-1.5">
+                        Virtual, one day only
+                        {isOneDay && <Check className="w-3.5 h-3.5" style={{ color: TEAL }} />}
+                      </div>
+                      <div className="text-xs text-slate-500 mt-0.5">Can&rsquo;t do both days? Join the stream for one.</div>
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-sm font-extrabold text-slate-900">{dollars(pricing.oneDayFinalCents)}</span>
+                      {data.discountPercent > 0 && <span className="text-xs text-slate-400 line-through">{dollarsNoCents(pricing.oneDayBaseCents)}</span>}
+                    </div>
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <DayButton label="Saturday, Aug 15" selected={data.attendDay === "sat"} onClick={() => pickOneDay("sat")} />
+                    <DayButton label="Sunday, Aug 16" selected={data.attendDay === "sun"} onClick={() => pickOneDay("sun")} />
+                  </div>
+                </div>
               </div>
 
               {error && <ErrorBanner msg={error} />}
-              <StepNav onBack={() => setStep(0)} onNext={advance} saving={saving} disabled={!data.attendanceMode} />
+
+              <button
+                onClick={advance}
+                disabled={saving || !data.attendanceMode}
+                className="mt-6 w-full px-6 py-4 rounded-xl font-bold text-white shadow-lg transition-all hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+                style={{ background: TEAL }}
+              >
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Continue to payment <ChevronRight className="w-4 h-4" /></>}
+              </button>
+              <p className="text-[11px] text-slate-400 text-center mt-3">
+                One more screen: review your total, then pay securely via Stripe.
+              </p>
             </div>
           )}
 
-          {/* Step 2: Logistics */}
-          {step === 2 && (
-            <div className="p-6 sm:p-8">
-              <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 mb-1">Almost there</h2>
-              <p className="text-sm text-slate-500 mb-5">Help us set up the right experience for you.</p>
-
-              {data.attendanceMode === "in-person" && (
-                <div className="mb-5">
-                  <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                    <Car className="w-3.5 h-3.5" /> Parking at Lurie Children&rsquo;s
-                  </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    <YesNoMaybe label="Yes" selected={data.needsParking === true} onClick={() => update("needsParking", true)} />
-                    <YesNoMaybe label="No" selected={data.needsParking === false} onClick={() => update("needsParking", false)} />
-                    <YesNoMaybe label="Not sure" selected={data.needsParking === null} onClick={() => update("needsParking", null)} />
-                  </div>
-                </div>
-              )}
-
-              <div className="mb-5">
-                <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                  <Accessibility className="w-3.5 h-3.5" /> Accessibility accommodations
-                </div>
-                <textarea
-                  value={data.accessibilityNotes}
-                  onChange={(e) => update("accessibilityNotes", e.target.value)}
-                  placeholder="ASL interpreter, CART, DeafBlind support, wheelchair access, sensory-friendly space, anything else we should know."
-                  rows={3}
-                  className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-lg outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10"
-                />
-              </div>
-
-              {data.attendanceMode === "in-person" && (
-                <div className="mb-5">
-                  <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                    <Utensils className="w-3.5 h-3.5" /> Dietary preferences
-                  </div>
-                  <textarea
-                    value={data.dietary}
-                    onChange={(e) => update("dietary", e.target.value)}
-                    placeholder="Vegetarian, vegan, gluten-free, allergies…"
-                    rows={2}
-                    className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-lg outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10"
-                  />
-                </div>
-              )}
-
-              {error && <ErrorBanner msg={error} />}
-              <StepNav onBack={() => setStep(1)} onNext={advance} saving={saving} />
-            </div>
-          )}
-
-          {/* Step 3: Review + pay */}
-          {step === 3 && (
+          {/* Step 1: review + pay */}
+          {step === 1 && (
             <div className="p-6 sm:p-8">
               {data.paid ? (
                 <div className="text-center py-6">
@@ -419,22 +386,13 @@ export default function AttendeeFunnel({
                   <div className="rounded-xl border border-slate-200 overflow-hidden mb-4">
                     <SummaryRow label="Name" value={`${data.firstName} ${data.lastName}`} />
                     <SummaryRow label="Email" value={data.email} />
-                    <SummaryRow
-                      label="Attendance"
-                      value={data.attendanceMode === "in-person" ? "In-person" : data.attendanceMode === "virtual" ? "Virtual" : "Not yet selected"}
-                    />
-                    {data.attendanceMode === "in-person" && (
-                      <SummaryRow label="Parking" value={
-                        data.needsParking === true ? "Yes, please" :
-                        data.needsParking === false ? "Not needed" : "Will figure out"
-                      } />
-                    )}
+                    <SummaryRow label="Attendance" value={attendanceLabel} />
                   </div>
 
                   <div className="rounded-xl p-4 mb-4" style={{ background: TEAL + "08", border: `1px solid ${TEAL}22` }}>
                     <div className="flex items-baseline justify-between">
                       <span className="text-sm text-slate-600">
-                        {data.attendanceMode === "in-person" ? "In-person standard" : "Virtual standard"}
+                        {data.attendanceMode === "in-person" ? "In-person standard" : isOneDay ? "Virtual one-day standard" : "Virtual standard"}
                       </span>
                       <span className="text-sm text-slate-500">{dollarsNoCents(baseCents)}</span>
                     </div>
@@ -471,7 +429,7 @@ export default function AttendeeFunnel({
                           <div className="text-[13px] font-bold text-emerald-800">Code {applied.code} applied</div>
                           <div className="text-[12px] text-emerald-700">You save {dollars(applied.discountCents)}.</div>
                         </div>
-                        <button onClick={clearCode} className="inline-flex items-center gap-1 text-[12px] font-semibold text-slate-500 hover:text-slate-700 shrink-0">
+                        <button onClick={clearAppliedCode} className="inline-flex items-center gap-1 text-[12px] font-semibold text-slate-500 hover:text-slate-700 shrink-0">
                           <X className="w-3.5 h-3.5" /> Remove
                         </button>
                       </div>
@@ -484,7 +442,7 @@ export default function AttendeeFunnel({
                               value={codeInput}
                               onChange={(e) => { setCodeInput(e.target.value.toUpperCase()); setCodeError(null); }}
                               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); applyCode(); } }}
-                              placeholder="Discount code"
+                              placeholder="Discount code (optional)"
                               autoCapitalize="characters"
                               className={`w-full pl-9 pr-3 py-2.5 text-sm font-semibold tracking-wide border rounded-lg outline-none transition-colors ${
                                 codeError ? "border-rose-300 focus:border-rose-400 focus:ring-2 focus:ring-rose-500/10" : "border-slate-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10"
@@ -520,10 +478,10 @@ export default function AttendeeFunnel({
                     )}
                   </button>
                   <p className="text-[11px] text-slate-400 text-center mt-3">
-                    Payment processed by Stripe. We never see or store your card details.
+                    Payment processed by Stripe. We never see or store your card details. Refundable through July 15.
                   </p>
                   <div className="mt-4 text-center">
-                    <button onClick={() => setStep(2)} className="text-xs font-semibold text-slate-500 hover:text-slate-700 inline-flex items-center gap-1">
+                    <button onClick={() => setStep(0)} className="text-xs font-semibold text-slate-500 hover:text-slate-700 inline-flex items-center gap-1">
                       <ChevronLeft className="w-3 h-3" /> Back
                     </button>
                   </div>
@@ -538,37 +496,6 @@ export default function AttendeeFunnel({
         </p>
       </div>
     </div>
-  );
-}
-
-function Field({
-  label, value, onChange, placeholder, required, disabled, className,
-}: {
-  label: string;
-  value: string;
-  onChange?: (v: string) => void;
-  placeholder?: string;
-  required?: boolean;
-  disabled?: boolean;
-  className?: string;
-}) {
-  return (
-    <label className={`block ${className || ""}`}>
-      <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
-        {label}{required && <span className="text-rose-500"> *</span>}
-      </span>
-      <input
-        value={value}
-        onChange={onChange ? (e) => onChange(e.target.value) : undefined}
-        placeholder={placeholder}
-        disabled={disabled}
-        className={`mt-1 w-full px-3 py-2.5 text-sm border rounded-lg outline-none transition-colors ${
-          disabled
-            ? "bg-slate-50 text-slate-500 border-slate-200"
-            : "border-slate-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10"
-        }`}
-      />
-    </label>
   );
 }
 
@@ -615,7 +542,7 @@ function ModeCard({
   );
 }
 
-function YesNoMaybe({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) {
+function DayButton({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
@@ -638,31 +565,6 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
     <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 last:border-0">
       <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{label}</span>
       <span className="text-sm font-medium text-slate-900">{value}</span>
-    </div>
-  );
-}
-
-function StepNav({
-  onBack, onNext, saving, disabled,
-}: {
-  onBack: () => void;
-  onNext: () => void;
-  saving: boolean;
-  disabled?: boolean;
-}) {
-  return (
-    <div className="mt-6 flex items-center justify-between">
-      <button onClick={onBack} className="text-sm font-semibold text-slate-500 hover:text-slate-700 inline-flex items-center gap-1">
-        <ChevronLeft className="w-4 h-4" /> Back
-      </button>
-      <button
-        onClick={onNext}
-        disabled={saving || disabled}
-        className="px-5 py-2.5 rounded-xl font-bold text-white shadow-md transition-all hover:shadow-lg disabled:opacity-50 inline-flex items-center gap-1.5"
-        style={{ background: TEAL }}
-      >
-        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Continue <ChevronRight className="w-4 h-4" /></>}
-      </button>
     </div>
   );
 }

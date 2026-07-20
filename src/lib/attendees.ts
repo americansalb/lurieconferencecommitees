@@ -3,6 +3,7 @@ import { appUrl } from "./presenters";
 import { plainStandardInviteEmail, plainCommunityInviteEmail, plainReturningInviteEmail } from "./mail-templates";
 import { firstNameToCode } from "./codes";
 import { pickAlumniSubject, pickReturningSubject, pickStudentSubject } from "./subject-variants";
+import { ONE_DAY_MULTIPLIER } from "@/components/landing/pricing-data";
 
 export type AttendeeTemplate = "standard" | "alumni" | "student" | "former-student" | "returning";
 export const ATTENDEE_TEMPLATES: { id: AttendeeTemplate; label: string; description: string }[] = [
@@ -39,6 +40,7 @@ export function buildAttendeeInvite(opts: {
       : "standard";
   const inPerson = computePrice("in-person", opts.discountPercent);
   const virtual = computePrice("virtual", opts.discountPercent);
+  const oneDayBase = oneDayInviteBaseCents();
   const relationship = GOLD_TEMPLATES[template];
   const common = {
     firstName: opts.firstName,
@@ -49,6 +51,8 @@ export function buildAttendeeInvite(opts: {
     inPersonDiscountedCents: inPerson.finalCents || 0,
     virtualOriginalCents: virtual.baseCents || 0,
     virtualDiscountedCents: virtual.finalCents || 0,
+    oneDayOriginalCents: oneDayBase,
+    oneDayDiscountedCents: Math.round(oneDayBase * (100 - opts.discountPercent) / 100),
     personalCode: firstNameToCode(opts.firstName),
     mainSiteUrl: `${appUrl()}/register`,
     // Used by the engraved letters (ignored by the standard invite).
@@ -102,7 +106,7 @@ export function buildAttendeeInvite(opts: {
     subject = picked.subject;
     subjectVariant = picked.id;
   } else {
-    subject = `${opts.firstName}, the Joint Commission is keynoting on language access this August`;
+    subject = `You're invited: the 2026 AALB & Lurie Children's Conference, Aug 15-16`;
   }
   return { subject, html, template, subjectVariant };
 }
@@ -110,9 +114,13 @@ export function buildAttendeeInvite(opts: {
 // "Personalized" envelope for attendee invitations. The display name appears
 // in the recipient's inbox; the actual sending address stays on the
 // Resend-verified domain so deliverability isn't affected. Replies route to
-// ATTENDEE_REPLY_TO (default: Iris's address derived from ATTENDEE_REPLY_TO
-// env, or whatever MAIL_REPLY_TO is set to).
-export const ATTENDEE_FROM_NAME_DEFAULT = "Iris Laffitte, AALB Operations Manager";
+// ATTENDEE_REPLY_TO (or MAIL_REPLY_TO, or contact@).
+//
+// Kevin is the sender: the 2024 roster and the AALB community know Kevin,
+// and most predate Iris joining, so her name in the inbox reads as a
+// stranger. The plain notes derive their signature from this same name
+// (via ATTENDEE_FROM_NAME), so From and sign-off always match.
+export const ATTENDEE_FROM_NAME_DEFAULT = "Kevin Thakkar, Founder & Executive Director";
 
 function extractAddress(s: string): string {
   const angle = s.match(/<([^>]+)>/);
@@ -182,6 +190,13 @@ export const PRICING = {
     standardCents: 10500,
   },
 };
+
+// Invited attendees hold the Standard tier even after public pricing steps
+// up (their emails quoted those numbers), so their one-day virtual ticket is
+// derived from the Standard virtual rate too — not from today's public tier.
+export function oneDayInviteBaseCents(): number {
+  return Math.round((PRICING.virtual.standardCents * ONE_DAY_MULTIPLIER) / 100) * 100;
+}
 
 export function computePrice(mode: string | null | undefined, discountPercent: number) {
   if (mode === "in-person") {
