@@ -3168,7 +3168,9 @@ export function plainCmiInviteEmail(args: AttendeeInviteArgs) {
   const { firstName, url, discountPercent, inviteMessage, unsubscribeUrl } = args;
   const paras: string[] = [];
   paras.push(
-    `You hold the CMI credential, so I wanted to invite you to the conference Americans Against Language Barriers (AALB) is putting on with Lurie Children's about language access in American healthcare. It's <strong>August 15-16</strong> in Chicago, and it streams live too.`
+    // The registry export is a snapshot, so don't assert the credential is
+    // current: "you've been certified" stays true even if it lapsed.
+    `You've been certified as a medical interpreter through NBCMI, so I wanted to invite you to the conference Americans Against Language Barriers (AALB) is putting on with Lurie Children's about language access in American healthcare. It's <strong>August 15-16</strong> in Chicago, and it streams live too.`
   );
   const note = (inviteMessage || "").trim();
   if (note) paras.push(escapeHtml(note).replace(/\n/g, "<br>"));
