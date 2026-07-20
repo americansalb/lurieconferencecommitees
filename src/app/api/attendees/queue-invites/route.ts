@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { buildAttendeeInvite } from "@/lib/attendees";
-import { ensureFirstNameCode } from "@/lib/discounts";
+import { ensureFirstNameCode, ensureCampaignCode, CMI_SHARED_CODE } from "@/lib/discounts";
 import { getPolicy, planSendTimes } from "@/lib/email-queue";
 
 function isAdmin(role?: string) {
@@ -56,6 +56,8 @@ export async function POST(req: Request) {
     if (!key || seenNames.has(key)) continue;
     seenNames.add(key);
     await ensureFirstNameCode(t.firstName, t.discountPercent, adminEmail).catch(() => {});
+    // The NBCMI cohort's note also advertises the shared campaign code.
+    if (t.inviteTemplate === "cmi") await ensureCampaignCode(CMI_SHARED_CODE, t.discountPercent, "NBCMI registry outreach (auto-created)", adminEmail).catch(() => {});
   }
 
   const policy = await getPolicy();

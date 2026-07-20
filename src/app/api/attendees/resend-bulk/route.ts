@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { buildAttendeeInvite } from "@/lib/attendees";
-import { ensureFirstNameCode } from "@/lib/discounts";
+import { ensureFirstNameCode, ensureCampaignCode, CMI_SHARED_CODE } from "@/lib/discounts";
 import { getPolicy, planSendTimes } from "@/lib/email-queue";
 
 function isAdmin(role?: string) {
@@ -79,6 +79,8 @@ export async function POST(req: Request) {
       data: { status: "cancelled" },
     }).catch(() => {});
     await ensureFirstNameCode(a.firstName, a.discountPercent, adminEmail).catch(() => {});
+    // The NBCMI cohort's note also advertises the shared campaign code.
+    if (a.inviteTemplate === "cmi") await ensureCampaignCode(CMI_SHARED_CODE, a.discountPercent, "NBCMI registry outreach (auto-created)", adminEmail).catch(() => {});
     const { subject, html } = buildAttendeeInvite({
       firstName: a.firstName,
       inviteToken: a.inviteToken,

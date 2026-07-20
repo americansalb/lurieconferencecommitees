@@ -31,6 +31,35 @@ export async function ensureFirstNameCode(
   return code;
 }
 
+// Shared campaign code for the NBCMI registry outreach: one memorable code
+// for the whole cohort ("CertifiedNBCMI"), stored uppercase so the funnel's
+// normalize (trim + uppercase) resolves however they type it.
+export const CMI_SHARED_CODE = "CERTIFIEDNBCMI";
+export const CMI_SHARED_CODE_DISPLAY = "CertifiedNBCMI";
+
+export async function ensureCampaignCode(
+  code: string,
+  percent: number,
+  description: string,
+  createdByEmail?: string | null,
+): Promise<void> {
+  const pct = Math.round(percent);
+  if (!code || pct <= 0) return;
+  await prisma.discountCode.upsert({
+    where: { code },
+    create: {
+      code,
+      description,
+      kind: "percent",
+      inPersonValue: Math.min(100, pct),
+      virtualValue: Math.min(100, pct),
+      active: true,
+      createdByEmail: createdByEmail || null,
+    },
+    update: {}, // an existing campaign code is left untouched
+  });
+}
+
 // Server-side discount logic. The price is ALWAYS computed here from the
 // stored code; the client only ever sends the code string, never an amount.
 //

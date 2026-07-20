@@ -3176,11 +3176,17 @@ export function plainCmiInviteEmail(args: AttendeeInviteArgs) {
   if (note) paras.push(escapeHtml(note).replace(/\n/g, "<br>"));
   paras.push(PLAIN_KEYNOTE_PARA);
   paras.push(plainDetailsPara(args.learnMoreUrl));
-  paras.push(plainCtaPara(url, discountPercent));
+  // The cohort shares one memorable code (created at queue time via
+  // ensureCampaignCode) alongside the personal link.
+  paras.push(
+    discountPercent > 0
+      ? `<strong><a href="${url}" style="${PLAIN_LINK}">Sign up here</a></strong>. It takes about two minutes, and your ${discountPercent}% comes off automatically. If you'd rather register from the main site, the code <strong>CertifiedNBCMI</strong> takes the same ${discountPercent}% off.`
+      : `<strong><a href="${url}" style="${PLAIN_LINK}">Sign up here</a></strong>. It takes about two minutes.`
+  );
   return plainNoteEmail({
     firstName,
     paras,
-    footerReason: "You're getting this because you're listed on the National Board of Certification for Medical Interpreters public registry.",
+    footerReason: "You're getting this because you were listed on the National Board of Certification for Medical Interpreters public registry.",
     unsubscribeUrl,
     siteUrl: args.learnMoreUrl,
   });
