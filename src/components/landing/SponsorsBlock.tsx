@@ -133,28 +133,26 @@ function PartnerLogo({ partner }: { partner: { name: string; logo: string; role?
   // a broken image, so a confirmed exhibitor can be listed before their art
   // lands.
   const [logoFailed, setLogoFailed] = useState(false);
-  // Every width here yields to the viewport (max-w-full + min() floors):
-  // wide logos like the 5:1 Multilingual Connections SVG otherwise push the
-  // card past a phone's edges and the gold frame disappears off-screen.
+  // Every card is the SAME fixed size (yielding to the viewport on narrow
+  // phones), and each logo scales to fit an identical box via object-contain,
+  // so no logo's shape can change its card. Content-sized cards made the
+  // strip read as a jumble of mismatched tiles.
   const inner = (
     <div
-      className="rounded-[22px] p-[1.5px] max-w-full"
+      className="rounded-[22px] p-[1.5px] w-[320px] max-w-full"
       style={{
         background: `linear-gradient(135deg, ${TOKENS.gold} 0%, ${TOKENS.goldSoft} 48%, ${TOKENS.gold} 100%)`,
         boxShadow: "0 22px 48px -24px rgba(201,161,75,0.42), 0 4px 14px -8px rgba(11,31,37,0.14)",
       }}
     >
-      <div
-        className="bg-white rounded-[20px] flex flex-col items-center justify-center px-6 sm:px-12 py-7 sm:py-9 max-w-full"
-        style={{ minWidth: "min(300px, 100%)" }}
-      >
+      <div className="bg-white rounded-[20px] flex flex-col items-center justify-center px-8 py-8 sm:py-9 w-full">
         {logoFailed ? (
-          <div className="h-16 sm:h-[78px] flex items-center text-2xl sm:text-[28px] font-extrabold tracking-tight text-center" style={{ color: TOKENS.ink }}>
+          <div className="h-16 sm:h-[72px] flex items-center text-xl sm:text-2xl font-extrabold tracking-tight text-center" style={{ color: TOKENS.ink }}>
             {partner.name}
           </div>
         ) : (
           /* eslint-disable-next-line @next/next/no-img-element */
-          <img src={partner.logo} alt={partner.name} onError={() => setLogoFailed(true)} className="h-16 sm:h-[78px] w-auto max-w-[min(340px,100%)] object-contain" />
+          <img src={partner.logo} alt={partner.name} onError={() => setLogoFailed(true)} className="h-16 sm:h-[72px] w-full object-contain" />
         )}
         {partner.role && (
           <>
