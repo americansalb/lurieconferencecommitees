@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { buildAttendeeInvite } from "@/lib/attendees";
-import { ensureFirstNameCode, ensureCampaignCode, CMI_SHARED_CODE } from "@/lib/discounts";
+import { ensureFirstNameCode, ensureCampaignCode, CMI_SHARED_CODE, ensureStandingCampaignCodes } from "@/lib/discounts";
 import { getPolicy, planSendTimes } from "@/lib/email-queue";
 
 function isAdmin(role?: string) {
@@ -22,6 +22,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const adminEmail = session?.user?.email || null;
+  await ensureStandingCampaignCodes().catch(() => {});
+
   const body = await req.json().catch(() => ({}));
   const ids = Array.isArray(body?.ids)
     ? (body.ids as unknown[]).filter((x): x is string => typeof x === "string")

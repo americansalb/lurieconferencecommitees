@@ -60,6 +60,20 @@ export async function ensureCampaignCode(
   });
 }
 
+// Standing campaign codes that must always exist: they are printed on
+// graphics and social posts, where "code not found" at checkout is a public
+// embarrassment. Ensured (idempotently) from the queue routes and the admin
+// queue poll, so they exist moments after any deploy is touched.
+const STANDING_CAMPAIGN_CODES: { code: string; percent: number; description: string }[] = [
+  { code: "CCHIAALB", percent: 25, description: "Meet the Speakers graphic / social campaign (auto-created)" },
+];
+
+export async function ensureStandingCampaignCodes(createdByEmail?: string | null): Promise<void> {
+  for (const c of STANDING_CAMPAIGN_CODES) {
+    await ensureCampaignCode(c.code, c.percent, c.description, createdByEmail).catch(() => {});
+  }
+}
+
 // Server-side discount logic. The price is ALWAYS computed here from the
 // stored code; the client only ever sends the code string, never an amount.
 //

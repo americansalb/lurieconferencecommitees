@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ensureStandingCampaignCodes } from "@/lib/discounts";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -15,6 +16,8 @@ export async function POST() {
   if (role !== "admin" && role !== "developer") {
     return NextResponse.json({ error: "Admins only" }, { status: 403 });
   }
+
+  await ensureStandingCampaignCodes().catch(() => {});
 
   const rows = await prisma.emailQueue.findMany({
     where: { recipientType: "attendee", status: "pending" },

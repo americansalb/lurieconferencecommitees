@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ensureStandingCampaignCodes } from "@/lib/discounts";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -15,6 +16,9 @@ function isEmail(s: string): boolean {
 }
 
 export async function GET() {
+  // Codes printed on public graphics must always resolve; this poll runs
+  // whenever the dashboard is open, so it's a reliable idempotent hook.
+  await ensureStandingCampaignCodes().catch(() => {});
   const session = await getServerSession(authOptions);
   if (!isAdmin((session?.user as { role?: string })?.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
