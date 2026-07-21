@@ -3180,12 +3180,14 @@ export function plainCmiInviteEmail(args: AttendeeInviteArgs) {
   // Their code is their own first name (ensureFirstNameCode creates it at
   // queue time): a branded campaign code reads as a mass blast, a name reads
   // as an invitation. Shown in normal casing; checkout normalizes.
-  const cmiSite = (args.learnMoreUrl || "https://conference.aalb.org").replace(/\/$/, "");
-  paras.push(
-    discountPercent > 0
-      ? `<strong><a href="${url}" style="${PLAIN_LINK}">Sign up here</a></strong> and your ${discountPercent}% comes off automatically, or learn more first at <a href="${cmiSite}" style="${PLAIN_LINK}">conference.aalb.org</a>. If you register from the main site, just use your name (${escapeHtml((firstName || "").trim())}) as your code.`
-      : `<strong><a href="${url}" style="${PLAIN_LINK}">Sign up here</a></strong>, or learn more first at <a href="${cmiSite}" style="${PLAIN_LINK}">conference.aalb.org</a>.`
-  );
+  // One link per job: the details paragraph above already carries the
+  // look-around link, so the CTA is just the sign-up link, and the personal
+  // part (their name as the code) gets its own short line where it can't be
+  // missed.
+  paras.push(`<strong><a href="${url}" style="${PLAIN_LINK}">Sign up here</a></strong>${discountPercent > 0 ? ` and your ${discountPercent}% comes off automatically` : ""}.`);
+  if (discountPercent > 0) {
+    paras.push(`Your code is just your name, <strong>${escapeHtml((firstName || "").trim())}</strong>, if you register from the main site instead.`);
+  }
   return plainNoteEmail({
     firstName,
     paras,
