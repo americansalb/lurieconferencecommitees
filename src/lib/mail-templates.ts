@@ -3186,7 +3186,7 @@ export function plainCmiInviteEmail(args: AttendeeInviteArgs) {
   // missed.
   paras.push(`<strong><a href="${url}" style="${PLAIN_LINK}">Sign up here</a></strong>${discountPercent > 0 ? ` and your ${discountPercent}% comes off automatically` : ""}.`);
   if (discountPercent > 0) {
-    paras.push(`Your code is just your name, <strong>${escapeHtml((firstName || "").trim())}</strong>, if you register from the main site instead.`);
+    paras.push(`Your discount code is just your name, <strong>${escapeHtml((firstName || "").trim())}</strong>, if you register from the main site instead.`);
   }
   return plainNoteEmail({
     firstName,
