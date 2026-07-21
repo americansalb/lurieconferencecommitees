@@ -89,9 +89,14 @@ export default function SpeakerCard({ speaker, accent }: { speaker: Speaker; acc
             {s.org}
           </div>
 
-          <p className="hidden sm:block mt-4 text-[14px] leading-relaxed line-clamp-3" style={{ color: TOKENS.inkSoft }}>
-            {s.bio}
-          </p>
+          {/* The visibility class lives on a wrapper: sm:block on the <p>
+              itself would override the -webkit-box display that line-clamp
+              needs, un-clamping every bio. */}
+          <div className="hidden sm:block">
+            <p className="mt-4 text-[14px] leading-relaxed line-clamp-3" style={{ color: TOKENS.inkSoft }}>
+              {s.bio}
+            </p>
+          </div>
 
           {/* On phones the button is the only path to the talk and bio, so it
               always shows there; on desktop only when the bio is clamped. */}
