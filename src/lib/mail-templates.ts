@@ -3029,6 +3029,7 @@ function plainNoteEmail({
     ${paras.map((x) => p(x)).join("\n    ")}
     ${p(`If you have any questions, just reply to this email.`)}
     ${p(`${signerFirst}<br><span style="font-size:12.5px;color:#6B7280;">${signerFull}${signerTitle ? `<br>${signerTitle}` : ""}<br>Americans Against Language Barriers<br><a href="${site}" style="color:#6B7280;">conference.aalb.org</a></span>`)}
+    ${p(`P.S. Registering takes about two minutes.`)}
     <p style="margin:26px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:11.5px;line-height:1.6;color:#9CA3AF;">${footerReason} ${escapeHtml(postalAddress)}.${unsubscribeUrl ? ` <a href="${unsubscribeUrl}" style="color:#9CA3AF;">Unsubscribe</a>` : ""}</p>
   </td></tr></table>
 </td></tr></table>
@@ -3069,8 +3070,8 @@ function plainLanguagesList(s: string | null | undefined): string | null {
 // the main site but the email doesn't need to explain it.
 function plainCtaPara(url: string, discountPercent: number): string {
   return discountPercent > 0
-    ? `<strong><a href="${url}" style="${PLAIN_LINK}">Sign up here</a></strong>. It takes about two minutes, and your personal invitation rate is already built into the link.`
-    : `<strong><a href="${url}" style="${PLAIN_LINK}">Sign up here</a></strong>. It takes about two minutes.`;
+    ? `<strong><a href="${url}" style="${PLAIN_LINK}">Sign up here</a></strong>. Your personal invitation rate is already built into the link.`
+    : `<strong><a href="${url}" style="${PLAIN_LINK}">Sign up here</a></strong>.`;
 }
 
 // 2024-roster reunion note: opening keyed to what they actually did in 2024.
@@ -3179,10 +3180,11 @@ export function plainCmiInviteEmail(args: AttendeeInviteArgs) {
   // Their code is their own first name (ensureFirstNameCode creates it at
   // queue time): a branded campaign code reads as a mass blast, a name reads
   // as an invitation. Shown in normal casing; checkout normalizes.
+  const cmiSite = (args.learnMoreUrl || "https://conference.aalb.org").replace(/\/$/, "");
   paras.push(
     discountPercent > 0
-      ? `<strong><a href="${url}" style="${PLAIN_LINK}">Sign up here</a></strong>. It takes about two minutes, and your ${discountPercent}% comes off automatically. If you'd rather register from the main site, just use your first name (${escapeHtml((firstName || "").trim())}) as your code for the same ${discountPercent}% off.`
-      : `<strong><a href="${url}" style="${PLAIN_LINK}">Sign up here</a></strong>. It takes about two minutes.`
+      ? `<strong><a href="${url}" style="${PLAIN_LINK}">Sign up here</a></strong> and your ${discountPercent}% comes off automatically, or learn more first at <a href="${cmiSite}" style="${PLAIN_LINK}">conference.aalb.org</a>. If you register from the main site, just use your name (${escapeHtml((firstName || "").trim())}) as your code.`
+      : `<strong><a href="${url}" style="${PLAIN_LINK}">Sign up here</a></strong>, or learn more first at <a href="${cmiSite}" style="${PLAIN_LINK}">conference.aalb.org</a>.`
   );
   return plainNoteEmail({
     firstName,
