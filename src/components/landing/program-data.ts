@@ -1,7 +1,7 @@
 // The full two-day schedule, transcribed from the official 2026 program
-// (public/program.pdf). Shown in the Program section's lightbox so visitors
-// can read the whole schedule without leaving the page; keep this file and
-// the PDF in sync when the program changes.
+// (public/program.pdf). Rendered inline in the Program section so visitors
+// see the whole schedule right on the page; keep this file and the PDF in
+// sync when the program changes.
 
 export type SessionKind =
   | "session"
