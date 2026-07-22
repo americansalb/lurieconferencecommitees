@@ -69,6 +69,7 @@ export default function AttendeesPage() {
     title: string; message: string; confirmLabel: string; danger?: boolean; onConfirm: () => void;
   } | null>(null);
   const [reinvite, setReinvite] = useState<{ sending: boolean; note: string | null }>({ sending: false, note: null });
+  const [nudge, setNudge] = useState<{ sending: boolean; note: string | null }>({ sending: false, note: null });
   // One-click AALB student roster load (draft only, nothing sent).
   const [rosterLoading, setRosterLoading] = useState(false);
   const [rosterNote, setRosterNote] = useState<string | null>(null);
@@ -559,6 +560,26 @@ export default function AttendeesPage() {
     setTimeout(() => setReinvite((r) => ({ ...r, note: null })), 9000);
   }
 
+  async function nudgeUnpaid() {
+    setNudge({ sending: true, note: null });
+    try {
+      const res = await fetch("/api/attendees/nudge-unpaid", { method: "POST" });
+      const json = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setNudge({
+          sending: false,
+          note: `Queued ${json.queued || 0} nudge${json.queued === 1 ? "" : "s"}. They'll send paced; hit "Send queue now" to push them out immediately.`,
+        });
+      } else {
+        setNudge({ sending: false, note: json.error || "Could not queue the nudges." });
+      }
+      await load();
+    } catch {
+      setNudge({ sending: false, note: "Network error while queuing." });
+    }
+    setTimeout(() => setNudge((n) => ({ ...n, note: null })), 9000);
+  }
+
   if (status !== "authenticated") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -579,6 +600,12 @@ export default function AttendeesPage() {
   const studentReinvitable = attendees.filter(
     (a) => !a.paid && (a.status === "invited" || a.status === "viewed" || a.status === "rsvp_pending")
       && (a.inviteTemplate === "student" || a.inviteTemplate === "former-student")
+  ).length;
+  // Started signing up (the Registering chip) but never paid: the
+  // finish-registration nudge's audience. The server re-filters, so this is
+  // just the live count for the button.
+  const nudgeable = attendees.filter(
+    (a) => !a.paid && (a.status === "registered" || a.status === "rsvp_pending" || a.status === "confirmed")
   ).length;
 
   return (
@@ -844,6 +871,38 @@ export default function AttendeesPage() {
                       </div>
                     </div>
                     {reinvite.note && <div className="mt-2 text-xs font-semibold text-teal-700">{reinvite.note}</div>}
+                  </div>
+                )}
+
+                {isAdmin && (
+                  <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm mb-4">
+                    <div className="flex items-start justify-between gap-3 flex-wrap">
+                      <div className="min-w-0">
+                        <div className="text-sm font-bold text-slate-900 inline-flex items-center gap-1.5">
+                          <Send className="w-4 h-4 text-amber-600" /> Nudge the almost-registered
+                        </div>
+                        <p className="text-xs text-slate-500 mt-1 max-w-lg">
+                          A short plain note to the <strong>{nudgeable}</strong> {nudgeable === 1 ? "person" : "people"} who started
+                          signing up (the Registering chip) but never paid: what they picked, what it costs, and one link that resumes
+                          exactly where they left off. Anyone paid, declined, or unsubscribed is skipped. Paced through the queue.
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setConfirmDialog({
+                          title: `Nudge ${nudgeable} ${nudgeable === 1 ? "person" : "people"}?`,
+                          message: "Everyone who started registering but hasn't paid gets the finish-your-registration note, personalized with their ticket and price, sent paced through the queue. Any of their still-pending queued emails are superseded so nobody gets two letters.",
+                          confirmLabel: "Queue the nudges",
+                          onConfirm: () => { setConfirmDialog(null); void nudgeUnpaid(); },
+                        })}
+                        disabled={nudge.sending || nudgeable === 0}
+                        className="px-4 py-2 rounded-lg text-sm font-bold text-white shadow-sm inline-flex items-center gap-1.5 disabled:opacity-50 shrink-0"
+                        style={{ background: "#B45309" }}
+                      >
+                        {nudge.sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                        {nudgeable === 0 ? "No one to nudge" : "Nudge them"}
+                      </button>
+                    </div>
+                    {nudge.note && <div className="mt-2 text-xs font-semibold text-amber-700">{nudge.note}</div>}
                   </div>
                 )}
 

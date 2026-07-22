@@ -2988,6 +2988,7 @@ function plainNoteEmail({
   footerReason,
   unsubscribeUrl,
   siteUrl,
+  ps,
 }: {
   firstName: string;
   // Pre-composed paragraph HTML: composers escape all user-derived text.
@@ -2996,6 +2997,9 @@ function plainNoteEmail({
   unsubscribeUrl?: string | null;
   // Conference home, for the signature link. Falls back to the public site.
   siteUrl?: string | null;
+  // Postscript line. Omitted -> the standard two-minutes line; null -> no P.S.
+  // (the finish-registration nudge already promises "about a minute" inline).
+  ps?: string | null;
 }) {
   const postalAddress = process.env.MAIL_POSTAL_ADDRESS?.trim() || "Americans Against Language Barriers, Chicago, IL";
   const site = (siteUrl || "https://conference.aalb.org").replace(/\/$/, "");
@@ -3029,7 +3033,7 @@ function plainNoteEmail({
     ${paras.map((x) => p(x)).join("\n    ")}
     ${p(`If you have any questions, just reply to this email.`)}
     ${p(`${signerFirst}<br><span style="font-size:12.5px;color:#6B7280;">${signerFull}${signerTitle ? `<br>${signerTitle}` : ""}<br>Americans Against Language Barriers<br><a href="${site}" style="color:#6B7280;">conference.aalb.org</a></span>`)}
-    ${p(`P.S. Registering takes about two minutes.`)}
+    ${ps === null ? "" : p(`P.S. ${ps ?? "Registering takes about two minutes."}`)}
     <p style="margin:26px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:11.5px;line-height:1.6;color:#9CA3AF;">${footerReason} ${escapeHtml(postalAddress)}.${unsubscribeUrl ? ` <a href="${unsubscribeUrl}" style="color:#9CA3AF;">Unsubscribe</a>` : ""}</p>
   </td></tr></table>
 </td></tr></table>
@@ -3194,5 +3198,62 @@ export function plainCmiInviteEmail(args: AttendeeInviteArgs) {
     footerReason: "You're getting this because you were listed on the National Board of Certification for Medical Interpreters public registry.",
     unsubscribeUrl,
     siteUrl: args.learnMoreUrl,
+  });
+}
+
+// Finish-registration nudge: for people who started signing up (picked a
+// ticket; most reached the payment page) and never paid. One short personal
+// note, no guilt and no countdown: what they started, what it costs, and one
+// link that resumes exactly where they left off. "Didn't get to the end"
+// deliberately covers both a failed payment and a deliberate close-tab, the
+// same way the returning-lead letter avoids recapping payment history.
+export function plainFinishRegistrationEmail(args: {
+  firstName: string;
+  url: string;
+  unsubscribeUrl?: string | null;
+  siteUrl?: string | null;
+  // What they had picked when they stopped, when we know it.
+  attendanceMode?: string | null; // "in-person" | "virtual" | null
+  attendDay?: string | null; // "sat" | "sun" for a one-day virtual ticket
+  finalPriceCents?: number | null; // their computed price at that point
+  discountPercent?: number;
+}) {
+  const { firstName, url, unsubscribeUrl } = args;
+  const site = (args.siteUrl || "https://conference.aalb.org").replace(/\/$/, "");
+  const paras: string[] = [];
+  paras.push(
+    `A little while ago you started signing up for the conference Americans Against Language Barriers (AALB) is putting on with Lurie Children's, <strong>August 15-16</strong> in Chicago (with a live stream), but it looks like you didn't get to the end, so your registration was never finished.`
+  );
+  const ticket = args.attendanceMode === "in-person"
+    ? "the two-day in-person ticket"
+    : args.attendanceMode === "virtual"
+    ? (args.attendDay === "sat"
+      ? "the one-day virtual ticket for Saturday"
+      : args.attendDay === "sun"
+      ? "the one-day virtual ticket for Sunday"
+      : "the two-day virtual ticket")
+    : null;
+  const cents = args.finalPriceCents;
+  const price = typeof cents === "number" && cents > 0
+    ? (cents % 100 === 0 ? `$${cents / 100}` : `$${(cents / 100).toFixed(2)}`)
+    : null;
+  if (ticket) {
+    paras.push(
+      `Everything you entered is saved, including ${ticket}${price ? ` at ${price}` : ""}${(args.discountPercent || 0) > 0 ? ` (your personal discount is part of that)` : ""}, so finishing takes about a minute.`
+    );
+  }
+  paras.push(
+    `If you'd like another look at the program first, from The Joint Commission keynote to the Department of Justice civil rights session, it's all at <a href="${site}" style="${PLAIN_LINK}">conference.aalb.org</a>.`
+  );
+  paras.push(
+    `<strong><a href="${url}" style="${PLAIN_LINK}">Finish signing up here</a></strong>. The link picks up right where you left off.`
+  );
+  return plainNoteEmail({
+    firstName,
+    paras,
+    footerReason: "You're getting this because you started registering for our 2026 conference with Lurie Children's.",
+    unsubscribeUrl,
+    siteUrl: args.siteUrl,
+    ps: null,
   });
 }

@@ -1,6 +1,6 @@
 import { randomBytes } from "crypto";
 import { appUrl } from "./presenters";
-import { plainStandardInviteEmail, plainCommunityInviteEmail, plainReturningInviteEmail, plainCmiInviteEmail } from "./mail-templates";
+import { plainStandardInviteEmail, plainCommunityInviteEmail, plainReturningInviteEmail, plainCmiInviteEmail, plainFinishRegistrationEmail } from "./mail-templates";
 import { firstNameToCode } from "./codes";
 import { pickAlumniSubject, pickReturningSubject, pickStudentSubject, pickCmiSubject } from "./subject-variants";
 import { ONE_DAY_MULTIPLIER } from "@/components/landing/pricing-data";
@@ -116,6 +116,42 @@ export function buildAttendeeInvite(opts: {
     subject = `You're invited: the 2026 AALB & Lurie Children's Conference, Aug 15-16`;
   }
   return { subject, html, template, subjectVariant };
+}
+
+// Single source for the finish-registration nudge (the "almost registered,
+// didn't pay" cohort), so the queue action and any preview render the same
+// note. Falls back to computePrice when checkout never got far enough to
+// stamp finalPriceCents (rsvp_pending rows).
+export function buildFinishRegistrationNudge(a: {
+  firstName: string;
+  inviteToken: string;
+  discountPercent: number;
+  attendanceMode?: string | null;
+  attendDay?: string | null;
+  finalPriceCents?: number | null;
+}): { subject: string; html: string } {
+  const oneDay = a.attendanceMode === "virtual" && (a.attendDay === "sat" || a.attendDay === "sun");
+  let finalCents = a.finalPriceCents ?? null;
+  if (finalCents == null && a.attendanceMode) {
+    finalCents = oneDay
+      ? Math.round(oneDayInviteBaseCents() * (100 - a.discountPercent) / 100)
+      : computePrice(a.attendanceMode, a.discountPercent).finalCents;
+  }
+  const html = plainFinishRegistrationEmail({
+    firstName: a.firstName,
+    url: attendeeFunnelUrl(a.inviteToken),
+    unsubscribeUrl: attendeeUnsubscribeUrl(a.inviteToken),
+    siteUrl: appUrl(),
+    attendanceMode: a.attendanceMode ?? null,
+    attendDay: oneDay ? a.attendDay : null,
+    finalPriceCents: finalCents,
+    discountPercent: a.discountPercent,
+  });
+  const first = (a.firstName || "").trim();
+  const subject = first
+    ? `${first}, your conference registration is one step from done`
+    : `Your conference registration is one step from done`;
+  return { subject, html };
 }
 
 // "Personalized" envelope for attendee invitations. The display name appears
