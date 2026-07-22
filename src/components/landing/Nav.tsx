@@ -6,7 +6,7 @@ import { TOKENS } from "./tokens";
 
 const links = [
   { href: "#speakers", label: "Speakers" },
-  { href: "#program", label: "Program" },
+  { href: "#program", label: "Agenda" },
   { href: "#theme", label: "Theme" },
   { href: "#venue", label: "Venue" },
   { href: "#pricing", label: "Pricing" },
@@ -52,6 +52,13 @@ export default function Nav() {
 
         <div className="flex items-center gap-3">
           <a
+            href="#program"
+            className="hidden sm:inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full text-sm font-bold bg-white transition-colors"
+            style={{ border: `1.5px solid ${TOKENS.teal}`, color: TOKENS.teal }}
+          >
+            View Agenda
+          </a>
+          <a
             href="/register"
             className="hidden sm:inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full text-sm font-bold transition-all"
             style={{
@@ -85,6 +92,14 @@ export default function Nav() {
                 {l.label}
               </a>
             ))}
+            <a
+              href="#program"
+              onClick={() => setOpen(false)}
+              className="mt-1 px-3 py-2.5 rounded-full text-sm font-bold text-center bg-white"
+              style={{ border: `1.5px solid ${TOKENS.teal}`, color: TOKENS.teal }}
+            >
+              View Agenda
+            </a>
             <a
               href="/register"
               className="mt-1 px-3 py-2.5 rounded-full text-sm font-bold text-center"

@@ -1,4 +1,4 @@
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, CalendarDays, Sparkles } from "lucide-react";
 import { TOKENS } from "./tokens";
 import { activeTier, PRICES } from "./pricing-data";
 
@@ -104,7 +104,7 @@ export default function Hero() {
           <span>10+ CEU hours</span>
         </div>
 
-        {/* Single CTA: registration is the focus. */}
+        {/* Registration leads; the agenda rides shotgun. */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3">
           <a
             href="/register"
@@ -116,6 +116,17 @@ export default function Hero() {
             }}
           >
             Register Now <ArrowRight className="w-4 h-4" />
+          </a>
+          <a
+            href="#program"
+            className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full font-bold text-[15px] transition-colors"
+            style={{
+              border: "1.5px solid rgba(255,255,255,0.55)",
+              color: "#FFFFFF",
+              background: "rgba(255,255,255,0.06)",
+            }}
+          >
+            <CalendarDays className="w-4 h-4" /> View Agenda
           </a>
         </div>
       </div>
