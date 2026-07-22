@@ -31,7 +31,17 @@ export type Attendee = {
   cohort?: string | null;
   cohortOrder?: number | null;
   notes?: string | null;
+  nudgeCount?: number;
+  lastNudgedAt?: string | null;
 };
+
+// "1st reminder", "2nd reminder", "3rd reminder", "4 reminders".
+function reminderLabel(n: number): string {
+  if (n === 1) return "1st reminder";
+  if (n === 2) return "2nd reminder";
+  if (n === 3) return "3rd reminder";
+  return `${n} reminders`;
+}
 
 // The AALB-community relationship badge, derived from the invite template. Only
 // shown for the three community framings; regular invitees get no badge. Gold
@@ -63,13 +73,14 @@ function shortDate(iso: string | null): string {
 }
 
 export default function AttendeesView({
-  attendees, onOpenDetail, onCompose, onSendPortal, onQueueInvites,
+  attendees, onOpenDetail, onCompose, onSendPortal, onQueueInvites, onNudge,
 }: {
   attendees: Attendee[];
   onOpenDetail: (id: string) => void;
   onCompose: (ids: string[]) => void;
   onSendPortal: (ids: string[]) => void;
   onQueueInvites: (ids: string[]) => void;
+  onNudge: (ids: string[]) => void;
 }) {
   const [cardFilter, setCardFilter] = useState<string>("all");
   const [sourceFilter, setSourceFilter] = useState<"all" | "invited" | "organic">("all");
@@ -239,6 +250,9 @@ export default function AttendeesView({
   // "Queue invites" will actually schedule, so we label the button with it.
   const statusById = new Map(attendees.map((a) => [a.id, a.status]));
   const notEmailedSelected = selectedIds.reduce((n, id) => n + (statusById.get(id) === "queued" ? 1 : 0), 0);
+  // Selected people in the started-not-paid bucket: the ones a reminder
+  // actually reaches (the server skips everyone else and reports it).
+  const nudgeableSelected = selectedIds.reduce((n, id) => n + (stepOf.get(id) === "registering" ? 1 : 0), 0);
 
   return (
     <div>
@@ -406,6 +420,11 @@ export default function AttendeesView({
                 <Clock className="w-3.5 h-3.5" /> Queue invites ({notEmailedSelected.toLocaleString()})
               </button>
             )}
+            {nudgeableSelected > 0 && (
+              <button onClick={() => onNudge(selectedIds)} className="text-xs font-bold px-3 py-1.5 rounded-lg text-white inline-flex items-center gap-1.5" style={{ background: "#B45309" }} title="Queue the finish-registration reminder for the selected started-not-paid people (others are skipped). Sends paced; bumps their reminder count.">
+                <Send className="w-3.5 h-3.5" /> Send reminder ({nudgeableSelected.toLocaleString()})
+              </button>
+            )}
             <button onClick={() => onCompose(selectedIds)} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 inline-flex items-center gap-1.5" title="Write and send a one-off message now (capped at 100 for deliverability)"><Mail className="w-3.5 h-3.5" /> Email them</button>
             <button onClick={() => onSendPortal(selectedIds)} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-white border border-teal-200 text-teal-700 inline-flex items-center gap-1.5"><Send className="w-3.5 h-3.5" /> Send portal link</button>
             <button onClick={() => setSelected(new Set())} className="text-xs font-semibold text-slate-500 hover:text-slate-700 ml-auto">Clear</button>
@@ -471,6 +490,11 @@ export default function AttendeesView({
                   <div className="flex flex-col items-end gap-1 shrink-0 w-[104px]">
                     <span className={`text-[10px] font-bold px-2 py-1 rounded-full border ${cfg.color}`}>{cfg.label}</span>
                     <span className="text-[11px] text-slate-400 truncate max-w-full">{when}</span>
+                    {(a.nudgeCount || 0) > 0 && (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-amber-50 text-amber-700 border-amber-200 truncate max-w-full" title={`Finish-registration reminder${(a.nudgeCount || 0) > 1 ? "s" : ""} sent`}>
+                        {reminderLabel(a.nudgeCount || 0)}{a.lastNudgedAt ? ` ${shortDate(a.lastNudgedAt)}` : ""}
+                      </span>
+                    )}
                   </div>
                 </li>
               );

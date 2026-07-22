@@ -560,18 +560,24 @@ export default function AttendeesPage() {
     setTimeout(() => setReinvite((r) => ({ ...r, note: null })), 9000);
   }
 
-  async function nudgeUnpaid() {
+  // No ids -> every never-reminded person in the started-not-paid bucket.
+  // With ids (the list's bulk bar) -> exactly the selection, already-reminded
+  // included; the server still skips paid/declined/unsubscribed/test people.
+  async function nudgeUnpaid(ids?: string[]) {
     setNudge({ sending: true, note: null });
     try {
-      const res = await fetch("/api/attendees/nudge-unpaid", { method: "POST" });
+      const res = await fetch("/api/attendees/nudge-unpaid", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(ids && ids.length ? { ids } : {}),
+      });
       const json = await res.json().catch(() => ({}));
       if (res.ok) {
         setNudge({
           sending: false,
-          note: `Queued ${json.queued || 0} nudge${json.queued === 1 ? "" : "s"}. They'll send paced; hit "Send queue now" to push them out immediately.`,
+          note: `Queued ${json.queued || 0} reminder${json.queued === 1 ? "" : "s"}${json.skipped ? ` · ${json.skipped} skipped (not in the started-not-paid group)` : ""}. They'll send paced; hit "Send queue now" to push them out immediately.`,
         });
       } else {
-        setNudge({ sending: false, note: json.error || "Could not queue the nudges." });
+        setNudge({ sending: false, note: json.error || "Could not queue the reminders." });
       }
       await load();
     } catch {
@@ -601,11 +607,14 @@ export default function AttendeesPage() {
     (a) => !a.paid && (a.status === "invited" || a.status === "viewed" || a.status === "rsvp_pending")
       && (a.inviteTemplate === "student" || a.inviteTemplate === "former-student")
   ).length;
-  // Started signing up (the Registering chip) but never paid: the
-  // finish-registration nudge's audience. The server re-filters, so this is
-  // just the live count for the button.
+  // Started signing up (the Registering chip), never paid, and never
+  // reminded: the bulk nudge's audience, so re-running it after new people
+  // abandon checkout only touches the new people. Already-reminded people
+  // can still be nudged again by selecting them in the list. The server
+  // re-filters, so this is just the live count for the button.
   const nudgeable = attendees.filter(
     (a) => !a.paid && (a.status === "registered" || a.status === "rsvp_pending" || a.status === "confirmed")
+      && (a.nudgeCount || 0) === 0
   ).length;
 
   return (
@@ -883,15 +892,16 @@ export default function AttendeesPage() {
                         </div>
                         <p className="text-xs text-slate-500 mt-1 max-w-lg">
                           A short plain note to the <strong>{nudgeable}</strong> {nudgeable === 1 ? "person" : "people"} who started
-                          signing up (the Registering chip) but never paid: what they picked, what it costs, and one link that resumes
-                          exactly where they left off. Anyone paid, declined, or unsubscribed is skipped. Paced through the queue.
+                          signing up (the Registering chip), never paid, and <strong>haven&rsquo;t had a reminder yet</strong> — so
+                          running this again later only reaches new people. Each row shows its reminder chip once sent. To re-remind
+                          someone deliberately, select them in the list and use &ldquo;Send reminder.&rdquo; Paced through the queue.
                         </p>
                       </div>
                       <button
                         onClick={() => setConfirmDialog({
-                          title: `Nudge ${nudgeable} ${nudgeable === 1 ? "person" : "people"}?`,
-                          message: "Everyone who started registering but hasn't paid gets the finish-your-registration note, personalized with their ticket and price, sent paced through the queue. Any of their still-pending queued emails are superseded so nobody gets two letters.",
-                          confirmLabel: "Queue the nudges",
+                          title: `Send 1st reminders to ${nudgeable} ${nudgeable === 1 ? "person" : "people"}?`,
+                          message: "Everyone who started registering, hasn't paid, and has never been reminded gets the finish-your-registration note, personalized with their ticket and price, sent paced through the queue. Their reminder count goes up (shown on the row), and any still-pending queued emails for them are superseded so nobody gets two letters.",
+                          confirmLabel: "Queue 1st reminders",
                           onConfirm: () => { setConfirmDialog(null); void nudgeUnpaid(); },
                         })}
                         disabled={nudge.sending || nudgeable === 0}
@@ -899,7 +909,7 @@ export default function AttendeesPage() {
                         style={{ background: "#B45309" }}
                       >
                         {nudge.sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                        {nudgeable === 0 ? "No one to nudge" : "Nudge them"}
+                        {nudgeable === 0 ? "No one new to nudge" : "Send 1st reminders"}
                       </button>
                     </div>
                     {nudge.note && <div className="mt-2 text-xs font-semibold text-amber-700">{nudge.note}</div>}
@@ -1181,6 +1191,12 @@ export default function AttendeesPage() {
                 onCompose={(ids) => setComposerIds(ids)}
                 onSendPortal={sendPortalLink}
                 onQueueInvites={queueInvites}
+                onNudge={(ids) => setConfirmDialog({
+                  title: `Send the reminder to this selection?`,
+                  message: "The selected started-not-paid people get the finish-your-registration note (their reminder count goes up and shows on the row). Anyone selected who is paid, declined, or unsubscribed is skipped. Sends paced through the queue.",
+                  confirmLabel: "Queue reminders",
+                  onConfirm: () => { setConfirmDialog(null); void nudgeUnpaid(ids); },
+                })}
               />
             )}
           </div>

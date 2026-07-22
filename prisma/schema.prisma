@@ -438,6 +438,12 @@ model Attendee {
   confirmedAt    DateTime?
   declinedAt     DateTime?
 
+  // Finish-registration reminders ("nudges"): how many this person has been
+  // sent and when the last one was queued. Drives the "1st reminder" chip on
+  // the attendee list and lets the bulk nudge target never-reminded people.
+  nudgeCount   Int       @default(0)
+  lastNudgedAt DateTime?
+
   // Created by the emails-only deliverability test, not a real invitee. Kept
   // out of the attendee pipeline and all email metrics so test traffic never
   // skews the numbers.
