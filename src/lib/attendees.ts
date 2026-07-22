@@ -118,6 +118,22 @@ export function buildAttendeeInvite(opts: {
   return { subject, html, template, subjectVariant };
 }
 
+// The official program PDF, attached to NBCMI letters (certified medical
+// interpreters pick sessions by the CEU schedule, so give them the actual
+// program). Resend fetches the file from the public site at send time (a
+// `path` URL, not embedded bytes), so queue rows stay small and the
+// attachment always matches what /program.pdf currently serves.
+export function programAttachments(): { filename: string; path: string }[] {
+  return [{ filename: "2026-conference-program.pdf", path: `${appUrl()}/program.pdf` }];
+}
+
+// The EmailQueue.attachments JSON for a given invite template; null for
+// templates that attach nothing. One source so queue, resend, refresh, and
+// immediate sends all agree on who gets the PDF.
+export function attachmentsJsonFor(template?: string | null): string | null {
+  return template === "cmi" ? JSON.stringify(programAttachments()) : null;
+}
+
 // Single source for the finish-registration nudge (the "almost registered,
 // didn't pay" cohort), so the queue action and any preview render the same
 // note. Falls back to computePrice when checkout never got far enough to

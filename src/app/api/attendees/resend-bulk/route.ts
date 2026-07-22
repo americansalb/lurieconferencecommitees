@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { buildAttendeeInvite } from "@/lib/attendees";
+import { buildAttendeeInvite, attachmentsJsonFor } from "@/lib/attendees";
 import { ensureFirstNameCode, ensureCampaignCode, CMI_SHARED_CODE } from "@/lib/discounts";
 import { getPolicy, planSendTimes } from "@/lib/email-queue";
 
@@ -97,6 +97,7 @@ export async function POST(req: Request) {
         to: a.email,
         subject,
         html,
+        attachments: attachmentsJsonFor(a.inviteTemplate),
         scheduledFor: times[i],
         status: "pending",
       },

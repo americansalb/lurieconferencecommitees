@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { newAttendeeToken, parseAttendeeCsv, parseEmailList, nameFromEmail, attendeeFromHeader, attendeeReplyTo, attendeeBcc, attendeeUnsubHeaders, buildAttendeeInvite } from "@/lib/attendees";
+import { newAttendeeToken, parseAttendeeCsv, parseEmailList, nameFromEmail, attendeeFromHeader, attendeeReplyTo, attendeeBcc, attendeeUnsubHeaders, buildAttendeeInvite, programAttachments, attachmentsJsonFor } from "@/lib/attendees";
 import { pickAlumniSubject, pickStudentSubject, pickCmiSubject } from "@/lib/subject-variants";
 import { ensureFirstNameCode } from "@/lib/discounts";
 import { getPolicy, planSendTimes } from "@/lib/email-queue";
@@ -121,10 +121,11 @@ export async function POST(req: Request) {
         replyTo: attendeeReplyTo(),
         bcc: attendeeBcc(),
         headers: attendeeUnsubHeaders(token),
+        attachments: template === "cmi" ? programAttachments() : undefined,
       });
       // Archive the exact email so it can be viewed later from the dashboard.
       await prisma.emailQueue.create({
-        data: { batchId: "attendee-immediate", recipientType: "attendee", recipientId: attendee.id, to: email, subject, html, scheduledFor: new Date(), status: "sent", sentAt: new Date() },
+        data: { batchId: "attendee-immediate", recipientType: "attendee", recipientId: attendee.id, to: email, subject, html, attachments: attachmentsJsonFor(template), scheduledFor: new Date(), status: "sent", sentAt: new Date() },
       }).catch(() => {});
       await prisma.attendee.update({
         where: { id: attendee.id },
@@ -189,7 +190,7 @@ export async function POST(req: Request) {
         inviteMessage: inviteMessage?.trim() || null, template,
       });
       try {
-        await sendMail({ to: email, subject, html, from: attendeeFromHeader(), replyTo: attendeeReplyTo(), bcc: attendeeBcc(), headers: attendeeUnsubHeaders(att.inviteToken) });
+        await sendMail({ to: email, subject, html, from: attendeeFromHeader(), replyTo: attendeeReplyTo(), bcc: attendeeBcc(), headers: attendeeUnsubHeaders(att.inviteToken), attachments: template === "cmi" ? programAttachments() : undefined });
         // Tagged recipientType "test" so it lands under the Test bucket in the
         // queue and analytics, never mixed into attendee numbers.
         await prisma.emailQueue.create({
@@ -345,6 +346,7 @@ export async function POST(req: Request) {
           to: att.email,
           subject,
           html,
+          attachments: attachmentsJsonFor(attendee.inviteTemplate),
           scheduledFor: times[i],
           status: "pending",
         },

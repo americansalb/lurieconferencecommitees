@@ -487,6 +487,10 @@ model EmailQueue {
   subject       String
   html          String
   textBody      String?
+  // JSON array of Resend attachment specs ({filename, path}) applied at send
+  // time. `path` is a public URL (e.g. the site's /program.pdf) so rows stay
+  // small and the file is fetched fresh on delivery. Null = no attachments.
+  attachments   String?
   scheduledFor  DateTime
   status        String    @default("pending")
   attempts      Int       @default(0)

@@ -12,6 +12,9 @@ type SendArgs = {
   from?: string;
   // Extra SMTP headers (e.g. List-Unsubscribe / List-Unsubscribe-Post).
   headers?: Record<string, string>;
+  // Resend attachment specs. `path` is a public URL Resend fetches at send
+  // time (preferred: keeps our payloads small); `content` is base64 bytes.
+  attachments?: { filename: string; path?: string; content?: string }[];
 };
 
 export function isMailConfigured() {
@@ -29,7 +32,7 @@ export function mailConfigDetail() {
   };
 }
 
-export async function sendMail({ to, subject, html, text, replyTo, bcc, cc, from, headers }: SendArgs) {
+export async function sendMail({ to, subject, html, text, replyTo, bcc, cc, from, headers, attachments }: SendArgs) {
   const apiKey = process.env.RESEND_API_KEY?.trim();
   const defaultFrom = process.env.MAIL_FROM?.trim();
   const fromHeader = (from || defaultFrom || "").trim();
@@ -57,6 +60,8 @@ export async function sendMail({ to, subject, html, text, replyTo, bcc, cc, from
   const finalBcc = bcc || process.env.MAIL_BCC;
   if (finalBcc) body.bcc = [finalBcc];
   if (headers && Object.keys(headers).length) body.headers = headers;
+  const files = (attachments || []).filter((a) => a && a.filename && (a.path || a.content));
+  if (files.length) body.attachments = files;
 
   let res: Response;
   try {

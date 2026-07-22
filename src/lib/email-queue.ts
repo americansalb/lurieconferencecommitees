@@ -324,6 +324,7 @@ export async function runEmailQueue(): Promise<{ processed: number; sent: number
         ...queueEnvelope(item.recipientType),
         cc: extras.cc,
         headers: extras.headers,
+        attachments: parseAttachments(item.attachments),
       });
       const resendId = (result as { id?: string })?.id || null;
       await prisma.emailQueue.update({
@@ -348,6 +349,24 @@ export async function runEmailQueue(): Promise<{ processed: number; sent: number
     }
   }
   return { processed: due.length, sent, failed };
+}
+
+// Parse an EmailQueue.attachments JSON column into Resend attachment specs.
+// Tolerant: null/garbage/empty all mean "no attachments", never a throw at
+// send time. Shared by the cron runner and the admin "send this one now".
+export function parseAttachments(s: string | null | undefined): { filename: string; path?: string; content?: string }[] | undefined {
+  if (!s) return undefined;
+  try {
+    const arr = JSON.parse(s) as unknown;
+    if (Array.isArray(arr)) {
+      const files = arr.filter(
+        (a): a is { filename: string; path?: string; content?: string } =>
+          !!a && typeof (a as { filename?: unknown }).filename === "string"
+      );
+      if (files.length) return files;
+    }
+  } catch {}
+  return undefined;
 }
 
 // Pre-send suppression check + per-recipient envelope extras for one queue

@@ -3181,6 +3181,11 @@ export function plainCmiInviteEmail(args: AttendeeInviteArgs) {
   if (note) paras.push(escapeHtml(note).replace(/\n/g, "<br>"));
   paras.push(PLAIN_KEYNOTE_PARA);
   paras.push(plainDetailsPara(args.learnMoreUrl));
+  // CMIs plan recertification around CEUs, so this letter carries the actual
+  // program: the send paths attach /program.pdf to cmi-template emails (see
+  // programAttachments in lib/attendees). Keep this line and the attachment
+  // together — one without the other reads as a mistake.
+  paras.push(`I've attached the full two-day program as a PDF, so you can see every session and the CEU hours before you decide.`);
   // Their code is their own first name (ensureFirstNameCode creates it at
   // queue time): a branded campaign code reads as a mass blast, a name reads
   // as an invitation. Shown in normal casing; checkout normalizes.

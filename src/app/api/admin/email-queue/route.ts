@@ -3,7 +3,7 @@ import { ensureStandingCampaignCodes } from "@/lib/discounts";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { isPaused, setPaused, getPolicy, savePolicy, repaceQueue, queueEnvelope, afterQueueSend, runEmailQueue, estimateNextSend, prepareQueueDelivery } from "@/lib/email-queue";
+import { isPaused, setPaused, getPolicy, savePolicy, repaceQueue, queueEnvelope, afterQueueSend, runEmailQueue, estimateNextSend, prepareQueueDelivery, parseAttachments } from "@/lib/email-queue";
 import { sendMail } from "@/lib/mail";
 import { buildAttendeeInvite } from "@/lib/attendees";
 
@@ -313,6 +313,7 @@ export async function POST(req: Request) {
         ...queueEnvelope(item.recipientType),
         cc: extras.cc,
         headers: extras.headers,
+        attachments: parseAttachments(item.attachments),
       });
       const resendId = (result as { id?: string })?.id || null;
       await prisma.emailQueue.update({
