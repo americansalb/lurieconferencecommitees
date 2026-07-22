@@ -2997,8 +2997,9 @@ function plainNoteEmail({
   unsubscribeUrl?: string | null;
   // Conference home, for the signature link. Falls back to the public site.
   siteUrl?: string | null;
-  // Postscript line. Omitted -> the standard two-minutes line; null -> no P.S.
-  // (the finish-registration nudge already promises "about a minute" inline).
+  // Optional postscript line. No default: the old "Registering takes about
+  // two minutes" P.S. was removed at the client's request — no letter makes
+  // time-to-register claims unless a composer explicitly passes one.
   ps?: string | null;
 }) {
   const postalAddress = process.env.MAIL_POSTAL_ADDRESS?.trim() || "Americans Against Language Barriers, Chicago, IL";
@@ -3033,7 +3034,7 @@ function plainNoteEmail({
     ${paras.map((x) => p(x)).join("\n    ")}
     ${p(`If you have any questions, just reply to this email.`)}
     ${p(`${signerFirst}<br><span style="font-size:12.5px;color:#6B7280;">${signerFull}${signerTitle ? `<br>${signerTitle}` : ""}<br>Americans Against Language Barriers<br><a href="${site}" style="color:#6B7280;">conference.aalb.org</a></span>`)}
-    ${ps === null ? "" : p(`P.S. ${ps ?? "Registering takes about two minutes."}`)}
+    ${ps ? p(`P.S. ${ps}`) : ""}
     <p style="margin:26px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:11.5px;line-height:1.6;color:#9CA3AF;">${footerReason} ${escapeHtml(postalAddress)}.${unsubscribeUrl ? ` <a href="${unsubscribeUrl}" style="color:#9CA3AF;">Unsubscribe</a>` : ""}</p>
   </td></tr></table>
 </td></tr></table>
@@ -3068,8 +3069,8 @@ function plainLanguagesList(s: string | null | undefined): string | null {
 }
 
 // The ask, always last: the note builds the case (keynote, program, venue)
-// BEFORE the price list, and the price before the ask. It names the effort
-// (about two minutes) because unstated effort is friction. The link carries the discount by
+// BEFORE the price list, and the price before the ask. No time-to-register
+// claims anywhere (client's call). The link carries the discount by
 // itself; the first-name fallback code (ensureFirstNameCode) still works on
 // the main site but the email doesn't need to explain it.
 function plainCtaPara(url: string, discountPercent: number): string {
@@ -3244,7 +3245,7 @@ export function plainFinishRegistrationEmail(args: {
     : null;
   if (ticket) {
     paras.push(
-      `Everything you entered is saved, including ${ticket}${price ? ` at ${price}` : ""}${(args.discountPercent || 0) > 0 ? ` (your personal discount is part of that)` : ""}, so finishing takes about a minute.`
+      `Everything you entered is saved, including ${ticket}${price ? ` at ${price}` : ""}${(args.discountPercent || 0) > 0 ? ` (your personal discount is part of that)` : ""}.`
     );
   }
   paras.push(
@@ -3259,6 +3260,5 @@ export function plainFinishRegistrationEmail(args: {
     footerReason: "You're getting this because you started registering for our 2026 conference with Lurie Children's.",
     unsubscribeUrl,
     siteUrl: args.siteUrl,
-    ps: null,
   });
 }
