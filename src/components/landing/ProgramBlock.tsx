@@ -30,43 +30,44 @@ export default function ProgramBlock() {
         <div className="max-w-3xl mx-auto text-center mb-12">
           <Eyebrow>Program</Eyebrow>
           <h2 className="mt-6 text-4xl sm:text-5xl font-bold leading-[1.05] tracking-tight" style={{ color: TOKENS.ink }}>
-            Two days, planned to the minute.
+            Step into the room where the future of language access is taking shape.
           </h2>
           <p className="mt-5 text-base sm:text-lg leading-relaxed" style={{ color: TOKENS.muted }}>
             {PROGRAM_NOTE}
           </p>
         </div>
 
-        {/* One small card per day: date, hours, and the headline moments. */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 max-w-4xl mx-auto mb-9">
-          {PROGRAM_DAYS.map((day) => {
-            const highlights = day.sessions
-              .filter((s) => s.kind === "keynote" || s.kind === "panel")
-              .concat(day.sessions.filter((s) => s.kind === "session" && s.who && !/RSVP/.test(s.who || "")))
-              .slice(0, 3)
-              .sort((a, b) => day.sessions.indexOf(a) - day.sessions.indexOf(b));
-            const talkCount = day.sessions.filter((s) => ["session", "panel", "keynote"].includes(s.kind) && s.who && !/RSVP/.test(s.who || "")).length;
-            return (
-              <div key={day.label} className="rounded-2xl bg-white p-6 text-left" style={{ border: `1px solid ${TOKENS.hairline}`, boxShadow: "0 10px 26px -16px rgba(11,31,37,0.14)" }}>
-                <div className="flex items-baseline justify-between gap-3">
-                  <div className="text-[11px] font-bold tracking-[0.26em] uppercase" style={{ color: TOKENS.gold }}>{day.label}</div>
-                  <div className="text-[12px] font-semibold" style={{ color: TOKENS.mutedSoft }}>{day.hours}</div>
-                </div>
-                <h3 className="mt-1.5 text-[19px] font-bold tracking-tight" style={{ color: TOKENS.ink }}>{day.date}</h3>
-                <ul className="mt-4 space-y-2.5">
-                  {highlights.map((s) => (
-                    <li key={s.title} className="flex gap-2.5 text-[13.5px] leading-snug" style={{ color: TOKENS.inkSoft }}>
-                      <span className="mt-[7px] block h-1 w-1 rounded-full shrink-0" style={{ background: TOKENS.gold }} />
-                      <span><span className="font-semibold">{s.time}</span> · {s.title}</span>
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-4 text-[12.5px] font-semibold" style={{ color: TOKENS.mutedSoft }}>
-                  {talkCount} talks and panels, plus networking and meals
-                </div>
+        {/* The whole agenda, on the page: every slot of both days. Talks read
+            in ink, logistics (meals, breaks, sign-in) sit muted, the keynote
+            carries gold. The lightbox adds presenters and details. */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 max-w-5xl mx-auto mb-9 items-start">
+          {PROGRAM_DAYS.map((day) => (
+            <div key={day.label} className="rounded-2xl bg-white p-6 text-left" style={{ border: `1px solid ${TOKENS.hairline}`, boxShadow: "0 10px 26px -16px rgba(11,31,37,0.14)" }}>
+              <div className="flex items-baseline justify-between gap-3">
+                <div className="text-[11px] font-bold tracking-[0.26em] uppercase" style={{ color: TOKENS.gold }}>{day.label}</div>
+                <div className="text-[12px] font-semibold" style={{ color: TOKENS.mutedSoft }}>{day.hours}</div>
               </div>
-            );
-          })}
+              <h3 className="mt-1.5 text-[19px] font-bold tracking-tight" style={{ color: TOKENS.ink }}>{day.date}</h3>
+              <ul className="mt-4">
+                {day.sessions.map((s) => {
+                  const logistics = ["registration", "networking", "lunch", "break"].includes(s.kind);
+                  const isKeynote = s.kind === "keynote";
+                  return (
+                    <li
+                      key={`${s.time}-${s.title}`}
+                      className="flex gap-3 py-[7px] text-[13.5px] leading-snug"
+                      style={{ borderTop: `1px solid ${TOKENS.hairline}` }}
+                    >
+                      <span className="w-[64px] shrink-0 font-semibold tabular-nums" style={{ color: logistics ? TOKENS.mutedSoft : TOKENS.ink }}>{s.time}</span>
+                      <span className="flex-1 min-w-0" style={{ color: logistics ? TOKENS.mutedSoft : isKeynote ? "#8A6A20" : TOKENS.inkSoft, fontWeight: isKeynote ? 700 : 400 }}>
+                        {s.title}{isKeynote ? " · Keynote" : ""}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
         </div>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -76,7 +77,7 @@ export default function ProgramBlock() {
             className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full font-bold text-white transition-all"
             style={{ background: `linear-gradient(135deg, ${TOKENS.tealDark} 0%, ${TOKENS.teal} 100%)`, boxShadow: "0 12px 28px -12px rgba(14,68,86,0.45)" }}
           >
-            <CalendarDays className="w-4 h-4" /> View the full schedule
+            <CalendarDays className="w-4 h-4" /> Speakers &amp; session details
           </button>
           <a
             href="/program.pdf"
