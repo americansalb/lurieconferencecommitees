@@ -3,6 +3,7 @@ import Hero from "./Hero";
 import ConferenceDetails from "./ConferenceDetails";
 import Theme from "./Theme";
 import Speakers from "./Speakers";
+import ProgramBlock from "./ProgramBlock";
 import Venue from "./Venue";
 import Pricing from "./Pricing";
 import SponsorsBlock from "./SponsorsBlock";
@@ -90,6 +91,7 @@ export default function Landing() {
       <main>
         <Hero />
         <Speakers />
+        <ProgramBlock />
         <ConferenceDetails />
         <Theme />
         <Venue />
