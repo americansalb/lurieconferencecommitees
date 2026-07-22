@@ -4,7 +4,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import {
-  Mail, RefreshCw, Pause, Play, Shuffle, SlidersHorizontal, Loader2, Send, X, Award, Ticket, FlaskConical, Megaphone,
+  Mail, RefreshCw, Pause, Play, Shuffle, SlidersHorizontal, Loader2, Send, X, Award, Ticket, FlaskConical, Megaphone, ArrowUpToLine,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
@@ -19,6 +19,7 @@ type PendingItem = {
   recipientType: string;
   recipientId: string | null;
   attempts: number;
+  batchId?: string | null;
 };
 
 type RecentItem = {
@@ -208,6 +209,34 @@ export default function EmailQueuePage() {
     }
   }
 
+  // Move one row to the front of the line: it becomes the next paced send
+  // (no blast — the drip pace is untouched).
+  async function frontOne(id: string) {
+    setRowBusy(id);
+    try {
+      const r = await fetch("/api/admin/email-queue", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "front", ids: [id] }) });
+      const j = await r.json().catch(() => ({}));
+      flash(r.ok ? "Moved to the front — it goes out on the next tick." : (j.error || "Could not move it."));
+    } finally {
+      setRowBusy(null);
+      load();
+    }
+  }
+
+  // Move a whole batch (by prefix) to the front, e.g. every pending
+  // finish-registration reminder.
+  async function frontBatch(batchPrefix: string, label: string) {
+    setBusy("front");
+    try {
+      const r = await fetch("/api/admin/email-queue", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "front", batchPrefix }) });
+      const j = await r.json().catch(() => ({}));
+      flash(r.ok ? `Moved ${j.fronted || 0} ${label} to the front. They drip out first, at the normal pace.` : (j.error || "Could not move them."));
+    } finally {
+      setBusy(null);
+      load();
+    }
+  }
+
   async function cancelOne(id: string) {
     setRowBusy(id);
     try {
@@ -229,6 +258,9 @@ export default function EmailQueuePage() {
   const pending = data?.pending || [];
   const recent = data?.recent || [];
   const typeCounts = pending.reduce<Record<string, number>>((acc, p) => ((acc[p.recipientType] = (acc[p.recipientType] || 0) + 1), acc), {});
+  // Pending finish-registration reminders, so the page can offer to move the
+  // whole batch to the front in one click.
+  const nudgesPending = pending.filter((p) => (p.batchId || "").startsWith("attendee-finish-nudge")).length;
   const shown = typeFilter === "all" ? pending : pending.filter((p) => p.recipientType === typeFilter);
   const overdueCount = pending.filter((p) => isOverdue(p.scheduledFor)).length;
   // The effective drip gap, mirroring runEmailQueue: the period of the
@@ -338,6 +370,24 @@ export default function EmailQueuePage() {
               </div>
             )}
 
+            {/* Finish-registration reminders waiting behind other mail — offer
+                to walk the whole batch to the front in one click. */}
+            {isAdmin && view === "queued" && nudgesPending > 0 && (
+              <div className="mb-4 rounded-xl border border-teal-300 bg-teal-50 px-4 py-3 flex flex-wrap items-center gap-3">
+                <ArrowUpToLine className="w-4 h-4 text-teal-700 shrink-0" />
+                <span className="text-sm text-teal-900">
+                  <strong>{nudgesPending}</strong> finish-registration reminder{nudgesPending === 1 ? " is" : "s are"} in the queue. Move {nudgesPending === 1 ? "it" : "them"} to the front so {nudgesPending === 1 ? "it" : "they"} send{nudgesPending === 1 ? "s" : ""} before everything else — still one at a time, at the normal pace.
+                </span>
+                <button
+                  onClick={() => frontBatch("attendee-finish-nudge", `reminder${nudgesPending === 1 ? "" : "s"}`)}
+                  disabled={busy !== null}
+                  className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-teal-700 hover:bg-teal-800 disabled:opacity-50 shrink-0"
+                >
+                  {busy === "front" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowUpToLine className="w-3.5 h-3.5" />} Reminders to the front
+                </button>
+              </div>
+            )}
+
             {/* Past-due explainer: answers "why is the next send in the past?" */}
             {view === "queued" && !data?.paused && overdueCount > 0 && (
               <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-[13px] text-amber-800">
@@ -400,8 +450,13 @@ export default function EmailQueuePage() {
                             </div>
                             {isAdmin && (
                               <div className="flex items-center gap-1.5 shrink-0">
-                                <button onClick={() => sendOne(p.id)} disabled={rowBusy === p.id} className="text-[10px] font-bold px-2 py-1 rounded-full border border-teal-200 bg-teal-50 text-teal-700 hover:bg-teal-100 inline-flex items-center gap-1 disabled:opacity-50" title="Send this one now">
-                                  {rowBusy === p.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />} Send
+                                {i > 0 && (
+                                  <button onClick={() => frontOne(p.id)} disabled={rowBusy === p.id} className="text-[10px] font-bold px-2 py-1 rounded-full border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 inline-flex items-center gap-1 disabled:opacity-50" title="Move to the front of the line — it becomes the next paced send">
+                                    {rowBusy === p.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <ArrowUpToLine className="w-3 h-3" />} Front
+                                  </button>
+                                )}
+                                <button onClick={() => sendOne(p.id)} disabled={rowBusy === p.id} className="text-[10px] font-bold px-2 py-1 rounded-full border border-teal-200 bg-teal-50 text-teal-700 hover:bg-teal-100 inline-flex items-center gap-1 disabled:opacity-50" title="Send this one right now, skipping the schedule">
+                                  {rowBusy === p.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />} Send now
                                 </button>
                                 <button onClick={() => cancelOne(p.id)} disabled={rowBusy === p.id} className="text-[10px] font-bold px-2 py-1 rounded-full border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 inline-flex items-center gap-1 disabled:opacity-50" title="Cancel this send">
                                   <X className="w-3 h-3" /> Cancel

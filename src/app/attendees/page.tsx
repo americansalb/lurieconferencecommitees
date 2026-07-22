@@ -548,7 +548,7 @@ export default function AttendeesPage() {
       if (res.ok) {
         setReinvite({
           sending: false,
-          note: `Re-queued ${json.queued || 0} invite${json.queued === 1 ? "" : "s"}. They'll send paced; hit "Send queue now" to push them out immediately.`,
+          note: `Re-queued ${json.queued || 0} invite${json.queued === 1 ? "" : "s"}. They'll send paced; the Email queue page can move them to the front.`,
         });
       } else {
         setReinvite({ sending: false, note: json.error || "Could not re-queue invites." });
@@ -560,9 +560,10 @@ export default function AttendeesPage() {
     setTimeout(() => setReinvite((r) => ({ ...r, note: null })), 9000);
   }
 
-  // No ids -> every never-reminded person in the started-not-paid bucket.
-  // With ids (the list's bulk bar) -> exactly the selection, already-reminded
-  // included; the server still skips paid/declined/unsubscribed/test people.
+  // No ids -> every never-reminded person in the started-not-paid bucket,
+  // paced through the queue. With ids (the list's bulk bar) -> the selection
+  // is sent IMMEDIATELY (up to 100 per click), already-reminded included;
+  // the server still skips paid/declined/unsubscribed/test people.
   async function nudgeUnpaid(ids?: string[]) {
     setNudge({ sending: true, note: null });
     try {
@@ -571,17 +572,22 @@ export default function AttendeesPage() {
         body: JSON.stringify(ids && ids.length ? { ids } : {}),
       });
       const json = await res.json().catch(() => ({}));
-      if (res.ok) {
+      if (!res.ok) {
+        setNudge({ sending: false, note: json.error || "Could not send the reminders." });
+      } else if (typeof json.sent === "number") {
         setNudge({
           sending: false,
-          note: `Queued ${json.queued || 0} reminder${json.queued === 1 ? "" : "s"}${json.skipped ? ` · ${json.skipped} skipped (not in the started-not-paid group)` : ""}. They'll send paced; hit "Send queue now" to push them out immediately.`,
+          note: `Sent ${json.sent} reminder${json.sent === 1 ? "" : "s"} now${json.failed ? ` · ${json.failed} failed` : ""}${json.skipped ? ` · ${json.skipped} skipped (not in the started-not-paid group)` : ""}.`,
         });
       } else {
-        setNudge({ sending: false, note: json.error || "Could not queue the reminders." });
+        setNudge({
+          sending: false,
+          note: `Queued ${json.queued || 0} reminder${json.queued === 1 ? "" : "s"} to send paced. Use the Email queue page to move them to the front or push one out now.`,
+        });
       }
       await load();
     } catch {
-      setNudge({ sending: false, note: "Network error while queuing." });
+      setNudge({ sending: false, note: "Network error while sending." });
     }
     setTimeout(() => setNudge((n) => ({ ...n, note: null })), 9000);
   }
@@ -1192,9 +1198,9 @@ export default function AttendeesPage() {
                 onSendPortal={sendPortalLink}
                 onQueueInvites={queueInvites}
                 onNudge={(ids) => setConfirmDialog({
-                  title: `Send the reminder to this selection?`,
-                  message: "The selected started-not-paid people get the finish-your-registration note (their reminder count goes up and shows on the row). Anyone selected who is paid, declined, or unsubscribed is skipped. Sends paced through the queue.",
-                  confirmLabel: "Queue reminders",
+                  title: `Send the reminder to this selection right now?`,
+                  message: "The selected started-not-paid people get the finish-your-registration note immediately — no queue, up to 100 per click. Their reminder count goes up and shows on the row. Anyone selected who is paid, declined, or unsubscribed is skipped.",
+                  confirmLabel: "Send now",
                   onConfirm: () => { setConfirmDialog(null); void nudgeUnpaid(ids); },
                 })}
               />

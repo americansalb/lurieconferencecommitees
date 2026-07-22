@@ -421,8 +421,8 @@ export default function AttendeesView({
               </button>
             )}
             {nudgeableSelected > 0 && (
-              <button onClick={() => onNudge(selectedIds)} className="text-xs font-bold px-3 py-1.5 rounded-lg text-white inline-flex items-center gap-1.5" style={{ background: "#B45309" }} title="Queue the finish-registration reminder for the selected started-not-paid people (others are skipped). Sends paced; bumps their reminder count.">
-                <Send className="w-3.5 h-3.5" /> Send reminder ({nudgeableSelected.toLocaleString()})
+              <button onClick={() => onNudge(selectedIds)} className="text-xs font-bold px-3 py-1.5 rounded-lg text-white inline-flex items-center gap-1.5" style={{ background: "#B45309" }} title="Send the finish-registration reminder to the selected started-not-paid people RIGHT NOW (up to 100 per click; others are skipped). Bumps their reminder count.">
+                <Send className="w-3.5 h-3.5" /> Send reminder now ({nudgeableSelected.toLocaleString()})
               </button>
             )}
             <button onClick={() => onCompose(selectedIds)} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 inline-flex items-center gap-1.5" title="Write and send a one-off message now (capped at 100 for deliverability)"><Mail className="w-3.5 h-3.5" /> Email them</button>

@@ -59,7 +59,7 @@ export async function GET() {
     where: { status: "pending" },
     orderBy: { scheduledFor: "asc" },
     take: 500,
-    select: { id: true, to: true, subject: true, scheduledFor: true, recipientType: true, recipientId: true, attempts: true },
+    select: { id: true, to: true, subject: true, scheduledFor: true, recipientType: true, recipientId: true, attempts: true, batchId: true },
   });
 
   // The sent log: what has already gone out (and what failed / was canceled or
@@ -187,6 +187,45 @@ export async function POST(req: Request) {
       ids.map((id, idx) => prisma.emailQueue.update({ where: { id }, data: { scheduledFor: times[idx] } })),
     );
     return NextResponse.json({ ok: true, shuffled: ids.length, paused: await isPaused() });
+  }
+
+  // Move pending entries to the FRONT of the line: give them the earliest
+  // scheduled times (just ahead of everything else, preserving their own
+  // relative order). They become due immediately but still leave one at a
+  // time at the configured pace — front of the queue, not a blast. Target
+  // either explicit ids or a whole batch by prefix (e.g. every pending
+  // "attendee-finish-nudge-*" reminder).
+  if (body?.action === "front") {
+    const frontIds = Array.isArray(body?.ids)
+      ? (body.ids as unknown[]).filter((x): x is string => typeof x === "string")
+      : null;
+    const batchPrefix = typeof body?.batchPrefix === "string" && body.batchPrefix.trim()
+      ? body.batchPrefix.trim()
+      : null;
+    if ((!frontIds || !frontIds.length) && !batchPrefix) {
+      return NextResponse.json({ error: "Pass ids or a batchPrefix to move to the front." }, { status: 400 });
+    }
+    const rows = await prisma.emailQueue.findMany({
+      where: {
+        status: "pending",
+        ...(frontIds && frontIds.length ? { id: { in: frontIds } } : { batchId: { startsWith: batchPrefix! } }),
+      },
+      orderBy: { scheduledFor: "asc" },
+      select: { id: true },
+    });
+    if (!rows.length) return NextResponse.json({ ok: true, fronted: 0 });
+    const earliest = await prisma.emailQueue.findFirst({
+      where: { status: "pending" },
+      orderBy: { scheduledFor: "asc" },
+      select: { scheduledFor: true },
+    });
+    // One second per row, ending just before the current head of the line
+    // (or now, if the head is already in the future).
+    const base = Math.min(Date.now(), earliest ? earliest.scheduledFor.getTime() : Date.now()) - rows.length * 1000;
+    await prisma.$transaction(
+      rows.map((r, i) => prisma.emailQueue.update({ where: { id: r.id }, data: { scheduledFor: new Date(base + i * 1000) } })),
+    );
+    return NextResponse.json({ ok: true, fronted: rows.length });
   }
 
   // Cancel specific pending entries (the per-row "cancel" on the queue page).
