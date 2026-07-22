@@ -9,7 +9,7 @@ const ACCENTS = [TOKENS.teal, TOKENS.blue, TOKENS.gold];
 
 export default function Speakers() {
   return (
-    <section id="speakers" className="relative bg-white py-28 sm:py-36 overflow-hidden">
+    <section id="speakers" className="relative bg-white pt-28 sm:pt-36 pb-12 sm:pb-16 overflow-hidden">
       {/* Faint teal halo, echoing the Theme section's gold one. */}
       <div
         aria-hidden
@@ -32,7 +32,7 @@ export default function Speakers() {
             className="mt-7 text-base sm:text-lg leading-relaxed max-w-2xl mx-auto"
             style={{ color: TOKENS.muted }}
           >
-            A growing lineup of the clinicians, interpreters, and advocates leading the work on language access, with more to be announced.
+            The clinicians, interpreters, and advocates leading the work on language access.
           </p>
         </div>
 
@@ -56,11 +56,6 @@ export default function Speakers() {
           ))}
         </div>
 
-        <div className="mt-16 text-center">
-          <p className="text-[15px] font-medium" style={{ color: TOKENS.muted }}>
-            More speakers to be announced.
-          </p>
-        </div>
       </div>
     </section>
   );

@@ -25,7 +25,7 @@ export default function ProgramBlock() {
   const [open, setOpen] = useState(false);
 
   return (
-    <section id="program" className="relative py-24 sm:py-28 overflow-hidden" style={{ background: `linear-gradient(180deg, #FFFFFF 0%, ${TOKENS.paper} 100%)` }}>
+    <section id="program" className="relative pt-12 sm:pt-16 pb-24 sm:pb-28 overflow-hidden" style={{ background: `linear-gradient(180deg, #FFFFFF 0%, ${TOKENS.paper} 100%)` }}>
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6">
         <div className="max-w-3xl mx-auto text-center mb-12">
           <Eyebrow>Program</Eyebrow>
