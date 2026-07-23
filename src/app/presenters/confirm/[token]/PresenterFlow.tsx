@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { parseResponse } from "@/lib/api";
 import { PolicyContent } from "./policy-content";
+import SlidesPanel, { type SlideInfo } from "./SlidesPanel";
 
 type Fields = Record<string, string | boolean | null | undefined>;
 
@@ -76,11 +77,12 @@ const TEAL = "#0E5566";
 const BLUE = "#0066B3";
 
 export default function PresenterFlow({
-  token, initial, headshotUrl,
+  token, initial, headshotUrl, slide,
 }: {
   token: string;
   initial: Initial;
   headshotUrl: string | null;
+  slide?: SlideInfo | null;
 }) {
   const [step, setStep] = useState<Step>(0);
   const [decision, setDecision] = useState<"accept" | "request_changes" | "decline" | null>(() => {
@@ -191,6 +193,9 @@ export default function PresenterFlow({
         firstName={firstName}
         mode={completion}
         onEdit={completion === "confirmed" || completion === "tentative" ? editAfterCompletion : undefined}
+        token={token}
+        slide={slide ?? null}
+        presenterName={initial.name}
       />
     );
   }
@@ -1300,11 +1305,14 @@ function ConfirmScreen({
 }
 
 function CompletionScreen({
-  firstName, mode, onEdit,
+  firstName, mode, onEdit, token, slide, presenterName,
 }: {
   firstName: string;
   mode: "confirmed" | "tentative" | "declined" | "changes";
   onEdit?: () => void;
+  token?: string;
+  slide?: SlideInfo | null;
+  presenterName?: string | null;
 }) {
   const config = {
     confirmed: {
@@ -1333,11 +1341,15 @@ function CompletionScreen({
     },
   }[mode];
 
+  // Confirmed (and tentative) presenters see the slides drop-box right on
+  // this screen: their portal link doubles as the place to deliver the deck.
+  const showSlides = !!token && (mode === "confirmed" || mode === "tentative");
+
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <BrandBar />
       <main className="flex-1 flex items-center justify-center px-6">
-        <div className="max-w-lg w-full text-center py-20">
+        <div className={`${showSlides ? "max-w-xl" : "max-w-lg"} w-full text-center py-20`}>
           {config.celebrate && (
             <div
               className="w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-8"
@@ -1349,6 +1361,9 @@ function CompletionScreen({
           <div className="text-[10px] font-semibold tracking-[0.22em] uppercase text-[#0E5566] mb-3">{config.eyebrow}</div>
           <h1 className="text-4xl sm:text-5xl font-bold text-slate-900 tracking-tight leading-[1.1]">{config.title}</h1>
           <p className="mt-5 text-base text-slate-500 leading-relaxed">{config.body}</p>
+          {showSlides && (
+            <SlidesPanel token={token!} initial={slide ?? null} presenterName={presenterName} />
+          )}
           {onEdit && (
             <button
               type="button"

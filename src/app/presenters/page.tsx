@@ -7,6 +7,7 @@ import Link from "next/link";
 import {
   Mic, Search, UserCheck, Download, Send, Check,
   Clock, XCircle, RefreshCw, AlertCircle, CircleHelp, Trash2, Megaphone, Inbox,
+  Presentation, ExternalLink,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
@@ -35,6 +36,15 @@ interface PresenterRow {
   confirmedAt: string | null;
   lastSentAt: string | null;
   headshotMime: string | null;
+  slidesRequestedAt: string | null;
+  slidesRemindCount: number;
+  slide: { fileName: string | null; sizeBytes: number | null; linkUrl: string | null; updatedAt: string | null; createdAt: string } | null;
+}
+
+function shortDate(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? "" : d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
 export default function PresentersPage() {
@@ -47,6 +57,8 @@ export default function PresentersPage() {
   const [showInvite, setShowInvite] = useState(false);
   const [showProposalCall, setShowProposalCall] = useState(false);
   const [acceptTarget, setAcceptTarget] = useState<InviteEditable | null>(null);
+  const [slidesBusy, setSlidesBusy] = useState<"initial" | "remind" | null>(null);
+  const [slidesNote, setSlidesNote] = useState<string | null>(null);
 
   const role = (session?.user as { role?: string } | undefined)?.role;
   const isAdmin = role === "admin" || role === "developer";
@@ -115,6 +127,40 @@ export default function PresentersPage() {
     changes_requested: rows.filter((r) => r.status === "changes_requested").length,
     declined: rows.filter((r) => r.status === "declined").length,
   }), [rows]);
+
+  // Slide-deck collection across the confirmed roster: who has delivered,
+  // who has been asked and hasn't, and who we haven't asked at all.
+  const slides = useMemo(() => {
+    const confirmed = rows.filter((r) => r.status === "confirmed");
+    return {
+      confirmed: confirmed.length,
+      received: confirmed.filter((r) => r.slide).length,
+      notAsked: confirmed.filter((r) => !r.slidesRequestedAt).length,
+      askedPending: confirmed.filter((r) => r.slidesRequestedAt && !r.slide).length,
+    };
+  }, [rows]);
+
+  async function requestSlides(mode: "initial" | "remind") {
+    setSlidesBusy(mode);
+    setSlidesNote(null);
+    try {
+      const res = await fetch("/api/presenters/request-slides", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode }),
+      });
+      const json = await res.json().catch(() => ({}));
+      setSlidesNote(res.ok
+        ? `${mode === "remind" ? "Reminded" : "Asked"} ${json.sent || 0} presenter${json.sent === 1 ? "" : "s"}${json.failed ? ` · ${json.failed} failed` : ""}.`
+        : (json.error || "Could not send."));
+      await load();
+    } catch {
+      setSlidesNote("Network error while sending.");
+    } finally {
+      setSlidesBusy(null);
+      setTimeout(() => setSlidesNote(null), 8000);
+    }
+  }
 
   function exportCsv() {
     const headers = ["Name", "Email", "Affiliation", "Role", "Talk title", "Length", "Track", "Day", "Honorarium", "Travel", "Status", "Invited", "Confirmed"];
@@ -197,6 +243,50 @@ export default function PresentersPage() {
               <Stat label="Changes" value={counts.changes_requested} icon={<AlertCircle className="w-4 h-4 text-amber-600" />} active={filter === "changes_requested"} onClick={() => setFilter("changes_requested")} />
               <Stat label="Declined" value={counts.declined} icon={<XCircle className="w-4 h-4 text-rose-500" />} active={filter === "declined"} onClick={() => setFilter("declined")} />
             </div>
+
+            {isAdmin && slides.confirmed > 0 && (
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 mb-6">
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <div className="min-w-0">
+                    <div className="text-sm font-bold text-slate-900 inline-flex items-center gap-1.5">
+                      <Presentation className="w-4 h-4 text-[#0E5566]" /> Presentation decks
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                        {slides.received}/{slides.confirmed} in
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1 max-w-xl">
+                      Confirmed presenters upload their deck (PowerPoint, Keynote, PDF up to 50 MB, or a Google
+                      Slides link) right in their portal, due <strong>Saturday, August 8</strong>, so there&rsquo;s time
+                      to review formatting. Files over 50 MB come in by email to contact@aalb.org. Each row below shows
+                      who has delivered; sends log to the presenter&rsquo;s history.
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => requestSlides("initial")}
+                      disabled={slidesBusy !== null || slides.notAsked === 0}
+                      className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white shadow-sm disabled:opacity-50 bg-gradient-to-r from-[#0E5566] to-[#0066B3]"
+                      title="Email every confirmed presenter who hasn't been asked yet"
+                    >
+                      {slidesBusy === "initial" ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                      {slides.notAsked === 0 ? "Everyone asked" : `Ask for presentations (${slides.notAsked})`}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => requestSlides("remind")}
+                      disabled={slidesBusy !== null || slides.askedPending === 0}
+                      className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold border disabled:opacity-50 text-[#0E5566] border-[#0E5566] bg-white"
+                      title="Nudge everyone who was asked and hasn't sent a deck yet"
+                    >
+                      {slidesBusy === "remind" ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Clock className="w-4 h-4" />}
+                      {slides.askedPending === 0 ? "No one to remind" : `Send reminder (${slides.askedPending})`}
+                    </button>
+                  </div>
+                </div>
+                {slidesNote && <div className="mt-2 text-xs font-semibold text-teal-700">{slidesNote}</div>}
+              </div>
+            )}
 
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
               <div className="p-3 border-b border-slate-200 flex items-center gap-2">
@@ -359,6 +449,32 @@ function PresenterRowItem({
         </div>
       </div>
       <div className="flex items-center gap-2 shrink-0">
+        {/* Deck state, only meaningful once someone is confirmed: green when
+            it's in (click to download; PDFs open in the tab, links open the
+            deck), amber while we're waiting on an ask. */}
+        {row.status === "confirmed" && row.slide && (
+          <a
+            href={`/api/presenters/${row.id}/slides`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold border bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+            title={row.slide.fileName
+              ? `${row.slide.fileName}${row.slide.sizeBytes ? ` · ${(row.slide.sizeBytes / 1024 / 1024).toFixed(1)} MB` : ""} — click to download`
+              : `${row.slide.linkUrl} — click to open`}
+          >
+            {row.slide.fileName ? <Download className="w-3 h-3" /> : <ExternalLink className="w-3 h-3" />}
+            Slides in · {shortDate(row.slide.updatedAt || row.slide.createdAt)}
+          </a>
+        )}
+        {row.status === "confirmed" && !row.slide && row.slidesRequestedAt && (
+          <span
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold border bg-amber-50 text-amber-700 border-amber-200"
+            title={`Asked ${shortDate(row.slidesRequestedAt)}${row.slidesRemindCount ? `, reminded ${row.slidesRemindCount}×` : ""} — no deck yet`}
+          >
+            <Presentation className="w-3 h-3" />
+            Slides asked {shortDate(row.slidesRequestedAt)}{row.slidesRemindCount ? ` · ${row.slidesRemindCount}×` : ""}
+          </span>
+        )}
         <span className={"inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold border " + status.color}>
           {status.label}
         </span>

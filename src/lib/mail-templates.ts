@@ -203,6 +203,37 @@ export function presenterConfirmedEmail({ name, url }: { name: string; url: stri
   `);
 }
 
+// The ask (and its reminder) for a confirmed presenter's slide deck. The
+// portal accepts PowerPoint / Keynote / PDF up to 50 MB or a Google Slides
+// link; anything bigger goes to contact@aalb.org by email. Deadline is a
+// week before the conference so formatting can be checked on the venue
+// systems with time to fix things together.
+export function presenterSlidesRequestEmail({ name, url, reminder }: { name: string; url: string; reminder?: boolean }) {
+  const first = (name || "").split(" ")[0] || "there";
+  return shell(`
+    <h1 style="font-size:22px;font-weight:700;margin:0 0 12px 0;letter-spacing:-0.01em;">${reminder ? `A gentle reminder, ${escapeHtml(first)}.` : `One more thing, ${escapeHtml(first)}.`}</h1>
+    <p style="font-size:15px;line-height:1.65;color:${TEXT};margin:0 0 14px 0;">
+      ${reminder
+        ? `We&rsquo;re still missing your presentation for the 2026 Lurie Children&rsquo;s and AALB Conference. Could you send it over by <strong>Saturday, August 8</strong>?`
+        : `You&rsquo;re confirmed to present at the 2026 Lurie Children&rsquo;s and AALB Conference, August 15 and 16. So that everything looks right on the venue screens, we&rsquo;d love your presentation by <strong>Saturday, August 8</strong>.`}
+    </p>
+    <p style="font-size:15px;line-height:1.65;color:${TEXT};margin:0 0 14px 0;">
+      PowerPoint, Keynote, or PDF up to 50 MB, or a link to Google Slides, whatever you&rsquo;re working in. Uploading takes a moment in your presenter portal:
+    </p>
+    ${button(url, reminder ? "Upload my presentation" : "Upload your presentation")}
+    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:8px 0 0 0;">
+      Or paste this link into your browser:<br/>
+      <a href="${url}" style="color:${BLUE};word-break:break-all;">${url}</a>
+    </p>
+    <p style="font-size:15px;line-height:1.65;color:${TEXT};margin:18px 0 0 0;">
+      If your file is larger than 50 MB, simply email it to <a href="mailto:contact@aalb.org" style="color:${BLUE};">contact@aalb.org</a> and we&rsquo;ll take it from there.
+    </p>
+    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;">
+      We review decks only for formatting and technical fit, and we&rsquo;ll reach out if anything needs adjusting. You can replace your file any time up to August 8.
+    </p>
+  `);
+}
+
 export function presenterTentativeEmail({ name, url }: { name: string; url: string }) {
   const first = (name || "").split(" ")[0] || "there";
   return shell(`

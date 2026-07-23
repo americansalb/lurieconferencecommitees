@@ -26,6 +26,9 @@ export default async function PresenterConfirmPage({ params }: { params: { token
       agreedToCe: true, agreedToHeadshot: true,
       status: true, confirmedAt: true, requestedChanges: true,
       token: true,
+      // Summary only — never the file bytes — for the slides panel on the
+      // confirmed screen.
+      slide: { select: { fileName: true, sizeBytes: true, linkUrl: true, updatedAt: true, createdAt: true } },
     },
   });
 
@@ -35,15 +38,23 @@ export default async function PresenterConfirmPage({ params }: { params: { token
     data: { presenterId: presenter.id, type: "opened" },
   });
 
+  const { slide, ...rest } = presenter;
+
   return (
     <PresenterFlow
       token={params.token}
       initial={{
-        ...presenter,
-        travelArrival: presenter.travelArrival ? presenter.travelArrival.toISOString() : null,
-        travelDeparture: presenter.travelDeparture ? presenter.travelDeparture.toISOString() : null,
+        ...rest,
+        travelArrival: rest.travelArrival ? rest.travelArrival.toISOString() : null,
+        travelDeparture: rest.travelDeparture ? rest.travelDeparture.toISOString() : null,
       }}
-      headshotUrl={presenter.headshotMime ? `/api/presenters/headshot/${presenter.id}` : null}
+      headshotUrl={rest.headshotMime ? `/api/presenters/headshot/${rest.id}` : null}
+      slide={slide ? {
+        fileName: slide.fileName,
+        sizeBytes: slide.sizeBytes,
+        linkUrl: slide.linkUrl,
+        updatedAt: (slide.updatedAt || slide.createdAt).toISOString(),
+      } : null}
     />
   );
 }

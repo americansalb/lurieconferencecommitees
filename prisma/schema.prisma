@@ -358,10 +358,39 @@ model Presenter {
   adminNotes       String?
   invitedById      String?
 
+  // Presentation-deck collection: when we first asked for their slides and
+  // how many reminder emails have gone out since. The deck itself lives in
+  // PresenterSlide so list queries never touch file bytes.
+  slidesRequestedAt DateTime?
+  slidesRemindCount Int       @default(0)
+
   events PresenterEvent[]
+  slide  PresenterSlide?
 
   @@index([email])
   @@map("lcc_presenters")
+  @@schema("lcc")
+}
+
+// A presenter's talk deck: either an uploaded file (PowerPoint / Keynote /
+// PDF, capped at 50 MB) or a pasted link (Google Slides etc.). One per
+// presenter, out-of-row so Presenter list queries never pull file bytes.
+// Uploaded via the tokenized portal; served to the team via
+// /api/presenters/[id]/slides. Decks too big to upload are emailed to
+// contact@aalb.org instead (the portal says so), so this row may stay empty
+// for a presenter who has genuinely delivered.
+model PresenterSlide {
+  presenterId String    @id
+  presenter   Presenter @relation(fields: [presenterId], references: [id], onDelete: Cascade)
+  fileName    String?
+  mime        String?
+  sizeBytes   Int?
+  data        Bytes?
+  linkUrl     String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime? @updatedAt
+
+  @@map("lcc_presenter_slides")
   @@schema("lcc")
 }
 
