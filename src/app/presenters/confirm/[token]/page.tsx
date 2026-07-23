@@ -28,6 +28,7 @@ export default async function PresenterConfirmPage({ params }: { params: { token
       token: true,
       // Summary only — never the file bytes — for the slides panel on the
       // confirmed screen.
+      slideNotes: true,
       slide: { select: { fileName: true, sizeBytes: true, linkUrl: true, updatedAt: true, createdAt: true } },
     },
   });
@@ -38,7 +39,7 @@ export default async function PresenterConfirmPage({ params }: { params: { token
     data: { presenterId: presenter.id, type: "opened" },
   });
 
-  const { slide, ...rest } = presenter;
+  const { slide, slideNotes, ...rest } = presenter;
 
   return (
     <PresenterFlow
@@ -49,6 +50,7 @@ export default async function PresenterConfirmPage({ params }: { params: { token
         travelDeparture: rest.travelDeparture ? rest.travelDeparture.toISOString() : null,
       }}
       headshotUrl={rest.headshotMime ? `/api/presenters/headshot/${rest.id}` : null}
+      slideNotes={slideNotes}
       slide={slide ? {
         fileName: slide.fileName,
         sizeBytes: slide.sizeBytes,

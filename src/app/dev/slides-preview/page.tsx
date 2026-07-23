@@ -18,6 +18,7 @@ export default function SlidesPreviewPage() {
           <SlidesPanel
             token="DEV-PREVIEW"
             initial={{ fileName: "Health-Equity-Through-Language-Access.pptx", sizeBytes: 18_400_000, linkUrl: null, updatedAt: "2026-07-21T15:00:00Z" }}
+            initialNotes="Please pass the microphone to the audience for the Q&A. The video on slide 14 has sound."
             presenterName="Yuliya Speroff"
           />
         </div>

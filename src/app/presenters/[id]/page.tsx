@@ -44,6 +44,7 @@ interface Presenter {
   facebookUrl: string | null;
   otherSocialUrl: string | null;
   avNotes: string | null;
+  slideNotes: string | null;
   needsMic: boolean;
   needsProjector: boolean;
   needsAudio: boolean;
@@ -340,6 +341,7 @@ export default function PresenterDetailPage() {
                     <KV label="Record session" value={yesno(presenter.needsRecording)} />
                     <KV label="Clicker" value={yesno(presenter.needsClicker)} />
                     <KV label="A/V notes" value={presenter.avNotes} multiline />
+                    <KV label="Session-day notes (with slides)" value={presenter.slideNotes} multiline />
                   </Section>
                   <Section title="Travel">
                     <KV label="Mode" value={presenter.travelMode} />

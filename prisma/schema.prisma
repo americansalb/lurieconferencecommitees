@@ -363,6 +363,10 @@ model Presenter {
   // PresenterSlide so list queries never touch file bytes.
   slidesRequestedAt DateTime?
   slidesRemindCount Int       @default(0)
+  // Run-of-show notes typed next to the deck ("pass the mic to the audience
+  // for Q&A", "the video has sound"). On Presenter, not PresenterSlide, so
+  // notes survive even when the deck itself arrives by email.
+  slideNotes        String?
 
   events PresenterEvent[]
   slide  PresenterSlide?

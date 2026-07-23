@@ -80,7 +80,24 @@ export async function POST(req: Request, { params }: { params: { token: string }
     return NextResponse.json({ ok: true, slide: slideSummary(saved) });
   }
 
-  const body = await req.json().catch(() => ({} as { linkUrl?: unknown; remove?: unknown }));
+  const body = await req.json().catch(() => ({} as { linkUrl?: unknown; remove?: unknown; notes?: unknown }));
+
+  // Run-of-show notes, saved independently of the deck itself so a presenter
+  // whose file comes in by email can still tell us what to handle in the
+  // room. Empty string clears.
+  if (typeof (body as { notes?: unknown }).notes === "string") {
+    const notes = (body as { notes: string }).notes.trim().slice(0, 2000);
+    await prisma.presenter.update({
+      where: { id: presenter.id },
+      data: { slideNotes: notes || null },
+    });
+    if (notes) {
+      await prisma.presenterEvent.create({
+        data: { presenterId: presenter.id, type: "slides_notes_saved", meta: notes.slice(0, 200) },
+      }).catch(() => {});
+    }
+    return NextResponse.json({ ok: true, notes: notes || null });
+  }
 
   if ((body as { remove?: unknown }).remove === true) {
     await prisma.presenterSlide.deleteMany({ where: { presenterId: presenter.id } });

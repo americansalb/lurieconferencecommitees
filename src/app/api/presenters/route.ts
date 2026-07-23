@@ -51,6 +51,7 @@ export async function GET() {
         headshotMime: true,
         slidesRequestedAt: true,
         slidesRemindCount: true,
+        slideNotes: true,
         // Deck summary for the dashboard chip — never the bytes.
         slide: { select: { fileName: true, sizeBytes: true, linkUrl: true, updatedAt: true, createdAt: true } },
       },

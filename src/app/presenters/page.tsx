@@ -7,7 +7,7 @@ import Link from "next/link";
 import {
   Mic, Search, UserCheck, Download, Send, Check,
   Clock, XCircle, RefreshCw, AlertCircle, CircleHelp, Trash2, Megaphone, Inbox,
-  Presentation, ExternalLink,
+  Presentation, ExternalLink, StickyNote,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
@@ -38,6 +38,7 @@ interface PresenterRow {
   headshotMime: string | null;
   slidesRequestedAt: string | null;
   slidesRemindCount: number;
+  slideNotes: string | null;
   slide: { fileName: string | null; sizeBytes: number | null; linkUrl: string | null; updatedAt: string | null; createdAt: string } | null;
 }
 
@@ -465,6 +466,14 @@ function PresenterRowItem({
             {row.slide.fileName ? <Download className="w-3 h-3" /> : <ExternalLink className="w-3 h-3" />}
             Slides in · {shortDate(row.slide.updatedAt || row.slide.createdAt)}
           </a>
+        )}
+        {row.status === "confirmed" && row.slideNotes && (
+          <span
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold border bg-violet-50 text-violet-700 border-violet-200"
+            title={`Session notes from the presenter: ${row.slideNotes}`}
+          >
+            <StickyNote className="w-3 h-3" /> Note
+          </span>
         )}
         {row.status === "confirmed" && !row.slide && row.slidesRequestedAt && (
           <span

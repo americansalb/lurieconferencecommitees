@@ -40,11 +40,13 @@ const ACCEPT_RE = /\.(ppt|pptx|key|odp|pdf)$/i;
 export default function SlidesPanel({
   token,
   initial,
+  initialNotes,
   presenterName,
   demoOversize,
 }: {
   token: string;
   initial: SlideInfo | null;
+  initialNotes?: string | null;
   presenterName?: string | null;
   // Dev-preview only: render the too-big card with this fake file.
   demoOversize?: { name: string; sizeBytes: number } | null;
@@ -58,7 +60,32 @@ export default function SlidesPanel({
   const [showLink, setShowLink] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [notes, setNotes] = useState(initialNotes || "");
+  const [savedNotes, setSavedNotes] = useState(initialNotes || "");
+  const [notesPhase, setNotesPhase] = useState<"idle" | "saving" | "saved">("idle");
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const saveNotes = useCallback(async () => {
+    setNotesPhase("saving");
+    try {
+      const res = await fetch(`/api/presenters/slides/${token}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notes }),
+      });
+      if (res.ok) {
+        setSavedNotes(notes.trim());
+        setNotesPhase("saved");
+        setTimeout(() => setNotesPhase("idle"), 2500);
+      } else {
+        setNotesPhase("idle");
+        setError("Couldn't save your notes. Please try again.");
+      }
+    } catch {
+      setNotesPhase("idle");
+      setError("Couldn't save your notes. Check your connection and try again.");
+    }
+  }, [notes, token]);
 
   const uploadFile = useCallback((file: File) => {
     setError(null);
@@ -359,6 +386,40 @@ export default function SlidesPanel({
           )}
 
           {error && <div className="mt-3 text-sm font-semibold text-rose-600">{error}</div>}
+
+          {/* Run-of-show notes: present in every state, because "pass the mic
+              to the audience" matters whether the deck came here or by email. */}
+          <div className="mt-5">
+            <label className="block text-xs font-bold text-slate-700">
+              Anything we should handle in the room?
+            </label>
+            <p className="mt-0.5 text-xs text-slate-400">
+              Optional, for the day-of team: mic handling, videos with sound, handouts, timing cues.
+            </p>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={3}
+              maxLength={2000}
+              placeholder="e.g. Please pass the microphone to the audience for the Q&A. My last slide has a video with sound."
+              className="mt-2 w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl outline-none focus:border-[#0066B3] focus:ring-2 focus:ring-[#0066B3]/15 resize-y"
+            />
+            {(notes.trim() !== savedNotes || notesPhase !== "idle") && (
+              <div className="mt-1.5 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={saveNotes}
+                  disabled={notesPhase === "saving" || notes.trim() === savedNotes}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white disabled:opacity-50"
+                  style={{ background: `linear-gradient(135deg, ${TEAL}, ${BLUE})` }}
+                >
+                  {notesPhase === "saving" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : notesPhase === "saved" ? <CheckCircle2 className="w-3.5 h-3.5" /> : null}
+                  {notesPhase === "saved" ? "Saved" : "Save notes"}
+                </button>
+                {notesPhase === "saved" && <span className="text-xs font-semibold text-emerald-700">The team will see this with your slides.</span>}
+              </div>
+            )}
+          </div>
 
           <p className="mt-4 text-xs text-slate-400 leading-relaxed">
             Bigger than {SLIDE_MAX_MB} MB? Email it to{" "}

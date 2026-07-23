@@ -229,7 +229,7 @@ export function presenterSlidesRequestEmail({ name, url, reminder }: { name: str
       If your file is larger than 50 MB, simply email it to <a href="mailto:contact@aalb.org" style="color:${BLUE};">contact@aalb.org</a> and we&rsquo;ll take it from there.
     </p>
     <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;">
-      We review decks only for formatting and technical fit, and we&rsquo;ll reach out if anything needs adjusting. You can replace your file any time up to August 8.
+      We review decks only for formatting and technical fit, and we&rsquo;ll reach out if anything needs adjusting. You can replace your file any time up to August 8. The same page has a notes box for anything you need from us in the room, like passing the microphone to the audience for Q&amp;A or a video with sound.
     </p>
   `);
 }

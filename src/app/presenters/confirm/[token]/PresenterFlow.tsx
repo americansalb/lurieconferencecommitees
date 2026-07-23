@@ -77,12 +77,13 @@ const TEAL = "#0E5566";
 const BLUE = "#0066B3";
 
 export default function PresenterFlow({
-  token, initial, headshotUrl, slide,
+  token, initial, headshotUrl, slide, slideNotes,
 }: {
   token: string;
   initial: Initial;
   headshotUrl: string | null;
   slide?: SlideInfo | null;
+  slideNotes?: string | null;
 }) {
   const [step, setStep] = useState<Step>(0);
   const [decision, setDecision] = useState<"accept" | "request_changes" | "decline" | null>(() => {
@@ -195,6 +196,7 @@ export default function PresenterFlow({
         onEdit={completion === "confirmed" || completion === "tentative" ? editAfterCompletion : undefined}
         token={token}
         slide={slide ?? null}
+        slideNotes={slideNotes ?? null}
         presenterName={initial.name}
       />
     );
@@ -1305,13 +1307,14 @@ function ConfirmScreen({
 }
 
 function CompletionScreen({
-  firstName, mode, onEdit, token, slide, presenterName,
+  firstName, mode, onEdit, token, slide, slideNotes, presenterName,
 }: {
   firstName: string;
   mode: "confirmed" | "tentative" | "declined" | "changes";
   onEdit?: () => void;
   token?: string;
   slide?: SlideInfo | null;
+  slideNotes?: string | null;
   presenterName?: string | null;
 }) {
   const config = {
@@ -1362,7 +1365,7 @@ function CompletionScreen({
           <h1 className="text-4xl sm:text-5xl font-bold text-slate-900 tracking-tight leading-[1.1]">{config.title}</h1>
           <p className="mt-5 text-base text-slate-500 leading-relaxed">{config.body}</p>
           {showSlides && (
-            <SlidesPanel token={token!} initial={slide ?? null} presenterName={presenterName} />
+            <SlidesPanel token={token!} initial={slide ?? null} initialNotes={slideNotes ?? null} presenterName={presenterName} />
           )}
           {onEdit && (
             <button
