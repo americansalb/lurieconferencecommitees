@@ -3225,12 +3225,33 @@ export function plainDirectInviteEmail(args: AttendeeInviteArgs & { org?: string
   paras.push(escapeHtml(note).replace(/\n{2,}/g, "</div>\n  <div><br></div>\n  <div>").replace(/\n/g, "<br>"));
   // The bridge. Deliberately one short sentence: the reader has just been
   // told why they were written to, and a long pitch here would undo it.
+  // The bridge. Deliberately one short sentence.
   paras.push(
     `AALB is putting on its second conference with Lurie Children's on August 15 and 16, and I'd like you to be there.`
   );
-  paras.push(PLAIN_KEYNOTE_PARA);
-  paras.push(plainDetailsPara(args.learnMoreUrl));
-  paras.push(plainCtaPara(url, discountPercent));
+  // Everything after the note is deliberately NOT the shared boilerplate.
+  //
+  // The standard paragraphs (PLAIN_KEYNOTE_PARA, plainDetailsPara,
+  // plainCtaPara) are written for readers who need the conference explained to
+  // them, and they give the game away here in three specific ways:
+  //   - They gloss The Joint Commission as "whose standards nearly every
+  //     hospital in America has to meet." Everyone on this list already knows
+  //     what The Joint Commission is. Explaining it to a hospital equity
+  //     director is what bulk mail does, and it undoes paragraph one.
+  //   - "Hospital standards and federal civil rights law, on the same stage"
+  //     is a tagline. People do not write taglines in their own email.
+  //   - "your personal invitation rate is already built into the link" is CRM
+  //     phrasing for "the discount is on the link."
+  // Same facts, addressed to a peer, and four paragraphs shorter.
+  const site = (args.learnMoreUrl || "https://conference.aalb.org").replace(/\/$/, "");
+  paras.push(
+    `The Joint Commission is keynoting on how their standards land on language access, and Michael Mul&eacute;, who ran language access enforcement at the DOJ civil rights division, is speaking too. It's two days at Lurie Children's with a live stream if you'd rather watch from home, and over ten hours of CEUs accredited by NBCMI and CCHI. The rest of the lineup, Wilma Alvarado-Little from the New York State Department of Health among them, is at <a href="${site}">conference.aalb.org</a>.`
+  );
+  paras.push(
+    discountPercent > 0
+      ? `You can <a href="${url}">sign up here</a>. The invitation rate is already on the link.`
+      : `You can <a href="${url}">sign up here</a>.`
+  );
   // Naming their organization in the footer is the honest answer to "how did
   // you get my address": we went looking at their org's own public pages.
   const org = (args.org || "").trim();

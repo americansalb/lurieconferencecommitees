@@ -10,7 +10,25 @@
 // program they run, a neighborhood they're rooted in. If a note could be
 // pasted onto a different row without anyone noticing, it has failed and
 // should be rewritten. That is the entire difference between this list and a
-// mail merge, and it is the reason the notes are long and the list is short.
+// mail merge, and it is the reason the list is short.
+//
+// ─── How they have to SOUND (this is half the job) ─────────────────────────
+// Specific is not the same as convincing. A first draft of these was factually
+// perfect and every single one still read as machine-written, because they all
+// had the same four tics. Do not reintroduce them:
+//   1. NO closing epigram. Real work email does not land a zinger at the end of
+//      every paragraph. End on a plain sentence, a question, or the ask.
+//   2. NO "most institutions do X, but you do Y" setup. It is the single most
+//      recognisable shape in the genre and it appeared in a third of the file.
+//   3. NO balanced opposites ("the part I hear least about and worry about
+//      most"), no scene-painting, no rule-of-three lists.
+//   4. VARY THE LENGTH. Twenty-seven notes of four sentences each in identical
+//      cadence is the giveaway even when every fact is right. Some of these
+//      should be two sentences. One person writing to twenty-seven people
+//      writes at wildly different lengths depending on how much they have.
+// Use contractions, the way the rest of the letter does. Say the fact and stop;
+// do not explain what the fact means. Being a little plain and a little
+// awkward reads as human. Being polished reads as generated.
 //
 // ─── Sourcing rules (read before adding anyone) ────────────────────────────
 // 1. `email` holds ONLY an address literally published on a real page. No
@@ -81,7 +99,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Director, CAHRA; James R. Webster Jr. Professor",
     email: "mswolf@northwestern.edu",
     source: "https://www.feinberg.northwestern.edu/sites/cahra/about/our-team/",
-    note: `I came across your work on liquid medication dosing errors among Hispanic parents with limited English proficiency, and then went and read the language-concordant drug label study, and I have not been able to stop thinking about either one. Most conversations about language access in healthcare stop at the encounter, the interpreter in the room, the consent form. Your ConcordantRx work follows the patient home, to the moment a parent is standing at a kitchen counter with a syringe and a label, and asks whether we got that part right. That is the part of the problem I hear the least about and worry about the most.`,
+    note: `I've been reading the ConcordantRx work, mostly the studies on liquid dosing errors among Spanish-speaking parents. We built this program around the interpreted visit and I've come round to thinking that's the easier half of the problem. Nobody on our agenda right now speaks to what happens once the family is home with the bottle and the label, and I'd rather that be you than nobody.`,
   },
   {
     org: "Health Literacy & Learning at Northwestern",
@@ -90,7 +108,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Professor of Medicine; Director, CAHRA Health Literacy & Learning Program (HeLP)",
     email: "stacy-bailey@northwestern.edu",
     source: "https://www.feinberg.northwestern.edu/sites/cahra/about/our-team/",
-    note: `Health literacy and language access keep turning out to be the same problem approached from two directions, and the Health Literacy and Learning Program is one of the few places I know of that treats it seriously enough to have built a research program around it. A family can be handed discharge instructions in flawless Spanish and still walk out not knowing what to do; the translation was fine, the document was never comprehensible to begin with. That distinction gets flattened constantly in language-access conversations, usually by people who have never had to measure it.`,
+    note: `I'm writing about a conference on language access in pediatric care, but the reason I'm writing to you specifically is health literacy. A discharge instruction can be translated perfectly and still be unreadable, and our program doesn't currently tell those two failures apart. HeLP looks like one of the few places actually measuring the difference.`,
   },
 
   // ─── Medicine and public health at UIC ────────────────────────────────────
@@ -101,7 +119,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Director, Hispanic Center of Excellence; Professor of Medicine",
     email: "mvela@uic.edu",
     source: "https://medicine.uic.edu/profiles/vela-monica/",
-    note: `You gave a talk last September called "Language Concordant Care and its Contributions to Health Equity," which is close enough to the subject of this conference that I read the description twice to make sure I had not somehow found our own agenda by mistake. The Hispanic Center of Excellence has been at UIC since 1991, which means it predates nearly every institutional equity office in this city and has outlasted a fair number of them. That kind of longevity usually means the work was real before it was fashionable.`,
+    note: `Your talk last September was called "Language Concordant Care and its Contributions to Health Equity." That's close enough to our whole agenda that I double-checked we hadn't lifted it off you. The Hispanic Center of Excellence has been at UIC since 1991, so you've been at this a great deal longer than we have.`,
   },
   {
     org: "the Odehmenan Health Equity Center",
@@ -110,7 +128,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Director of Health Equity Innovation and Collaboration; Founding Director, Odehmenan Health Equity Center",
     email: "ablack3@uic.edu",
     source: "https://publichealth.uic.edu/profiles/adriana-black",
-    note: `Naming a health equity center Odehmenan, this heart of ours in Potawatomi, is a choice most institutions would have workshopped down into something safer. It also says something about how the center thinks about language: that a word carries a claim, and that translating it away costs you the claim. Your center hosted Dr. Vela's talk on language-concordant care last fall, so I suspect none of this is a new argument to you.`,
+    note: `Odehmenan. This heart of ours. I looked up what it meant before writing to you, which I suppose is part of the point of naming it that. Your center hosted Monica Vela's talk on language-concordant care last fall so none of this is new to you, but I wanted to ask you directly rather than hope you came across us somewhere.`,
   },
   {
     org: "UIC School of Public Health",
@@ -119,7 +137,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Clinical Assistant Professor, Community Health Sciences",
     email: "amparo@uic.edu",
     source: "https://publichealth.uic.edu/profiles/amparo-castillo/",
-    note: `The Diabetes Empowerment Education Program is one of the few health education programs I can point to that was designed for low health literacy from the start rather than translated into it afterward, and having a physician who trains the trainers is a large part of why. Most of what passes for culturally appropriate patient education in this country is an English program run through a translator and a stock photo swap. Yours was built the other way around.`,
+    note: `The Diabetes Empowerment Education Program was built in Spanish for low-literacy learners instead of translated into that afterward. It's what I point to when people ask me what "culturally appropriate" is supposed to mean in practice.`,
   },
   {
     org: "UIC's Transnational Research and Practice Lab",
@@ -128,7 +146,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Clinical Associate Professor; Chair, APHA Caucus on Refugee and Immigrant Health",
     email: "klamber4@uic.edu",
     source: "https://blst.uic.edu/profiles/ibe-lamberts-kelechi",
-    note: `Language access conversations in this country have a way of collapsing into Spanish and then stopping, which leaves African immigrant families, often multilingual, often navigating a language the hospital has no contract for, somewhere off the edge of the plan. The Interconnected African Wellness Assembly and your work chairing the APHA refugee and immigrant health caucus are both aimed squarely at that gap. I would rather have that in the room for this than discover afterward that we talked around it for two days.`,
+    note: `Something I'm worried about with our program: language access in this country tends to mean Spanish and then stop. African immigrant families end up off the edge of the plan, frequently multilingual, frequently speaking a language the hospital holds no contract for. You chair the APHA caucus on refugee and immigrant health and you built the Interconnected African Wellness Assembly. I'd rather you said that in the room than have us talk around it for two days and work it out afterward.`,
   },
   {
     org: "UIC Occupational Therapy",
@@ -137,7 +155,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Faculty, Department of Occupational Therapy (rank not published)",
     email: "mmirza2@uic.edu",
     source: "https://ahs.uic.edu/disability-human-development/faculty/",
-    note: `Your research page lists clinical communication with non-English speaking patients as an area, which is a plainer description of this conference's subject than anything we have managed to put on our own website. The disability and refugee side of it is the part I think gets least attention. A family navigating both a language barrier and a rehabilitation system is dealing with two sets of jargon at once, and interpreters are rarely trained for the second one.`,
+    note: `Your faculty page lists clinical communication with non-English speaking patients as a research area, which is a plainer description of this conference than anything currently on our own website. The disability side is what I'd want you for. A family working through a language barrier and a rehab system at the same time is handling two vocabularies, and interpreters are generally not trained on the second.`,
   },
 
   // ─── Spanish, heritage language, and bilingual education ──────────────────
@@ -148,7 +166,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Professor of Spanish Linguistics; Director of Undergraduate Studies",
     email: "kimpotow@uic.edu",
     source: "https://hip.uic.edu/people/faculty/",
-    note: `Spanish in Chicago has been sitting on my desk for a while now. The reason a conference like this one has to happen in this city and not somewhere else is essentially the argument of that book: Chicago's Spanish is not one language community but many, layered by generation and country of origin and neighborhood, and a hospital that treats it as a single checkbox on an intake form will get it wrong in ways nobody downstream ever traces back. I also watched your TEDx talk, and the framing of monolingualism as something we do to children rather than something that simply happens to them is the sharpest version of that argument I have heard.`,
+    note: `I read Spanish in Chicago last year and it's a good part of why this conference is happening here and not somewhere else. A hospital intake form has one box for Spanish. Your book is a few hundred pages on why that isn't one thing. I watched the TEDx talk too, and the bit about monolingualism being something done to children has stuck with me longer than most of what I hear at conferences, which is an awkward thing to say while inviting you to one.`,
   },
   {
     org: "UIC Spanish Heritage Language Program",
@@ -157,7 +175,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Clinical Assistant Professor; Director, Spanish Heritage Language Program",
     email: "abetan3@uic.edu",
     source: "https://hip.uic.edu/profiles/betancourt-ciprian-angela/",
-    note: `Nearly every bilingual person working in a Chicago hospital came up through a heritage-speaker pathway, and almost none of them were ever told that the Spanish they grew up with was a professional asset rather than something to apologize for. Directing the Spanish Heritage Language Program puts you at the exact point where that gets decided. I noticed you were on the organizing committee for the Illinois Dual Language Summit too, so you already know what it takes to get people in a room around this.`,
+    note: `Most of the bilingual staff in Chicago hospitals came up as heritage speakers, and plenty of them were taught somewhere along the way that their Spanish wasn't quite the real article. You run the program where that goes one way or the other. I also saw you were on the organizing committee for the Illinois Dual Language Summit, so you know exactly how much work it is to get people in a room about this, and I'm asking anyway.`,
   },
   {
     org: "Loyola University Chicago",
@@ -166,7 +184,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Professor of Spanish",
     email: "cburgo@luc.edu",
     source: "https://www.luc.edu/modernlang/profiles/burgoclara.shtml",
-    note: `Clases mixtas took on something most Spanish departments would rather not look at directly: that a heritage speaker and a second-language learner sitting in the same classroom are not doing the same task, and that pretending otherwise costs the heritage speaker more. The same thing happens in hospitals. A bilingual nurse who grew up speaking Spanish at home and a clinician who took Medical Spanish get treated as interchangeable resources, and it is almost always the first one who ends up absorbing the work without the title.`,
+    note: `Clases mixtas is about heritage speakers and second-language learners being taught as though they're doing the same task. The hospital version is a bilingual nurse who grew up speaking Spanish and a physician who took Medical Spanish getting counted as the same resource, and it usually ends with the nurse interpreting for free. Nobody on our program can speak to the classroom end of it yet.`,
   },
   {
     org: "Truman College",
@@ -175,7 +193,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Faculty Director, Transitional Bilingual Learning Community",
     email: "mtroche-rodriguez@ccc.edu",
     source: "https://www.ccc.edu/truman/departments/transitional-bilingual-learning-community/",
-    note: `The Transitional Bilingual Learning Community has been running since 2002, which means you have moved more than two decades of Chicago's English learners into college-credit coursework without ever asking them to trade one language for the other. That premise, that a student's first language is the thing to build on rather than the thing to get past, is exactly the argument this conference is making about hospitals. You have a considerably longer track record of proving it than we do.`,
+    note: `The Transitional Bilingual Learning Community has been running since 2002. That's twenty-odd years of moving English learners into credit coursework without asking them to give up the first language, which is the same argument we're making about hospitals, except you can demonstrate it and we're still asserting it.`,
   },
 
   // ─── Hospitals and health systems ─────────────────────────────────────────
@@ -186,7 +204,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "SVP Community Health Equity; Co-Director, RUSH BMO Institute for Health Equity",
     email: "David_Ansell@rush.edu",
     source: "https://rushu.rush.edu/rush-medical-college/departments/department-internal-medicine/division-community-global-health-equity",
-    note: `Rush lists you on both its health equity experts page and its Spanish-speaking experts page, which is a combination I did not find anywhere else in the city. Most institutions keep those two lists staffed by entirely different people, and the gap between them is roughly the subject of this conference. The Chicago Health Map makes the same point geographically. A life expectancy gap that large across a few miles is not produced by any one failure, but a family who cannot ask a question in their own language is somewhere inside almost every version of the story.`,
+    note: `Rush lists you on its health equity experts page and on its Spanish-speaking physicians page. You're the only person I found in the city on both, and it's odd to me that being on both is rare. I've spent a fair amount of time with the Chicago Health Map as well. A life expectancy gap that big across a few miles has no single cause, but a parent who can't ask a question in their own language is somewhere in most versions of it.`,
   },
   {
     org: "Shirley Ryan AbilityLab",
@@ -196,7 +214,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     email: "international@sralab.org",
     sharedInbox: true,
     source: "Global Patient Services page, sralab.org",
-    note: `"Interpreters are not just a box, where one language goes in, and another comes out." I read that line of yours a while back and it has been doing a lot of work in my head since. The Coleman-funded study on interpreter-mediated aphasia assessments is the same argument with data attached: if you cannot separate the language barrier from the language impairment, you can misdiagnose a person into the wrong year of their life. You also came up through the interpreter booth rather than into it from administration, which is rare enough at director level that I noticed.`,
+    note: `You said somewhere that interpreters are not just a box where one language goes in and another comes out. I've been quoting that at people for months without asking you first, so the least I can do is invite you. The Coleman-funded study on interpreter-mediated aphasia assessment makes the same point with data behind it: if you can't separate the language barrier from the language impairment, you can misdiagnose somebody badly. I also noticed you came up through the booth rather than into it from administration, which isn't common at director level.`,
   },
   {
     org: "UChicago Medicine",
@@ -206,7 +224,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     email: "international.services@uchospitals.edu",
     sharedInbox: true,
     source: "International Programs page, uchicagomedicine.org",
-    note: `At UChicago Medicine, Interpreter Services reports up through International Programs, which is an organizational choice more than an administrative one. It puts language alongside the rest of what it takes to care for someone arriving from outside the system rather than filing it under compliance. Your top five languages run Spanish, Arabic, Cantonese, Polish, Mandarin, which is a fair description of the South Side and not much like the list any national vendor would have predicted. Volume up seventy-one percent since 2015 suggests the demand found you faster than the budget did.`,
+    note: `Interpreter Services reporting up through International Programs instead of sitting under compliance is a choice, and I think it's the right one. Your top five languages run Spanish, Arabic, Cantonese, Polish, Mandarin, which reads like the South Side and not much like the list a national vendor would have predicted. Seventy-one percent volume growth since 2015 is the number I'd most want to ask you about, since I doubt the budget grew seventy-one percent.`,
   },
   {
     org: "Cook County Health",
@@ -216,7 +234,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     email: "patientexperience@cookcountyhealth.org",
     sharedInbox: true,
     source: "Leadership page, cookcountyhealth.org (address published in the page's own encoded contact link)",
-    note: `Cook County Health staffs Spanish interpreters on site around the clock and Polish on weekdays, which is not a decision anyone reaches from a spreadsheet. It means somebody looked at who actually walks through the door in this county and staffed to that rather than to a national average. Coming from NYC Health and Hospitals, you have now run patient experience in the two American health systems that serve the widest range of languages by some distance. What I would most want to hear is what transfers between them and what does not.`,
+    note: `Cook County Health staffs Spanish interpreters on site around the clock and Polish on weekdays. That's staffing to who actually walks in rather than to a national average, and it isn't the usual call. You've now run patient experience at Cook County and at NYC Health and Hospitals, probably the two most multilingual public systems in the country. What transferred and what didn't is the thing I'd most want to ask you.`,
   },
   {
     org: "Loyola Medicine",
@@ -226,7 +244,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     email: "LoyolaHealth@lumc.edu",
     sharedInbox: true,
     source: "Community benefit report FY2024 and leadership listing, loyolamedicine.org",
-    note: `Loyola's community benefit report puts language assistance at $3,886,246 for fiscal 2024, over thirty thousand minutes of interpreting a month. I have read a lot of these reports and very few break that line out at all, which means most systems either are not tracking it or would rather not publish it. The other number in yours is the one that explains it: roughly one in ten households in your service area is limited English proficient, against about four percent statewide.`,
+    note: `Loyola's FY2024 community benefit report puts language assistance at $3,886,246, over thirty thousand minutes of interpreting a month. I read a lot of these reports and yours is one of the very few that breaks the line out at all. The other number in it is the one that explains it: roughly one in ten households in your service area is limited English proficient, against about four percent statewide.`,
   },
   {
     org: "UI Health",
@@ -236,7 +254,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     email: "UIHealthDiversity@uic.edu",
     sharedInbox: true,
     source: "Diversity and community health equity leadership page, hospital.uillinois.edu",
-    note: `Taking on preferred-language data as a data quality problem rather than a courtesy field is an unglamorous choice and the right one. A system that does not reliably know which of its patients need an interpreter cannot staff for it, cannot budget for it, and cannot tell whether anything it tries is working. Being the first person to hold the chief diversity and community health equity role at UI Health means you inherited that question rather than a system that had already answered it.`,
+    note: `Treating preferred language as a data quality problem rather than a courtesy field is the unglamorous version of this work and probably the one the rest of it rests on. You can't staff for interpreters you can't count.`,
   },
   {
     org: "La Rabida Children's Hospital",
@@ -245,7 +263,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "VP Development and External Affairs",
     email: "mwysoglad@larabida.org",
     source: "https://www.larabida.org/contact/",
-    note: `La Rabida is the only hospital in the region built entirely around children with complex, chronic conditions, which means your families are not passing through. They come back for years, and every one of those return visits is another chance for a language barrier to compound rather than resolve. With more than nine in ten of your patients on Medicaid, I would guess a fair number of those families are doing all of that in a language the system defaults out of. I am writing to you because external affairs is the front door here, and I would be grateful if you pointed this toward whoever at La Rabida owns interpreting, or came yourself.`,
+    note: `La Rabida is the only hospital around here built entirely for children with complex chronic conditions, so your families aren't passing through. They come back for years, and a language barrier in that arrangement compounds instead of resolving. With better than nine in ten of your patients on Medicaid I'd guess a good number of them are doing all of it in a language the system defaults away from. I'm writing to you because external affairs is the front door. If someone at La Rabida owns interpreting I'd be grateful if you sent this along to them, or come yourself.`,
   },
 
   // ─── Public health, government, and the courts ────────────────────────────
@@ -257,7 +275,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     email: "dph.cmhs.info@illinois.gov",
     sharedInbox: true,
     source: "IDPH Language Access Plan approved February 2026, dph.illinois.gov",
-    note: `I read the Language Access Plan IDPH approved in February, all the way through, which I suspect is not a large club. The part that stayed with me was not the vendor contracts but the schedule attached to them: training for every front-line and managerial staff member starting this quarter, new hires inside sixty days, I Speak cards in every IDPH building by the end of December. Deadlines are what separate a language access plan from a language access statement, and most of the ones I read do not have any. Since you coordinate that plan, you are also the person who will find out first whether those dates hold.`,
+    note: `I read the Language Access Plan IDPH approved in February, the whole way through, which I suspect is a small club. What I kept looking at was the dates. Training for front-line and managerial staff starting this quarter, new hires inside sixty days, I Speak cards in every IDPH building by the end of December. Most of the plans I read don't carry dates at all. You coordinate that one, so you'll be the first to find out whether they hold.`,
   },
   {
     org: "the Cook County Department of Public Health",
@@ -267,7 +285,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     email: "healthycook@cookcountyhhs.org",
     sharedInbox: true,
     source: "Leadership page, cookcountypublichealth.org",
-    note: `Standing up a community behavioral health unit and a community immunization unit inside a suburban county health department means you have twice now had to build a service for people the existing system was not reaching, and in suburban Cook County a large share of those people are not reached because of language before anything else. Behavioral health is the hardest version of it. There is no way to do a competent psychiatric assessment through a family member, and yet a great deal of it still happens exactly that way.`,
+    note: `You've stood up a community behavioral health unit and a community immunization unit inside a suburban county health department, so twice now you've had to build a service for people the existing one wasn't reaching. In suburban Cook a lot of that is language before it's anything else. Behavioral health is the hard case. There's no competent psychiatric assessment through a family member, and it still happens all the time.`,
   },
   {
     org: "Northwestern's Center for Community Health",
@@ -277,7 +295,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     email: "cch@northwestern.edu",
     sharedInbox: true,
     source: "IPHAM Center for Community Health staff page, feinberg.northwestern.edu",
-    note: `The Alliance for Research with Chicagoland Communities exists because academic health research has a long habit of arriving in a neighborhood, collecting what it needs, and leaving, and language is usually the first place that asymmetry shows up. A study recruits in English, or recruits in translated English, and then reports findings about a community half of whom could never have enrolled in it. ARCC's whole structure is an attempt to make that harder to do.`,
+    note: `ARCC exists because health research has a habit of turning up in a neighborhood, taking what it needs and leaving. Language is usually where that shows first. A study recruits in English, or in translated English, then reports findings about a community half of whom could never have enrolled. I'd like the research side of this represented properly and you're the obvious person to ask.`,
   },
   {
     org: "the Administrative Office of Illinois Courts",
@@ -286,7 +304,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Senior Program Manager, Language Access",
     email: "nalawawda@illinoiscourts.gov",
     source: "https://www.illinoiscourts.gov/public/find-a-language-interpreter/",
-    note: `The Illinois Court Interpreter Registry is the closest thing this state has to a settled answer on who is qualified to interpret in a high-stakes setting, and healthcare has nothing equivalent. A hospital can put very nearly anyone in the room and still call it access. You have been at the AOIC since roughly the beginning of court interpreter certification here, which means you watched standards get built around a profession in real time, spoken language and sign language both. That is a story I would like the clinicians and interpreters coming to this to hear from someone who was actually there for it.`,
+    note: `The court interpreter registry is the closest thing Illinois has to a settled answer on who's qualified to interpret when the stakes are high. Healthcare has nothing equivalent. A hospital can put very nearly anyone in the room and still call it access. You've been at the AOIC since roughly the start of certification here, spoken language and sign language both, and I'd like the clinicians and interpreters coming to this to hear how that got built from someone who was actually there.`,
   },
   {
     org: "the Illinois School for the Deaf",
@@ -295,7 +313,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Superintendent",
     email: "julee.nist@illinois.gov",
     source: "https://isd.illinois.gov/district-leadership",
-    note: `The Illinois School for the Deaf publishes a videophone number for the superintendent's office, which is a small thing that tells me something: leadership there is reachable in ASL directly, not through a relay and a gatekeeper. Most of what gets said about deaf children in healthcare is said by hearing people. The gap between an interpreter being present and a child actually understanding what is about to happen to them is where the damage lives, and the people who see that gap most clearly are the ones working in ASL every day.`,
+    note: `ISD publishes a videophone number for the superintendent's office. Small thing, but it told me leadership there is reachable in ASL directly rather than through a relay and a gatekeeper. Most of what gets said about deaf children in healthcare is said by hearing people, and I'd rather that weren't true of this conference.`,
   },
   {
     org: "the Illinois Public Health Association",
@@ -304,7 +322,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Associate Executive Director for Public Health Practice",
     email: "tsmith@ipha.com",
     source: "https://ipha.com/about/meet-the-team",
-    note: `Public health practice in Illinois runs through local health departments that are, in a good many counties, the only door a limited-English family has into the health system at all, and unlike hospitals they have no billing code to hang interpreter costs on. I have been trying to understand how that actually gets handled in practice rather than on paper, and IPHA seems to be where that question would land if it lands anywhere.`,
+    note: `In a good many Illinois counties the local health department is the only door a limited-English family has into the health system, and unlike a hospital there's no billing code to hang interpreter costs on. I've been trying to work out how that actually gets handled and IPHA seems like where the question would land if it lands anywhere.`,
   },
 
   // ─── Pediatrics and the interpreting profession ───────────────────────────
@@ -315,7 +333,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Senior Program Manager, Health Equity Initiatives",
     email: "acreek@illinoisaap.com",
     source: "https://illinoisaap.org/about-2/",
-    note: `ICAAP already publishes a bilingual flyer on language interpretation services for pediatric practices, which puts your chapter ahead of most of the state associations I have looked at. Most treat interpreting as a compliance footnote if they mention it at all. Health equity initiatives is where that flyer lives, so I suspect you are the person who has had to field the practical questions from practices that want to do this well and cannot afford a full-time interpreter.`,
+    note: `ICAAP publishes a bilingual flyer on interpretation services for pediatric practices, which puts your chapter ahead of most of the state chapters I've looked at, where interpreting turns up as a compliance footnote if it turns up. The flyer sits under health equity initiatives, so I'm guessing you're the one fielding calls from practices that want to do this properly and can't afford a full-time interpreter. Those calls are more or less what the conference is built around.`,
   },
   {
     org: "CCHI",
@@ -324,7 +342,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Executive Director",
     email: "managing.director@cchicertification.org",
     source: "https://cchicertification.org/about-us/",
-    note: `CCHI is the only healthcare interpreter credential I know of that covers ASL alongside spoken languages under one commission, rather than treating deaf patients as a separate problem for a separate body. Most of the field still runs those as two worlds with two vocabularies, and the people who pay for that are the families who need both. This conference is trying to hold them together for two days, which is easier said in a program than done in a room.`,
+    note: `CCHI is the only healthcare interpreter credential I know of that covers ASL and spoken languages under one commission instead of splitting them across two bodies with two vocabularies. We're trying to hold both together for two days, which is easier to put in a program than to do in a room.`,
   },
   {
     org: "MATI",
@@ -333,7 +351,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Secretary, MATI Board; Associate Professor, UW-Milwaukee",
     email: "amytolen@uwm.edu",
     source: "MATI board roster (matiata.org) and UW-Milwaukee faculty directory",
-    note: `Ethics in community interpreting is the part of this that almost never makes it onto a conference program, because it does not resolve into a best practice. An interpreter who has just heard a clinician say something untrue has a genuinely hard decision to make, and no policy manual has ever made it an easy one. MATI's membership covers Illinois as well as Wisconsin, and a good share of the interpreters working in Chicago hospitals sit inside it.`,
+    note: `Ethics in community interpreting almost never makes a conference program, because it doesn't resolve into a best practice. An interpreter who's just heard a clinician say something untrue has a genuinely hard call and no manual has ever made it easy. I'd like that session to exist and I'd like you running it. MATI's membership covers Illinois too, so a fair share of the interpreters in Chicago hospitals sit inside it.`,
   },
 
   // ═══ HOLD: real published addresses, deliberately not being written to ════
