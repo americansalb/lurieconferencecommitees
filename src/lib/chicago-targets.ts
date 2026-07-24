@@ -254,7 +254,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     email: "UIHealthDiversity@uic.edu",
     sharedInbox: true,
     source: "Diversity and community health equity leadership page, hospital.uillinois.edu",
-    note: `Treating preferred language as a data quality problem rather than a courtesy field is the unglamorous version of this work and probably the one the rest of it rests on. You can't staff for interpreters you can't count.`,
+    note: `Health equity work at UI Health runs on knowing who your patients actually are, and preferred language is one of the fields that gets collected as a courtesy rather than as data. You can't staff for interpreters you can't count.`,
   },
   {
     org: "La Rabida Children's Hospital",
@@ -996,7 +996,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "President, 2026",
     email: "azea@bu.edu",
     source: "Hispanic Dental Association 2026 leadership listing",
-    note: `Dental gets left out of language access planning almost completely. Hospitals write interpreter policies and the dental clinic down the hall is not in them.`,
+    note: `You're president of the Hispanic Dental Association this year, and dental is close to absent from language access planning. Hospitals write interpreter policies and the dental clinic down the hall is not in them.`,
   },
   {
     org: "National Latinx Psychological Association",
@@ -1041,7 +1041,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "President",
     email: "erica@drericataylor.com",
     source: "Cook County Physicians Association leadership listing",
-    note: `A county-wide physician association is one of the few groups that can say something about language access without it sounding like a hospital defending its own compliance record.`,
+    note: `You're president of the Cook County Physicians Association, which means you can say something about language access without it reading as a hospital defending its own compliance record.`,
   },
   {
     org: "National Black Nurses Association, Chicago Chapter",
@@ -1182,7 +1182,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Chief External Relations Officer",
     email: "lpereira@legalcouncil.org",
     source: "https://legalcouncil.org staff listing",
-    note: `Medical-legal partnership is one of the few models where the lawyer is standing in the clinic instead of waiting for the client to find the office. When the client and the clinician don't share a language, that lawyer inherits the misunderstanding along with the case.`,
+    note: `Legal Council for Health Justice puts the lawyer in the clinic instead of waiting for the client to find the office. When the client and the clinician don't share a language, that lawyer inherits the misunderstanding along with the case.`,
   },
   {
     org: "Health and Medicine Policy Research Group",
@@ -1248,7 +1248,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Patient Access Manager",
     email: "vchester@communityhealth.org",
     source: "https://www.communityhealth.org staff listing",
-    note: `Patient access is where the language question gets asked for the first time, usually by whoever picks up the phone, and whatever gets written down then follows the patient through everything after.`,
+    note: `Patient access at CommunityHealth is where a patient's language gets asked about for the first time, usually by whoever picks up the phone, and whatever gets written down then follows them through everything after.`,
   },
   {
     org: "Howard Brown Health",
@@ -1368,7 +1368,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Access to Justice Navigator Coordinator",
     email: "mborrero@centrodeinformacion.org",
     source: "https://centrodeinformacion.org/about",
-    note: `Court navigators and hospital interpreters are solving the same problem in two buildings that don't talk to each other. We have people from the Illinois court system's language access side coming, and I think that conversation is worth having in person.`,
+    note: `Centro de Información's court navigators and hospital interpreters are solving the same problem in two buildings that don't talk to each other. We have people from the Illinois court system's language access side coming, and I think that conversation is worth having in person.`,
   },
   {
     org: "Town of Cicero, Citizenship Department",
@@ -1569,7 +1569,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Named contact for the Senior Health Insurance Program (no title published)",
     email: "ahernandez@waukegantownship.com",
     source: "https://www.waukegantownship.com; the township publishes her as the SHIP contact without a title, and one is deliberately not invented here",
-    note: `Medicare counselling for a senior who needs an interpreter takes three times as long and the appointment slot is the same length as everybody else's.`,
+    note: `You're the person Waukegan Township lists for the Senior Health Insurance Program, so you already know that Medicare counselling for a senior who needs an interpreter takes three times as long and gets the same length of appointment as everybody else.`,
   },
   {
     org: "Waukegan Township",
@@ -1578,7 +1578,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Director, Eddie Washington Center",
     email: "cbutler@waukegantownship.com",
     source: "https://www.waukegantownship.com",
-    note: `Shelter intake is where somebody has to explain their situation to a stranger while exhausted, and where a bad interpretation costs someone a bed.`,
+    note: `Intake at the Eddie Washington Center is where somebody has to explain their situation to a stranger while exhausted, and where a bad interpretation costs someone a bed.`,
   },
   {
     org: "Nicasa Behavioral Health Services",
@@ -1652,7 +1652,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Vice President of Development and Innovation",
     email: "sderama@vnahealth.com",
     source: "Published on https://www.dupagefederation.org/ourteam",
-    note: `Development is where language access either gets written into a grant or gets left out of it, and once it's out it doesn't come back until the next cycle.`,
+    note: `Your name is on VNA Health Care's development side and on the DuPage Federation's team page, so you see both one organization's funding and the county-wide version of the same question. Language access either gets written into a proposal at the start or it waits for the next cycle.`,
   },
 
   // ═══ HOLD (second wave): real addresses, deliberately not written to ══════
