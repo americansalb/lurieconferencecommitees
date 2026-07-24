@@ -608,12 +608,19 @@ export default function AttendeesPage() {
 
   // Schedule invites for the selected not-yet-emailed people into the paced
   // queue. Confirmed first, since it's a real commitment — but it can NEVER
-  // blast: the server drips them one at a time (~19/hr), and you can pause.
+  // blast: the server drips them out slowly, and you can pause.
   function queueInvites(ids: string[]) {
     if (!ids.length) return;
+    // Quote the real policy, not a number typed in once. This dialog used to
+    // promise "about 19/hour, in the 9 AM–7 PM window" while the queue was
+    // actually running at 10/hour until 5 — so mail looked overdue when it
+    // was on time.
+    const pace = queueStatus
+      ? `about ${queueStatus.policy.maxPerHour}/hour, between ${queueStatus.policy.sendStartHour}:00 and ${queueStatus.policy.sendEndHour}:00 ${(queueStatus.policy.sendTimezone || "").replace("America/", "").replace("_", " ")} on weekdays`
+      : "slowly, during business hours";
     setConfirmDialog({
       title: "Queue these invites?",
-      message: "This schedules invites for the not-yet-emailed people in your selection into the paced queue. They go out one at a time (about 19/hour, in the 9 AM–7 PM window), never all at once, and you can pause anytime. Nothing sends immediately.",
+      message: `This schedules invites for the not-yet-emailed people in your selection into the paced queue. They go out one at a time (${pace}), never all at once, and you can pause anytime. Nothing sends immediately — to send one right away, use "Send now" next to it on the Email queue page.`,
       confirmLabel: "Queue invites",
       onConfirm: async () => {
         setConfirmDialog(null);
@@ -622,7 +629,7 @@ export default function AttendeesPage() {
           body: JSON.stringify({ ids }),
         }).then((r) => r.json()).catch(() => ({}));
         setPortalNote(res.ok
-          ? `Queued ${(res.queued || 0).toLocaleString()} invite${res.queued === 1 ? "" : "s"} to send paced${res.skipped ? ` · ${res.skipped} skipped (already queued or emailed)` : ""}.`
+          ? `Queued ${(res.queued || 0).toLocaleString()} invite${res.queued === 1 ? "" : "s"} — find them on the Email queue page${res.skipped ? ` · ${res.skipped} already queued or written to` : ""}.`
           : (res.error || "Could not queue invites."));
         setTimeout(() => setPortalNote(null), 6000);
         load(true);
