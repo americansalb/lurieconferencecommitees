@@ -50,6 +50,18 @@ export async function GET() {
         where: { recipientType: "attendee", status: "pending", recipientId: { in: rows.map((r) => r.id) } },
       })
     : 0;
+  // People loaded into the pipeline BEFORE they were held. `held` below counts
+  // the file; this counts the ones that decision now has to reach. Queueing
+  // excludes them and cancels anything already scheduled for them, but until
+  // someone clicks Queue they are still sitting there, so the number is worth
+  // showing rather than discovering later.
+  const heldAddresses = CHICAGO_TARGETS.filter((t) => t.hold && t.email.trim())
+    .map((t) => t.email.trim().toLowerCase());
+  const heldInPipeline = heldAddresses.length
+    ? await prisma.attendee.count({
+        where: { inviteTemplate: "chicago", email: { in: heldAddresses }, lastSentAt: null },
+      })
+    : 0;
   return NextResponse.json({
     ok: true,
     curated: CHICAGO_TARGETS.length,
@@ -63,6 +75,7 @@ export async function GET() {
     // letter. Counted separately from missingEmail so the two never get
     // confused: one is a research gap, the other is a judgement call.
     held: CHICAGO_TARGETS.filter((t) => t.hold && t.email.trim()).length,
+    heldInPipeline,
     inPipeline: rows.length,
     contacted: rows.filter((r) => r.lastSentAt).length,
     paid: rows.filter((r) => r.paid).length,
@@ -145,6 +158,21 @@ export async function POST(req: Request) {
   const cohort = await prisma.attendee.count({ where: { inviteTemplate: "chicago" } });
   const writtenTo = await prisma.attendee.count({ where: { inviteTemplate: "chicago", lastSentAt: { not: null } } });
 
+  // `hold` gates the LOADER, and that is not enough on its own. Once a person
+  // has been loaded they are an attendee row on the "chicago" template, and
+  // this query finds them by template, not by walking the file — so a row held
+  // after the load had already run would have gone out anyway. That is exactly
+  // what happened when the list was cut from 127 to 80: forty-seven people
+  // were held in the file while already sitting in the pipeline.
+  //
+  // So the file stays the authority on who gets written to, at queue time as
+  // well as at load time. Held addresses are excluded here, and any pending
+  // paced send already scheduled for one of them is canceled below, since the
+  // decision not to write to someone should reach the letter that is already
+  // waiting in the queue for them.
+  const heldEmails = CHICAGO_TARGETS.filter((t) => t.hold && t.email.trim())
+    .map((t) => t.email.trim().toLowerCase());
+
   const targets = await prisma.attendee.findMany({
     where: {
       inviteTemplate: "chicago",
@@ -153,12 +181,41 @@ export async function POST(req: Request) {
       unsubscribedAt: null,
       lastSentAt: null,
       status: { notIn: ["declined", "registered", "rsvp_pending", "confirmed"] },
+      ...(heldEmails.length ? { email: { notIn: heldEmails } } : {}),
     },
   });
+
+  // Cancel, never delete: the person keeps their row and their history, and
+  // "canceled" is the single-L spelling the queue's own sent log reads, so a
+  // withdrawn letter stays visible instead of vanishing from both lists.
+  let heldBack = 0;
+  let heldInPipeline = 0;
+  if (heldEmails.length) {
+    const heldRows = await prisma.attendee.findMany({
+      where: { inviteTemplate: "chicago", email: { in: heldEmails }, lastSentAt: null },
+      select: { id: true },
+    });
+    heldInPipeline = heldRows.length;
+    if (heldRows.length) {
+      const res = await prisma.emailQueue.updateMany({
+        where: {
+          recipientType: "attendee",
+          status: "pending",
+          recipientId: { in: heldRows.map((r) => r.id) },
+        },
+        data: { status: "canceled" },
+      }).catch(() => ({ count: 0 }));
+      heldBack = res.count;
+    }
+  }
   // Everyone on the template minus everyone still writable: people who have
-  // been written to already, paid, declined, or opted out.
-  const notEligible = Math.max(0, cohort - targets.length);
-  const summary = { cohort, writtenTo, notEligible };
+  // been written to already, paid, declined, or opted out. Held people are
+  // subtracted out and reported on their own, because folding a decision we
+  // made into a count called "not eligible" is how a deliberate choice starts
+  // looking like a system rejection — the same confusion this response was
+  // already rewritten once to fix.
+  const notEligible = Math.max(0, cohort - targets.length - heldInPipeline);
+  const summary = { cohort, writtenTo, notEligible, heldInPipeline, heldBack };
   if (!targets.length) return NextResponse.json({ ok: true, queued: 0, alreadyQueued: 0, ...summary });
 
   const already = await prisma.emailQueue.findMany({

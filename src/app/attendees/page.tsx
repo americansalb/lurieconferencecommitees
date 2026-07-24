@@ -61,7 +61,7 @@ export default function AttendeesPage() {
   const [queueStatus, setQueueStatus] = useState<QueueStatus | null>(null);
   // Counts for the hand-curated Chicago direct-invitation list. Fetched rather
   // than imported so the ~30 hand-written letters don't ship in the bundle.
-  const [chicagoStats, setChicagoStats] = useState<{ curated: number; loadable: number; missingEmail: number; held: number; inPipeline: number; contacted: number; pending: number; paid: number } | null>(null);
+  const [chicagoStats, setChicagoStats] = useState<{ curated: number; loadable: number; missingEmail: number; held: number; heldInPipeline: number; inPipeline: number; contacted: number; pending: number; paid: number } | null>(null);
   const [loading, setLoading] = useState(true);
   // Attendees view: detail drawer + broadcast composer + portal-link sends.
   const [detailId, setDetailId] = useState<string | null>(null);
@@ -332,13 +332,21 @@ export default function AttendeesPage() {
         // rejection, and sent someone hunting for letters that were fine.
         const waiting = json.alreadyQueued || 0;
         const written = json.writtenTo || 0;
-        setRosterNote(json.queued > 0
+        // Someone held after they were already loaded is a decision the queue
+        // has to carry out, not a silent skip. Say it plainly, and say that
+        // nobody was deleted, so a shrinking count never looks like data loss.
+        const held = json.heldInPipeline || 0;
+        const pulled = json.heldBack || 0;
+        const heldNote = held
+          ? ` ${held} ${held === 1 ? "person is" : "people are"} held back by name in the list file${pulled ? `, and ${pulled} letter${pulled === 1 ? "" : "s"} already waiting for them ${pulled === 1 ? "was" : "were"} withdrawn` : ""} — nobody was deleted, they're still on their own page.`
+          : "";
+        setRosterNote((json.queued > 0
           ? `${json.queued} Chicago letter${json.queued === 1 ? "" : "s"} added to the paced queue${waiting ? `, and ${waiting} ${waiting === 1 ? "was" : "were"} already waiting there` : ""}. They'll drip out at the queue's rate — watch them on the Email queue page.`
           : waiting
             ? `Nothing new to add: all ${waiting} Chicago letter${waiting === 1 ? " is" : "s are"} already waiting in the queue and will send on schedule. Nobody was turned away.`
             : written
               ? `Nothing left to queue — all ${written} ${written === 1 ? "person has" : "people have"} already been written to.`
-              : "Nothing to queue. Load the Chicago list first.");
+              : "Nothing to queue. Load the Chicago list first.") + heldNote);
         await load();
       } else {
         setRosterNote(json.error || "Could not queue the Chicago letters.");
