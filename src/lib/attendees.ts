@@ -177,9 +177,11 @@ export function buildFinishRegistrationNudge(a: {
 //
 // Kevin is the sender: the 2024 roster and the AALB community know Kevin,
 // and most predate Iris joining, so her name in the inbox reads as a
-// stranger. The plain notes derive their signature from this same name
-// (via ATTENDEE_FROM_NAME), so From and sign-off always match.
-export const ATTENDEE_FROM_NAME_DEFAULT = "Kevin Thakkar, Founder & Executive Director";
+// stranger. Just the name, no title: "Kevin Thakkar, Founder & Executive
+// Director" in the From line reads as a campaign, not a person. The plain
+// notes derive their signature from this same name (via ATTENDEE_FROM_NAME),
+// so From and sign-off always match.
+export const ATTENDEE_FROM_NAME_DEFAULT = "Kevin Thakkar";
 
 function extractAddress(s: string): string {
   const angle = s.match(/<([^>]+)>/);

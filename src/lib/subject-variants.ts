@@ -186,27 +186,28 @@ export function pickStudentSubject(firstName: string, token: string): { id: stri
 // have no prior relationship with, so every line is concrete about what this
 // is (the conference, the keynoter, the CEU hours, the dates) and none of it
 // presumes familiarity with AALB. Same stable-by-token rules: append, never
-// reorder or remove.
+// reorder or remove. No first names in these: a name in the subject line is
+// the signature move of a mail merge, and this set goes to cold recipients.
 export const CMI_SUBJECT_VARIANTS: SubjectVariant[] = [
   {
     id: "cmi-ceu",
     label: "CEU hours",
-    make: (f) => `${f}, over ten CEU hours at the Lurie Children's & AALB conference`,
+    make: () => `over ten CEU hours at the Lurie Children's & AALB conference`,
   },
   {
     id: "cmi-jc",
     label: "JC keynote",
-    make: (f) => `${f}, the Joint Commission is keynoting on language access this August`,
+    make: () => `the Joint Commission is keynoting on language access this August`,
   },
   {
     id: "cmi-cred",
     label: "For CMIs",
-    make: (f) => `${f}, a conference for certified medical interpreters, August 15-16`,
+    make: () => `a conference for certified medical interpreters, August 15-16`,
   },
   {
     id: "cmi-hybrid",
     label: "Chicago or stream",
-    make: (f) => `${f}, two days on language access, in Chicago or on the live stream`,
+    make: () => `two days on language access, in Chicago or on the live stream`,
   },
 ];
 

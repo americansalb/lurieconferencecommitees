@@ -3042,13 +3042,15 @@ function plainNoteEmail({
   // "Name, Title" format is split for the signature block. Mirrors
   // ATTENDEE_FROM_NAME_DEFAULT in lib/attendees (importing it here would be
   // circular).
-  const fromName = (process.env.ATTENDEE_FROM_NAME || "Kevin Thakkar, Founder & Executive Director").trim();
+  const fromName = (process.env.ATTENDEE_FROM_NAME || "Kevin Thakkar").trim();
   const commaAt = fromName.indexOf(",");
   const signerFull = escapeHtml(commaAt > 0 ? fromName.slice(0, commaAt).trim() : fromName);
   const signerTitle = escapeHtml(commaAt > 0 ? fromName.slice(commaAt + 1).trim() : "");
   const signerFirst = escapeHtml((commaAt > 0 ? fromName.slice(0, commaAt) : fromName).trim().split(/\s+/)[0] || "");
-  const p = (html: string) =>
-    `<p style="margin:0 0 16px 0;font-family:Arial,Helvetica,sans-serif;font-size:14.5px;line-height:1.75;color:#111827;">${html}</p>`;
+  // Rendered the way Gmail itself composes a message: bare left-aligned
+  // divs at the default reading size, full width (no centered 600px card),
+  // default-blue links, blank-line paragraph gaps, and a short plain
+  // signature. Any visible layout is what makes a note read as a campaign.
   // No hidden preheader on purpose: the inbox preview should show the real
   // first line of the note, the way a personal email would.
   return `<!doctype html>
@@ -3059,21 +3061,23 @@ function plainNoteEmail({
 <title>2026 Lurie Children's &amp; AALB Conference</title>
 </head>
 <body style="margin:0;padding:0;background-color:#ffffff;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center">
-  <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:96%;"><tr><td align="left" style="padding:26px 12px 30px 12px;">
-    ${p(`Hi ${first},`)}
-    ${paras.map((x) => p(x)).join("\n    ")}
-    ${p(`If you have any questions, just reply to this email.`)}
-    ${p(`${signerFirst}<br><span style="font-size:12.5px;color:#6B7280;">${signerFull}${signerTitle ? `<br>${signerTitle}` : ""}<br>Americans Against Language Barriers<br><a href="${site}" style="color:#6B7280;">conference.aalb.org</a></span>`)}
-    ${ps ? p(`P.S. ${ps}`) : ""}
-    <p style="margin:26px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:11.5px;line-height:1.6;color:#9CA3AF;">${footerReason} ${escapeHtml(postalAddress)}.${unsubscribeUrl ? ` <a href="${unsubscribeUrl}" style="color:#9CA3AF;">Unsubscribe</a>` : ""}</p>
-  </td></tr></table>
-</td></tr></table>
+<div style="font-family:Arial,Helvetica,sans-serif;font-size:13.5px;line-height:1.5;color:#222222;padding:16px 14px;">
+  <div>Hi ${first},</div>
+  <div><br></div>
+${paras.map((x) => `  <div>${x}</div>\n  <div><br></div>`).join("\n")}
+  <div>If you have any questions, just reply to this email.</div>
+  <div><br></div>
+  <div>${signerFirst}</div>
+  <div><br></div>
+  <div style="color:#555555;">${signerFull}${signerTitle ? `, ${signerTitle}` : ""}<br>Americans Against Language Barriers &middot; <a href="${site}">conference.aalb.org</a></div>
+  ${ps ? `<div><br></div>\n  <div>P.S. ${ps}</div>` : ""}
+  <div><br></div>
+  <div><br></div>
+  <div style="font-size:11px;line-height:1.5;color:#9CA3AF;">${footerReason} ${escapeHtml(postalAddress)}.${unsubscribeUrl ? ` <a href="${unsubscribeUrl}" style="color:#9CA3AF;">Unsubscribe</a>` : ""}</div>
+</div>
 </body>
 </html>`;
 }
-
-const PLAIN_LINK = "color:#1D4ED8;";
 
 // Shared keynote paragraph: the one thing every audience should know.
 const PLAIN_KEYNOTE_PARA = `This year the keynote is from The Joint Commission, whose standards nearly every hospital in America has to meet: "The Standards That Protect Patients: A Joint Commission View on Language Access." And Michael Mul&eacute;, who led language access enforcement at the U.S. Department of Justice, Civil Rights Division, is speaking too. Hospital standards and federal civil rights law, on the same stage.`;
@@ -3084,7 +3088,7 @@ const PLAIN_KEYNOTE_PARA = `This year the keynote is from The Joint Commission, 
 // asks people to pay sight unseen.
 function plainDetailsPara(siteUrl?: string | null): string {
   const site = (siteUrl || "https://conference.aalb.org").replace(/\/$/, "");
-  return `It's two days at Ann &amp; Robert H. Lurie Children's Hospital of Chicago, with a live stream if you'd rather join from home, and over ten hours of CEUs, which will be accredited by NBCMI and CCHI. The full lineup, from Wilma Alvarado-Little (New York State Department of Health) to Yuliya Speroff (AALB's 2024 Trainer of the Year), is at <a href="${site}" style="${PLAIN_LINK}">conference.aalb.org</a> if you want to look around first.`;
+  return `It's two days at Ann &amp; Robert H. Lurie Children's Hospital of Chicago, with a live stream if you'd rather join from home, and over ten hours of CEUs, which will be accredited by NBCMI and CCHI. The full lineup, from Wilma Alvarado-Little (New York State Department of Health) to Yuliya Speroff (AALB's 2024 Trainer of the Year), is at <a href="${site}">conference.aalb.org</a> if you want to look around first.`;
 }
 
 // "Spanish, English" -> "Spanish and English", for the returning roster's
@@ -3106,8 +3110,8 @@ function plainLanguagesList(s: string | null | undefined): string | null {
 // the main site but the email doesn't need to explain it.
 function plainCtaPara(url: string, discountPercent: number): string {
   return discountPercent > 0
-    ? `<strong><a href="${url}" style="${PLAIN_LINK}">Sign up here</a></strong>. Your personal invitation rate is already built into the link.`
-    : `<strong><a href="${url}" style="${PLAIN_LINK}">Sign up here</a></strong>.`;
+    ? `You can <a href="${url}">sign up here</a>; your personal invitation rate is already built into the link.`
+    : `You can <a href="${url}">sign up here</a>.`;
 }
 
 // 2024-roster reunion note: opening keyed to what they actually did in 2024.
@@ -3119,13 +3123,13 @@ export function plainReturningInviteEmail(args: AttendeeReturningArgs) {
   paras.push(
     paid
       ? (inPerson
-        ? `You came to AALB's first conference with Lurie Children's back in 2024. We're doing the second one <strong>August 15-16</strong> in Chicago and I'd love to see you there again.`
-        : `You watched AALB's first conference with Lurie Children's on the live stream in 2024. The second one is <strong>August 15-16</strong>, and the stream is back if you can't make it to Chicago.`)
+        ? `You came to AALB's first conference with Lurie Children's back in 2024. We're doing the second one August 15-16 in Chicago and I'd love to see you there again.`
+        : `You watched AALB's first conference with Lurie Children's on the live stream in 2024. The second one is August 15-16, and the stream is back if you can't make it to Chicago.`)
       : // Attempted and lead read the same. Neither paid, so "signed up" or
         // "registered" would overstate: they indicated interest, and that's
         // the phrase (user-chosen). No checkout talk, no registration-status
         // talk; nobody wants their payment history recapped in an invitation.
-        `You had indicated your interest in AALB's first conference with Lurie Children's back in 2024, but didn't end up signing up. The second one is <strong>August 15-16</strong> in Chicago, and it streams live too. I'd love to have you with us this time.`
+        `You had indicated your interest in AALB's first conference with Lurie Children's back in 2024, but didn't end up signing up. The second one is August 15-16 in Chicago, and it streams live too. I'd love to have you with us this time.`
   );
   const note = (inviteMessage || "").trim();
   if (note) paras.push(escapeHtml(note).replace(/\n/g, "<br>"));
@@ -3152,9 +3156,9 @@ export function plainCommunityInviteEmail(args: AttendeeInviteArgs) {
   const paras: string[] = [];
   paras.push(
     rel === "student"
-      ? `You're in our interpreter training right now, so I wanted to invite you personally: AALB's conference with Lurie Children's is <strong>August 15-16</strong> in Chicago, and it streams live too.`
+      ? `You're in our interpreter training right now, so I wanted to invite you personally: AALB's conference with Lurie Children's is August 15-16 in Chicago, and it streams live too.`
       : rel === "former-student"
-      ? `You did our 40-hour interpreter training, so I wanted to invite you personally: AALB's conference with Lurie Children's is <strong>August 15-16</strong> in Chicago, and it streams live too.`
+      ? `You did our 40-hour interpreter training, so I wanted to invite you personally: AALB's conference with Lurie Children's is August 15-16 in Chicago, and it streams live too.`
       : `You got your certificate with us, so I wanted to invite you personally: AALB's conference with Lurie Children's is <strong>August 15-16</strong> in Chicago, and it streams live too.`
   );
   const note = (inviteMessage || "").trim();
@@ -3181,7 +3185,7 @@ export function plainStandardInviteEmail(args: AttendeeInviteArgs) {
   const { firstName, url, discountPercent, inviteMessage, unsubscribeUrl } = args;
   const paras: string[] = [];
   paras.push(
-    `I'd like to invite you to the conference Americans Against Language Barriers (AALB) is putting on with Lurie Children's about language access in American healthcare. It's <strong>August 15-16</strong> in Chicago, and it streams live too.`
+    `I'd like to invite you to the conference Americans Against Language Barriers (AALB) is putting on with Lurie Children's about language access in American healthcare. It's August 15-16 in Chicago, and it streams live too.`
   );
   const note = (inviteMessage || "").trim();
   if (note) paras.push(escapeHtml(note).replace(/\n/g, "<br>"));
@@ -3207,7 +3211,7 @@ export function plainCmiInviteEmail(args: AttendeeInviteArgs) {
   paras.push(
     // The registry export is a snapshot, so don't assert the credential is
     // current: "you've been certified" stays true even if it lapsed.
-    `You've been certified as a medical interpreter through NBCMI, so I wanted to invite you to the conference Americans Against Language Barriers (AALB) is putting on with Lurie Children's about language access in American healthcare. It's <strong>August 15-16</strong> in Chicago, and it streams live too.`
+    `You've been certified as a medical interpreter through NBCMI, so I wanted to invite you to the conference Americans Against Language Barriers (AALB) is putting on with Lurie Children's about language access in American healthcare. It's August 15-16 in Chicago, and it streams live too.`
   );
   const note = (inviteMessage || "").trim();
   if (note) paras.push(escapeHtml(note).replace(/\n/g, "<br>"));
@@ -3225,9 +3229,9 @@ export function plainCmiInviteEmail(args: AttendeeInviteArgs) {
   // look-around link, so the CTA is just the sign-up link, and the personal
   // part (their name as the code) gets its own short line where it can't be
   // missed.
-  paras.push(`<strong><a href="${url}" style="${PLAIN_LINK}">Sign up here</a></strong>${discountPercent > 0 ? ` and your ${discountPercent}% comes off automatically` : ""}.`);
+  paras.push(`You can <a href="${url}">sign up here</a>${discountPercent > 0 ? ` and your ${discountPercent}% comes off automatically` : ""}.`);
   if (discountPercent > 0) {
-    paras.push(`Your discount code is just your name, <strong>${escapeHtml((firstName || "").trim())}</strong>, if you register from the main site instead.`);
+    paras.push(`Your discount code is just your name, ${escapeHtml((firstName || "").trim())}, if you register from the main site instead.`);
   }
   return plainNoteEmail({
     firstName,
@@ -3259,7 +3263,7 @@ export function plainFinishRegistrationEmail(args: {
   const site = (args.siteUrl || "https://conference.aalb.org").replace(/\/$/, "");
   const paras: string[] = [];
   paras.push(
-    `A little while ago you started signing up for the conference Americans Against Language Barriers (AALB) is putting on with Lurie Children's, <strong>August 15-16</strong> in Chicago (with a live stream), but it looks like you didn't get to the end, so your registration was never finished.`
+    `A little while ago you started signing up for the conference Americans Against Language Barriers (AALB) is putting on with Lurie Children's, August 15-16 in Chicago (with a live stream), but it looks like you didn't get to the end, so your registration was never finished.`
   );
   const ticket = args.attendanceMode === "in-person"
     ? "the two-day in-person ticket"
@@ -3280,10 +3284,10 @@ export function plainFinishRegistrationEmail(args: {
     );
   }
   paras.push(
-    `If you'd like another look at the program first, from The Joint Commission keynote to the Department of Justice civil rights session, it's all at <a href="${site}" style="${PLAIN_LINK}">conference.aalb.org</a>.`
+    `If you'd like another look at the program first, from The Joint Commission keynote to the Department of Justice civil rights session, it's all at <a href="${site}">conference.aalb.org</a>.`
   );
   paras.push(
-    `<strong><a href="${url}" style="${PLAIN_LINK}">Finish signing up here</a></strong>. The link picks up right where you left off.`
+    `You can <a href="${url}">finish signing up here</a>; the link picks up right where you left off.`
   );
   return plainNoteEmail({
     firstName,
