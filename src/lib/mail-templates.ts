@@ -3024,7 +3024,11 @@ function plainNoteEmail({
   firstName: string;
   // Pre-composed paragraph HTML: composers escape all user-derived text.
   paras: string[];
-  footerReason: string;
+  // Null suppresses the gray footer entirely (reason line, postal address and
+  // unsubscribe link together). Only the Chicago direct-invite list does that,
+  // and only because those letters are one-to-one; see the note there. Every
+  // other list passes a real string.
+  footerReason: string | null;
   unsubscribeUrl?: string | null;
   // Conference home, for the signature link. Falls back to the public site.
   siteUrl?: string | null;
@@ -3070,9 +3074,9 @@ ${paras.map((x) => `  <div>${x}</div>\n  <div><br></div>`).join("\n")}
   <div><br></div>
   <div style="color:#555555;">${signerFull}${signerTitle ? `, ${signerTitle}` : ""}<br>Americans Against Language Barriers &middot; <a href="${site}">conference.aalb.org</a></div>
   ${ps ? `<div><br></div>\n  <div>P.S. ${ps}</div>` : ""}
+${footerReason === null ? "" : `  <div><br></div>
   <div><br></div>
-  <div><br></div>
-  <div style="font-size:11px;line-height:1.5;color:#9CA3AF;">${footerReason} ${escapeHtml(postalAddress)}.${unsubscribeUrl ? ` <a href="${unsubscribeUrl}" style="color:#9CA3AF;">Unsubscribe</a>` : ""}</div>
+  <div style="font-size:11px;line-height:1.5;color:#9CA3AF;">${footerReason} ${escapeHtml(postalAddress)}.${unsubscribeUrl ? ` <a href="${unsubscribeUrl}" style="color:#9CA3AF;">Unsubscribe</a>` : ""}</div>`}
 </div>
 </body>
 </html>`;
@@ -3215,8 +3219,8 @@ export function plainStandardInviteEmail(args: AttendeeInviteArgs) {
 // The note is therefore required, not optional. Without one this letter has
 // no opening at all, so it falls back to the standard invite rather than
 // sending a headless message.
-export function plainDirectInviteEmail(args: AttendeeInviteArgs & { org?: string | null }) {
-  const { firstName, url, discountPercent, inviteMessage, unsubscribeUrl } = args;
+export function plainDirectInviteEmail(args: AttendeeInviteArgs) {
+  const { firstName, url, discountPercent, inviteMessage } = args;
   const note = (inviteMessage || "").trim();
   if (!note) return plainStandardInviteEmail(args);
   const paras: string[] = [];
@@ -3225,7 +3229,6 @@ export function plainDirectInviteEmail(args: AttendeeInviteArgs & { org?: string
   paras.push(escapeHtml(note).replace(/\n{2,}/g, "</div>\n  <div><br></div>\n  <div>").replace(/\n/g, "<br>"));
   // The bridge. Deliberately one short sentence: the reader has just been
   // told why they were written to, and a long pitch here would undo it.
-  // The bridge. Deliberately one short sentence.
   paras.push(
     `AALB is putting on its second conference with Lurie Children's on August 15 and 16, and I'd like you to be there.`
   );
@@ -3252,16 +3255,26 @@ export function plainDirectInviteEmail(args: AttendeeInviteArgs & { org?: string
       ? `You can <a href="${url}">sign up here</a>. The invitation rate is already on the link.`
       : `You can <a href="${url}">sign up here</a>.`
   );
-  // Naming their organization in the footer is the honest answer to "how did
-  // you get my address": we went looking at their org's own public pages.
-  const org = (args.org || "").trim();
+  // No gray footer on this one, and that is the whole point of the template.
+  // A reason-for-receipt line, a postal address and an Unsubscribe link are
+  // things only a sending platform appends; nobody writing one person a real
+  // invitation signs off and then explains how they got the address. Leaving
+  // it in undid every other decision in this letter.
+  //
+  // The opt-out does not disappear with it. Attendee sends carry RFC 8058
+  // List-Unsubscribe and List-Unsubscribe-Post headers (attendeeUnsubHeaders
+  // in lib/attendees, applied in lib/email-queue), so Gmail and Outlook draw
+  // their own one-click unsubscribe control at the top of the message. That
+  // is the mechanism that actually works, and it is invisible in the body.
+  // The letter also says to reply with questions, and replies reach a human.
+  //
+  // This is a 27-person hand-built list of named people written to
+  // individually, not a bulk campaign. Do not reuse this template for a list
+  // that isn't.
   return plainNoteEmail({
     firstName,
     paras,
-    footerReason: org
-      ? `You're getting this one-off invitation because of your work at ${escapeHtml(org)}.`
-      : "You're getting this one-off invitation because of your work on language access in Chicago.",
-    unsubscribeUrl,
+    footerReason: null,
     siteUrl: args.learnMoreUrl,
   });
 }

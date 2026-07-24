@@ -83,7 +83,7 @@ export function buildAttendeeInvite(opts: {
   } else if (template === "cmi") {
     html = plainCmiInviteEmail(common);
   } else if (template === "chicago") {
-    html = plainDirectInviteEmail({ ...common, org: opts.org ?? null });
+    html = plainDirectInviteEmail(common);
   } else if (relationship) {
     html = plainCommunityInviteEmail({ ...common, relationship });
   } else {
@@ -232,7 +232,10 @@ export function attendeeUnsubscribeUrl(token: string) {
 // RFC 8058 one-click unsubscribe headers for attendee mail, matching the
 // sponsor side. Gmail and Yahoo treat a working List-Unsubscribe (plus the
 // one-click POST) as a strong trust signal and increasingly require it for
-// bulk senders. Always paired with a visible unsubscribe link in the body.
+// bulk senders. Mail clients render these as their own unsubscribe control
+// above the message, so the opt-out works whether or not the body carries a
+// visible link. Most templates carry one as well; the Chicago direct-invite
+// letters deliberately do not, and rely on these headers alone.
 export function attendeeUnsubHeaders(token: string): Record<string, string> {
   const url = attendeeUnsubscribeUrl(token);
   const mailto = process.env.MAIL_REPLY_TO?.trim() || "contact@aalb.org";
