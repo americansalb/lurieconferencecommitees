@@ -20,7 +20,7 @@ export default function InvitedGuestForm({ code, demoState }: { code: string; de
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<{ already: boolean; first: string } | null>(
-    demoState === "success" ? { already: false, first: "Maria" } : null
+    demoState === "success" ? { already: true, first: "Maria" } : null
   );
 
   async function submit(e: React.FormEvent) {
@@ -38,14 +38,24 @@ export default function InvitedGuestForm({ code, demoState }: { code: string; de
         body: JSON.stringify({ code, firstName, lastName, email, affiliation, attendanceMode: mode }),
       });
       const json = await res.json().catch(() => ({}));
+      if (res.ok && json.ok && json.token) {
+        // Straight into their attendee portal — the "you're going" page with
+        // the same setup questions every attendee answers (languages,
+        // parking, dietary), org already pre-filled from this card. Keep the
+        // button in its busy state while the browser navigates.
+        window.location.href = `/attend/${json.token}`;
+        return;
+      }
       if (res.ok && json.ok) {
-        setDone({ already: !!json.already, first: firstName.trim().split(/\s+/)[0] || "there" });
+        // Already registered: no portal URL is ever returned for an email
+        // someone merely typed — their link is re-sent to the inbox instead.
+        setDone({ already: true, first: firstName.trim().split(/\s+/)[0] || "there" });
       } else {
         setError(json.error || "Something went wrong. Please try again.");
       }
+      setSubmitting(false);
     } catch {
       setError("Something went wrong. Check your connection and try again.");
-    } finally {
       setSubmitting(false);
     }
   }

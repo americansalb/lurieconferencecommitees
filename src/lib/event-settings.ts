@@ -11,7 +11,9 @@ export async function getEventSettings(): Promise<EventSettings> {
   const get = (k: string) => rows.find((r) => r.key === k)?.value?.trim() || "";
   return {
     joinUrl: get("conference.joinUrl") || process.env.CONFERENCE_JOIN_URL?.trim() || null,
-    agendaUrl: get("conference.agendaUrl") || "/schedule",
+    // Public program on the landing page — NEVER /schedule, which is the
+    // login-gated internal builder and dead-ends every attendee who clicks.
+    agendaUrl: get("conference.agendaUrl") || "/#program",
   };
 }
 

@@ -12,7 +12,7 @@ export default function EventSettingsModal({ onClose }: { onClose: () => void })
 
   useEffect(() => {
     fetch("/api/admin/event-settings").then((r) => (r.ok ? r.json() : null)).then((d) => {
-      if (d) { setJoinUrl(d.joinUrl || ""); setAgendaUrl(d.agendaUrl || "/schedule"); }
+      if (d) { setJoinUrl(d.joinUrl || ""); setAgendaUrl(d.agendaUrl || "/#program"); }
     }).finally(() => setLoading(false));
   }, []);
 
@@ -46,7 +46,7 @@ export default function EventSettingsModal({ onClose }: { onClose: () => void })
             </label>
             <label className="block">
               <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Agenda link</span>
-              <input value={agendaUrl} onChange={(e) => setAgendaUrl(e.target.value)} placeholder="/schedule" className="mt-1 w-full px-3 py-2.5 text-sm border border-slate-200 rounded-lg outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10" />
+              <input value={agendaUrl} onChange={(e) => setAgendaUrl(e.target.value)} placeholder="/#program" className="mt-1 w-full px-3 py-2.5 text-sm border border-slate-200 rounded-lg outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10" />
             </label>
           </div>
         )}

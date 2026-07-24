@@ -12,7 +12,7 @@ export default function InvitedPreviewPage() {
     <div className="relative">
       <div className="fixed top-3 left-3 z-50 flex gap-2">
         <button onClick={() => setState("form")} className={`px-3 py-1.5 rounded-lg text-xs font-bold ${state === "form" ? "bg-white text-slate-900" : "bg-white/20 text-white"}`}>Form</button>
-        <button onClick={() => setState("success")} className={`px-3 py-1.5 rounded-lg text-xs font-bold ${state === "success" ? "bg-white text-slate-900" : "bg-white/20 text-white"}`}>Success</button>
+        <button onClick={() => setState("success")} className={`px-3 py-1.5 rounded-lg text-xs font-bold ${state === "success" ? "bg-white text-slate-900" : "bg-white/20 text-white"}`}>Already registered</button>
       </div>
       <InvitedGuestForm key={state} code="GUEST" demoState={state === "success" ? "success" : null} />
     </div>
