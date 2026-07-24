@@ -76,7 +76,7 @@ export async function POST(req: Request) {
     // Supersede any still-pending paced send so we never double up.
     await prisma.emailQueue.updateMany({
       where: { recipientType: "attendee", recipientId: a.id, status: "pending" },
-      data: { status: "cancelled" },
+      data: { status: "canceled" },
     }).catch(() => {});
     await ensureFirstNameCode(a.firstName, a.discountPercent, adminEmail).catch(() => {});
     // The NBCMI cohort's note also advertises the shared campaign code.

@@ -133,6 +133,9 @@ export default function EmailQueuePage() {
   const [search, setSearch] = useState("");
   const [showSettings, setShowSettings] = useState(false);
   const [note, setNote] = useState<string | null>(null);
+  // Bulk remove is armed by a first click and only fires on the second, since
+  // it can drop hundreds of scheduled letters in one go.
+  const [armRemove, setArmRemove] = useState(false);
 
   const role = (session?.user as { role?: string })?.role;
   const isAdmin = role === "admin" || role === "developer";
@@ -163,6 +166,10 @@ export default function EmailQueuePage() {
     const t = setInterval(load, 30000);
     return () => clearInterval(t);
   }, [status, pendingCount, load]);
+
+  // Changing what's listed disarms the remove button, so a click aimed at one
+  // search can never land on a different set of people.
+  useEffect(() => { setArmRemove(false); }, [search, typeFilter, view]);
 
   function flash(msg: string) {
     setNote(msg);
@@ -273,6 +280,32 @@ export default function EmailQueuePage() {
       await fetch("/api/admin/email-queue", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "cancel", ids: [id] }) });
     } finally {
       setRowBusy(null);
+      load();
+    }
+  }
+
+  // Take everything currently listed back out of the queue. Search first, then
+  // remove what you found: that's the way to undo "I queued the wrong batch"
+  // without cancelling three hundred rows one at a time.
+  //
+  // Nobody is deleted here — only the scheduled letter goes away. Attendees
+  // were never moved off "not emailed" by queueing in the first place; the
+  // server puts sponsors back to prospect and ambassadors back to pending. So
+  // everyone stays on their own page, ready to queue again or send directly.
+  async function removeShown(ids: string[], label: string) {
+    setBusy("remove");
+    try {
+      const r = await fetch("/api/admin/email-queue", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "cancel", ids }),
+      });
+      const j = await r.json().catch(() => ({}));
+      flash(r.ok
+        ? `Removed ${j.canceled || 0} ${label} from the queue. Nobody was deleted — everyone is still on their own page, not emailed, ready to queue again or send directly.`
+        : (j.error || "Could not remove them."));
+    } finally {
+      setBusy(null);
+      setArmRemove(false);
       load();
     }
   }
@@ -475,6 +508,47 @@ export default function EmailQueuePage() {
                 </div>
               )}
             </div>
+
+            {/* Take the listed letters back out of the queue. Paired with the
+                search above: find the batch you didn't mean to queue, then
+                remove it in one click instead of cancelling row by row. */}
+            {isAdmin && view === "queued" && shown.length > 0 && (
+              <div className={`mb-3 rounded-xl border px-4 py-2.5 flex flex-wrap items-center gap-3 ${armRemove ? "border-rose-300 bg-rose-50" : "border-slate-200 bg-white"}`}>
+                {armRemove ? (
+                  <>
+                    <X className="w-4 h-4 text-rose-600 shrink-0" />
+                    <span className="text-sm text-rose-900">
+                      Take <strong>{shown.length}</strong> letter{shown.length === 1 ? "" : "s"} out of the queue? Nobody is deleted — everyone stays on their own page as not emailed, so you can queue them again or send to them directly.
+                    </span>
+                    <div className="ml-auto flex items-center gap-2 shrink-0">
+                      <button onClick={() => setArmRemove(false)} className="text-xs font-semibold text-slate-500 hover:text-slate-700 px-2 py-1.5">Keep them</button>
+                      <button
+                        onClick={() => removeShown(shown.map((p) => p.id), `letter${shown.length === 1 ? "" : "s"}`)}
+                        disabled={busy !== null}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50"
+                      >
+                        {busy === "remove" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />} Yes, remove {shown.length}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-[13px] text-slate-500">
+                      {q || typeFilter !== "all"
+                        ? <>Showing <strong className="text-slate-700">{shown.length}</strong> of {pending.length} waiting {q && <>for &ldquo;{search}&rdquo;</>}.</>
+                        : <>All <strong className="text-slate-700">{pending.length}</strong> waiting to send.</>}
+                    </span>
+                    <button
+                      onClick={() => setArmRemove(true)}
+                      className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-rose-700 bg-white border border-rose-200 hover:bg-rose-50 shrink-0"
+                      title="Unschedule everything currently listed. Nothing is deleted — everyone stays on their own page as not emailed."
+                    >
+                      <X className="w-3.5 h-3.5" /> {q || typeFilter !== "all" ? `Remove these ${shown.length}` : `Remove all ${shown.length}`}
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
 
             {/* Queued list */}
             {view === "queued" ? (

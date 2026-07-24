@@ -76,9 +76,12 @@ export async function POST(req: Request) {
     let failed = 0;
     for (const a of targets) {
       // Supersede any still-pending paced send so this doesn't double up.
+      // "canceled", one L: that's the spelling the queue's own history query
+      // looks for, so a superseded row still shows up in the sent log instead
+      // of vanishing from both lists.
       await prisma.emailQueue.updateMany({
         where: { recipientType: "attendee", recipientId: a.id, status: "pending" },
-        data: { status: "cancelled" },
+        data: { status: "canceled" },
       }).catch(() => {});
       const { subject, html } = buildFinishRegistrationNudge({
         firstName: a.firstName,
@@ -130,7 +133,7 @@ export async function POST(req: Request) {
     const a = targets[i];
     await prisma.emailQueue.updateMany({
       where: { recipientType: "attendee", recipientId: a.id, status: "pending" },
-      data: { status: "cancelled" },
+      data: { status: "canceled" },
     }).catch(() => {});
     const { subject, html } = buildFinishRegistrationNudge({
       firstName: a.firstName,

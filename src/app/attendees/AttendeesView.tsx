@@ -74,13 +74,14 @@ function shortDate(iso: string | null): string {
 }
 
 export default function AttendeesView({
-  attendees, onOpenDetail, onCompose, onSendPortal, onQueueInvites, onNudge,
+  attendees, onOpenDetail, onCompose, onSendPortal, onQueueInvites, onSendInvitesNow, onNudge,
 }: {
   attendees: Attendee[];
   onOpenDetail: (id: string) => void;
   onCompose: (ids: string[]) => void;
   onSendPortal: (ids: string[]) => void;
   onQueueInvites: (ids: string[]) => void;
+  onSendInvitesNow: (ids: string[]) => void;
   onNudge: (ids: string[]) => void;
 }) {
   const [cardFilter, setCardFilter] = useState<string>("all");
@@ -417,8 +418,13 @@ export default function AttendeesView({
           <div className="px-4 py-2.5 bg-teal-50 border-b border-teal-100 flex items-center gap-3 flex-wrap">
             <span className="text-sm font-bold text-teal-800">{selectedIds.length} selected</span>
             {notEmailedSelected > 0 && (
-              <button onClick={() => onQueueInvites(selectedIds)} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-[#0E5566] text-white inline-flex items-center gap-1.5" title="Schedule invites for the not-yet-emailed people into the paced queue — they drip out one at a time, never all at once">
-                <Clock className="w-3.5 h-3.5" /> Queue invites ({notEmailedSelected.toLocaleString()})
+              <button onClick={() => onSendInvitesNow(selectedIds)} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-[#0E5566] text-white inline-flex items-center gap-1.5" title="Send the invite to the selected not-yet-emailed people RIGHT NOW — no queue, no waiting (up to 100 per click; others are skipped)">
+                <Send className="w-3.5 h-3.5" /> Send invites now ({notEmailedSelected.toLocaleString()})
+              </button>
+            )}
+            {notEmailedSelected > 0 && (
+              <button onClick={() => onQueueInvites(selectedIds)} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 inline-flex items-center gap-1.5" title="Schedule invites for the not-yet-emailed people into the paced queue instead — they drip out one at a time over the working day">
+                <Clock className="w-3.5 h-3.5" /> Queue instead ({notEmailedSelected.toLocaleString()})
               </button>
             )}
             {nudgeableSelected > 0 && (

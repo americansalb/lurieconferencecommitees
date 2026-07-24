@@ -637,6 +637,23 @@ export default function AttendeesPage() {
     });
   }
 
+  // Send the invite to the selected not-yet-emailed people right now, skipping
+  // the queue entirely. The queue is still there for a whole cold roster; this
+  // is for a handful you've picked off the list and want gone today.
+  async function sendInvitesNow(ids: string[]) {
+    if (!ids.length) return;
+    setPortalNote("Sending…");
+    const res = await fetch("/api/attendees/send-invites", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids }),
+    }).then((r) => r.json()).catch(() => ({}));
+    setPortalNote(res.ok
+      ? `Sent ${(res.sent || 0).toLocaleString()} invite${res.sent === 1 ? "" : "s"} now${res.failed ? ` · ${res.failed} failed` : ""}${res.skipped ? ` · ${res.skipped} skipped (already emailed, paid or opted out)` : ""}${res.overCap ? ` · ${res.overCap} over the 100-per-click limit, select them again` : ""}.`
+      : (res.error || "Could not send the invites."));
+    setTimeout(() => setPortalNote(null), 9000);
+    load(true);
+  }
+
   async function reinviteNonResponders(templates?: string[]) {
     setReinvite({ sending: true, note: null });
     try {
@@ -1340,6 +1357,12 @@ export default function AttendeesPage() {
                 onCompose={(ids) => setComposerIds(ids)}
                 onSendPortal={sendPortalLink}
                 onQueueInvites={queueInvites}
+                onSendInvitesNow={(ids) => setConfirmDialog({
+                  title: "Send these invites right now?",
+                  message: "The not-yet-emailed people in your selection get their invitation immediately — no queue, no waiting, up to 100 per click. Anyone already emailed, paid, or unsubscribed is skipped. If any of them are sitting in the paced queue, that pending copy is dropped so nobody gets the letter twice.",
+                  confirmLabel: "Send now",
+                  onConfirm: () => { setConfirmDialog(null); void sendInvitesNow(ids); },
+                })}
                 onNudge={(ids) => setConfirmDialog({
                   title: `Send the reminder to this selection right now?`,
                   message: "The selected started-not-paid people get the finish-your-registration note immediately — no queue, up to 100 per click. Their reminder count goes up and shows on the row. Anyone selected who is paid, declined, or unsubscribed is skipped.",

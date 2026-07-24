@@ -65,8 +65,12 @@ export async function GET() {
   // The sent log: what has already gone out (and what failed / was canceled or
   // skipped), most recent first, so admins can see the trail instead of just the
   // pending queue. updatedAt is set on every status transition.
+  //
+  // "cancelled" is in here for history only: two routes used to write the
+  // British spelling when superseding a paced send, which left those rows in
+  // neither list. New writes are all "canceled"; this keeps the old ones visible.
   const recent = await prisma.emailQueue.findMany({
-    where: { status: { in: ["sent", "failed", "canceled", "skipped"] } },
+    where: { status: { in: ["sent", "failed", "canceled", "cancelled", "skipped"] } },
     orderBy: { updatedAt: "desc" },
     take: 100,
     // batchId rides along so the sent log can name which list each letter came
