@@ -46,6 +46,28 @@
 //    arrive at a front desk, so expect lower reach and never send two
 //    different asks to the same shared inbox.
 //
+// ─── ONE LETTER PER EMPLOYER (added after the first audit) ─────────────────
+// The list reached 127 sendable rows and only 75 unique email domains, which
+// meant 52 letters were landing where a colleague was already getting one:
+// four at the DuPage Federation, three each at SWOP, Sinai, Centro de
+// Informacion, Waukegan Township. Colleagues at a small nonprofit forward each
+// other cold email. Three "hand-written personal notes" surfacing in one
+// office in one week is precisely the tell every other rule in this file
+// exists to avoid, and it is worse than a bad note because it exposes all
+// three at once. So each employer keeps exactly ONE contact and the rest carry
+// `hold`. Two traps when adding people:
+//   - Dedupe on the EMPLOYER, not the `org` string. Three Town of Cicero
+//     departments and two Northwestern centers were written as five different
+//     organizations and survived a dedupe by name. Check the domain.
+//   - Pick the contact whose desk this conference is actually about, not the
+//     most senior one. The Language Access Resource Center's program director
+//     beats her own executive director here.
+// A department triage line at a hospital, university or county government is
+// held outright: a letter to a named person read by whoever is on the intake
+// queue that morning has no one whose job it is to care. A shared mailbox at a
+// small nonprofit is different — it is often the director's own inbox — so
+// those still send.
+//
 // ─── Deliberately excluded ─────────────────────────────────────────────────
 // Lurie Children's staff (they are the host), confirmed speakers and
 // sponsors, and any organization already receiving a SPONSORSHIP ask from
@@ -107,6 +129,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Cooper Bailey",
     title: "Professor of Medicine; Director, CAHRA Health Literacy & Learning Program (HeLP)",
     email: "stacy-bailey@northwestern.edu",
+    hold:
+      "One letter per org, applied across org names: her program sits inside CAHRA, and CAHRA's director Michael Wolf is already getting a letter at the same northwestern.edu domain. Two rows named it differently, which is exactly how a duplicate survives a dedupe by organization.",
     source: "https://www.feinberg.northwestern.edu/sites/cahra/about/our-team/",
     note: `I'm writing about a conference on language access in pediatric care, but the reason I'm writing to you specifically is health literacy. A discharge instruction can be translated perfectly and still be unreadable, and our program doesn't currently tell those two failures apart. HeLP looks like one of the few places actually measuring the difference.`,
   },
@@ -213,6 +237,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Director, Global Patient Services",
     email: "international@sralab.org",
     sharedInbox: true,
+    hold:
+      "Front desk: international@sralab.org is Shirley Ryan AbilityLab's international patient services queue, not his inbox. Held until a direct address turns up.",
     source: "Global Patient Services page, sralab.org",
     note: `You said somewhere that interpreters are not just a box where one language goes in and another comes out. I've been quoting that at people for months without asking you first, so the least I can do is invite you. The Coleman-funded study on interpreter-mediated aphasia assessment makes the same point with data behind it: if you can't separate the language barrier from the language impairment, you can misdiagnose somebody badly. I also noticed you came up through the booth rather than into it from administration, which isn't common at director level.`,
   },
@@ -223,6 +249,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Chief of Global and National Programs",
     email: "international.services@uchospitals.edu",
     sharedInbox: true,
+    hold:
+      "Front desk: international.services@uchospitals.edu is UChicago Medicine's international services queue. Held until a direct address turns up.",
     source: "International Programs page, uchicagomedicine.org",
     note: `Interpreter Services reporting up through International Programs instead of sitting under compliance is a choice, and I think it's the right one. Your top five languages run Spanish, Arabic, Cantonese, Polish, Mandarin, which reads like the South Side and not much like the list a national vendor would have predicted. Seventy-one percent volume growth since 2015 is the number I'd most want to ask you about, since I doubt the budget grew seventy-one percent.`,
   },
@@ -233,6 +261,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Chief Experience Officer",
     email: "patientexperience@cookcountyhealth.org",
     sharedInbox: true,
+    hold:
+      "Front desk: patientexperience@cookcountyhealth.org is a patient-complaints intake queue, which is the worst possible place for an invitation to land. Held until a direct address turns up.",
     source: "Leadership page, cookcountyhealth.org (address published in the page's own encoded contact link)",
     note: `Cook County Health staffs Spanish interpreters on site around the clock and Polish on weekdays. That's staffing to who actually walks in rather than to a national average, and it isn't the usual call. You've now run patient experience at Cook County and at NYC Health and Hospitals, probably the two most multilingual public systems in the country. What transferred and what didn't is the thing I'd most want to ask you.`,
   },
@@ -253,6 +283,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Chief Diversity & Community Health Equity Officer",
     email: "UIHealthDiversity@uic.edu",
     sharedInbox: true,
+    hold:
+      "Front desk: UIHealthDiversity@uic.edu is a department mailbox. Held until a direct address turns up.",
     source: "Diversity and community health equity leadership page, hospital.uillinois.edu",
     note: `Health equity work at UI Health runs on knowing who your patients actually are, and preferred language is one of the fields that gets collected as a courtesy rather than as data. You can't staff for interpreters you can't count.`,
   },
@@ -274,6 +306,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Chief, Center for Minority Health Services; IDPH Language Access Plan Coordinator",
     email: "dph.cmhs.info@illinois.gov",
     sharedInbox: true,
+    hold:
+      "Front desk: dph.cmhs.info@illinois.gov is a state agency information line. Held until a direct address turns up.",
     source: "IDPH Language Access Plan approved February 2026, dph.illinois.gov",
     note: `I read the Language Access Plan IDPH approved in February, the whole way through, which I suspect is a small club. What I kept looking at was the dates. Training for front-line and managerial staff starting this quarter, new hires inside sixty days, I Speak cards in every IDPH building by the end of December. Most of the plans I read don't carry dates at all. You coordinate that one, so you'll be the first to find out whether they hold.`,
   },
@@ -284,6 +318,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Chief Operating Officer",
     email: "healthycook@cookcountyhhs.org",
     sharedInbox: true,
+    hold:
+      "Front desk: healthycook@cookcountyhhs.org is a program mailbox for the Healthy Cook County plan. Held until a direct address turns up.",
     source: "Leadership page, cookcountypublichealth.org",
     note: `You've stood up a community behavioral health unit and a community immunization unit inside a suburban county health department, so twice now you've had to build a service for people the existing one wasn't reaching. In suburban Cook a lot of that is language before it's anything else. Behavioral health is the hard case. There's no competent psychiatric assessment through a family member, and it still happens all the time.`,
   },
@@ -294,6 +330,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Director, IPHAM Center for Community Health",
     email: "cch@northwestern.edu",
     sharedInbox: true,
+    hold:
+      "Front desk: cch@northwestern.edu is the center's general mailbox. Held until a direct address turns up.",
     source: "IPHAM Center for Community Health staff page, feinberg.northwestern.edu",
     note: `ARCC exists because health research has a habit of turning up in a neighborhood, taking what it needs and leaving. Language is usually where that shows first. A study recruits in English, or in translated English, then reports findings about a community half of whom could never have enrolled. I'd like the research side of this represented properly and you're the obvious person to ask.`,
   },
@@ -739,6 +777,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Biggs",
     title: "Director of Healthy Southwest",
     email: "Jbiggs@swopchicago.org",
+    hold:
+      "One letter per org: SWOP is written to through Jeff Bartow, the executive director.",
     source: "https://swopchicago.org/staff",
     note: `Healthy Southwest runs across six neighborhood schools and about a dozen social service agencies with eight lead organizations, and you supervise the community navigators and public health ambassadors inside it. The navigator job is the one this conference is really about. Somebody sits with a family, figures out what they actually need, and then has to get that across to a clinic that may not share a language with them.`,
   },
@@ -748,6 +788,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Velazquez",
     title: "Administrative Director, Illinois Statewide Parent Mentor Program",
     email: "avelazquez@swopchicago.org",
+    hold:
+      "One letter per org: SWOP is written to through Jeff Bartow, the executive director.",
     source: "https://swopchicago.org/staff",
     note: `Your parent mentor team supports twenty schools and you connect immigrant families to citizenship and DACA legal help on top of that. Parents who've been through the mentor program are usually the ones who end up interpreting for other parents at the clinic, whether or not anyone asked them to.`,
   },
@@ -758,6 +800,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Executive Director",
     email: "Communications@BPNCchicago.org",
     sharedInbox: true,
+    hold:
+      "Front desk: Communications@BPNCchicago.org is a press inbox. Held until a direct address turns up.",
     source: "https://www.bpncchicago.org and coverage of the June 2026 opening at 4000 S. Archer",
     note: `The $8.7 million center you opened at 4000 S. Archer in June puts legal aid, benefits enrollment, immigration services, clinical services, a nutrition program and a community kitchen in one building. That's a decision about how many doors a family should have to walk through, and almost nobody funds it that way. You also have a clinician at each of your nine community school partners.`,
   },
@@ -768,6 +812,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Promotora de Salud",
     email: "paes@enlacechicago.org",
     sharedInbox: true,
+    hold:
+      "Front desk: paes@enlacechicago.org is the parent engagement program's mailbox. Held until a direct address turns up.",
     source: "Enlace Chicago promotores program page and 2025 local coverage of Little Village promotoras",
     note: `You were Enlace's first promotora and you've been doing it ten years, after teaching high school in Mexico and immigrating here more than twenty-five years ago. The thing you said about parents needing access too, not just the kids, has stuck with me. I also read that your call volume dropped when people started staying home because of ICE, which is a public health number that won't show up in anybody's dashboard.`,
   },
@@ -855,6 +901,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Quevedo",
     title: "Organizing Director",
     email: "crystal@latinounion.org",
+    hold:
+      "One letter per org: Latino Union is written to through Miguel Alvelo Rivera, the executive director.",
     source: "https://www.latinounion.org",
     note: `Latino Union trained five thousand community members in three languages in a single year. I'd like to know how you staffed that, because the training is usually the easy part and finding people who can deliver it in all three is not.`,
   },
@@ -875,6 +923,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Solarte",
     title: "Director of Government Affairs and Community Relations",
     email: "asolarte@ihccbusiness.net",
+    hold:
+      "One letter per org: the Illinois Hispanic Chamber is written to through Jaime di Paulo, the president and CEO.",
     source: "https://ihccbusiness.net/meet-the-ihcc-team/",
     note: `We have someone from the Department of Justice speaking about how language access law is actually enforced, which is the session I think you'd get the most out of. Business owners hear about civil rights obligations from lawyers after something has gone wrong, rarely before.`,
   },
@@ -884,6 +934,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Orozco",
     title: "Events and Membership Director",
     email: "ivette.orozco@ihccbusiness.net",
+    hold:
+      "One letter per org: the Illinois Hispanic Chamber is written to through Jaime di Paulo, the president and CEO.",
     source: "https://ihccbusiness.net/meet-the-ihcc-team/",
     note: `You're the person who'd know whether any of this is worth putting in front of IHCC members, so I'd rather ask you than guess.`,
   },
@@ -922,6 +974,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Olvera",
     title: "President-Elect; Treasurer, NAHN national",
     email: "rsanchez.nahn@gmail.com",
+    hold:
+      "One letter per org: NAHN Illinois is written to through Diana Ortega, the chapter president. Also, the published address is rsanchez@, which does not match this name — the chapter's other three are firstname/lastname patterns, so this is either a seat address inherited from a previous holder or a different person entirely. Re-verify from the chapter site before it is ever used.",
     source: "NAHN Illinois chapter site; national treasurer effective July 17, 2026",
     note: `Holding the Illinois chapter's president-elect seat and the national treasurer's seat at the same time means you see what Chicago is doing and what the rest of the country is doing. I'd like to know whether the language burden on Hispanic nurses looks different here than it does in the chapters you're reading budgets for.`,
   },
@@ -931,6 +985,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Sandoval",
     title: "Treasurer; faculty, DePaul University School of Nursing",
     email: "jensandoval.nahn@gmail.com",
+    hold:
+      "One letter per org: NAHN Illinois is written to through Diana Ortega, the chapter president.",
     source: "NAHN Illinois chapter board listing and DePaul faculty directory",
     note: `Your 2024 paper asked Latinx nurses what the first wave of COVID was actually like for them. You're teaching at DePaul now, so the students coming up behind that cohort are yours.`,
   },
@@ -949,6 +1005,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Gonzalez",
     title: "Chapter member; 2020 ANA-Illinois Nurse Influencer Award",
     email: "susanagonzalez.ihna@gmail.com",
+    hold:
+      "One letter per org: NAHN Illinois is written to through Diana Ortega, the chapter president.",
     source: "ANA-Illinois 2020 award announcement",
     note: `Your award citation was specifically for mentoring bilingual, bicultural Spanish-speaking nurses. Awards for mentoring usually go to people who mentored a lot of everybody, so somebody deliberately noticed what you were doing.`,
   },
@@ -967,6 +1025,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Perez",
     title: "Director of Educational Research",
     email: "nperez57@uic.edu",
+    hold:
+      "One letter per employer: the center's director Monica Vela is already getting one. This row said \"UIC Hispanic Center of Excellence\" and hers said \"UIC's Hispanic Center of Excellence\" — one apostrophe was the entire reason a dedupe by organization name did not catch it.",
     source: "UIC Hispanic Center of Excellence staff listing",
     note: `Somebody has to measure whether any of the pipeline work is producing clinicians who can actually practice in Spanish, as opposed to producing clinicians who identify as Hispanic. Those are different outcomes and they get reported as one number more often than they should.`,
   },
@@ -986,6 +1046,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "National Professional Trustee; Lead Dentist, RefugeeOne",
     email: "info@healthytoothdental.com",
     sharedInbox: true,
+    hold:
+      "Front desk, and the Hispanic Dental Association is already written to through its 2026 president Ana Zea: info@healthytoothdental.com is her private dental practice's general inbox, not an HDA address.",
     source: "Hispanic Dental Association board listing and RefugeeOne clinical staff page; address is her practice",
     note: `What you said about dialect, that patients can tell your intentions are good even when you get a word wrong for their region, is the most useful sentence I've read about this all year. It cuts against the instinct to stay silent unless your Spanish is perfect. Being lead dentist at RefugeeOne on top of the HDA seat also means you're working across languages that have almost no dental vocabulary support at all.`,
   },
@@ -1116,6 +1178,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Lopez",
     title: "Vice President",
     email: "FLopez@bn98.org",
+    hold:
+      "One letter per org: IAMME is written to through James Cohen, its president.",
     source: "IAMME board listing",
     note: `Doing this from inside a district rather than a university means you deal with the version where a family is standing in front of you and the translated form doesn't exist yet.`,
   },
@@ -1145,6 +1209,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Chablani",
     title: "Chief Program Officer",
     email: "achablani@clccrul.org",
+    hold:
+      "One letter per org: the Chicago Lawyers' Committee is written to through Venu Gupta, the executive director.",
     source: "https://www.clccrul.org/staff",
     note: `Migrant farmworker rights at ABLE in Toledo and before that death row work in Louisiana is an unusual road into Chicago civil rights practice. Farmworker language access is the hardest version of the problem in the country, and Illinois has somewhere between thirty-five and fifty-five thousand of those workers depending on whose count you use.`,
   },
@@ -1154,6 +1220,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Gandhi",
     title: "Senior Counsel",
     email: "agandhi@clccrul.org",
+    hold:
+      "One letter per org: the Chicago Lawyers' Committee is written to through Venu Gupta, the executive director.",
     source: "https://www.clccrul.org/staff",
     note: `You advised the election authorities that put the first Hindi ballots in the country into service. Getting a ballot right in a new language is the same problem as getting a consent form right, minus the part where somebody is frightened and in pain while they read it. I'd like to hear what the ballot work taught you that transfers.`,
   },
@@ -1163,6 +1231,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Jansen",
     title: "Public Policy Director",
     email: "cherylj2@equipforequality.org",
+    hold:
+      "One letter per org: Equip for Equality is written to through Sujatha Jagadeesh Branch, whose civil rights team is nearer to this subject than public policy.",
     source: "https://www.equipforequality.org staff and public policy listings",
     note: `Equip for Equality says it can accommodate more than two hundred languages at all of its locations, which is a sentence I have not seen a healthcare organization in this state write down. Your legislative updates are also the only reliable place to find out what actually passed.`,
   },
@@ -1200,6 +1270,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Commissioner",
     email: "access@cityofchicago.org",
     sharedInbox: true,
+    hold:
+      "Front desk: access@cityofchicago.org is the disability office's public request line. Held until a direct address turns up.",
     source: "City of Chicago MOPD leadership page; the office publishes one shared address",
     note: `You're a deaf commissioner running the city office that enforces access, so the ASL side of this conference is your territory in a way it isn't for anybody else on this list. Deaf patients whose first language is ASL and hearing patients whose first language is Spanish get handled by two different departments in most hospitals, with two different budgets and no shared standard.`,
   },
@@ -1220,6 +1292,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Ignoffo",
     title: "Executive Director, Community Health Innovations",
     email: "stacy.ignoffo@sinai.org",
+    hold:
+      "One letter per org: Sinai Urban Health Institute is written to through Helen Margellos-Anast, its president.",
     source: "https://www.sinaichicago.org/en/sinai-urban-health-institute/",
     note: `Community health worker programs live or die on whether the CHW is treated as a member of the care team or as outreach staff who happen to speak the language. That's a workforce design question and you're one of the few people in the city whose job is answering it.`,
   },
@@ -1229,6 +1303,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Jacobs",
     title: "Director of Evaluation",
     email: "jackie.jacobs@sinai.org",
+    hold:
+      "One letter per org: Sinai Urban Health Institute is written to through Helen Margellos-Anast, its president.",
     source: "SUHI staff listing and the IDEA study on diabetes equity",
     note: `You were corresponding author on the IDEA diabetes work for Black and Latine patients. Diabetes education is where language access gets expensive, because it's not one conversation, it's dozens over years, and nobody budgets for interpreting on that timeline.`,
   },
@@ -1238,6 +1314,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Seguil",
     title: "Director of Operations",
     email: "pseguil@communityhealth.org",
+    hold:
+      "One letter per org: CommunityHealth is written to through Vickie Chester. Patient access is a step below director of operations and is also the desk where a patient's language first gets asked about.",
     source: "https://www.communityhealth.org staff and volunteer listings",
     note: `CommunityHealth publishes its site in English, Spanish and Polish and recruits volunteer interpreters in both alongside bilingual nurses. Running that on a volunteer clinical model means you're scheduling language capacity and clinical capacity against each other every week, which is a harder operations problem than any salaried clinic has.`,
   },
@@ -1295,6 +1373,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Rivera",
     title: "Manager of Training and Education, Language Access Resource Center",
     email: "crivera@dupagefederation.org",
+    hold:
+      "One letter per org: the DuPage Federation is written to through Eva Rafas, who runs the Language Access Resource Center.",
     source: "https://www.dupagefederation.org/ourteam",
     note: `You ran the Spanish-language focus groups for the DuPage Early Childhood Community Profile, so you've done the version where you're the one asking parents questions rather than interpreting somebody else's. Training interpreters afterward has to be different once you've sat on that side of it.`,
   },
@@ -1304,6 +1384,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Jasso",
     title: "Program Coordinator, Language Access Resource Center",
     email: "vjasso@dupagefederation.org",
+    hold:
+      "One letter per org: the DuPage Federation is written to through Eva Rafas, who runs the Language Access Resource Center.",
     source: "https://www.dupagefederation.org/ourteam",
     note: `Coordinating a shared interpreter pool across dozens of agencies means you're the person who finds out at nine in the morning that nobody in the county speaks the language somebody needs at ten.`,
   },
@@ -1313,6 +1395,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Abdul-Qadir",
     title: "Executive Director, Administration",
     email: "sqadir@dupagefederation.org",
+    hold:
+      "One letter per org: the DuPage Federation is written to through Eva Rafas. She is more junior than the executive director but she runs the Language Access Resource Center, which is the part of the Federation this conference is actually about.",
     source: "https://www.dupagefederation.org/ourteam",
     note: `Your organization also supports the Illinois Welcoming Center staff statewide on language access and interpreter training. That's a small federation in Lombard carrying a state function, and I'd like to know whether that's by design or because nobody else picked it up.`,
   },
@@ -1331,6 +1415,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Cabrera",
     title: "Citizenship and Immigration Program Manager",
     email: "daniel@spanishcenter.org",
+    hold:
+      "One letter per org: the Spanish Community Center is written to through Maria Munoz at the Illinois Welcoming Center.",
     source: "https://www.spanishcenter.org/staffdirectory",
     note: `A DOJ-recognized program running twenty-four services including DACA renewal, VAWA and U visas, in both languages, out of a building that opened in 1969. The U visa work in particular puts you in the room when somebody has to describe a crime to a stranger, which is the same problem an interpreter has in an emergency department at three in the morning.`,
   },
@@ -1340,6 +1426,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Cruz",
     title: "Family Advocacy Center Program Lead",
     email: "katherine@spanishcenter.org",
+    hold:
+      "One letter per org: the Spanish Community Center is written to through Maria Munoz at the Illinois Welcoming Center.",
     source: "https://www.spanishcenter.org/staffdirectory",
     note: `Yours is the only Family Advocacy Center in Will and Kankakee counties, and your staff go to court with clients rather than sending them. Court interpreting and clinical interpreting are governed by completely separate rules and your clients cross between them in the same week.`,
   },
@@ -1358,6 +1446,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Larrota",
     title: "Welcoming Center Team Manager",
     email: "glarrota@centrodeinformacion.org",
+    hold:
+      "One letter per org: Centro de Informacion is written to through Dianha Ortega-Ehreth, the executive director.",
     source: "https://centrodeinformacion.org/about and https://centrodeinformacion.org/services",
     note: `Case management, crisis intervention and interpretation sitting under one manager means the interpreting isn't outsourced away from the people who know the family. That's rarer than it should be.`,
   },
@@ -1367,6 +1457,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Borrero",
     title: "Access to Justice Navigator Coordinator",
     email: "mborrero@centrodeinformacion.org",
+    hold:
+      "One letter per org: Centro de Informacion is written to through Dianha Ortega-Ehreth, the executive director.",
     source: "https://centrodeinformacion.org/about",
     note: `Centro de Información's court navigators and hospital interpreters are solving the same problem in two buildings that don't talk to each other. We have people from the Illinois court system's language access side coming, and I think that conversation is worth having in person.`,
   },
@@ -1385,6 +1477,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Arias",
     title: "Executive Director and General Assistance Commissioner",
     email: "carias@thetownofcicero.com",
+    hold:
+      "One letter per employer: three Town of Cicero departments were listed as three organizations and would have put three letters into thetownofcicero.com in one week. Cicero is written to through Arcadio Delgado in Citizenship Assistance, the department nearest this subject.",
     source: "https://www.thetownofcicero.com/community/community-mental-health-board/",
     note: `Your board's referral commitment says regardless of legal status, in writing, on a town government page. That sentence is doing real work in 2026 and somebody made a decision to leave it up. You also fund Pilsen Wellness Center, Un Nuevo Despertar and Youth Crossroads, so you know which of them can actually deliver a session in Spanish and which of them say they can.`,
   },
@@ -1394,6 +1488,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Chlada",
     title: "Executive Director",
     email: "rchlada@thetownofcicero.com",
+    hold:
+      "One letter per employer: Cicero is written to through Arcadio Delgado in Citizenship Assistance. See the note on the 708 Board row.",
     source: "https://www.thetownofcicero.com",
     note: `Deaf and hard of hearing residents in a town that is overwhelmingly Spanish-speaking need something the standard playbook doesn't cover, because the interpreter has to bridge two languages at once and there are very few of those people in Illinois.`,
   },
@@ -1412,6 +1508,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Ayala",
     title: "Community Health Worker",
     email: "eayala@casscohealth.org",
+    hold:
+      "One letter per org: Cass County Health Department is written to through Yazmin Perez-Carapia at the Immigrant Welcoming Center.",
     source: "https://casscohealth.org community health worker listing",
     note: `Your department writes that its community health workers are bilingual in Spanish and can provide other languages as needed, with interpretation listed as an actual duty rather than an informal favour. Getting that written into the job is most of the battle.`,
   },
@@ -1430,6 +1528,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Gutierrez",
     title: "Community Health Education and Outreach Program Manager",
     email: "dgutierrez@mamfrc.org",
+    hold:
+      "One letter per org: Mano a Mano is written to through Dulce Ortiz, the executive director.",
     source: "mamfrc.org leadership listing (archived January 2025); the live page currently 404s",
     note: `You've trained promotores in Mexico and here, and you were a practitioner and researcher there before this. That's two health systems' worth of assumptions to hold at once. What you said about people already being in trauma before the political situation added more is the part clinicians tend to hear as background rather than history.`,
   },
@@ -1449,6 +1549,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Acosta",
     title: "Assistant Director and Director of Outreach",
     email: "macosta4@uic.edu",
+    hold:
+      "One letter per org: the Great Lakes Center for Farmworker Health is written to through Linda Forst, its director and principal investigator.",
     source: "https://farmworkerhealth.uic.edu/profiles/acosta-maggie/",
     note: `Medical anthropology plus a decade of community public health is close to the right training for outreach to a population that moves. Illinois has somewhere between thirty-five and fifty-five thousand farmworkers and the range itself tells you how well anybody has been counting.`,
   },
@@ -1476,6 +1578,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Bermudez",
     title: "Northern Region Coordinator",
     email: "abermudez@illinoismigrant.org",
+    hold:
+      "One letter per org: the Illinois Migrant Council is written to through Magdalena Rivera, its president and CEO.",
     source: "https://illinoismigrant.org/staff",
     note: `Your region is close enough to Chicago that your workers show up in Chicago emergency departments, and far enough that nobody at those hospitals knows where they came from.`,
   },
@@ -1503,6 +1607,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Kritz",
     title: "Director of Prevention",
     email: "lkritz@lakecountyil.gov",
+    hold:
+      "One letter per org: the Lake County Health Department is written to through Christopher Hoff, its executive director.",
     source: "Lake County Health Department program announcements, October 2025",
     note: `Lead exposure prevention runs on getting into people's homes, and the families most at risk in Waukegan and North Chicago are the ones least likely to open the door to a county employee they can't talk to.`,
   },
@@ -1513,6 +1619,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Director of Community Health",
     email: "askus@kanecountyil.gov",
     sharedInbox: true,
+    hold:
+      "Front desk: askus@kanecountyil.gov is the county's general public enquiry line, not the health department's. Held until a direct address turns up.",
     source: "https://www.kanehealth.com/Pages/Menu-About.aspx; Kane County publishes no individual staff addresses, so this is the only route to her",
     note: `Your division runs a program literally called Immigrant Health, and the page says immigration is considered a social determinant of health. Very few health departments will write that down. Aurora and Elgin between them hold a big share of the state's Spanish-speaking population outside Chicago and get almost none of the attention.`,
   },
@@ -1559,6 +1667,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Jones",
     title: "Supervisor",
     email: "mjones@waukegantownship.com",
+    hold:
+      "One letter per org: Waukegan Township is written to through Chris Butler at the Eddie Washington Center. The supervisor is the more senior name, but the shelter director is the one whose day this conference is about.",
     source: "https://www.waukegantownship.com",
     note: `Township government is the layer that hands out general assistance and gets nobody's attention, and in Waukegan that means you're often the last office before someone goes without.`,
   },
@@ -1568,6 +1678,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Hernandez",
     title: "Named contact for the Senior Health Insurance Program (no title published)",
     email: "ahernandez@waukegantownship.com",
+    hold:
+      "One letter per org: Waukegan Township is written to through Chris Butler at the Eddie Washington Center.",
     source: "https://www.waukegantownship.com; the township publishes her as the SHIP contact without a title, and one is deliberately not invented here",
     note: `You're the person Waukegan Township lists for the Senior Health Insurance Program, so you already know that Medicare counselling for a senior who needs an interpreter takes three times as long and gets the same length of appointment as everybody else.`,
   },
@@ -1623,6 +1735,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Lerner",
     title: "Community Initiatives Coordinator",
     email: "Lisa.Lerner@dupagehealth.org",
+    hold:
+      "One letter per org: the DuPage County Health Department is written to through Adam Forker, its executive director.",
     source: "DuPage County Prevention Leadership Team meeting minutes, February 2025",
     note: `The prevention leadership team meetings are where the county's agencies actually find out what each other are doing, and LARC presented at one of them last year. Coordination is the whole job and it never photographs well.`,
   },
@@ -1642,6 +1756,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "President and Chief Executive Officer",
     email: "communications@vnahealth.com",
     sharedInbox: true,
+    hold:
+      "Front desk, and VNA Health Care is already written to through Sonny de Rama: communications@vnahealth.com is a press inbox and would be a second letter into the same organization.",
     source: "https://www.vnahealth.com leadership page; VNA publishes no individual executive addresses",
     note: `Fifteen clinics, about ninety thousand patients a year, and more than sixty-eight percent of them Hispanic. That makes VNA the largest community health center in the suburbs and one of the most Spanish-speaking patient populations in the state, and you also run an Illinois Welcoming Center inside it.`,
   },
