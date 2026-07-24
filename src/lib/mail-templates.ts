@@ -3020,6 +3020,9 @@ function plainNoteEmail({
   unsubscribeUrl,
   siteUrl,
   ps,
+  // A default, so the five list letters keep the line without being changed.
+  // Only an explicit null suppresses it.
+  replyLine = "If you have any questions, just reply to this email.",
 }: {
   firstName: string;
   // Pre-composed paragraph HTML: composers escape all user-derived text.
@@ -3036,6 +3039,12 @@ function plainNoteEmail({
   // two minutes" P.S. was removed at the client's request — no letter makes
   // time-to-register claims unless a composer explicitly passes one.
   ps?: string | null;
+  // "If you have any questions, just reply to this email." Defaults on,
+  // because on a list letter it is genuinely useful. Pass null to suppress:
+  // it is service-desk phrasing, and in a one-to-one note it reads as the
+  // one machine-written line in an otherwise hand-typed message. Only the
+  // Chicago direct invite does that; replies still reach a human either way.
+  replyLine?: string | null;
 }) {
   const postalAddress = process.env.MAIL_POSTAL_ADDRESS?.trim() || "Americans Against Language Barriers, Chicago, IL";
   const site = (siteUrl || "https://conference.aalb.org").replace(/\/$/, "");
@@ -3068,9 +3077,7 @@ function plainNoteEmail({
   <div>Hi ${first},</div>
   <div><br></div>
 ${paras.map((x) => `  <div>${x}</div>\n  <div><br></div>`).join("\n")}
-  <div>If you have any questions, just reply to this email.</div>
-  <div><br></div>
-  <div>${signerFirst}</div>
+${replyLine ? `  <div>${replyLine}</div>\n  <div><br></div>\n` : ""}  <div>${signerFirst}</div>
   <div><br></div>
   <div style="color:#555555;">${signerFull}${signerTitle ? `, ${signerTitle}` : ""}<br>Americans Against Language Barriers &middot; <a href="${site}">conference.aalb.org</a></div>
   ${ps ? `<div><br></div>\n  <div>P.S. ${ps}</div>` : ""}
@@ -3220,7 +3227,8 @@ export function plainStandardInviteEmail(args: AttendeeInviteArgs) {
 // no opening at all, so it falls back to the standard invite rather than
 // sending a headless message.
 export function plainDirectInviteEmail(args: AttendeeInviteArgs) {
-  const { firstName, url, discountPercent, inviteMessage } = args;
+  // discountPercent is deliberately not read: this letter never states a rate.
+  const { firstName, url, inviteMessage } = args;
   const note = (inviteMessage || "").trim();
   if (!note) return plainStandardInviteEmail(args);
   const paras: string[] = [];
@@ -3246,15 +3254,35 @@ export function plainDirectInviteEmail(args: AttendeeInviteArgs) {
   //   - "your personal invitation rate is already built into the link" is CRM
   //     phrasing for "the discount is on the link."
   // Same facts, addressed to a peer, and four paragraphs shorter.
+  //
+  // And then shorter again, because "addressed to a peer" was still selling.
+  // What was here stacked six reasons to come — keynote, DOJ speaker, two-day
+  // format, live stream, CEU hours, two accreditors, a third and fourth
+  // speaker name — and a reader does not experience six reasons as six times
+  // as persuasive. They experience it as being sold to, which is exactly what
+  // paragraph one spent its whole length earning the right not to do. So:
+  //   - CEU hours and the NBCMI/CCHI accreditations are gone. Recertification
+  //     is what an INTERPRETER comes for, and plainCmiInviteEmail already
+  //     carries it. To a development director or a county health officer it is
+  //     product spec for a product they aren't buying.
+  //   - The live stream is gone. Everyone on this list is in the Chicago area.
+  //     Offering a stranger a way to NOT show up reads as objection-handling.
+  //   - The third and fourth speaker names are gone. One more name is not more
+  //     convincing; past two it stops being people and becomes a lineup.
+  //   - The date and venue are gone from here because the sentence above
+  //     already said both. Saying them twice is a brochure habit.
+  // Two speakers and a link to go look for themselves. If that isn't enough
+  // reason for this particular reader, a longer paragraph was never going to
+  // be either.
   const site = (args.learnMoreUrl || "https://conference.aalb.org").replace(/\/$/, "");
   paras.push(
-    `The Joint Commission is keynoting on how their standards land on language access, and Michael Mul&eacute;, who ran language access enforcement at the DOJ civil rights division, is speaking too. It's two days at Lurie Children's with a live stream if you'd rather watch from home, and over ten hours of CEUs accredited by NBCMI and CCHI. The rest of the lineup, Wilma Alvarado-Little from the New York State Department of Health among them, is at <a href="${site}">conference.aalb.org</a>.`
+    `The Joint Commission is keynoting on language access, and Michael Mul&eacute;, who ran language access enforcement at the DOJ civil rights division, is speaking. The rest of the program is at <a href="${site}">conference.aalb.org</a>.`
   );
-  paras.push(
-    discountPercent > 0
-      ? `You can <a href="${url}">sign up here</a>. The invitation rate is already on the link.`
-      : `You can <a href="${url}">sign up here</a>.`
-  );
+  // No price in the ask. The discount rides on the URL and applies itself at
+  // checkout, so it costs nothing to leave unmentioned — and a rate quoted
+  // inside an invitation is the most sales-sounding move available to this
+  // letter. An invitation says come; a promotion says act now.
+  paras.push(`You can <a href="${url}">sign up here</a>.`);
   // No gray footer on this one, and that is the whole point of the template.
   // A reason-for-receipt line, a postal address and an Unsubscribe link are
   // things only a sending platform appends; nobody writing one person a real
@@ -3276,6 +3304,9 @@ export function plainDirectInviteEmail(args: AttendeeInviteArgs) {
     paras,
     footerReason: null,
     siteUrl: args.learnMoreUrl,
+    // See replyLine on plainNoteEmail: the one help-desk sentence in a letter
+    // that is otherwise trying very hard to read as typed by hand.
+    replyLine: null,
   });
 }
 
