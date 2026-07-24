@@ -364,7 +364,12 @@ function extractAddress(s: string): string {
 export function sponsorFromHeader(): string {
   const baseFrom = process.env.MAIL_FROM?.trim() || "";
   const baseAddr = extractAddress(baseFrom);
-  const displayName = (process.env.SPONSOR_FROM_NAME || SPONSOR_FROM_NAME_DEFAULT).replace(/"/g, '\\"');
+  // No commas in From display names (see attendeeFromHeader): mail clients
+  // treat them as address separators and split the sender in two.
+  const displayName = (process.env.SPONSOR_FROM_NAME || SPONSOR_FROM_NAME_DEFAULT)
+    .split(",")[0]
+    .trim()
+    .replace(/"/g, '\\"');
   const fromAddr = process.env.SPONSOR_FROM_EMAIL?.trim() || baseAddr;
   if (!fromAddr) return baseFrom;
   return `"${displayName}" <${fromAddr}>`;

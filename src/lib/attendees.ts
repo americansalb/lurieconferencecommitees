@@ -192,7 +192,14 @@ function extractAddress(s: string): string {
 export function attendeeFromHeader(): string {
   const baseFrom = process.env.MAIL_FROM?.trim() || "";
   const baseAddr = extractAddress(baseFrom);
-  const displayName = (process.env.ATTENDEE_FROM_NAME || ATTENDEE_FROM_NAME_DEFAULT).replace(/"/g, '\\"');
+  // Keep only the name before any comma: a comma in a From display name is
+  // an address-list separator to mail clients, and Gmail's thread summary
+  // splits "Kevin Thakkar, Founder & Executive Director" into two "senders"
+  // ("Founder, Kevin"). Quoting is not enough in practice — no commas, ever.
+  const displayName = (process.env.ATTENDEE_FROM_NAME || ATTENDEE_FROM_NAME_DEFAULT)
+    .split(",")[0]
+    .trim()
+    .replace(/"/g, '\\"');
   const fromAddr = process.env.ATTENDEE_FROM_EMAIL?.trim() || baseAddr;
   if (!fromAddr) return baseFrom;
   return `"${displayName}" <${fromAddr}>`;
