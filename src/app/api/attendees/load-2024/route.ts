@@ -95,16 +95,19 @@ export async function POST(req: Request) {
       status: { notIn: ["declined", "registered", "rsvp_pending", "confirmed"] },
     },
   });
-  if (!targets.length) return NextResponse.json({ ok: true, queued: 0, skipped: 0 });
+  if (!targets.length) return NextResponse.json({ ok: true, queued: 0, alreadyQueued: 0 });
 
-  // Never double-queue anyone who already has a pending row.
+  // Never double-queue anyone who already has a pending row. Reported to the
+  // dashboard as alreadyQueued, on its own: it is a success, not a rejection,
+  // and the old shared `skipped` count got printed as "already queued or not
+  // eligible" even though nobody ineligible can reach this line.
   const already = await prisma.emailQueue.findMany({
     where: { recipientType: "attendee", status: "pending", recipientId: { in: targets.map((t) => t.id) } },
     select: { recipientId: true },
   });
   const has = new Set(already.map((r) => r.recipientId));
   const fresh = targets.filter((t) => !has.has(t.id));
-  if (!fresh.length) return NextResponse.json({ ok: true, queued: 0, skipped: targets.length });
+  if (!fresh.length) return NextResponse.json({ ok: true, queued: 0, alreadyQueued: targets.length });
 
   // Their personal first-name code should also work on the public site.
   const seenNames = new Set<string>();
@@ -149,5 +152,5 @@ export async function POST(req: Request) {
     .createMany({ data: fresh.map((a) => ({ attendeeId: a.id, type: "added_to_send_queue", meta: "2024 reunion", actorEmail: adminEmail })) })
     .catch(() => {});
 
-  return NextResponse.json({ ok: true, queued, skipped: targets.length - fresh.length });
+  return NextResponse.json({ ok: true, queued, alreadyQueued: targets.length - fresh.length, batchId });
 }

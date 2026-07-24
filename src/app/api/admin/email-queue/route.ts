@@ -69,7 +69,9 @@ export async function GET() {
     where: { status: { in: ["sent", "failed", "canceled", "skipped"] } },
     orderBy: { updatedAt: "desc" },
     take: 100,
-    select: { id: true, to: true, subject: true, recipientType: true, status: true, sentAt: true, updatedAt: true, attempts: true, lastError: true, resendId: true },
+    // batchId rides along so the sent log can name which list each letter came
+    // from, the same way the pending list does.
+    select: { id: true, to: true, subject: true, recipientType: true, status: true, sentAt: true, updatedAt: true, attempts: true, lastError: true, resendId: true, batchId: true },
   });
 
   // Sponsors don't auto-enter the queue: a prospect only gets scheduled when

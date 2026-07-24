@@ -134,6 +134,17 @@ export async function POST(req: Request) {
   }
 
   // action === "queue": drip each person's letter into the paced queue.
+  //
+  // The response reports where every Chicago person stands, in separate
+  // numbers. It used to return one `skipped` count that the dashboard printed
+  // as "already queued or not eligible", which reads like a rejection — and it
+  // never was one. Anyone ineligible is filtered out by the query below and so
+  // can't be in that number at all; it could only ever mean "already waiting
+  // in the queue", which is the harmless case. Counting them apart keeps a
+  // successful no-op from looking like a failure.
+  const cohort = await prisma.attendee.count({ where: { inviteTemplate: "chicago" } });
+  const writtenTo = await prisma.attendee.count({ where: { inviteTemplate: "chicago", lastSentAt: { not: null } } });
+
   const targets = await prisma.attendee.findMany({
     where: {
       inviteTemplate: "chicago",
@@ -144,7 +155,11 @@ export async function POST(req: Request) {
       status: { notIn: ["declined", "registered", "rsvp_pending", "confirmed"] },
     },
   });
-  if (!targets.length) return NextResponse.json({ ok: true, queued: 0, skipped: 0 });
+  // Everyone on the template minus everyone still writable: people who have
+  // been written to already, paid, declined, or opted out.
+  const notEligible = Math.max(0, cohort - targets.length);
+  const summary = { cohort, writtenTo, notEligible };
+  if (!targets.length) return NextResponse.json({ ok: true, queued: 0, alreadyQueued: 0, ...summary });
 
   const already = await prisma.emailQueue.findMany({
     where: { recipientType: "attendee", status: "pending", recipientId: { in: targets.map((t) => t.id) } },
@@ -152,7 +167,7 @@ export async function POST(req: Request) {
   });
   const has = new Set(already.map((r) => r.recipientId));
   const fresh = targets.filter((t) => !has.has(t.id));
-  if (!fresh.length) return NextResponse.json({ ok: true, queued: 0, skipped: targets.length });
+  if (!fresh.length) return NextResponse.json({ ok: true, queued: 0, alreadyQueued: targets.length, ...summary });
 
   // Their first name also works as a discount code on the public site, so the
   // letter's link and the main site agree if they navigate there themselves.
@@ -198,5 +213,5 @@ export async function POST(req: Request) {
     .createMany({ data: fresh.map((a) => ({ attendeeId: a.id, type: "added_to_send_queue", meta: "Chicago list", actorEmail: adminEmail })) })
     .catch(() => {});
 
-  return NextResponse.json({ ok: true, queued, skipped: targets.length - fresh.length });
+  return NextResponse.json({ ok: true, queued, alreadyQueued: targets.length - fresh.length, ...summary, batchId });
 }

@@ -4,7 +4,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import {
-  Mail, RefreshCw, Pause, Play, Shuffle, SlidersHorizontal, Loader2, Send, X, Award, Ticket, FlaskConical, Megaphone, ArrowUpToLine,
+  Mail, RefreshCw, Pause, Play, Shuffle, SlidersHorizontal, Loader2, Send, X, Award, Ticket, FlaskConical, Megaphone, ArrowUpToLine, Search,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
@@ -33,6 +33,7 @@ type RecentItem = {
   attempts: number;
   lastError: string | null;
   resendId: string | null;
+  batchId?: string | null;
 };
 
 type QueueData = {
@@ -55,6 +56,31 @@ const TYPE_META: Record<string, { label: string; cls: string; Icon: typeof Award
   ambassador: { label: "Ambassador", cls: "bg-violet-50 text-violet-700 border-violet-200", Icon: Megaphone },
   test: { label: "Test", cls: "bg-slate-100 text-slate-600 border-slate-200", Icon: FlaskConical },
 };
+
+// Which list a queued item came from, read off its batchId prefix. Without
+// this the queue is 500 rows of "Attendee" and there is no way to see that the
+// seven letters you just scheduled are in here — they get scheduled behind
+// everything else and look lost. Longest prefix wins, so attendee-finish-nudge
+// isn't swallowed by a shorter attendee- rule.
+const LIST_LABELS = ([
+  ["attendee-chicago", "Chicago"],
+  ["attendee-returning", "2024 reunion"],
+  ["attendee-finish-nudge", "Reminder"],
+  ["attendee-reinvite", "Re-invite"],
+  ["attendee-queue", "Invite"],
+  ["attendee-invite", "Invite"],
+  ["ambassador", "Ambassador"],
+  ["sponsor-invite", "Sponsor invite"],
+  ["sponsor-queue", "Sponsor"],
+  ["sponsor-oneoff", "Sponsor"],
+] as [string, string][]).sort((a, b) => b[0].length - a[0].length);
+
+function listLabel(batchId?: string | null): string | null {
+  const id = batchId || "";
+  if (!id) return null;
+  for (const [prefix, label] of LIST_LABELS) if (id.startsWith(prefix)) return label;
+  return null;
+}
 
 function fmtTime(iso: string | null) {
   if (!iso) return "—";
@@ -101,6 +127,10 @@ export default function EmailQueuePage() {
   const [queuingAmbassadors, setQueuingAmbassadors] = useState(false);
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [view, setView] = useState<"queued" | "sent">("queued");
+  // Find one person in a queue of hundreds. Matches the address, the subject
+  // and the list name, and applies to the sent log too, so "did Maria's letter
+  // go out?" is one search rather than a scroll.
+  const [search, setSearch] = useState("");
   const [showSettings, setShowSettings] = useState(false);
   const [note, setNote] = useState<string | null>(null);
 
@@ -261,7 +291,11 @@ export default function EmailQueuePage() {
   // Pending finish-registration reminders, so the page can offer to move the
   // whole batch to the front in one click.
   const nudgesPending = pending.filter((p) => (p.batchId || "").startsWith("attendee-finish-nudge")).length;
-  const shown = typeFilter === "all" ? pending : pending.filter((p) => p.recipientType === typeFilter);
+  const q = search.trim().toLowerCase();
+  const matches = (r: { to: string; subject: string; batchId?: string | null }) =>
+    !q || r.to.toLowerCase().includes(q) || r.subject.toLowerCase().includes(q) || (listLabel(r.batchId) || "").toLowerCase().includes(q);
+  const shown = (typeFilter === "all" ? pending : pending.filter((p) => p.recipientType === typeFilter)).filter(matches);
+  const shownRecent = recent.filter(matches);
   const overdueCount = pending.filter((p) => isOverdue(p.scheduledFor)).length;
   // The effective drip gap, mirroring runEmailQueue: the period of the
   // configured hourly rate. This is why past-due items don't all fire at once.
@@ -395,15 +429,35 @@ export default function EmailQueuePage() {
               </div>
             )}
 
+            {/* Find one person. Both lists run to hundreds of rows in send
+                order, so without a search there is no way to answer "where did
+                the letters I just queued go?" — they're simply somewhere in
+                the middle. Searching the list name ("chicago") pulls up a whole
+                batch at once. */}
+            <div className="relative mb-3">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Find someone — email, subject, or list name (try “chicago”)"
+                className="w-full pl-9 pr-9 py-2 rounded-xl border border-slate-200 bg-white text-sm text-slate-700 placeholder:text-slate-400 shadow-sm focus:outline-none focus:border-slate-400"
+              />
+              {search && (
+                <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" title="Clear the search">
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
             {/* View toggle: what's waiting vs what already went out */}
             <div className="flex items-center gap-1.5 mb-3 flex-wrap">
               <button onClick={() => setView("queued")} className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-sm font-bold border transition-colors ${view === "queued" ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"}`}>
                 Queued
-                <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full ${view === "queued" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"}`}>{pending.length}</span>
+                <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full ${view === "queued" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"}`}>{q ? pending.filter(matches).length : pending.length}</span>
               </button>
               <button onClick={() => setView("sent")} className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-sm font-bold border transition-colors ${view === "sent" ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"}`}>
                 Sent log
-                <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full ${view === "sent" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"}`}>{recent.length}</span>
+                <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full ${view === "sent" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"}`}>{q ? shownRecent.length : recent.length}</span>
               </button>
               {view === "queued" && (
                 <div className="ml-auto flex items-center gap-1.5 flex-wrap">
@@ -428,7 +482,11 @@ export default function EmailQueuePage() {
                 <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                   {shown.length === 0 ? (
                     <div className="p-10 text-center text-sm text-slate-400">
-                      {pending.length === 0 ? "The queue is empty. Nothing waiting to send." : "No items of this type."}
+                      {pending.length === 0
+                        ? "The queue is empty. Nothing waiting to send."
+                        : q
+                        ? <>Nothing waiting to send matches &ldquo;{search}&rdquo;. If it already went out it&rsquo;s in the <button onClick={() => setView("sent")} className="font-bold underline">Sent log</button>.</>
+                        : "No items of this type."}
                     </div>
                   ) : (
                     <ul className="divide-y divide-slate-100">
@@ -441,6 +499,9 @@ export default function EmailQueuePage() {
                             <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full border shrink-0 ${meta.cls}`}>
                               <meta.Icon className="w-3 h-3" /> {meta.label}
                             </span>
+                            {listLabel(p.batchId) && (
+                              <span className="text-[10px] font-bold px-2 py-1 rounded-full border border-slate-200 bg-slate-50 text-slate-500 shrink-0 hidden sm:inline">{listLabel(p.batchId)}</span>
+                            )}
                             <div className="flex-1 min-w-0">
                               <div className="text-sm font-semibold text-slate-800 truncate">{p.subject}</div>
                               <div className="text-xs text-slate-500 truncate">{p.to}{p.attempts > 0 && <span className="text-rose-500"> · {p.attempts} attempt{p.attempts === 1 ? "" : "s"}</span>}</div>
@@ -476,11 +537,13 @@ export default function EmailQueuePage() {
             ) : (
               /* Sent log */
               <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                {recent.length === 0 ? (
-                  <div className="p-10 text-center text-sm text-slate-400">Nothing has been sent yet.</div>
+                {shownRecent.length === 0 ? (
+                  <div className="p-10 text-center text-sm text-slate-400">
+                    {recent.length === 0 ? "Nothing has been sent yet." : <>Nothing in the sent log matches &ldquo;{search}&rdquo;.</>}
+                  </div>
                 ) : (
                   <ul className="divide-y divide-slate-100">
-                    {recent.map((r) => {
+                    {shownRecent.map((r) => {
                       const meta = TYPE_META[r.recipientType] || TYPE_META.test;
                       const sm = STATUS_META[r.status] || { label: r.status, cls: "bg-slate-100 text-slate-500 border-slate-200" };
                       return (
@@ -488,6 +551,9 @@ export default function EmailQueuePage() {
                           <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full border shrink-0 ${meta.cls}`}>
                             <meta.Icon className="w-3 h-3" /> {meta.label}
                           </span>
+                          {listLabel(r.batchId) && (
+                            <span className="text-[10px] font-bold px-2 py-1 rounded-full border border-slate-200 bg-slate-50 text-slate-500 shrink-0 hidden sm:inline">{listLabel(r.batchId)}</span>
+                          )}
                           <div className="flex-1 min-w-0">
                             <div className="text-sm font-semibold text-slate-800 truncate">{r.subject}</div>
                             <div className="text-xs text-slate-500 truncate">

@@ -61,7 +61,7 @@ export default function AttendeesPage() {
   const [queueStatus, setQueueStatus] = useState<QueueStatus | null>(null);
   // Counts for the hand-curated Chicago direct-invitation list. Fetched rather
   // than imported so the ~30 hand-written letters don't ship in the bundle.
-  const [chicagoStats, setChicagoStats] = useState<{ curated: number; loadable: number; missingEmail: number; held: number; inPipeline: number; contacted: number } | null>(null);
+  const [chicagoStats, setChicagoStats] = useState<{ curated: number; loadable: number; missingEmail: number; held: number; inPipeline: number; contacted: number; pending: number; paid: number } | null>(null);
   const [loading, setLoading] = useState(true);
   // Attendees view: detail drawer + broadcast composer + portal-link sends.
   const [detailId, setDetailId] = useState<string | null>(null);
@@ -270,9 +270,12 @@ export default function AttendeesPage() {
       });
       const json = await res.json().catch(() => ({}));
       if (res.ok) {
+        const waiting = json.alreadyQueued || 0;
         setRosterNote(json.queued > 0
-          ? `${json.queued} reunion letter${json.queued === 1 ? "" : "s"} added to the paced queue${json.skipped ? ` (${json.skipped} already queued or not eligible)` : ""}. They'll drip out at the queue's rate.`
-          : `Nothing new to queue${json.skipped ? ` — ${json.skipped} already queued or not eligible` : ""}.`);
+          ? `${json.queued} reunion letter${json.queued === 1 ? "" : "s"} added to the paced queue${waiting ? `, and ${waiting} ${waiting === 1 ? "was" : "were"} already waiting there` : ""}. They'll drip out at the queue's rate — watch them on the Email queue page.`
+          : waiting
+            ? `Nothing new to add: all ${waiting} reunion letter${waiting === 1 ? " is" : "s are"} already waiting in the queue. Nobody was turned away.`
+            : "Nothing to queue — everyone tagged returning has already been written to, paid, declined, or opted out.");
         await load();
       } else {
         setRosterNote(json.error || "Could not queue the reunion letters.");
@@ -300,7 +303,7 @@ export default function AttendeesPage() {
       });
       const json = await res.json().catch(() => ({}));
       if (res.ok) {
-        setRosterNote(`Chicago list loaded: ${json.created || 0} added, ${json.retagged || 0} re-tagged for their personal letter, ${json.leftAlone || 0} left alone (already written to, paid, declined, or unsubscribed). Nothing has been emailed — use "Queue Chicago letters" when ready.`);
+        setRosterNote(`Chicago list loaded: ${json.created || 0} added, ${json.retagged || 0} re-tagged for their personal letter, ${json.leftAlone || 0} left alone (already written to, paid, declined, or unsubscribed). They're in the list below now with their letter already attached — loading never emails anyone. Next step: "Queue Chicago letters".`);
         await load();
       } else {
         setRosterNote(json.error || "Could not load the Chicago list.");
@@ -324,9 +327,18 @@ export default function AttendeesPage() {
       });
       const json = await res.json().catch(() => ({}));
       if (res.ok) {
+        // "Already waiting in the queue" is the good outcome and has to read
+        // like one. Saying it alongside "not eligible" made a no-op look like a
+        // rejection, and sent someone hunting for letters that were fine.
+        const waiting = json.alreadyQueued || 0;
+        const written = json.writtenTo || 0;
         setRosterNote(json.queued > 0
-          ? `${json.queued} Chicago letter${json.queued === 1 ? "" : "s"} added to the paced queue${json.skipped ? ` (${json.skipped} already queued or not eligible)` : ""}. They'll drip out at the queue's rate.`
-          : `Nothing new to queue${json.skipped ? ` — ${json.skipped} already queued or not eligible` : ""}.`);
+          ? `${json.queued} Chicago letter${json.queued === 1 ? "" : "s"} added to the paced queue${waiting ? `, and ${waiting} ${waiting === 1 ? "was" : "were"} already waiting there` : ""}. They'll drip out at the queue's rate — watch them on the Email queue page.`
+          : waiting
+            ? `Nothing new to add: all ${waiting} Chicago letter${waiting === 1 ? " is" : "s are"} already waiting in the queue and will send on schedule. Nobody was turned away.`
+            : written
+              ? `Nothing left to queue — all ${written} ${written === 1 ? "person has" : "people have"} already been written to.`
+              : "Nothing to queue. Load the Chicago list first.");
         await load();
       } else {
         setRosterNote(json.error || "Could not queue the Chicago letters.");
@@ -705,6 +717,12 @@ export default function AttendeesPage() {
       && (a.nudgeCount || 0) === 0
   ).length;
 
+  // Chicago people who are loaded but have neither been queued nor written to
+  // — the ones the "Queue Chicago letters" button would actually act on.
+  const chicagoNotQueued = chicagoStats
+    ? Math.max(0, chicagoStats.inPipeline - (chicagoStats.pending || 0) - chicagoStats.contacted)
+    : 0;
+
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">
       <Sidebar />
@@ -772,6 +790,32 @@ export default function AttendeesPage() {
 
             {rosterNote && (
               <div className="mb-4 rounded-lg border px-4 py-2.5 text-sm font-semibold" style={{ borderColor: "#E6D9B8", background: "#FBF8F1", color: "#7A5E1E" }}>{rosterNote}</div>
+            )}
+
+            {/* Where the Chicago list actually stands. Loading and queueing are
+                two different things and the toolbar has two similar-looking
+                buttons for them, so without this the list appears to vanish
+                into the roster and the letters appear to go nowhere. Naming
+                each stage, with live counts, is what makes the two clicks make
+                sense. */}
+            {isAdmin && !!chicagoStats?.inPipeline && (
+              <div className="mb-4 rounded-xl border px-4 py-3" style={{ borderColor: "#F3C6D0", background: "#FFF6F8" }}>
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1" style={{ color: "#881337" }}>
+                  <MapPin className="w-4 h-4 shrink-0" />
+                  <span className="text-sm font-bold">Chicago list</span>
+                  <span className="text-[13px]">
+                    <strong>{chicagoStats.inPipeline}</strong> loaded ·{" "}
+                    <strong>{chicagoStats.pending || 0}</strong> waiting in the queue ·{" "}
+                    <strong>{chicagoStats.contacted}</strong> written to
+                    {chicagoNotQueued > 0 && <> · <strong>{chicagoNotQueued}</strong> not queued yet</>}
+                  </span>
+                  <a href="/queue" className="ml-auto text-xs font-bold underline shrink-0">Open the queue</a>
+                </div>
+                <div className="mt-1.5 text-[11px] leading-relaxed" style={{ color: "#A8455F" }}>
+                  Loading stages people and attaches each person&rsquo;s letter; it never emails anyone. Queueing schedules those letters, and the queue drips them out
+                  {queueStatus ? ` about ${queueStatus.policy.maxPerHour}/hour between ${queueStatus.policy.sendStartHour}:00 and ${queueStatus.policy.sendEndHour}:00 ${(queueStatus.policy.sendTimezone || "").replace("America/", "")}` : " on a slow drip during business hours"}, so nothing goes out the instant you click. To send one immediately, use <strong>Send now</strong> next to it in the queue.
+                </div>
+              </div>
             )}
 
             {queueStatus && (queueStatus.counts.pending > 0 || queueStatus.paused) && (
