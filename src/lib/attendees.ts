@@ -175,13 +175,12 @@ export function buildFinishRegistrationNudge(a: {
 // Resend-verified domain so deliverability isn't affected. Replies route to
 // ATTENDEE_REPLY_TO (or MAIL_REPLY_TO, or contact@).
 //
-// Kevin is the sender: the 2024 roster and the AALB community know Kevin,
-// and most predate Iris joining, so her name in the inbox reads as a
-// stranger. Just the name, no title: "Kevin Thakkar, Founder & Executive
-// Director" in the From line reads as a campaign, not a person. The plain
-// notes derive their signature from this same name (via ATTENDEE_FROM_NAME),
-// so From and sign-off always match.
-export const ATTENDEE_FROM_NAME_DEFAULT = "Kevin Thakkar";
+// The inbox shows the organization (client's call); the note inside is still
+// typed and signed by a person (ATTENDEE_SIGNER_NAME in mail-templates,
+// default Kevin) — the org-mailbox-with-a-human-signing pattern. No titles
+// and no commas here: commas split the sender in mail clients, and
+// "Founder & Executive Director" reads as a campaign.
+export const ATTENDEE_FROM_NAME_DEFAULT = "AALB Nonprofit";
 
 function extractAddress(s: string): string {
   const angle = s.match(/<([^>]+)>/);

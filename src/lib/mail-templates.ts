@@ -3036,13 +3036,12 @@ function plainNoteEmail({
   const postalAddress = process.env.MAIL_POSTAL_ADDRESS?.trim() || "Americans Against Language Barriers, Chicago, IL";
   const site = (siteUrl || "https://conference.aalb.org").replace(/\/$/, "");
   const first = escapeHtml((firstName || "there").trim());
-  // Sign as the person the email is actually From. attendeeFromHeader() puts
-  // ATTENDEE_FROM_NAME (default: Kevin) in the recipient's inbox; an email
-  // displayed as from one person and signed by another reads as fake. The
-  // "Name, Title" format is split for the signature block. Mirrors
-  // ATTENDEE_FROM_NAME_DEFAULT in lib/attendees (importing it here would be
-  // circular).
-  const fromName = (process.env.ATTENDEE_FROM_NAME || "Kevin Thakkar").trim();
+  // The From line shows the organization (ATTENDEE_FROM_NAME, default
+  // "AALB Nonprofit"); the note is still signed by a person — the org
+  // mailbox with a human signing, like any nonprofit's shared inbox. The
+  // signer is its own setting so changing the inbox name never changes who
+  // the letter sounds like. "Name, Title" splits for the signature block.
+  const fromName = (process.env.ATTENDEE_SIGNER_NAME || "Kevin Thakkar").trim();
   const commaAt = fromName.indexOf(",");
   const signerFull = escapeHtml(commaAt > 0 ? fromName.slice(0, commaAt).trim() : fromName);
   const signerTitle = escapeHtml(commaAt > 0 ? fromName.slice(commaAt + 1).trim() : "");
