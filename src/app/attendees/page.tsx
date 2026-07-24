@@ -6,7 +6,7 @@ import { useEffect, useState, useCallback } from "react";
 import {
   Users, Send, Pause, Play, Loader2, Mail, Check,
   RefreshCw, Zap, FileText, UserPlus, Rocket, Eye, SlidersHorizontal,
-  ChevronDown, ChevronRight, Video, Shuffle, GraduationCap,
+  ChevronDown, ChevronRight, Video, Shuffle, GraduationCap, MapPin,
 } from "lucide-react";
 import { STUDENT_ROSTER_CSV, STUDENT_ROSTER_COUNT, STUDENT_ROSTER_ALUMNI, STUDENT_ROSTER_STUDENT, STUDENT_ROSTER_FORMER } from "@/lib/student-roster";
 import { NBCMI_ROSTER_CSV, NBCMI_ROSTER_COUNT } from "@/lib/nbcmi-roster";
@@ -59,6 +59,9 @@ export default function AttendeesPage() {
   const [inviteSubTab, setInviteSubTab] = useState<InviteSubTab>("quick");
   const [attendees, setAttendees] = useState<Attendee[]>([]);
   const [queueStatus, setQueueStatus] = useState<QueueStatus | null>(null);
+  // Counts for the hand-curated Chicago direct-invitation list. Fetched rather
+  // than imported so the ~30 hand-written letters don't ship in the bundle.
+  const [chicagoStats, setChicagoStats] = useState<{ curated: number; loadable: number; missingEmail: number; held: number; inPipeline: number; contacted: number } | null>(null);
   const [loading, setLoading] = useState(true);
   // Attendees view: detail drawer + broadcast composer + portal-link sends.
   const [detailId, setDetailId] = useState<string | null>(null);
@@ -111,14 +114,16 @@ export default function AttendeesPage() {
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const [a, q] = await Promise.all([
+      const [a, q, c] = await Promise.all([
         fetch("/api/attendees").then((r) => (r.ok ? r.json() : { attendees: [] })),
         // Queue status is admin-gated server-side; non-admins just get null and the panel stays hidden.
         // This fetch also nudges the server to send any now-due queued invites.
         fetch("/api/admin/email-queue").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+        fetch("/api/attendees/load-chicago").then((r) => (r.ok ? r.json() : null)).catch(() => null),
       ]);
       setAttendees(a.attendees || []);
       setQueueStatus(q);
+      setChicagoStats(c);
     } finally {
       if (!silent) setLoading(false);
     }
@@ -280,6 +285,60 @@ export default function AttendeesPage() {
     }
   }
 
+  // The hand-curated Chicago list: named leaders whose own work is language
+  // access, each carrying a paragraph written from something specific about
+  // their organization. Rows without a published address, and rows we've
+  // deliberately held back, are skipped by the loader rather than guessed at.
+  async function loadChicagoList() {
+    setRosterLoading(true);
+    setRosterNote(null);
+    try {
+      const res = await fetch("/api/attendees/load-chicago", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "load", discountPercent: 25 }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setRosterNote(`Chicago list loaded: ${json.created || 0} added, ${json.retagged || 0} re-tagged for their personal letter, ${json.leftAlone || 0} left alone (already written to, paid, declined, or unsubscribed). Nothing has been emailed — use "Queue Chicago letters" when ready.`);
+        await load();
+      } else {
+        setRosterNote(json.error || "Could not load the Chicago list.");
+      }
+    } catch {
+      setRosterNote("Network error while loading the Chicago list.");
+    } finally {
+      setRosterLoading(false);
+      setTimeout(() => setRosterNote(null), 15000);
+    }
+  }
+
+  async function queueChicagoList() {
+    setRosterLoading(true);
+    setRosterNote(null);
+    try {
+      const res = await fetch("/api/attendees/load-chicago", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "queue" }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setRosterNote(json.queued > 0
+          ? `${json.queued} Chicago letter${json.queued === 1 ? "" : "s"} added to the paced queue${json.skipped ? ` (${json.skipped} already queued or not eligible)` : ""}. They'll drip out at the queue's rate.`
+          : `Nothing new to queue${json.skipped ? ` — ${json.skipped} already queued or not eligible` : ""}.`);
+        await load();
+      } else {
+        setRosterNote(json.error || "Could not queue the Chicago letters.");
+      }
+    } catch {
+      setRosterNote("Network error while queueing the Chicago letters.");
+    } finally {
+      setRosterLoading(false);
+      setTimeout(() => setRosterNote(null), 15000);
+    }
+  }
+
   async function queueNbcmi() {
     setRosterLoading(true);
     setRosterNote(null);
@@ -322,6 +381,29 @@ export default function AttendeesPage() {
       message: "Everyone who filled out the 2024 form joins the list: 120 paid attendees, 66 who started a checkout, 315 who left their info. New people are added as queued; anyone already on the list is re-tagged to get the personalized reunion letter instead. Paid, declined, and unsubscribed people are left alone. Nothing sends yet.",
       confirmLabel: "Load the roster",
       onConfirm: () => { setConfirmDialog(null); void load2024Roster(); },
+    });
+  }
+
+  function confirmLoadChicago() {
+    const n = chicagoStats?.loadable ?? 0;
+    const gaps: string[] = [];
+    if (chicagoStats?.missingEmail) gaps.push(`${chicagoStats.missingEmail} researched with no published address`);
+    if (chicagoStats?.held) gaps.push(`${chicagoStats.held} held back on purpose`);
+    setConfirmDialog({
+      title: `Load the Chicago direct-invitation list (${n} people)?`,
+      message: `Named leaders at Chicago-area organizations whose work is language access — hospitals, health centers, the courts, public health, universities, interpreter bodies. Each is added as queued with 25% off and their own hand-written opening paragraph about their organization.${gaps.length ? ` Skipped: ${gaps.join(", ")}.` : ""} Anyone already written to is left exactly as they are. Nothing sends yet.`,
+      confirmLabel: "Load the list",
+      onConfirm: () => { setConfirmDialog(null); void loadChicagoList(); },
+    });
+  }
+
+  function confirmQueueChicago() {
+    const staged = attendees.filter((a) => a.inviteTemplate === "chicago" && !a.lastSentAt && !a.paid).length;
+    setConfirmDialog({
+      title: `Queue ${staged.toLocaleString()} Chicago letter${staged === 1 ? "" : "s"}?`,
+      message: "Each person gets a letter that opens with the paragraph written about their own organization before the conference introduces itself. Nobody who has already been emailed, paid, declined, or unsubscribed is included, and no one is double-queued. At the current queue rate this drips out over several days.",
+      confirmLabel: "Queue the letters",
+      onConfirm: () => { setConfirmDialog(null); void queueChicagoList(); },
     });
   }
 
@@ -654,6 +736,11 @@ export default function AttendeesPage() {
                   {rosterLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Users className="w-3.5 h-3.5" />} Load 2024 roster
                 </button>
               )}
+              {isAdmin && !!chicagoStats?.loadable && (
+                <button onClick={confirmLoadChicago} disabled={rosterLoading} className="px-3 py-1.5 rounded-lg text-xs font-bold text-white inline-flex items-center gap-1.5 disabled:opacity-50 shadow-sm" style={{ background: "#9F1239" }} title={`Load ${chicagoStats.loadable} named Chicago leaders, each with a hand-written paragraph about their own organization — nothing emailed`}>
+                  {rosterLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <MapPin className="w-3.5 h-3.5" />} Load Chicago list
+                </button>
+              )}
               {isAdmin && (
                 <>
                   <button onClick={confirmQueueNbcmi} disabled={rosterLoading} className="px-3 py-1.5 rounded-lg text-xs font-bold text-white inline-flex items-center gap-1.5 disabled:opacity-50 shadow-sm" style={{ background: "#4338CA" }} title="Drip the certified-interpreter note to everyone staged from the NBCMI registry via the paced queue">
@@ -663,6 +750,11 @@ export default function AttendeesPage() {
                     {rosterLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />} Queue reunion letters
                   </button>
                 </>
+              )}
+              {isAdmin && attendees.some((a) => a.inviteTemplate === "chicago" && !a.lastSentAt && !a.paid) && (
+                <button onClick={confirmQueueChicago} disabled={rosterLoading} className="px-3 py-1.5 rounded-lg text-xs font-bold text-white inline-flex items-center gap-1.5 disabled:opacity-50 shadow-sm" style={{ background: "#9F1239" }} title="Drip each Chicago leader's personal letter through the paced queue">
+                  {rosterLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />} Queue Chicago letters
+                </button>
               )}
               {isAdmin && (
                 <button onClick={() => setShowEventSettings(true)} className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 inline-flex items-center gap-1.5" title="Set the attendee portal join link and agenda">

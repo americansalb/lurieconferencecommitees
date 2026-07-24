@@ -29,6 +29,7 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
     discountPercent: attendee.discountPercent,
     inviteMessage: attendee.inviteMessage,
     template: attendee.inviteTemplate,
+    org: attendee.affiliation,
     returning: { status: attendee.returning2024, mode: attendee.attended2024Mode, languages: attendee.primaryLanguages },
   });
 

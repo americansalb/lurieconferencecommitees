@@ -3200,6 +3200,51 @@ export function plainStandardInviteEmail(args: AttendeeInviteArgs) {
   });
 }
 
+// Chicago direct invitation: a named leader at an organization someone
+// actually looked up, one at a time.
+//
+// Every other invite in this file opens with the SAME sentence for everyone
+// on its list and slots the personal note in second. That ordering is what
+// gives a letter away — a stranger's first line being identical to another
+// stranger's first line is the definition of a mass send. So this one
+// inverts it: the hand-written paragraph about THEIR organization is
+// paragraph one, and the conference doesn't introduce itself until the
+// reader already knows why they in particular were written to. That is the
+// order a person writes in when they mean it.
+//
+// The note is therefore required, not optional. Without one this letter has
+// no opening at all, so it falls back to the standard invite rather than
+// sending a headless message.
+export function plainDirectInviteEmail(args: AttendeeInviteArgs & { org?: string | null }) {
+  const { firstName, url, discountPercent, inviteMessage, unsubscribeUrl } = args;
+  const note = (inviteMessage || "").trim();
+  if (!note) return plainStandardInviteEmail(args);
+  const paras: string[] = [];
+  // Paragraph one, in their words-about-them. Hand-written per person in
+  // lib/chicago-targets; blank lines in it stay as real paragraph breaks.
+  paras.push(escapeHtml(note).replace(/\n{2,}/g, "</div>\n  <div><br></div>\n  <div>").replace(/\n/g, "<br>"));
+  // The bridge. Deliberately one short sentence: the reader has just been
+  // told why they were written to, and a long pitch here would undo it.
+  paras.push(
+    `AALB is putting on its second conference with Lurie Children's on August 15 and 16, and I'd like you to be there.`
+  );
+  paras.push(PLAIN_KEYNOTE_PARA);
+  paras.push(plainDetailsPara(args.learnMoreUrl));
+  paras.push(plainCtaPara(url, discountPercent));
+  // Naming their organization in the footer is the honest answer to "how did
+  // you get my address": we went looking at their org's own public pages.
+  const org = (args.org || "").trim();
+  return plainNoteEmail({
+    firstName,
+    paras,
+    footerReason: org
+      ? `You're getting this one-off invitation because of your work at ${escapeHtml(org)}.`
+      : "You're getting this one-off invitation because of your work on language access in Chicago.",
+    unsubscribeUrl,
+    siteUrl: args.learnMoreUrl,
+  });
+}
+
 // NBCMI registry note: certified medical interpreters we have no prior
 // relationship with. The opener names their credential (the reason they're
 // hearing from us) and the details paragraph carries the CEU hours, which is

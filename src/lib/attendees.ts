@@ -1,11 +1,11 @@
 import { randomBytes } from "crypto";
 import { appUrl } from "./presenters";
-import { plainStandardInviteEmail, plainCommunityInviteEmail, plainReturningInviteEmail, plainCmiInviteEmail, plainFinishRegistrationEmail } from "./mail-templates";
+import { plainStandardInviteEmail, plainCommunityInviteEmail, plainReturningInviteEmail, plainCmiInviteEmail, plainFinishRegistrationEmail, plainDirectInviteEmail } from "./mail-templates";
 import { firstNameToCode } from "./codes";
-import { pickAlumniSubject, pickReturningSubject, pickStudentSubject, pickCmiSubject } from "./subject-variants";
+import { pickAlumniSubject, pickReturningSubject, pickStudentSubject, pickCmiSubject, pickChicagoSubject } from "./subject-variants";
 import { ONE_DAY_MULTIPLIER } from "@/components/landing/pricing-data";
 
-export type AttendeeTemplate = "standard" | "alumni" | "student" | "former-student" | "returning" | "cmi";
+export type AttendeeTemplate = "standard" | "alumni" | "student" | "former-student" | "returning" | "cmi" | "chicago";
 export const ATTENDEE_TEMPLATES: { id: AttendeeTemplate; label: string; description: string }[] = [
   { id: "standard", label: "Standard invite", description: "Concise personal invitation with the discounted rate." },
   { id: "alumni", label: "AALB alumni", description: "Gold letter for certificate holders (alumni courtesy)." },
@@ -13,6 +13,7 @@ export const ATTENDEE_TEMPLATES: { id: AttendeeTemplate; label: string; descript
   { id: "former-student", label: "Former AALB student", description: "Gold letter for past students without a certificate." },
   { id: "returning", label: "2024 reunion", description: "Gold reunion letter for people from the 2024 conference roster." },
   { id: "cmi", label: "NBCMI CMI", description: "Plain invite for certified medical interpreters from the NBCMI registry." },
+  { id: "chicago", label: "Chicago direct invite", description: "Opens with a hand-written paragraph about the recipient's own organization." },
 ];
 
 // The three AALB-community templates all render the same gold letter; only the
@@ -31,12 +32,16 @@ export function buildAttendeeInvite(opts: {
   discountPercent: number;
   inviteMessage?: string | null;
   template?: string | null;
+  // The recipient's organization (Attendee.affiliation). Used by the Chicago
+  // direct invite for its subject line and footer; ignored elsewhere. Passed
+  // from the attendee row so send, resend, refresh and preview all agree.
+  org?: string | null;
   // For the "returning" reunion letter: their 2024 relationship. status is
   // "paid" | "attempted" | "lead"; mode is "in-person" | "virtual".
   returning?: { status?: string | null; mode?: string | null; languages?: string | null };
 }): { subject: string; html: string; template: AttendeeTemplate; subjectVariant: string | null } {
   const template: AttendeeTemplate =
-    opts.template === "alumni" || opts.template === "student" || opts.template === "former-student" || opts.template === "returning" || opts.template === "cmi"
+    opts.template === "alumni" || opts.template === "student" || opts.template === "former-student" || opts.template === "returning" || opts.template === "cmi" || opts.template === "chicago"
       ? opts.template
       : "standard";
   const inPerson = computePrice("in-person", opts.discountPercent);
@@ -77,6 +82,8 @@ export function buildAttendeeInvite(opts: {
     });
   } else if (template === "cmi") {
     html = plainCmiInviteEmail(common);
+  } else if (template === "chicago") {
+    html = plainDirectInviteEmail({ ...common, org: opts.org ?? null });
   } else if (relationship) {
     html = plainCommunityInviteEmail({ ...common, relationship });
   } else {
@@ -98,6 +105,12 @@ export function buildAttendeeInvite(opts: {
     subjectVariant = picked.id;
   } else if (template === "cmi") {
     const picked = pickCmiSubject(opts.firstName, opts.inviteToken);
+    subject = picked.subject;
+    subjectVariant = picked.id;
+  } else if (template === "chicago") {
+    // Keyed to their organization, not their first name: this list is small
+    // enough that two people at one hospital could compare inboxes.
+    const picked = pickChicagoSubject(opts.org, opts.inviteToken);
     subject = picked.subject;
     subjectVariant = picked.id;
   } else if (relationship === "alumnus") {

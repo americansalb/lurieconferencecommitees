@@ -216,6 +216,55 @@ export function pickCmiSubject(firstName: string, token: string): { id: string; 
   return { id: v.id, subject: v.make((firstName || "there").trim()) };
 }
 
+// Chicago direct-invitation subject lines. These go to named leaders at
+// organizations we looked up one at a time, so the register is a colleague
+// writing rather than a campaign: lowercase openings, no exclamation, and no
+// first name — a name in the subject is the mail-merge tell (same lesson as
+// the CMI set above), and it matters most here, where the entire premise is
+// that the message could have been typed by hand.
+//
+// Two arms name the recipient's organization, which is the point of this
+// list; two stay org-free so several people at one big health system don't
+// all see the same stem. Variants take the ORG, not the first name.
+export type OrgSubjectVariant = { id: string; label: string; needsOrg?: boolean; make: (org: string) => string };
+
+export const CHICAGO_SUBJECT_VARIANTS: OrgSubjectVariant[] = [
+  {
+    id: "chi-org",
+    label: "Org named",
+    needsOrg: true,
+    make: (o) => `${o} and two days on language access at Lurie Children's`,
+  },
+  {
+    id: "chi-jc",
+    label: "JC keynote",
+    make: () => `the Joint Commission is keynoting on language access this August`,
+  },
+  {
+    id: "chi-org-invite",
+    label: "Invitation to org",
+    needsOrg: true,
+    make: (o) => `an invitation to ${o}: language access, August 15-16`,
+  },
+  {
+    id: "chi-dates",
+    label: "Dates and place",
+    make: () => `two days on language access at Lurie Children's, August 15-16`,
+  },
+];
+
+// Long org names blow past the ~50 characters an inbox actually shows, so
+// anyone whose organization is too long (or unknown) draws from the org-free
+// arms only. A person's org never changes under them, so their assignment is
+// still stable across resends — the requirement that makes token-hashed
+// variants safe to attribute.
+export function pickChicagoSubject(org: string | null | undefined, token: string): { id: string; subject: string } {
+  const clean = (org || "").trim();
+  const set = clean && clean.length <= 46 ? CHICAGO_SUBJECT_VARIANTS : CHICAGO_SUBJECT_VARIANTS.filter((v) => !v.needsOrg);
+  const v = set[hashStr(token || "") % set.length];
+  return { id: v.id, subject: v.make(clean) };
+}
+
 export function alumniVariant(id: string | null | undefined): SubjectVariant | null {
   return ALUMNI_SUBJECT_VARIANTS.find((v) => v.id === id) || null;
 }

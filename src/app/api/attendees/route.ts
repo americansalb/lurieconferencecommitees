@@ -67,7 +67,7 @@ export async function POST(req: Request) {
   const pct = Math.max(0, Math.min(100, Number.isFinite(discountPercent) ? discountPercent : 25));
   // Any of the four community/standard templates is valid; anything else falls
   // back to the plain standard invite. buildAttendeeInvite handles all four.
-  const VALID_TEMPLATES = new Set(["standard", "alumni", "student", "former-student", "returning", "cmi"]);
+  const VALID_TEMPLATES = new Set(["standard", "alumni", "student", "former-student", "returning", "cmi", "chicago"]);
   const template = VALID_TEMPLATES.has(payload.template) ? String(payload.template) : "standard";
 
   // Single-recipient mode: send immediately, bypass the queue.
@@ -109,7 +109,7 @@ export async function POST(req: Request) {
 
     const { subject, html } = buildAttendeeInvite({
       firstName, inviteToken: token, discountPercent: pct,
-      inviteMessage: inviteMessage?.trim() || null, template,
+      inviteMessage: inviteMessage?.trim() || null, template, org: affiliation,
     });
 
     try {
@@ -336,7 +336,12 @@ export async function POST(req: Request) {
       if (!attendee) continue;
       const { subject, html } = buildAttendeeInvite({
         firstName: attendee.firstName, inviteToken: att.token, discountPercent: pct,
-        inviteMessage: inviteMessage?.trim() || null, template,
+        inviteMessage: inviteMessage?.trim() || null,
+        // The row's own template, not the batch default: a paste can carry a
+        // per-row Template column (inviteTemplate above is `r.template ||
+        // template`), and rendering the batch default here would have queued
+        // the wrong letter for those rows.
+        template: attendee.inviteTemplate, org: attendee.affiliation,
       });
       await prisma.emailQueue.create({
         data: {
