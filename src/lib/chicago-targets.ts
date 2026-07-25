@@ -3796,6 +3796,219 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     source: "Start Early, Early Head Start Network FY24 Annual Report, p.14 (2111 S. Ernie Krueger Circle, Waukegan)",
     note: `Waukegan's early learning families are the ones furthest from every regional service and closest to the industrial employers whose injury rates end up in Lake County emergency rooms.`,
   },
+  // ─── Courts, legal aid and immigration law ────────────────────────────────
+  // The courts solved a version of this problem thirty years before healthcare
+  // admitted it had one: certification, a published language access plan, a
+  // named coordinator, and a rule about when a family member may not
+  // interpret. Nobody in a hospital has read any of it. These are the people
+  // who administer it daily plus the attorneys whose clients live on both
+  // sides of the gap.
+  // Six of the nineteen are leadership (Meza, Palumbo, Weisberg, Fennell,
+  // Mosley, Lee); the rest are staff attorneys, fellows, paralegals, intake
+  // and monitoring staff, which is deliberate.
+  // Two of these are ADJUNCT addresses, not employer addresses — Carter and
+  // Elgindy both work elsewhere and are reachable only through the Loyola
+  // clinic page. That is stated in each `source` and must stay stated.
+  // Dropped on the compare-notes rule rather than for cause: Elizabeth Cull
+  // (Kane County interpreter office is two people, and Nicacio is the one
+  // doing the scheduling) and Nicole May (same Amica Center case as
+  // Georgevich, so the two letters would be visibly the same letter). Equip
+  // for Equality gets four because it is a 50-plus-person statewide body and
+  // these are four unrelated units — civil rights, independent monitoring,
+  // the special education clinic, and intake. Gavin Martin is excluded
+  // because EFE's own directory gives him a mailto pointing at a colleague's
+  // address. Stephanie Altman is excluded because Shriver lists her as
+  // "Of Counsel; former Director" and a letter to a former director of
+  // anything is a letter that gets forwarded. Marilu Moreno at ICIRR is
+  // excluded because no title is published for her and I will not write one.
+  {
+    org: "Administrative Office of the Illinois Courts, Access to Justice Division",
+    firstName: "Sophia",
+    lastName: "Akbar",
+    title: "Senior Program Manager, Language Access",
+    email: "sakbar@illinoiscourts.gov",
+    source:
+      "Address published at https://www.illinoiscourts.gov/public/find-a-language-interpreter/e-services-find-a-language-interpreter-language-access-program-resources/ as the contact for pre-approval of interpreter skill-building hours. Title from https://www.2civility.org/ensuring-language-access-in-illinois-courts/ and MAY HAVE CHANGED — the May 2026 Cook County plan names someone else in a similar role. Neither source states her office; AOIC has Chicago and Springfield offices, so Chicago basing is inferred from the division, not confirmed.",
+    note: `You're the person listed for pre-approving interpreter skill-building hours, which means you've had to make judgment calls about what actually counts as training. Medical interpreting has the same argument going on with none of the same infrastructure behind it. I'm also interested in the remote-hearing work — video interpreting broke in courts a few years before it broke in clinics, and I don't think anyone wrote down what you learned.`,
+  },
+  {
+    org: "Circuit Court of Cook County, Office of Interpreter Services",
+    firstName: "Teresa",
+    lastName: "Meza",
+    title: "Acting Director, Office of Interpreter Services",
+    email: "teresa.meza@cookcountyil.gov",
+    source:
+      "Listed as LAP Contact in the Circuit Court of Cook County Language Access Plan, May 2026, Sec. VIII (https://ocj-web-files.s3.us-east-2.amazonaws.com/documents/2026_Cook_County_Language_Access_Plan_May_2026.pdf)",
+    note: `Your plan puts it at 61 full and part-time interpreters with 32 certified, in languages down to Assyrian and Toisan, plus contracted agency coverage when nobody in-house is free. I'd like to ask you about the mornings when the coverage doesn't work — what you do, and who you call. Hospitals hit the same wall and treat it as a vendor's problem rather than a staffing one.`,
+  },
+  {
+    org: "Sixteenth Judicial Circuit (Kane County)",
+    firstName: "Jazmin",
+    lastName: "Nicacio",
+    title: "Assistant Interpreter Coordinator",
+    email: "nicaciojazmin@16thcircuit.illinoiscourts.gov",
+    source:
+      "Sixteenth Judicial Circuit Court Language Access Plan, Part 7, Language Access Contact Information (https://www.illinois16thjudicialcircuit.org/Documents/LAJP.pdf)",
+    note: `You and Elizabeth are the two names on the Kane County plan, so I assume the day-to-day scheduling lands on you. The thing I'd want your read on is what happens when a party brings a relative to interpret and the court has to say no. Clinics say no to that far less often, and when they do they usually lose the argument.`,
+  },
+  {
+    org: "Loyola University Chicago School of Law, Health Justice Project",
+    firstName: "Alice",
+    lastName: "Setrini",
+    title: "Clinical Teaching Fellow",
+    email: "asetrini@luc.edu",
+    source:
+      "https://www.luc.edu/law/academics/clinical-programs/healthjusticeproject/aboutus/ — the same bio states she previously managed Legal Aid Chicago's Medical-Legal Partnerships Project.",
+    note: `You've now seen medical-legal partnership from the legal aid side and from the law school side, which is a fairly rare vantage point. My interest is narrower than the usual MLP conversation: what happens to an intake done through a phone interpreter, and whether anything gets lost there that later turns into a bad case. You'd know better than most whether that's a real failure mode or one I've invented.`,
+  },
+  {
+    org: "Loyola University Chicago School of Law, Health Justice Project",
+    firstName: "Martha Laura",
+    lastName: "Garcia-Izaguirre",
+    title: "Supervising Attorney and Clinical Fellow",
+    email: "mgarcia15@luc.edu",
+    source:
+      "https://www.luc.edu/law/academics/clinical-programs/healthjusticeproject/aboutus/",
+    note: `You supervise the students doing the actual client interviews, which makes you the one who catches it when an interview goes sideways. I'm interested in the bilingual-attorney question specifically — the courts have a formal answer about when speaking the language is enough and when you still need an interpreter, and healthcare mostly doesn't. Curious whether you apply a rule or a feel.`,
+  },
+  {
+    org: "Legal Council for Health Justice",
+    firstName: "Meghan",
+    lastName: "Carter",
+    title: "Senior Staff Attorney",
+    email: "mcarter12@luc.edu",
+    source:
+      "Address and adjunct title published at https://www.luc.edu/law/academics/clinical-programs/healthjusticeproject/aboutus/, which also identifies her as Senior Staff Attorney at Legal Council for Health Justice. THIS IS HER LOYOLA ADJUNCT ADDRESS, not a Legal Council address — Legal Council's public staff page lists no attorney emails.",
+    note: `Legal Council's model puts you inside the clinic rather than waiting for a referral to arrive, which is the setting where the interpreter question stops being theoretical. A client can be entitled to a certified interpreter in a courtroom on Tuesday and get a bilingual medical assistant on Thursday for a conversation with higher stakes. I'd like to know whether your clients notice that difference or whether only you do.`,
+  },
+  {
+    org: "Legal Aid Chicago",
+    firstName: "Mona",
+    lastName: "Elgindy",
+    title: "Supervisory Attorney, Medical Legal Partnership Group",
+    email: "melgind@luc.edu",
+    source:
+      "Address and adjunct title published at https://www.luc.edu/law/academics/clinical-programs/healthjusticeproject/aboutus/, which identifies her as Supervisory Attorney in Legal Aid Chicago's Medical Legal Partnership Group. Recovery Legal Care co-director role from https://legalaidchicago.org/newsroom/in-the-news/uchicago-medicine-legal-aid-chicago-launch-bedside-program-to-provide-in-hospital-legal-support-for-trauma-patients-injured-by-violence/. THIS IS HER LOYOLA ADJUNCT ADDRESS, not a Legal Aid Chicago address.",
+    note: `Recovery Legal Care does bedside intake with trauma patients at UChicago Medicine, which is about the hardest possible setting to get interpretation right — the patient is injured, the family is there, and nobody is in a state to object to whoever ends up doing it. Courts eventually wrote rules about family members interpreting because the errors were provable on the record. There's no record in a trauma bay, and I'd like your view on what that changes.`,
+  },
+  {
+    org: "Legal Aid Chicago",
+    firstName: "Lisa",
+    lastName: "Palumbo",
+    title: "Director of Immigrants & Workers' Rights Practice Group",
+    email: "lpalumbo@legalaidchicago.org",
+    source:
+      "Title from the legalaidchicago.org full staff listing. Address from her own signature block in Garcia v. Pioneer Hi-Bred International, filed 2024-04-15 (courtlistener.com/docket/18709701/137/), given as her address of record for e-service at Legal Aid Chicago, 120 S. LaSalle St., Suite 900, Chicago 60603. A masked ZoomInfo listing showed the same address; that was ignored and only the filing used. This is the oldest address in the file — 2024.",
+    note: `Garcia v. Pioneer is a multi-plaintiff action for Spanish-speaking farmworkers, so I'd guess most of the facts in it reached you through an interpreter before they were ever a pleading. What I'd want to ask is what you do when the interpretation itself is the weakest link in your own evidence. Clinicians have the identical problem and no procedure for it at all.`,
+  },
+  {
+    org: "National Immigrant Justice Center",
+    firstName: "Mary",
+    lastName: "Georgevich",
+    title: "Senior Litigation Attorney",
+    email: "mgeorgevich@immigrantjustice.org",
+    source:
+      "Title from the NIJC staff page, Wayback snapshot 2026-07-16 (web.archive.org/web/20260716191513/https://immigrantjustice.org/about-nijc/staff/) — the live site is captcha-walled. Address from her own signature block in Z. v. U.S. Dept. of Homeland Security, filed 2026-07-22 (courtlistener.com/docket/73277892/42/), given as her address of record at NIJC's Chicago office, 111 W. Jackson Blvd., Suite 800.",
+    note: `You're counsel of record in Amica Center v. EOIR, which is about detained people losing the programming that told them what their rights were. Hospitals have a smaller version of that — the notice of rights exists, it's in English, and nobody reads it out loud. I don't know whether that's a legal problem or just a bad habit, and I'd rather ask someone litigating the harder version of it.`,
+  },
+  {
+    org: "National Immigrant Justice Center",
+    firstName: "Gerardo",
+    lastName: "Romo",
+    title: "Equal Justice Works Fellow",
+    email: "gromo@immigrantjustice.org",
+    source:
+      "Title from the NIJC staff page, Wayback snapshot 2026-07-16. Address from his own signature block in Z. v. DHS, filed 2026-07-22 (courtlistener.com/docket/73277892/42/), given as his address of record at NIJC's Chicago office.",
+    note: `You're early in a fellowship on NIJC's federal litigation team, and I mention that because the invitation is genuinely open at that stage — most of this room is clinical and mid-career, and it would be a better conference if it weren't. If detention-side language access is anywhere near what your fellowship touches, almost nobody attending has heard it described from that direction.`,
+  },
+  {
+    org: "Equip for Equality",
+    firstName: "Andrea",
+    lastName: "Meneses",
+    title: "Paralegal, Civil Rights Team",
+    email: "andrea.meneses@equipforequality.org",
+    source:
+      "Published staff directory, https://www.equipforequality.org/about/staff-directory/ (Chicago office, 312-600-3056)",
+    note: `You're case support on the civil rights team, which usually means you're the one talking to the client in between the milestones. I'd like people in the room who do intake and follow-up rather than only the people who argue the case, because the language problems tend to show up in the gaps.`,
+  },
+  {
+    org: "Equip for Equality",
+    firstName: "Myria",
+    lastName: "Freeman",
+    title: "Senior Clinical Monitor, Independent Monitoring Unit",
+    email: "myria@equipforequality.org",
+    source:
+      "Published staff directory, https://www.equipforequality.org/about/staff-directory/ (Chicago office, 312-766-3591)",
+    note: `Monitoring puts you inside facilities looking at how residents are actually treated, which is a different vantage point from anyone who works in one. What I'd want to ask is whether a language barrier ever becomes a documented finding, or whether it stays something you notice and can't cite.`,
+  },
+  {
+    org: "Equip for Equality",
+    firstName: "René",
+    lastName: "Valenzuela",
+    title: "Skadden Fellow and Staff Attorney, Special Education Rights Clinic",
+    email: "rene@equipforequality.org",
+    source:
+      "Published staff directory, https://www.equipforequality.org/about/staff-directory/ (Chicago office, 312-757-6718). His individual case focus is not published.",
+    note: `The special education rights clinic is one of the few places a parent gets to push back on an evaluation, and plenty of those evaluations were done across a language gap to begin with. Whether the district got the parent an interpreter for the IEP meeting is the kind of detail that either is or isn't in the file. I'd like to hear which it usually is.`,
+  },
+  {
+    org: "Equip for Equality",
+    firstName: "Mari",
+    lastName: "Monteiro",
+    title: "Intake and Traumatic Brain Injury Project Manager and Attorney",
+    email: "mariangela@equipforequality.org",
+    source:
+      "Published staff directory, https://www.equipforequality.org/about/staff-directory/ (Chicago office, 312-895-7358)",
+    note: `You run intake, so you hear the complaint before anyone has shaped it into anything. That's the version I'm most interested in — how many callers can't get through the front door of the system they're calling about because of the language it's conducted in. And if the brain injury side of your work has anything to say about capacity and interpretation together, that's a conversation nobody is having.`,
+  },
+  {
+    org: "Disability Rights Advocates",
+    firstName: "Rachel",
+    lastName: "Weisberg",
+    title: "Directing Attorney – Illinois",
+    email: "rweisberg@dralegal.org",
+    source:
+      "Title and address published at https://dralegal.org/staff-members/rachel-weisberg/. Prior Equip for Equality role and the deaf-prisoner case from https://www.equipforequality.org/news/court-sanctions-illinois-prisons-for-failing-deaf-and-hard-of-hearing-prisoners/",
+    note: `You were counsel on the sanctions ruling against IDOC over deaf and hard-of-hearing prisoners waiting months for audiological evaluations and hearing aids. That's the clearest case I know of where a language access failure was also plainly a medical one, and a court treated it that way. I'd like the clinical half of this audience to hear it described as something other than a scheduling problem.`,
+  },
+  {
+    org: "Hughes Socol Piers Resnick & Dym, Ltd.",
+    firstName: "Kelli",
+    lastName: "Fennell",
+    title: "Partner; Secretary, AILA Chicago Chapter",
+    email: "kfennell@hsplegal.com",
+    source:
+      "Title, practice description and address published at https://www.hsplegal.com/attorneys/kelli-fennell; the AILA role and the identical address are published at https://ailachicago.org/officers-liaisons/",
+    note: `Your caseload — family-based, naturalization, asylum, U visa, deferred action — is the one that generates psychological evaluations conducted through an interpreter. Those get written by clinicians who mostly have no training in working through one, and then read by adjudicators as though they were routine. I'd like to know how often you've had an evaluation come back weak for that reason.`,
+  },
+  {
+    org: "Law Offices of KiKi M. Mosley",
+    firstName: "KiKi",
+    lastName: "Mosley",
+    title: "Chapter Chair, AILA Chicago Chapter; solo immigration practitioner",
+    email: "kiki@kikislaw.com",
+    source:
+      "Published on the official AILA Chicago officers page, https://ailachicago.org/officers-liaisons/, and independently on her own firm site kikislaw.com — identical address in both places. Office at 401 S. LaSalle St., Chicago.",
+    note: `You're chairing the chapter, so part of this is asking whether it's worth putting in front of your members — but I'd rather you came. The asylum office liaison work is the part I'd want to ask about: what that office does and doesn't do about interpretation during an interview, and whether an applicant has any way to object to it.`,
+  },
+  {
+    org: "Shriver Center on Poverty Law",
+    firstName: "Andrea",
+    lastName: "Kovach",
+    title: "Senior Attorney, Healthcare Justice",
+    email: "andreakovach@povertylaw.org",
+    source: "https://www.povertylaw.org/about-us/staff-departments/",
+    note: `Healthcare justice at the policy level is where language services either get paid for or don't, and the clinical people at this conference mostly meet that as a line item somebody else already decided. If there's a live reimbursement fight in Illinois, I'd want it described by someone who's actually in it rather than summarised by a hospital.`,
+  },
+  {
+    org: "Illinois Coalition for Immigrant and Refugee Rights (ICIRR)",
+    firstName: "Brandon",
+    lastName: "Lee",
+    title: "Director of Communications",
+    email: "blee@icirr.org",
+    source: "https://www.icirr.org/contact",
+    note: `Communications is an odd invitation to a clinical conference, which is roughly why I'm sending it. ICIRR has to say things in a lot of languages quickly, usually about something frightening and often before the agencies have said anything. I'd like to ask how you actually do that — who translates, how fast, and what you do when there's no vendor for the language.`,
+  },
 ];
 
 // Researched and deliberately not represented above:
