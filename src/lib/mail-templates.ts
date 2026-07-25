@@ -3246,9 +3246,13 @@ export function plainDirectInviteEmail(args: AttendeeInviteArgs) {
   // hadn't been disclosed yet. Restructuring inside that skeleton — which an
   // earlier pass did — changes nothing, because the deception is the skeleton.
   //
-  // So the order is inverted. The ask comes first, in the first sentence,
-  // together with an admission that we have never met. Nothing is bought on
-  // credit: by the time the reader sees anything about themselves, they
+  // So the order is inverted. The ask comes first, in the first sentence.
+  // It does NOT open by pointing out that we have never met — naming that is
+  // meta-commentary about the email rather than the email, it draws attention
+  // to the coldness of the contact instead of just getting on with it, and it
+  // is not something a person writing another person would ever say out loud.
+  // Nothing is bought on credit: by the time the reader sees anything about
+  // themselves, they
   // already know who is writing, what it is, and what is wanted. That turns
   // the researched material from a hook into what it should have been from
   // the beginning, which is an answer to "why me and not somebody else."
@@ -3259,7 +3263,7 @@ export function plainDirectInviteEmail(args: AttendeeInviteArgs) {
   // a standalone call-to-action line. If a sentence would be at home in a
   // campaign, it does not belong in a letter to one person.
   paras.push(
-    `We haven't met — I'm Kevin Thakkar, and I run a nonprofit called Americans Against Language Barriers. We're doing our second conference with Lurie Children's on August 15 and 16 in Chicago, about language access in healthcare, and I'm writing to ask you to come.`
+    `I'm Kevin Thakkar, and I run a nonprofit called Americans Against Language Barriers. We're doing our second conference with Lurie Children's on August 15 and 16 in Chicago, about language access in healthcare, and I'm writing to ask you to come.`
   );
 
   // The hand-written material, from lib/chicago-targets. A blank line in it
