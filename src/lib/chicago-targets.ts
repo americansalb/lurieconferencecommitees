@@ -3137,6 +3137,153 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
       "Illinois Trauma Coordinators' Directory, Region 9 section (illinoistraumanurse.org, rev. 06/06/2023). CURRENCY CAVEAT: three years old; current title unconfirmed.",
     note: `The MPH next to the trauma role suggests you already think about this a population at a time rather than a patient at a time. Lutheran General pulls from a stretch of northwest Cook with a lot of first-generation households. My interest is narrow: does the injury prevention material actually reach those families, and how would you know if it didn't?`,
   },
+  // ─── Cook County school districts: the people the letter actually reaches ──
+  // Districts publish real addresses, which is the binding constraint on this
+  // whole list. They also employ exactly the person this conference is about
+  // and never invites: the building nurse who takes the phone call from a
+  // parent, the family liaison who runs the bilingual parent committee, the
+  // social worker whose caseload is literally the EL roster.
+  // Per-employer reading: a district is not one employer for this purpose, but
+  // a district's NURSE TEAM is, and so is its EL department. Where several
+  // people hold the same published title, only one is here.
+  {
+    org: "Cicero School District 99",
+    firstName: "Adela",
+    lastName: "Plaku",
+    title: "Lead Nurse",
+    email: "aplaku@cicd99.edu",
+    source: "https://www.cicd99.edu — district health services staff listing",
+    note: `District 99 is around twelve thousand students and the great majority of your families speak Spanish at home. You're the person those health office calls eventually roll up to. I'm organising a conference on language access in pediatric care and the agenda so far is heavy on hospitals, which is a mistake — a school nurse handles more real conversations with LEP parents in a week than most clinics manage in a month. I'd like you in the room.`,
+  },
+  {
+    org: "Cicero School District 99",
+    firstName: "Patricia",
+    lastName: "Chatta",
+    title: "EC Diagnostics Nurse",
+    email: "pchatta@cicd99.edu",
+    source: "https://www.cicd99.edu — district health services staff listing",
+    note: `Early childhood diagnostics is where a language difference and a developmental delay are easiest to confuse, and hardest to tell apart quickly. I don't think our field has been honest about how often that goes wrong in the other direction too — a real delay read as "he's just bilingual." You'd know what that actually looks like at intake.`,
+  },
+  {
+    org: "Cicero School District 99",
+    firstName: "Dalia",
+    lastName: "Merril",
+    title: "Program Supervisor, Multilingual Department",
+    email: "dmerrill@cicd99.edu",
+    source:
+      "https://www.cicd99.edu — Multilingual Department staff card. NAME/ADDRESS MISMATCH as published: her name is printed 'Merril' with one L and the address has two. Reproduced exactly as published, not corrected.",
+    note: `A second Program Supervisor shares your title in the department, so forgive me for picking one of you more or less arbitrarily. What I'm after is the operational reality: Cicero runs dual language at several buildings, and I'd like to know what the health and special-education side of that looks like from where you sit, as opposed to what the program description says.`,
+  },
+  {
+    org: "Cicero School District 99",
+    firstName: "Stephanie",
+    lastName: "Cordero",
+    title: "Cicero West School Nurse",
+    email: "scordero@cicd99.edu",
+    source: "https://www.cicd99.edu — building staff listing, Cicero West",
+    note: `Cicero West is a dual language site, so your building has made a deliberate institutional choice about language that the clinic down the street has not. I'm curious whether that changes anything in the health office, or whether the health office is still doing what health offices everywhere do.`,
+  },
+  {
+    org: "Berwyn South School District 100",
+    firstName: "Junely",
+    lastName: "Escobar",
+    title: "Family Liaison",
+    email: "jescobar@bsd100.org",
+    source: "https://www.bsd100.org — Emerson, Room 105, 708-303-4135",
+    note: `You're the district's dedicated bilingual family liaison, which means you are the answer to the question hospitals keep asking themselves in strategy documents. They pay consultants for a version of what you already do daily. I'm putting together a conference on language access in pediatric care and I'd rather hear from you than from another vendor.`,
+  },
+  {
+    org: "Berwyn South School District 100",
+    firstName: "Maria",
+    lastName: "Torres",
+    title: "School Nurse",
+    email: "maria.torres@bsd100.org",
+    source: "https://www.bsd100.org — health services listing; splits Emerson and Heritage",
+    note: `Splitting two buildings means you're the health office for a lot of families and physically present for about half of them at any given moment. The medication and asthma-plan conversations that go through you are the same conversations a pediatric clinic has, with less time and no interpreter line. I'd like the clinic half of our audience to hear what that's actually like.`,
+  },
+  {
+    org: "Berwyn South School District 100",
+    firstName: "Susana",
+    lastName: "Valenzuela",
+    title: "Bilingual Literacy Specialist & EL Core Leader",
+    email: "svalenzuela@bsd100.org",
+    source: "https://www.bsd100.org — Hiawatha",
+    note: `Berwyn South names a whole team of EL Core Leaders and I've written to exactly one of you on purpose, because five near-identical letters into one district is how a personal note stops being one. Literacy is the part of this I understand least. A family can be handed a perfectly translated discharge instruction and still not be able to use it, and I don't think medicine has any way of noticing that happened.`,
+  },
+  {
+    org: "Berwyn North School District 98",
+    firstName: "Mary Beth",
+    lastName: "Arenella",
+    title: "Home School Community Liaison",
+    email: "MArenella@bn98.org",
+    source: "https://www.bn98.org — District Office, 708-484-6200",
+    note: `Home school community liaison is one of those titles that sounds administrative and turns out to be the person who knows which families are actually reachable and how. That knowledge doesn't exist anywhere in a hospital. We're running a conference on language access in pediatric care in Chicago and I think you'd change what the clinical people in the room think the problem is.`,
+  },
+  {
+    org: "Berwyn North School District 98",
+    firstName: "Margaret",
+    lastName: "Henderson",
+    title: "School Nurse Certified",
+    email: "mhenderson@bn98.org",
+    source: "https://www.bn98.org — Jefferson Elementary, 708-795-2454",
+    note: `Jefferson's health office sees the same children a pediatric practice does, roughly two hundred times more often. What I want to know is what you do when you need a parent on the phone right now and there isn't a shared language — because whatever that is, it's the honest answer, and the honest answer isn't in anyone's policy.`,
+  },
+  {
+    org: "Summit School District 104",
+    firstName: "Tina Marie",
+    lastName: "Lopez",
+    title: "District 104 Lead Nurse, BSN, RN, PEL-CSN, RNC-OB",
+    email: "tlopez@sd104.us",
+    source: "https://www.sd104.us — health services; Graves School and Heritage MS, 708-924-7998",
+    note: `The RNC-OB alongside the school nurse credentials is an unusual combination and it's why I'm writing to you rather than to your district office. You've done the maternal side and now you're doing the school-age side of the same families. Our conference is on language access in pediatric care and nobody on the agenda has seen both ends of that.`,
+  },
+  {
+    org: "Summit School District 104",
+    firstName: "Racheal",
+    lastName: "Romo",
+    title: "UNIDOS Parent Liaison",
+    email: "rromo@sd104.us",
+    source: "https://www.sd104.us — Multilingual Programs. First name published as 'Racheal'.",
+    note: `UNIDOS is a named program with a person attached to it, which already puts Summit ahead of most health systems, where family engagement is a line in a strategic plan and nobody's actual job. I'd like to know what you've found works to get parents to show up, because the clinical side has been guessing at that for twenty years.`,
+  },
+  {
+    org: "Summit School District 104",
+    firstName: "Yuritzi",
+    lastName: "Chavez",
+    title: "Bilingual School Psychologist",
+    email: "ychavez@sd104.us",
+    source: "https://www.sd104.us — Walker and Graves schools; published as 'Dr. Yuritzi Chavez'",
+    note: `A bilingual school psychologist is a genuinely scarce role and you're doing the assessment work that is most easily wrecked by a language mismatch. Testing a child in a language they're still acquiring produces a number, and the number looks just as authoritative as a real one. I'd like our audience to sit with that for a while.`,
+  },
+  {
+    org: "Summit School District 104",
+    firstName: "Maureen",
+    lastName: "Kuhn-Rojas",
+    title: "EL Program Coordinator",
+    email: "mkuhn@sd104.us",
+    source: "https://www.sd104.us — Multilingual Programs page, where she is listed simply as 'Coordinator'",
+    note: `Summit is small enough that the EL program is a person rather than a department, which I suspect makes you the one who notices when something isn't working. Do the health forms and the emergency contact cards actually get back from families in usable shape? That's a mundane question and I think it's a much bigger deal than the conference circuit realises.`,
+  },
+  {
+    org: "Leyden High School District 212",
+    firstName: "Areli",
+    lastName: "Diaz",
+    title: "Teacher, Multilingual Learners Department Chair",
+    email: "adiaz@leyden212.org",
+    source:
+      "https://www.leyden212.org/academics/departments — her name links to mailto:adiaz@leyden212.org under 'Multilingual Learners and Literacy'. CAVEAT: that link's screen-reader-only label wrongly reads cschmidt@leyden212.org, a stale copy-paste; the actual href is adiaz@. There is no Christina Schmidt on any Leyden page.",
+    note: `Leyden's own page tells families to contact the Multilingual Department Chair at their campus, which makes you the district's front door for more than thirty language groups. Two high schools, 3,500 students, and the translation resources page lists Google Translate and Microsoft Translate by name. I'd like you to say out loud at our conference what that's like, because the hospitals in the room are quietly doing the same thing and calling it a strategy.`,
+  },
+  {
+    org: "Leyden High School District 212",
+    firstName: "Marlene",
+    lastName: "Cuevas",
+    title: "BSN, RN",
+    email: "mcuevas@leyden212.org",
+    source:
+      "https://www.leyden212.org/parents-community/health-care-services/contact-us — East Leyden, Franklin Park, 847-451-3084. TITLE CAVEAT: Leyden publishes no job-title string for its nurses, only credentials under an 'East'/'West' heading. The title field holds exactly what is published; she is the building nurse by page context.",
+    note: `East Leyden's health office covers a student body drawn from more than thirty language groups. That's a harder job than the equivalent in a hospital, because you don't have a phone line to call and you have to finish the conversation before the bell. I'm inviting you to a conference on language access in pediatric care and I'd like it to be less hospital-shaped than it currently is.`,
+  },
 ];
 
 // Researched and deliberately not represented above:
