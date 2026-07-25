@@ -67,12 +67,21 @@
 //     silent by accident that way: SWOP's second letter was withdrawn because
 //     of a colleague who was not getting one either. Name the surviving
 //     contact, and re-check the chain after every trim.
-// A university is not one employer, so the cap there is a DOMAIN cap of four
-// rather than one: eleven notes into uic.edu in a week is a campaign to a mail
-// gateway even though the eleven departments have never met. Where the cap
-// bites, prefer the desks furthest from this field — farmworker health,
-// disability, Indigenous health equity — over a second heritage-language
-// linguist, since the near desks are the ones we already reach.
+// The unit of this rule is the set of people who would COMPARE NOTES, which at
+// a small nonprofit is the whole staff and at a university is one department.
+// It is not the mail domain. This file spent a while enforcing a domain cap of
+// four on uic.edu, and the rule as written conceded its own problem in the same
+// sentence — "eleven departments who have never met" is a description of eleven
+// employers, not one. What that cap actually guarded was a mail gateway, and a
+// paced drip of five notes is not a deliverability event at a university that
+// receives millions. It cost five people who belonged on the list, including
+// the director of the Clinical Medical Spanish elective, which is close to the
+// most on-topic desk in the state.
+// So: at a large institution the cap is per DEPARTMENT, and two people from the
+// same department or the same sub-field still collapse to one. Where it bites,
+// prefer the desk furthest from this field — farmworker health, disability,
+// Indigenous health equity — over a second heritage-language linguist, since
+// the near desks are the ones we already reach.
 // A department triage line at a hospital, university or county government is
 // held outright: a letter to a named person read by whoever is on the intake
 // queue that morning has no one whose job it is to care. A shared mailbox at a
@@ -206,7 +215,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Director, Hispanic Center of Excellence; Professor of Medicine",
     email: "mvela@uic.edu",
     hold:
-      "UIC domain cap. Also the single likeliest name on this list to already be in Kevin's phone — directing a national Hispanic Center of Excellence is how you meet everyone in this field. Promote her first if he says he does not know her.",
+      "The single likeliest name on this list to already be in Kevin's phone — directing a national Hispanic Center of Excellence is how you meet everyone in this field. This used to also cite the UIC domain cap; that cap is gone and this reason stands on its own. Promote her first if he says he does not know her.",
     source: "https://medicine.uic.edu/profiles/vela-monica/",
     note: `Your talk last September was called "Language Concordant Care and its Contributions to Health Equity." That's close enough to our whole agenda that I double-checked we hadn't lifted it off you. The Hispanic Center of Excellence has been at UIC since 1991, so you've been at this a great deal longer than we have.`,
   },
@@ -225,7 +234,6 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Castillo",
     title: "Clinical Assistant Professor, Community Health Sciences",
     email: "amparo@uic.edu",
-    hold: "UIC domain cap: the four kept addresses reach desks further from this field than a school of public health does.",
     source: "https://publichealth.uic.edu/profiles/amparo-castillo/",
     note: `The Diabetes Empowerment Education Program was built in Spanish for low-literacy learners instead of translated into that afterward. It's what I point to when people ask me what "culturally appropriate" is supposed to mean in practice.`,
   },
@@ -244,7 +252,6 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Mirza",
     title: "Faculty, Department of Occupational Therapy (rank not published)",
     email: "mmirza2@uic.edu",
-    hold: "UIC domain cap, and Rooshey Hasnain already carries the disability lens. Strongest alternate on the whole UIC set — refugee resettlement plus occupational therapy is a combination nobody else here has.",
     source: "https://ahs.uic.edu/disability-human-development/faculty/",
     note: `Your faculty page lists clinical communication with non-English speaking patients as a research area, which is a plainer description of this conference than anything currently on our own website. The disability side is what I'd want you for. A family working through a language barrier and a rehab system at the same time is handling two vocabularies, and interpreters are generally not trained on the second.`,
   },
@@ -256,7 +263,6 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Potowski",
     title: "Professor of Spanish Linguistics; Director of Undergraduate Studies",
     email: "kimpotow@uic.edu",
-    hold: "UIC domain cap, and heritage-language linguistics is covered twice over on this list by people whose day job is health.",
     source: "https://hip.uic.edu/people/faculty/",
     note: `I read Spanish in Chicago last year and it's a good part of why this conference is happening here and not somewhere else. A hospital intake form has one box for Spanish. Your book is a few hundred pages on why that isn't one thing. I watched the TEDx talk too, and the bit about monolingualism being something done to children has stuck with me longer than most of what I hear at conferences, which is an awkward thing to say while inviting you to one.`,
   },
@@ -266,7 +272,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Betancourt-Ciprian",
     title: "Clinical Assistant Professor; Director, Spanish Heritage Language Program",
     email: "abetan3@uic.edu",
-    hold: "UIC domain cap; same program and same sub-field as Kim Potowski, so holding one without the other would have been arbitrary.",
+    hold: "Same department and same sub-field as Kim Potowski, who is written to. Two notes into UIC Hispanic and Italian Studies about heritage speakers is the one place on this campus where the two recipients really would compare them.",
     source: "https://hip.uic.edu/profiles/betancourt-ciprian-angela/",
     note: `Most of the bilingual staff in Chicago hospitals came up as heritage speakers, and plenty of them were taught somewhere along the way that their Spanish wasn't quite the real article. You run the program where that goes one way or the other. I also saw you were on the organizing committee for the Illinois Dual Language Summit, so you know exactly how much work it is to get people in a room about this, and I'm asking anyway.`,
   },
@@ -590,7 +596,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Suarez-Balcazar",
     title: "Faculty, Department of Occupational Therapy (rank not published)",
     email: "ysuarez@uic.edu",
-    hold: "UIC domain cap. Neither she nor Mansha Mirza is written to, so UIC occupational therapy receives nothing — a consequence of the cap, not a judgement about the department.",
+    hold: "Same department as Mansha Mirza, who is written to. This used to say neither of them was, which was the domain cap emptying a whole department by accident; now occupational therapy is reached, once.",
     source: "https://ahs.uic.edu/disability-human-development/faculty/",
     note: `Community-based participatory work with Latino families with disabilities sits at the intersection this conference is about, and very few people work there.`,
   },
@@ -1076,7 +1082,6 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Aquino",
     title: "Associate Dean; past President, NAHN Illinois, 2017-2021",
     email: "eaquino@uic.edu",
-    hold: "UIC domain cap.",
     source: "UIC College of Nursing directory and NAHN Illinois past-president listing",
     note: `You interviewed seventeen Latina nurse leaders and came out with six obstacles, including imposter syndrome, age discrimination and the absence of mentorship. Those are the reasons the bilingual nurse who's been interpreting for her unit for eight years is still not the one running it.`,
   },
@@ -1097,7 +1102,6 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Angulo",
     title: "Faculty; director, Clinical Medical Spanish elective",
     email: "angulo@uic.edu",
-    hold: "UIC domain cap.",
     source: "UIC College of Medicine course listing for the Clinical Medical Spanish elective",
     note: `Running the elective with live and simulated patient interviews in Spanish rather than vocabulary drills is the difference between a student who can name the organs and a student who can take a history. Two weeks isn't long, and I'd guess you know exactly which parts you'd extend if anybody gave you the room.`,
   },
