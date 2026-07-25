@@ -395,7 +395,7 @@ You're the only person I found in the city on both, and it's odd to me that bein
     title: "VP Development and External Affairs",
     email: "mwysoglad@larabida.org",
     source: "https://www.larabida.org/contact/",
-    note: `La Rabida is the only hospital around here built entirely for children with complex chronic conditions, so your families aren't passing through. They come back for years, and a language barrier in that arrangement compounds instead of resolving. With better than nine in ten of your patients on Medicaid I'd guess a good number of them are doing all of it in a language the system defaults away from.
+    note: `La Rabida is built entirely for children with complex chronic conditions, so your families aren't passing through. They come back for years, and a language barrier in that arrangement compounds instead of resolving. With better than nine in ten of your patients on Medicaid I'd guess a good number of them are doing all of it in a language the system defaults away from.
 
 I'm writing to you because external affairs is the front door. If someone at La Rabida owns interpreting I'd be grateful if you sent this along to them, or come yourself.`,
   },
@@ -477,7 +477,7 @@ You've been at the AOIC since roughly the start of certification here, spoken la
     title: "Senior Program Manager, Health Equity Initiatives",
     email: "acreek@illinoisaap.com",
     source: "https://illinoisaap.org/about-2/",
-    note: `ICAAP publishes a bilingual flyer on interpretation services for pediatric practices, which puts your chapter ahead of most of the state chapters I've looked at, where interpreting turns up as a compliance footnote if it turns up.
+    note: `ICAAP publishes a bilingual flyer on interpretation services for pediatric practices. Most of what I read from state chapters treats interpreting as a compliance footnote if it appears at all.
 
 The flyer sits under health equity initiatives, so I'm guessing you're the one fielding calls from practices that want to do this properly and can't afford a full-time interpreter. Those calls are more or less what the conference is built around.`,
   },
@@ -951,7 +951,7 @@ The flyer sits under health equity initiatives, so I'm guessing you're the one f
     sharedInbox: true,
     tier2: true,
     source: "https://www.casacentral.org leadership page",
-    note: `Chairing the Illinois Human Rights Commission and then the U.S. Commission on Civil Rights is an unusual route into running a social service agency. Language access sits on the civil rights side of the line more often than the service side, and I suspect you already think of it that way.`,
+    note: `You chaired the Illinois Human Rights Commission and then the U.S. Commission on Civil Rights before running a social service agency. Language access sits on the civil rights side of the line more often than the service side, and I suspect you already think of it that way.`,
   },
   {
     org: "Latinos Progresando",
@@ -1013,7 +1013,7 @@ I'd be interested in what you've found in six months that the org chart didn't t
     email: "miguel@latinounion.org",
     tier2: true,
     source: "https://www.latinounion.org",
-    note: `The Albany Park Workers' Center took a four-year campaign to open and it's still the only worker center of its kind in the Midwest. Average day laborer wages went up two hundred percent. Day laborers are also close to the least likely group in the city to have a usable route into care, and the workers' center is where they already are.`,
+    note: `The Albany Park Workers' Center took a four-year campaign to open. Average day laborer wages went up two hundred percent. Day laborers are also close to the least likely group in the city to have a usable route into care, and the workers' center is where they already are.`,
   },
   {
     org: "Latino Union of Chicago",
@@ -1067,7 +1067,7 @@ I'd be interested in what you've found in six months that the org chart didn't t
     title: "Chief Operating Officer",
     email: "Blanca@littlevillagechamber.org",
     source: "https://littlevillagechamber.org",
-    note: `The chamber runs a Community Health and Resource Fair, which as far as I can tell makes it the only Hispanic chamber in the Chicago area doing anything like a health program. You've held both of the chamber's top jobs and you manage SSA #25 along 26th Street.
+    note: `The chamber runs a Community Health and Resource Fair, which is not something I expected to find a business association doing. You've held both of the chamber's top jobs and you manage SSA #25 along 26th Street.
 
 If a business district ends up being the front door to care for people who have no other one, I'd like to understand how that happened here and not anywhere else. Nobody I've asked can tell me whether it was deliberate.`,
   },
@@ -1205,7 +1205,7 @@ If a business district ends up being the front door to care for people who have 
     title: "Co-advisor",
     email: "marcelo.vinces@northwestern.edu",
     source: "Northwestern SACNAS chapter page and the 2024 Linzer Award announcement",
-    note: `You grew up in an Ecuadorian immigrant family, were undocumented, and now advise the students coming through the same door — the Linzer Award in 2024 says the university noticed.
+    note: `You grew up in an Ecuadorian immigrant family, were undocumented, and now advise the students coming through the same door.
 
 Most of the people who will fix this inside a hospital twenty years from now are undergraduates somewhere right now, and a good share of them are sitting in chapters like yours.`,
   },
@@ -1282,7 +1282,7 @@ Community Voices looks like the part where you check with actual readers instead
     email: "jyanguas@yahoo.com",
     tier2: true,
     source: "Illinois Resource Center staff listing and Illinois Advisory Council on Bilingual Education roster",
-    note: `You've directed the IRC since 2006 and sat on the IAMME board since 1990, which is longer than most of the policy in this area has existed. Schools and hospitals hit the same wall from opposite sides and almost never compare notes about it.`,
+    note: `You've directed the IRC since 2006 and sat on the IAMME board since 1990. Schools and hospitals hit the same wall from opposite sides and almost never compare notes about it.`,
   },
   {
     org: "Illinois State Board of Education",
@@ -1309,7 +1309,7 @@ Community Voices looks like the part where you check with actual readers instead
     tier2: true,
     source:
       "ISBE's published contact list (isbe.net Contact Information list). Her direct line is (312) 814-2237 — the 312 exchange is ISBE's Chicago office, 555 W. Monroe St., Suite 900, Chicago 60661, per https://www.isbe.net/Pages/contact-isbe.aspx. Springfield staff on the same list carry 217 numbers and were not used.",
-    note: `Newcomer is your portfolio, which makes you one of very few people in the state whose job is specifically the first year — before anybody has a file, a screener result, or a relationship with the school. Hospitals meet the same families in the same window and have no equivalent role at all. What I'd want to ask is what you tell a district that has just enrolled a family it has no staff who can talk to.`,
+    note: `Newcomer is your portfolio, so your job is the first year specifically — before anybody has a file, a screener result, or a relationship with the school. Hospitals meet the same families in the same window and have no equivalent role at all. What I'd want to ask is what you tell a district that has just enrolled a family it has no staff who can talk to.`,
   },
   {
     org: "Illinois State Board of Education — Multilingual/Language Development",
@@ -1540,7 +1540,7 @@ Community Voices looks like the part where you check with actual readers instead
     email: "erafas@dupagefederation.org",
     tier2: true,
     source: "https://www.dupagefederation.org/ourteam and https://www.dupagefederation.org/larc",
-    note: `LARC is the closest thing in Illinois to the thing this conference is arguing should exist. You pooled interpreters across health, human service, legal and educational organizations in 2005 because those organizations asked for it, you cover forty-plus languages face to face and two hundred by phone, and you're funded by a township mental health board and a hospital rather than by any of the systems that formally owe the obligation. You also announced ten training scholarships last year, which tells me demand outruns supply about the way I'd expect. I would like you at this conference more than almost anyone else on my list.`,
+    note: `LARC does in practice a good deal of what this conference spends two days arguing about. You pooled interpreters across health, human service, legal and educational organizations in 2005 because those organizations asked for it, you cover forty-plus languages face to face and two hundred by phone, and you're funded by a township mental health board and a hospital rather than by any of the systems that formally owe the obligation. You also announced ten training scholarships last year, which tells me demand outruns supply about the way I'd expect. I would like you at this conference more than almost anyone else on my list.`,
   },
   {
     org: "DuPage Federation on Human Services Reform",
@@ -1645,7 +1645,7 @@ Community Voices looks like the part where you check with actual readers instead
     title: "Citizenship Assistance Director",
     email: "adelgado@thetownofcicero.com",
     source: "https://www.thetownofcicero.com/citizenship/",
-    note: `Your department lists translation for citizenship appointments as a named free service alongside the ESL and citizenship classes, which makes a municipal office one of the few places in Cicero publishing language help as a service rather than an accommodation. Cicero is about ninety-one percent Latino and the town's health department page is an empty stub, so in practice you're part of the health infrastructure whether that's in your job description or not.`,
+    note: `Your department lists translation for citizenship appointments as a named free service alongside the ESL and citizenship classes — language help written down as a service rather than an accommodation. Cicero is about ninety-one percent Latino and the town's health department page is an empty stub, so in practice you're part of the health infrastructure whether that's in your job description or not.`,
   },
   {
     org: "Town of Cicero, 708 Community Mental Health Board",
@@ -1740,7 +1740,7 @@ Community Voices looks like the part where you check with actual readers instead
     email: "lforst@uic.edu",
     tier2: true,
     source: "https://farmworkerhealth.uic.edu and UIC School of Public Health announcement of the NIOSH award",
-    note: `Yours is the first federal agricultural safety center in the country built around the whole health of agricultural workers rather than machinery and pesticides alone. Occupational health and language access almost never appear on the same agenda, and I'd like to know whether the center ran into that or built around it from the start.`,
+    note: `The center is built around the whole health of agricultural workers rather than machinery and pesticides. Occupational health and language access almost never appear on the same agenda, and I'd like to know whether the center ran into that or built around it from the start.`,
   },
   {
     org: "Illinois Migrant Council",
@@ -3244,7 +3244,7 @@ I'd rather know that than guess at it from the outside.`,
     email: "ceasley2@ccc.edu",
     source:
       "Malcolm X College Paramedic Program Student Handbook 2024-2025 (ccc.edu), email printed beside his name in the faculty list",
-    note: `You place students into clinical sites and then hear back about how they did, which is a view of where new medics freeze that almost nobody else has. Is not being able to get a history off a patient one of the recurring ones?
+    note: `You place students into clinical sites and then hear back about how they did, so you know where new medics freeze. Is not being able to get a history off a patient one of the recurring ones?
 
 What do your preceptors say about it when they're being honest?`,
   },
@@ -3391,7 +3391,7 @@ I think you'd change what the clinical people in the room believe the problem is
     email: "rromo@sd104.us",
     tier2: true,
     source: "https://www.sd104.us — Multilingual Programs. First name published as 'Racheal'.",
-    note: `UNIDOS is a named program with a person attached to it, which already puts Summit ahead of most health systems, where family engagement is a line in a strategic plan and nobody's actual job. I'd like to know what you've found works to get parents to show up, because the clinical side has been guessing at that for twenty years.`,
+    note: `UNIDOS is a named program with a person attached to it. In most health systems family engagement is a line in a strategic plan and nobody's actual job. I'd like to know what you've found works to get parents to show up, because the clinical side has been guessing at that for twenty years.`,
   },
   {
     org: "Summit School District 104",
@@ -4098,7 +4098,7 @@ The thing I'd want your read on is what happens when a party brings a relative t
     email: "asetrini@luc.edu",
     source:
       "https://www.luc.edu/law/academics/clinical-programs/healthjusticeproject/aboutus/ — the same bio states she previously managed Legal Aid Chicago's Medical-Legal Partnerships Project.",
-    note: `You've now seen medical-legal partnership from the legal aid side and from the law school side, which is a fairly rare vantage point. My interest is narrower than the usual MLP conversation: what happens to an intake done through a phone interpreter, and whether anything gets lost there that later turns into a bad case.
+    note: `You've now seen medical-legal partnership from the legal aid side and from the law school side. My interest is narrower than the usual MLP conversation: what happens to an intake done through a phone interpreter, and whether anything gets lost there that later turns into a bad case.
 
 You'd know better than most whether that's a real failure mode or one I've invented.`,
   },
