@@ -2927,6 +2927,216 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     source: "https://indoamerican.org/about-us/staff",
     note: `Sees the same South Asian elders weekly at the congregate meal, which is more regular contact than any clinic in their lives manages.`,
   },
+  // ─── EMS, trauma and prehospital care ─────────────────────────────────────
+  // The furthest desk from this field that the field completely depends on.
+  // Nobody below has ever filed a document with "language access" in the title.
+  // What they have is a clock: on-scene time, triage accuracy, and a history
+  // that has to come from somewhere before a decision gets made. When the
+  // patient can't answer, that cost lands on them first and gets coded as
+  // something else. Every one of these is a different hospital or department,
+  // so the per-employer rule is satisfied by construction rather than by
+  // cutting people.
+  // CURRENCY WARNING on the trauma coordinators: five rows below come from the
+  // Illinois Trauma Coordinators' Directory revised 06/06/2023. Three years is
+  // long enough for a role to turn over. The addresses are real and published;
+  // the titles may not be current, which is why each note is written so it
+  // still makes sense if the person has moved on.
+  {
+    org: "Northwest Community EMS System (Endeavor Health)",
+    firstName: "Kourtney",
+    lastName: "Chesney",
+    title: "EMS System Coordinator",
+    email: "kourtney.chesney@endeavorhealth.org",
+    source:
+      "https://www.nwcemss.org/assets/1/documents/2026_NWC_EMSS_Directory_01-05.pdf (system directory dated 5 January 2026, email printed beside her name)",
+    note: `Here's the thing I can't get anyone to answer. When a crew burns four extra minutes on scene because they can't get a history, does that show up in your run review as anything at all, or does it just look like a slow call? You'd know. I'm putting together a conference on language access in pediatric care and almost everyone coming works in a building, not a driveway, which is most of why I'm writing to you.`,
+  },
+  {
+    org: "Northwest Community EMS System (Endeavor Health)",
+    firstName: "Nichole",
+    lastName: "Junge",
+    title: "EMS Educator",
+    email: "nichole.junge@endeavorhealth.org",
+    source:
+      "https://www.nwcemss.org/assets/1/documents/2026_NWC_EMSS_Directory_01-05.pdf (system directory dated 5 January 2026)",
+    note: `Whatever goes into your lesson plans ends up on scene across a lot of northwest suburban towns, which is a wider blast radius than most curriculum jobs have. I'm curious whether patient assessment gets taught with the assumption that the patient answers you. If you've ever used a case in class where that fell apart, I'd like to hear it, and I'd like our audience to hear it more.`,
+  },
+  {
+    org: "Loyola University Medical Center EMS System",
+    firstName: "Marlo",
+    lastName: "Jorgenson",
+    title: "ECRN Coordinator / EMS Instructor",
+    email: "Marlo.Jorgenson@luhs.org",
+    source: "https://www.loyolamedicine.org/ems/staff",
+    note: `ECRNs give orders off a picture somebody else built over a radio. If the crew couldn't get a history, you're the next person the problem lands on and you still have to decide. That's a failure mode I've never seen written up anywhere, and it's the one I'd most like on our agenda.`,
+  },
+  {
+    org: "Loyola University Medical Center EMS System",
+    firstName: "Joshua",
+    lastName: "Hintz",
+    title: "Paramedic Program Coordinator, NREMT Course Coordinator",
+    email: "Joshua.Hintz@luhs.org",
+    source: "https://www.loyolamedicine.org/ems/staff",
+    note: `You're training people to a national registry standard while they do clinicals in Maywood and the towns around it. The exam rewards a clean, fast history and those streets don't always hand you one. I'd genuinely like to know whether you prepare students for that on purpose or whether they find out in the field.`,
+  },
+  {
+    org: "Cook County Health — Chicago West EMS System (Stroger)",
+    firstName: "Matt",
+    lastName: "Strzalka",
+    title: "EMS Educator",
+    email: "mstrzalka@cookcountyhhs.org",
+    source: "https://chicagoems.org/resource-hospitals/",
+    note: `Your system covers the West Side, so your crews walk into households where the patient, the family and whoever called 911 may each be working in a different language. You're the one who has to turn that into something teachable. What do you tell a new medic to do in the first sixty seconds? I'd like to put that answer in front of a room of pediatricians who have never had to give one.`,
+  },
+  {
+    org: "Advocate Illinois Masonic — Chicago North EMS System",
+    firstName: "Rachel",
+    lastName: "Thornburg",
+    title: "EMS Operations Coordinator",
+    email: "Rachel.Thornburg@aah.org",
+    source: "https://chicagoems.org/resource-hospitals/",
+    note: `Chicago North covers a stretch where the household language changes street to street. My suspicion is that the friction from that is real and measured nowhere, because it doesn't have a field to go in. If I'm wrong I'd like to be told so before I say it out loud at a conference in front of three hundred people.`,
+  },
+  {
+    org: "UChicago Medicine — Chicago South EMS System",
+    firstName: "Cyd",
+    lastName: "Gajewski",
+    title: "EMS System Coordinator",
+    email: "cynthia.gajewski@uchicagomedicine.org",
+    source: "https://chicagoems.org/resource-hospitals/",
+    note: `Where I keep getting stuck is the handoff. What the crew couldn't establish on scene becomes what the ED doesn't know on arrival, and I can't tell from outside whether that gap gets closed in practice or just gets absorbed. You run one set of protocols across a very varied South Side catchment, so you'd know how often it happens.`,
+  },
+  {
+    org: "Northwestern Memorial — Chicago Central EMS System",
+    firstName: "Patti",
+    lastName: "Lindeman",
+    title: "EMS System Coordinator",
+    email: "plindema@nm.org",
+    source: "https://chicagoems.org/resource-hospitals/",
+    note: `Chicago Central takes in downtown, which means a real share of your patients are people nobody on scene knows, who can't say where they're from and have nobody with them who can. That's a triage accuracy problem before it's a language problem. How does your system handle an unaccompanied patient who can't give a history?`,
+  },
+  {
+    org: "Mount Prospect Fire Department",
+    firstName: "Tina",
+    lastName: "Hayes",
+    title: "RN, Paramedic; alternate, NWC EMS System Education Committee",
+    email: "thayes@mountprospect.org",
+    source:
+      "https://www.nwcemss.org — Advisory Board membership list, May 2024, Education Committee section. TITLE CAVEAT: her formal departmental title at the fire department is not published; what is published is her credentials and her committee seat, and the title field says only that.",
+    note: `Sitting on the education committee as a working field provider puts you on both sides of the gap I'm interested in — what gets taught, and what actually happens at two in the morning. When a crew can't get a history from the patient, does the current training tell them what to do next, or does everyone improvise it fresh every time?`,
+  },
+  {
+    org: "Illinois Department of Public Health, Division of EMS",
+    firstName: "Danielle",
+    lastName: "Albinger",
+    title: "Region 9 EMS Coordinator, BSN, RN",
+    email: "Danielle.albinger@illinois.gov",
+    source:
+      "https://www.nwcemss.org — Advisory Board membership list, May 2024, listing her IDPH title and the West Chicago office at 245 W Roosevelt Rd (DuPage County) beside this address.",
+    note: `Region 9 takes in Elgin and Aurora, and you're the person the system plans get submitted to. Narrow question: does anything in any of those plans address a patient who can't answer assessment questions? If the answer is no, has anyone ever raised it with you? I'd rather know that than guess at it from the outside.`,
+  },
+  {
+    org: "Ascension Resurrection Medical Center",
+    firstName: "Virginia",
+    lastName: "Logan",
+    title: "EMS Coordinator",
+    email: "Virginia.logan@ascension.org",
+    source:
+      "https://www.nwcemss.org — Advisory Board membership list, May 2024, listed as EMS Coordinator, Ascension Resurrection.",
+    note: `Resurrection sits in a part of the Northwest Side with long-settled Polish and Ukrainian households alongside much newer arrivals, so a single shift can cross several languages. I'm trying to work out what crews actually have that works, as opposed to what the policy says they have. Your read from the receiving end would be worth more to me than another literature search.`,
+  },
+  {
+    org: "Mount Sinai Hospital, Chicago",
+    firstName: "Laila",
+    lastName: "Robateau",
+    title: "Trauma Program contact, RN (as listed June 2023)",
+    email: "Laila.Robateau@sinai.org",
+    source:
+      "Illinois Trauma Coordinators' Directory, Region 11 section (illinoistraumanurse.org, rev. 06/06/2023). CURRENCY CAVEAT: three years old; current title unconfirmed.",
+    note: `In a trauma activation the history often has to come from a relative standing in the corridor, at speed, and a lot of those relatives on the West and Southwest Sides are working in Spanish. Everybody agrees that's not ideal and nobody I've asked can tell me what the alternative looks like at three in the morning. If it's just what happens, I'd rather hear that plainly than hear a policy read to me.`,
+  },
+  {
+    org: "Northwestern Medicine McHenry Hospital",
+    firstName: "Joan",
+    lastName: "Rembacz",
+    title: "Clinical Nurse Specialist, Emergency Services and CDU; TNS course coordinator (as listed June 2023)",
+    email: "Joan.rembacz@nm.org",
+    source:
+      "Illinois Trauma Coordinators' Directory, TNS Course Coordinator section (illinoistraumanurse.org, rev. 06/06/2023). CURRENCY CAVEAT: three years old; current title unconfirmed.",
+    note: `McHenry County's Spanish-speaking population has grown faster than most people's mental map of it, mine included until recently. You're in the unusual position of both seeing it in the department and getting to teach about it through the TNS course. Does triage accuracy actually suffer when the patient can't answer, or does the team route around it well enough that it never shows in the numbers?`,
+  },
+  {
+    org: "Ascension Saint Joseph Medical Center, Joliet",
+    firstName: "Leslie",
+    lastName: "Livett",
+    title: "TNS course coordinator (as listed June 2023)",
+    email: "leslie.livett@ascension.org",
+    source:
+      "Illinois Trauma Coordinators' Directory, TNS Course Coordinator section (illinoistraumanurse.org, rev. 06/06/2023). CURRENCY CAVEAT: three years old; current title unconfirmed.",
+    note: `Will County grew fast and the population that arrived isn't the one the older protocols were written for. You're teaching the trauma nurses who'll meet that first. I want to know whether the course says anything at all about assessing a patient who can't answer you, and I'd rather ask than assume it doesn't.`,
+  },
+  {
+    org: "Advocate Sherman Hospital, Elgin",
+    firstName: "Belinda",
+    lastName: "Hardy",
+    title: "Trauma Coordinator, RN, BSN (as listed June 2023)",
+    email: "Belinda.Hardy@aah.org",
+    source:
+      "Illinois Trauma Coordinators' Directory, Region 9 section (illinoistraumanurse.org, rev. 06/06/2023). CURRENCY CAVEAT: three years old; current title unconfirmed.",
+    note: `Elgin is one of the most heavily Spanish-speaking cities in the six counties and Sherman is where its serious injuries land. Trauma runs on a fixed sequence with a clock attached and the sequence assumes somebody in the room can tell you what happened. What does your team do when nobody can, and does it cost time you can measure?`,
+  },
+  {
+    org: "Advocate Condell Medical Center, Libertyville",
+    firstName: "Sharon",
+    lastName: "Esterquest",
+    title: "Trauma Coordinator, BSN, RN (as listed June 2023)",
+    email: "Sharon.Esterquest@aah.org",
+    source:
+      "Illinois Trauma Coordinators' Directory, Region 10 section (illinoistraumanurse.org, rev. 06/06/2023). CURRENCY CAVEAT: three years old; current title unconfirmed.",
+    note: `You're the Level I for Lake County, receiving from Waukegan and North Chicago as well as from the parts of the county that look nothing like them. Injury prevention only works if the message gets into the household in a form it can actually use, and that's where I think most of it quietly fails. How have you handled that?`,
+  },
+  {
+    org: "Malcolm X College, City Colleges of Chicago",
+    firstName: "Rick",
+    lastName: "Conner",
+    title: "Lead Instructor, Paramedic Program",
+    email: "rconner25@ccc.edu",
+    source:
+      "Malcolm X College Paramedic Program Student Handbook 2024-2025 (ccc.edu), email printed beside his name in the faculty list",
+    note: `Your students go from your classroom into the parts of this city with the widest spread of household languages anywhere in Illinois, so what they practise with you is more or less what those blocks get for the next twenty years. Does the paramedic curriculum give them anything concrete for a patient who can't answer, or is it left to the preceptor?`,
+  },
+  {
+    org: "Malcolm X College, City Colleges of Chicago",
+    firstName: "Chris",
+    lastName: "Easley",
+    title: "Clinical Coordinator and Co-Lab Instructor, Paramedic Program",
+    email: "ceasley2@ccc.edu",
+    source:
+      "Malcolm X College Paramedic Program Student Handbook 2024-2025 (ccc.edu), email printed beside his name in the faculty list",
+    note: `You place students into clinical sites and then hear back about how they did, which is a view of where new medics freeze that almost nobody else has. Is not being able to get a history off a patient one of the recurring ones? What do your preceptors say about it when they're being honest?`,
+  },
+  {
+    org: "Moraine Valley Community College",
+    firstName: "Sheila",
+    lastName: "Moran",
+    title: "EMS Program Director",
+    email: "morans33@morainevalley.edu",
+    source:
+      "Moraine Valley Community College 2026 Paramedic Program Application (morainevalley.edu), name, phone and email printed together",
+    note: `Standing up a paramedic program means the curriculum isn't in concrete yet, which is a narrow window and the reason I'm writing now rather than in two years. Your district covers a good deal of the southwest suburbs. If assessment of a patient who can't answer is going to be in there deliberately, it more or less has to go in at the start.`,
+  },
+  {
+    org: "Advocate Lutheran General Hospital, Park Ridge",
+    firstName: "Delilah",
+    lastName: "Mendez",
+    title: "Trauma Coordinator, RN, BSN, MPH (as listed June 2023)",
+    email: "delilah.mendez@aah.org",
+    hold:
+      "Fourth Advocate row in this section. Sherman (Kane), Condell (Lake) and Illinois Masonic (Chicago) already cover three counties and three different job contexts; Park Ridge duplicates Cook, which Thornburg holds. Advocate trauma coordinators plausibly sit in the same system-level meeting, and four near-identical asks arriving in that meeting is the exact thing the per-employer rule exists to prevent. Promote her if any of the other three bounce — the MPH alongside the trauma role makes her the most likely of the four to already think about this at population level.",
+    source:
+      "Illinois Trauma Coordinators' Directory, Region 9 section (illinoistraumanurse.org, rev. 06/06/2023). CURRENCY CAVEAT: three years old; current title unconfirmed.",
+    note: `The MPH next to the trauma role suggests you already think about this a population at a time rather than a patient at a time. Lutheran General pulls from a stretch of northwest Cook with a lot of first-generation households. My interest is narrow: does the injury prevention material actually reach those families, and how would you know if it didn't?`,
+  },
 ];
 
 // Researched and deliberately not represented above:
