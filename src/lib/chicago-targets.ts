@@ -2819,6 +2819,114 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     source: "polkbrosfdn.org; no staff addresses published",
     note: `Polk Bros is transitioning away from its health strategy through the autumn, so anyone approaching them on health framing is working from a map that is about to be out of date.`,
   },
+
+  // ─── Language communities that are not Spanish ─────────────────────────────
+  // This section exists because the rest of the file kept proving a point it
+  // did not mean to make: language access in Chicago is written about as though
+  // it means Spanish, and then stops. These organisations serve Polish, Khmer,
+  // Assyrian Neo-Aramaic, Korean, Urdu, Gujarati, Bengali, Arabic, Tagalog,
+  // Toishanese, Burmese and Karen speakers, and most of them publish no staff
+  // addresses at all, so this section is mostly leads rather than letters.
+  // That imbalance is itself the finding: the smaller the language community,
+  // the harder it is to reach the people serving it, in exactly the way it is
+  // hard for a hospital to reach them.
+  {
+    org: "Indo-American Center",
+    firstName: "Farhat",
+    lastName: "Khatoon",
+    title: "Community Health Worker",
+    email: "fkhatoon@indoamerican.org",
+    source: "https://indoamerican.org/about-us/staff",
+    note: `Interpreter vendors treat Hindi, Urdu, Gujarati and Punjabi as more or less interchangeable, and a Gujarati speaker handed a Hindi interpreter will usually go along with it rather than make a fuss in a clinic. You do the accompaniment and the follow-up afterward, which means you are one of the few people who finds out what was actually understood. The distance between what a chart records as interpreted and what the patient walked out knowing is most of what we want to spend two days on.`,
+  },
+  {
+    org: "Indo-American Center",
+    firstName: "Bhakti",
+    lastName: "Vasani",
+    title: "Public Benefits Case Manager",
+    email: "bvasani@indoamerican.org",
+    source: "https://indoamerican.org/about-us/staff",
+    note: `Medicaid redetermination notices go out in a short list of languages, and Gujarati is generally not one of them on the assumption that a Gujarati speaker reads Hindi. The coverage gap that follows turns up months later at a clinic with no idea why the person went uninsured. Most of the people coming to this are on the clinical end of that sequence and very few are on the paperwork end, which is the wrong balance.`,
+  },
+  {
+    org: "Assyrian National Council of Illinois",
+    firstName: "Shoshan",
+    lastName: "Sarkis",
+    title: "Assistant Director",
+    email: "shoshan@ancil.org",
+    source: "https://ancil.org/contact",
+    note: `Chicagoland has one of the largest Assyrian populations anywhere and close to no trained medical interpreter capacity in Neo-Aramaic, so clinical conversations tend to route through whichever relative came along, often a young one. ANCIL running home care puts you nearest the elders least likely to have any English at all. What a hospital actually does when it has nothing at all for a language is the part no procedure manual covers.`,
+  },
+  {
+    org: "Assyrian National Council of Illinois",
+    firstName: "Fadia",
+    lastName: "",
+    title: "Intake (ANCIL publishes staff surnames only as an initial, so the full name is not available)",
+    email: "fmarogail@ancil.org",
+    hold:
+      "One letter per employer, and ANCIL is small enough that the whole office would compare them. Shoshan Sarkis is the one written to. Worth noting the loss: intake is the better seat for this and we are writing to the assistant director instead, because a letter that opens without a surname to a person whose full name we could not establish is a worse first contact than one to a colleague.",
+    source: "https://ancil.org/contact",
+    note: `Intake is where somebody first says what they need, in Neo-Aramaic, before it gets sorted into whatever box a form allows.`,
+  },
+  {
+    org: "Hanul Family Alliance",
+    firstName: "Nayeon",
+    lastName: "Yang",
+    title: "Nutrition Program Manager, Chicago",
+    email: "nyang@hanulusa.org",
+    source: "https://hanulusa.org/what-we-do/senior-services",
+    note: `A congregate meal site sees the same older adults every week, which is more contact than any clinic gets, and it makes the staff there the first to notice when something is going wrong medically. The Kedzie site skews lower income and more likely to be on Medicaid than the suburban ones. What an elder says about a doctor's visit a week afterward is usually more accurate than what they said in the room.`,
+  },
+  {
+    org: "Hanul Family Alliance",
+    firstName: "Miran",
+    lastName: "Lee",
+    title: "Nutrition Program Manager, Mt. Prospect",
+    email: "mlee@hanulusa.org",
+    hold: "Same program and same job title as Nayeon Yang, one site apart. Two identical roles at one organisation is the clearest case there is for sending one letter.",
+    source: "https://hanulusa.org/what-we-do/senior-services",
+    note: `Runs the suburban end of a program feeding several hundred Korean older adults, which is a different population from the Chicago site — more settled, further from any clinic with Korean capacity.`,
+  },
+  {
+    org: "Indo-American Center",
+    firstName: "Fahmida",
+    lastName: "Begum",
+    title: "Public Health Coordinator",
+    email: "fbegum@indoamerican.org",
+    hold: "Same health team as Farhat Khatoon, who is written to.",
+    source: "https://indoamerican.org/about-us/staff",
+    note: `Rohingya families on the north side get logged as Bengali speakers routinely, which is the more consequential kind of mistake because it looks like a match on paper.`,
+  },
+  {
+    org: "Indo-American Center",
+    firstName: "Umer",
+    lastName: "Jabin",
+    title: "Public Health Coordinator",
+    email: "ujabin@indoamerican.org",
+    hold: "Same health team and same job title as Fahmida Begum, and the team is already reached through Farhat Khatoon.",
+    source: "https://indoamerican.org/about-us/staff",
+    note: `Runs health sessions near Devon where the room needs three or four South Asian languages at once and the funder's materials exist in one.`,
+  },
+  {
+    org: "Indo-American Center",
+    firstName: "Salek",
+    lastName: "Khalid",
+    title: "Community Navigator Program Coordinator",
+    email: "skhalid@indoamerican.org",
+    hold: "Same organisation and adjacent to the health team already reached through Farhat Khatoon.",
+    source: "https://indoamerican.org/about-us/staff",
+    note: `Navigator work is where a language failure gets caught, which is almost always after the appointment rather than during it.`,
+  },
+  {
+    org: "Indo-American Center",
+    firstName: "Shaista",
+    lastName: "Siddiqui",
+    title: "Golden Diner Program Coordinator",
+    email: "sshaista@indoamerican.org",
+    hold: "Two letters into Indo-American Center is already the ceiling for an organisation this size; Farhat Khatoon and Bhakti Vasani are the two.",
+    source: "https://indoamerican.org/about-us/staff",
+    note: `Sees the same South Asian elders weekly at the congregate meal, which is more regular contact than any clinic in their lives manages.`,
+  },
 ];
 
 // Researched and deliberately not represented above:
