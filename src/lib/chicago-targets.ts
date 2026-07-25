@@ -672,7 +672,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Andrews",
     title: "Cook County Health leadership",
     email: "patientexperience@cookcountyhealth.org",
-    hold: "Cook County Health gets no letter from this file: the only published address for either leader is the shared patientexperience@ triage line, and a named note read by whoever is on that queue has nobody whose job it is to care.",
+    hold: "Cook County Health's LEADERSHIP gets no letter: the only published address for either leader is the shared patientexperience@ triage line, and a named note read by whoever is on that queue has nobody whose job it is to care. The system is reached further down this file instead, through Ugoeze Otome at Stroger, whose own address is printed in her PubMed affiliation.",
     source: "Leadership page, cookcountyhealth.org",
     note: `Cook County Health serves more languages than almost any system in the country and does it on a public budget.`,
   },
@@ -4008,6 +4008,245 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     email: "blee@icirr.org",
     source: "https://www.icirr.org/contact",
     note: `Communications is an odd invitation to a clinical conference, which is roughly why I'm sending it. ICIRR has to say things in a lot of languages quickly, usually about something frightening and often before the agencies have said anything. I'd like to ask how you actually do that — who translates, how fast, and what you do when there's no vendor for the language.`,
+  },
+  // ─── Higher education, health services research and policy ────────────────
+  // The last section, and the one furthest from the usual list. Two seats:
+  // the faculty who train the people who will spend a career working across a
+  // language gap, and the working clinicians, educators and analysts whose
+  // published work is about a language problem they did not call one.
+  // Seven of the twenty-one are leadership (Bing, Jackson, Hebert-Beirne,
+  // Mora, Barnfield, Johnson, Barrera); the rest are faculty
+  // below chair level, staff nurses and educators, analysts, an EMS
+  // instructor and a financial counsellor.
+  // A sourcing note on the clinicians: several of these addresses come from
+  // PubMed affiliation strings, where an author prints their own working
+  // address for correspondence. That is a published address in the ordinary
+  // sense, but it means the EXACT JOB TITLE is often not stated, and where it
+  // is not, the title field says so rather than guessing one. Two Lawrence
+  // Hall rows have an EMPTY title for the same reason — the page names them
+  // and describes what they handle without ever giving a title, so none is
+  // written here.
+  // Andrea Ortez at Woods Fund is NOT here, though her address was found:
+  // this file already recorded her as dropped because admin@woodsfund.org is
+  // a front desk and there was no one specific fact to write a note from.
+  // That decision stands; Samantha Collazo took the slot instead. Also
+  // dropped: Catherine Balthazar (dean over Bing), Lorena Cruz-Garabito
+  // (same eleven-person UI Health team as Viviana Rodriguez), and N. Coley at
+  // Lawrence Hall, whose first name is published as an initial only.
+  {
+    org: "Roosevelt University",
+    firstName: "Tammy",
+    lastName: "Oberg De La Garza",
+    title:
+      "Professor of Language and Literacy; Director, Dual Language Teacher Leadership M.A. Program",
+    email: "tobergdelagarza@roosevelt.edu",
+    source: "https://blogs.roosevelt.edu/dual-language/faculty/",
+    note: `The teachers coming out of your programme are going to spend part of their careers being asked to interpret — for a colleague, for a school nurse, for a parent conference nobody planned as a bilingual meeting. It's relied on constantly and trained for almost never. I'd like to know whether the M.A. touches it at all or whether it's the thing they work out in year two.`,
+  },
+  {
+    org: "Roosevelt University",
+    firstName: "Erin",
+    lastName: "Mackinney",
+    title:
+      "Associate Professor of ESL/Bilingual Education, College of Humanities, Education & Social Sciences",
+    email: "emackinney@roosevelt.edu",
+    source: "https://www.roosevelt.edu/profile/emackinney",
+    note: `There's a version of the academic-versus-conversational language distinction that turns up in a clinic: a child fluent enough to interpret for a teacher and nowhere near fluent enough to interpret a diagnosis, with no adult in the room able to tell the difference. That's your field's finding before it's ours, and mostly it hasn't crossed over.`,
+  },
+  {
+    org: "Governors State University (University Park, Will County)",
+    firstName: "Nicole",
+    lastName: "Bing",
+    title:
+      "Department Chair and Associate Professor, Department of Communication Disorders",
+    email: "nbing@govst.edu",
+    source:
+      "Governors State's published Department of Communication Disorders faculty and staff directory (govst.edu). The exact page path was not captured during research — worth re-opening the directory before this one sends, though the name, title and address were read off it together. Catherine Balthazar, the college dean, was on the same page and deliberately not used.",
+    note: `Telling a disorder from a difference in a bilingual child is still the hardest call in your field and one of the fastest ones made, usually by whoever had an opening in their schedule. Governors State sits in a part of the region where it gets made a lot. I'd like a communication disorders view in a room that will otherwise be mostly physicians.`,
+  },
+  {
+    org: "National Louis University",
+    firstName: "Kristin",
+    lastName: "Lems",
+    title:
+      "Professor of ESL/Bilingual Education, National College of Education",
+    email: "klems@nl.edu",
+    source: "https://nl.edu/faculty/l/lems-kristin/",
+    note: `Your work is on reading in a second language, which is the part that gets skipped whenever someone says a patient is bilingual. Discharge instructions get handed to people who speak English fine and read it at a level nobody has ever measured. I'd like to know what you'd do to a discharge sheet if somebody let you.`,
+  },
+  {
+    org: "Concordia University Chicago",
+    firstName: "Erin",
+    lastName: "Real",
+    title:
+      "Associate Professor of Spanish; Spanish Program Leader, Division of Humanities",
+    email: "erin.real@cuchicago.edu",
+    source:
+      "https://www.cuchicago.edu/faculty/college-of-theology-arts--humanities/division-humanities/erin-real/",
+    note: `Whether somebody who has finished four semesters of Spanish should be talking to a patient without an interpreter is a question health systems answer by never asking it. You'd have a defensible answer. I'd like it said out loud in front of people who currently staff on self-reported fluency.`,
+  },
+  {
+    org: "City Colleges of Chicago — Harry S Truman College",
+    firstName: "Lee",
+    lastName: "Jackson",
+    title: "Senior Dean of Adult Education",
+    email: "ljackson410@ccc.edu",
+    source: "https://www.ccc.edu/truman/site/adult-education/",
+    note: `Your adult education students are, demographically, the same people every hospital in this city describes as hard to reach. They come to you voluntarily, at night, after work. Whatever you understand about why they turn up for you and not for a follow-up appointment is worth more than another outreach plan, and I'd rather hear it from you than infer it.`,
+  },
+  {
+    org: "DePaul University",
+    firstName: "María Luisa",
+    lastName: "Ortega Hernández",
+    title:
+      "Senior Professional Lecturer, Spanish, Department of Modern Languages",
+    email: "mlortega@depaul.edu",
+    source: "https://www.depaul.edu/faculty/maria-luisa-ortega-hernandez",
+    note: `I'm inviting some language faculty because this is otherwise going to be clinicians talking to clinicians about what is fundamentally a linguistics problem. Register is the specific thing I'd want in the room — the way one speaker sounds different depending on who they're addressing. It's behind a lot of what gets misheard in an exam room and medicine has no name for it.`,
+  },
+  {
+    org: "University of Illinois Chicago — School of Public Health",
+    firstName: "Jeni",
+    lastName: "Hebert-Beirne",
+    title:
+      "Professor of Community Health Sciences and Assistant Dean for Community Engagement",
+    email: "jheber1@uic.edu",
+    source: "https://publichealth.uic.edu/people/?search=Hebert-Beirne",
+    note: `Community engagement at a school of public health often means a partnership conducted in English with an organisation that is then quietly expected to do the translating, unpaid. I'd like to hear you say whether that's a fair description, and what UIC does differently if it does anything.`,
+  },
+  {
+    org: "Loyola University Chicago, Parkinson School of Health Sciences and Public Health",
+    firstName: "Nallely",
+    lastName: "Mora",
+    title:
+      "Research Assistant Professor, Public Health Sciences; Program Director, Master of Public Health",
+    email: "namora@luc.edu",
+    source:
+      "https://www.luc.edu/parkinson/ourpeople/facultystaffprofiles/nallelymorafaculty.shtml",
+    note: `You decide what an MPH is required to contain. Language access is in almost none of them and graduates walk into it in their first job. I'd want to ask what it would actually take to put it in a curriculum, and whether you think it belongs there or somewhere else.`,
+  },
+  {
+    org: "Health & Medicine Policy Research Group",
+    firstName: "Mayra",
+    lastName: "Diaz",
+    title: "Senior Policy Analyst",
+    email: "mdiaz@hmprg.org",
+    source: "https://www.hmprg.org/our-people/",
+    note: `Policy is where language services either become a reimbursable service or stay an unfunded expectation, and most of the clinicians coming to this have never seen that argument written down anywhere. If HMPRG has a position on it, or a considered reason for not having taken one, I'd like it in the room.`,
+  },
+  {
+    org: "Lawrence Hall — Community Wellness",
+    firstName: "Aaron",
+    lastName: "Brown",
+    title: "",
+    email: "abrown@lawrencehall.org",
+    source:
+      "https://lawrencehall.org/our-programs/community-wellness/ — address printed on the page. NO TITLE IS PUBLISHED for him; the page says he handles JAC referrals and nothing more, so the title field is left empty rather than inferred. Programme serves South Shore, Auburn Gresham, Austin, Englewood, Humboldt Park, North Lawndale, Roseland and East/West Garfield Park.",
+    note: `You handle the JAC referrals, so the young people who reach you have already been through at least one system that made a decision about them. If a family's English was part of why an early conversation went badly, you'd be one of very few people positioned to notice it after the fact. This is billed as a health conference, but the referral chain runs through both.`,
+  },
+  {
+    org: "Lawrence Hall — Community Wellness",
+    firstName: "Francesca",
+    lastName: "Valenziano",
+    title: "",
+    email: "fvalenziano@lawrencehall.org",
+    source:
+      "https://lawrencehall.org/our-programs/community-wellness/ — address printed on the page. NO TITLE IS PUBLISHED; the page says she oversees the mentoring programme. Title deliberately left empty.",
+    note: `You oversee the mentoring side, so you're matching adults to young people and thinking hard about who fits with whom. I'd guess language comes into that — a mentee whose parents don't speak English is a different matching problem, and the mentor ends up doing more than mentoring. I'd like to know if you match on it deliberately or if it sorts itself out.`,
+  },
+  {
+    org: "Cook County Health — John H. Stroger Jr. Hospital",
+    firstName: "Ugoeze",
+    lastName: "Otome",
+    title:
+      "Clinician-researcher, John H. Stroger Jr. Hospital of Cook County (exact job title is not printed in the source)",
+    email: "ugoeze.otome@cookcountyhealth.org",
+    source:
+      "PubMed PMID 41361030 — 'Readmission rates before and after the implementation of 2022 revised AAP clinical practice guidelines for the management of neonatal hyperbilirubinemia: a single center study,' J Perinatol 2026. The address is printed literally in her affiliation string ('John H. Stroger Jr. Hospital of Cook County, Chicago, IL, USA. ugoeze.otome@cookcountyhealth.org.'), which also documents the Chicago siting.",
+    note: `Your readmission study is about what happens after a family goes home holding instructions, which is exactly the point where a language problem stops being observable to anyone in the building. Stroger's population makes that a sharper question than it would be almost anywhere else. I don't know whether the data can separate the families who couldn't follow the plan from the ones who couldn't get back — but if it can, I'd like to hear about it before it's written up.`,
+  },
+  {
+    org: "University of Chicago Medicine",
+    firstName: "Joy",
+    lastName: "Ayemoba",
+    title:
+      "Division of Pediatric Surgery, University of Chicago Medical Center (exact job title is not printed in the source)",
+    email: "jayemoba@uchicagomedicine.org",
+    source:
+      "PubMed PMID 40344996 — 'Addressing disparities in telehealth access for children on the Southside of Chicago,' Am J Surg 2025. The address is printed as the electronic address in her affiliation.",
+    note: `The telehealth access work is the clearest description I've read of a service built to remove a barrier and installing a different one on the way in. The language layer of that is worse than the broadband layer and studied far less — a video visit run through a phone interpreter is a three-way call in which nobody can see who is speaking. If your data touches that at all, even at the edges, I'd like to hear it.`,
+  },
+  {
+    org: "University of Chicago Medicine",
+    firstName: "Eileen",
+    lastName: "Dowdall",
+    title: "Central Nursing Education — MSN, CNL, RN, CMSRN",
+    email: "eileen.dowdall@uchicagomedicine.org",
+    source:
+      "PubMed PMID 41871118 (J Nurs Care Qual 2026), where the byline prints both the unit and the address: 'Eileen Dowdall, MSN, CNL, RN, CMSRN, Central Nursing Education, University of Chicago Medicine, Chicago, Illinois... (eileen.dowdall@uchicagomedicine.org; dowdalle@morainevalley.edu)'. She also holds a concurrent clinical education role at OSF Little Company of Mary in Evergreen Park. Escape-room teaching work is PMID 40865021.",
+    note: `You built an escape room to refresh critical skills and a movement-based method for teaching mobility, which tells me you concluded some time ago that lecturing nurses at them doesn't work. I've got a session on communicating with a patient through an interpreter and I keep hitting the same wall — it's a skill, and I'd be teaching it with slides. I'd take any advice you have. I'd rather you came.`,
+  },
+  {
+    org: "Illinois Chapter, American Academy of Pediatrics (ICAAP)",
+    firstName: "Lauren",
+    lastName: "Erbach Barnfield",
+    title: "Program Director, Mental Health and Development",
+    email: "lbarnfield@illinoisaap.com",
+    source:
+      "https://illinoisaap.org/about-2/ — NOTE the address domain is illinoisaap.COM while the website is illinoisaap.ORG. Verified twice; the .com is what is published and is not a typo.",
+    note: `Developmental screening is where a language barrier does the most damage per minute: a screen that depends entirely on what a parent reports, administered through whoever happened to be free. Your programme sits over that for paediatricians across the state. I'd like to know what ICAAP currently tells them to do when the screen and the family don't share a language.`,
+  },
+  {
+    org: "Loyola University Medical Center EMS System (Maywood, Cook County)",
+    firstName: "Samantha",
+    lastName: "Collazo",
+    title: "EMS Instructor; Licensing and Continuing Education Specialist",
+    email: "samantha.collazo@luhs.org",
+    source:
+      "Loyola Medicine EMS staff directory (loyolamedicine.org/ems/staff) — address published beside her name and title, listed there as 'Sam Collazo, BA, EMT-P'.",
+    note: `You sit on both sides of it — teaching, and tracking whether everyone's hours and licenses are where they need to be. That means you've got a clear view of what people are actually choosing to spend con-ed time on. What I'm trying to find out is whether anything currently in the CE menu touches assessing a patient who can't give you a history, or whether it's all skills and cards.`,
+  },
+  {
+    org: "Beloved Community Family Wellness Center",
+    firstName: "Margie",
+    lastName: "Johnson",
+    title: "Chief Executive Officer",
+    email: "mjohnson@bcfwc.org",
+    source:
+      "https://www.bcfwc.org/our-services confirms the organisation and her role. THE ADDRESS ITSELF came from a third-party chamber of commerce directory rather than from bcfwc.org — medium confidence. Worth a bounce test or a phone check before this one sends.",
+    note: `Working at family level rather than patient level means you see the part clinics never do, which is what happens to the instructions after the visit ends. I'd like this conference to have somebody in it who isn't describing a hospital, and a wellness centre is a different vantage point from a clinic even when the medicine is the same.`,
+  },
+  {
+    org: "Illinois Association of School Nurses / UIC College of Nursing",
+    firstName: "Gloria",
+    lastName: "Barrera",
+    title:
+      "Foundation Liaison, IASN; Director of the RN to BSN Program, UIC College of Nursing",
+    email: "gloriabarrera.rn@gmail.com",
+    source:
+      "https://www.iasn.org/board-of-directors (address published there by her, a personal account used professionally) and https://nursing.uic.edu/news-stories/gloria-barrera-named-director-of-rn-bsn-program/ for the UIC role. She is NOT on the current Downers Grove South health services roster, whatever older pages say.",
+    note: `School nursing is where I'd start if I wanted to find the children in this region whose health information has never once reached their parents in a language they read. You're teaching working nurses on the RN-to-BSN side at the same time, so you see both the practice and what people were never taught in the first place. And since you're on IASN's board — is this worth putting in front of that membership, or not?`,
+  },
+  {
+    org: "Northwestern Medicine Palos Hospital (Palos Heights, Cook County)",
+    firstName: "Angela",
+    lastName: "Helms",
+    title:
+      "Healthcare Epidemiology and Infection Prevention (department printed in the affiliation; exact job title unconfirmed)",
+    email: "angela.helms@nm.org",
+    source:
+      "PubMed PMID 37939850 — first author of 'Investigation of a pseudo-outbreak of Mycobacterium franklinii,' Am J Infect Control 2024. The address is printed inside that record's affiliation string, which names Northwestern Medicine Palos Hospital, Palos Heights, IL as her site.",
+    note: `You ran the investigation that identified and closed out the Mycobacterium franklinii pseudo-outbreak. Infection prevention isn't an obvious invitation to a conference about language, except that isolation precautions get explained at a doorway, quickly, to somebody who is already frightened — and the written version may or may not exist in their language. I'd like to know whose job that is in your building, or whether it turns out to be nobody's.`,
+  },
+  {
+    org: "UI Health (University of Illinois Hospital & Health Sciences System)",
+    firstName: "Viviana",
+    lastName: "Rodriguez",
+    title: "Financial Counselor (CAC, CHAA)",
+    email: "vrod@uic.edu",
+    source:
+      "UI Health's published 'Meet the Financial Counseling Team' page, which prints each counsellor's name, credentials and address. Lorena Cruz-Garabito is on the same eleven-person team and was deliberately NOT used — two of these letters landing in one team is exactly the thing that gives the whole list away.",
+    note: `Financial counselling might be the hardest conversation in the building to interpret: the vocabulary is bureaucratic, the stakes are immediate, and the patient is being asked to disclose things they may not want to say to a stranger on a phone line. You're doing it as a certified application counsellor, so you're translating in both directions at once. I'd like the clinical people at this to hear that part described by somebody who does it.`,
   },
 ];
 
