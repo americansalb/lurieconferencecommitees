@@ -107,6 +107,30 @@
 // already in his network, so this rule is applied on his say-so and there is
 // no way to infer it from a source URL.
 //
+// ─── TWO RULES THIS FILE KEPT BREAKING ────────────────────────────────────
+// GEOGRAPHY. Cook, DuPage, Lake, Kane, Will, McHenry. The person has to work
+// at an address in those six counties. A statewide or national organization
+// qualifies only if this particular seat is in a Chicago-area office, which
+// has to be checked and not assumed: the Illinois Public Health Association
+// is Springfield, the School for the Deaf is Jacksonville, MATI's secretary is
+// in Milwaukee, and the National Latinx Psychological Association's president
+// is in Virginia. All four were on the send list. Relevance is not proximity,
+// and nobody drives four hours each way to a two-day conference.
+//
+// SENIORITY. Stop reaching for the executive director. This list filled up
+// with presidents, chiefs and directors because they are who a search engine
+// surfaces, and they are close to the worst people to cold-email: their inbox
+// has a gatekeeper, their August is booked, and they delegate conferences.
+// The people this conference is actually for read their own email — staff
+// interpreters, patient navigators and promotores, care coordinators,
+// schedulers and registration clerks, staff and school nurses, social workers,
+// medical assistants, health educators, program coordinators, residents. They
+// also have a professional development line to spend, which a director does
+// not need and will not bother with. Roughly one leader to every two or three
+// people who do the work. Their addresses are harder to find; that is the job,
+// and an empty `email` on the right person beats a published address on their
+// boss.
+//
 // ─── Deliberately excluded ─────────────────────────────────────────────────
 // Lurie Children's staff (they are the host), confirmed speakers and
 // sponsors, and any organization already receiving a SPONSORSHIP ask from
@@ -395,6 +419,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Nist",
     title: "Superintendent",
     email: "julee.nist@illinois.gov",
+    hold: "Not Chicagoland. Jacksonville is roughly two hundred and thirty miles away. The Deaf angle this row was carrying still needs covering — from a Chicago-area agency, and from Deaf staff rather than a superintendent.",
     source: "https://isd.illinois.gov/district-leadership",
     note: `ISD publishes a videophone number for the superintendent's office. Small thing, but it told me leadership there is reachable in ASL directly rather than through a relay and a gatekeeper. Most of what gets said about deaf children in healthcare is said by hearing people, and I'd rather that weren't true of this conference.`,
   },
@@ -404,6 +429,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Smith",
     title: "Associate Executive Director for Public Health Practice",
     email: "tsmith@ipha.com",
+    hold: "Not Chicagoland. IPHA is a Springfield office.",
     source: "https://ipha.com/about/meet-the-team",
     note: `In a good many Illinois counties the local health department is the only door a limited-English family has into the health system, and unlike a hospital there's no billing code to hang interpreter costs on. I've been trying to work out how that actually gets handled and IPHA seems like where the question would land if it lands anywhere.`,
   },
@@ -435,6 +461,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Olen",
     title: "Secretary, MATI Board; Associate Professor, UW-Milwaukee",
     email: "amytolen@uwm.edu",
+    hold: "Not Chicagoland. MATI is the regional association but this seat sits in Milwaukee.",
     source: "MATI board roster (matiata.org) and UW-Milwaukee faculty directory",
     note: `Ethics in community interpreting almost never makes a conference program, because it doesn't resolve into a best practice. An interpreter who's just heard a clinician say something untrue has a genuinely hard call and no manual has ever made it easy. I'd like that session to exist and I'd like you running it. MATI's membership covers Illinois too, so a fair share of the interpreters in Chicago hospitals sit inside it.`,
   },
@@ -1121,6 +1148,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Moreno",
     title: "President, 2026",
     email: "oamoreno@vcu.edu",
+    hold: "Not Chicagoland, not even Illinois — the association is national and this year's president sits at Virginia Commonwealth. Holding a national officer because of the office they hold is exactly the error being corrected here.",
     source: "National Latinx Psychological Association 2026 leadership listing",
     note: `Mental health is where interpreting stops being about accuracy and starts being about whether the thing said in Spanish can survive the trip into English at all. I don't think the field has settled that and I'd like the conference to at least argue about it properly.`,
   },
@@ -1224,6 +1252,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Cohen",
     title: "President",
     email: "jcohen2@niu.edu",
+    hold: "Borderline: DeKalb is about sixty-five miles out and outside the six-county metro. Release if the radius is meant to be looser than that.",
     source: "IAMME board listing and Northern Illinois University faculty directory",
     note: `IAMME's membership is the group that has already had every argument about language access that healthcare is currently having for the first time.`,
   },
@@ -1556,6 +1585,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Perez-Carapia",
     title: "Immigrant Welcoming Center Coordinator",
     email: "yperez-carapia@casscohealth.org",
+    hold: "Not Chicagoland. Cass County is Beardstown, about two hundred miles southwest — a real Welcoming Center doing real work, and a four-hour drive each way to a two-day conference.",
     source: "https://casscohealth.org/Welcoming-Center",
     note: `Your welcoming center publishes separate phone extensions for English, Spanish, French and Creole, and Burmese. A rural Illinois county health department listing a Burmese extension is not something I expected to find, and it says somebody counted who actually lives there instead of assuming. Beardstown is a long way to come for two days and I understand if it doesn't work, but the invitation is a real one.`,
   },
