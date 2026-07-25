@@ -38,6 +38,7 @@ export async function GET() {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const loadable = loadableChicagoTargets();
+  const secondWave = loadableChicagoTargets({ includeSecondWave: true }).length - loadable.length;
   const emails = loadable.map((t) => t.email.trim().toLowerCase());
   const rows = emails.length
     ? await prisma.attendee.findMany({
@@ -66,6 +67,10 @@ export async function GET() {
     ok: true,
     curated: CHICAGO_TARGETS.length,
     loadable: loadable.length,
+    // Real, sendable people whose address is sourced well enough to keep but
+    // not well enough to mail blind. They are excluded from every default
+    // load; POST { secondWave: true } is the only way to reach them.
+    secondWave,
     // Researched real people we could not find a public address for. They are
     // kept in the file as leads; surfacing the number keeps the gap honest
     // rather than making the list look complete.
@@ -91,13 +96,17 @@ export async function POST(req: Request) {
   const adminEmail = session?.user?.email || null;
   const body = await req.json().catch(() => ({}));
   const action = body?.action === "queue" ? "queue" : "load";
+  // Opt-in only. The default load is the first wave (see `tier2` on
+  // ChicagoTarget); the rest are real people whose addresses want a bounce
+  // test first, so nobody should reach them by clicking the usual button.
+  const includeSecondWave = body?.secondWave === true;
 
   if (action === "load") {
     const pct = Math.max(0, Math.min(100, Number.isFinite(body?.discountPercent) ? body.discountPercent : 25));
     let created = 0;
     let retagged = 0;
     let leftAlone = 0;
-    for (const t of loadableChicagoTargets()) {
+    for (const t of loadableChicagoTargets({ includeSecondWave })) {
       const email = t.email.trim().toLowerCase();
       // Title and provenance ride along in adminNotes so anyone auditing a row
       // on the dashboard can see who this person is and where we found them.
@@ -143,7 +152,7 @@ export async function POST(req: Request) {
       });
       retagged++;
     }
-    return NextResponse.json({ ok: true, created, retagged, leftAlone, total: loadableChicagoTargets().length });
+    return NextResponse.json({ ok: true, created, retagged, leftAlone, total: loadableChicagoTargets({ includeSecondWave }).length });
   }
 
   // action === "queue": drip each person's letter into the paced queue.

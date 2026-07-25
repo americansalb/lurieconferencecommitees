@@ -174,6 +174,20 @@ export type ChicagoTarget = {
    * failures and which are our own decisions.
    */
   hold?: string;
+  /**
+   * A real, sendable person we are holding in the second wave. Tier 2 is NOT
+   * a quality judgement about the human — it is a judgement about how well
+   * their address is sourced. A row is tier 2 when its `source` carries any
+   * of: an address decoded rather than read plainly, a title the source
+   * itself hedges or omits, an address that belongs to somewhere other than
+   * their employer, an address recovered from a court filing or a journal
+   * affiliation rather than a current staff page, a personal webmail account,
+   * or a note saying it is worth a phone check first. Tier 1 is the hundred
+   * whose name, title and address were all read off one current page owned by
+   * the organization they work for.
+   * Send tier 1, see what bounces, then decide about tier 2.
+   */
+  tier2?: boolean;
   /** Page the name/title/address came from. */
   source: string;
   /**
@@ -252,6 +266,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Mirza",
     title: "Faculty, Department of Occupational Therapy (rank not published)",
     email: "mmirza2@uic.edu",
+    tier2: true,
     source: "https://ahs.uic.edu/disability-human-development/faculty/",
     note: `Your faculty page lists clinical communication with non-English speaking patients as a research area, which is a plainer description of this conference than anything currently on our own website. The disability side is what I'd want you for. A family working through a language barrier and a rehab system at the same time is handling two vocabularies, and interpreters are generally not trained on the second.`,
   },
@@ -291,6 +306,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Troche-Rodriguez",
     title: "Faculty Director, Transitional Bilingual Learning Community",
     email: "mtroche-rodriguez@ccc.edu",
+    tier2: true,
     source: "https://www.ccc.edu/truman/departments/transitional-bilingual-learning-community/",
     note: `The Transitional Bilingual Learning Community has been running since 2002. That's twenty-odd years of moving English learners into credit coursework without asking them to give up the first language, which is the same argument we're making about hospitals, except you can demonstrate it and we're still asserting it.`,
   },
@@ -347,6 +363,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Peters",
     title: "Regional VP, Community Health & Well-Being",
     email: "petermic@sjrmc.com",
+    tier2: true,
     source:
       "Listed as Department Contact in the 2025 CHNA implementation report for Loyola University Medical Center and Gottlieb Memorial Hospital, loyolamedicine.org. Note the address is on sjrmc.com, not luhs.org.",
     note: `Loyola's FY2024 community benefit report puts language assistance at $3,886,246, over thirty thousand minutes of interpreting a month. I read a lot of these reports and yours is one of the very few that breaks the line out at all. The other number in it is the one that explains it: roughly one in ten households in your service area is limited English proficient, against about four percent statewide.`,
@@ -918,6 +935,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "President and Chief Executive Officer",
     email: "info@casacentral.org",
     sharedInbox: true,
+    tier2: true,
     source: "https://www.casacentral.org leadership page",
     note: `Chairing the Illinois Human Rights Commission and then the U.S. Commission on Civil Rights is an unusual route into running a social service agency. Language access sits on the civil rights side of the line more often than the service side, and I suspect you already think of it that way.`,
   },
@@ -938,6 +956,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "President and Chief Executive Officer",
     email: "mail@mujereslat.org",
     sharedInbox: true,
+    tier2: true,
     source: "Mujeres Latinas en Acción leadership announcement, search closed June 2025",
     note: `You run the 24-Hour Chicago Rape Crisis Hotline with bilingual staff across every program, and the hotline is the hardest version of this problem. A survivor calling at two in the morning cannot wait on a phone interpreter queue. Mujeres has been Latina-led since 1973 and I'd like the conference to hear how you staff that line.`,
   },
@@ -976,6 +995,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Alvelo Rivera",
     title: "Executive Director",
     email: "miguel@latinounion.org",
+    tier2: true,
     source: "https://www.latinounion.org",
     note: `The Albany Park Workers' Center took a four-year campaign to open and it's still the only worker center of its kind in the Midwest. Average day laborer wages went up two hundred percent. Day laborers are also close to the least likely group in the city to have a usable route into care, and the workers' center is where they already are.`,
   },
@@ -998,6 +1018,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "di Paulo",
     title: "President and Chief Executive Officer",
     email: "jaime@ihccbusiness.net",
+    tier2: true,
     source: "https://ihccbusiness.net/meet-the-ihcc-team/",
     note: `IHCC started in 1990 as the Mexican American Chamber of Commerce of Illinois and now speaks for more than a hundred thousand businesses out of offices on North Michigan and in Naperville. Small business owners are the group that gets left out of health coverage conversations entirely, and a lot of your members are the employers of the people this conference is about.`,
   },
@@ -1051,6 +1072,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Ortega",
     title: "President, 2026-2028",
     email: "dortega.nahn@gmail.com",
+    tier2: true,
     source: "NAHN Illinois chapter site, 2026-2028 board listing",
     note: `You've just started a two-year term, so the timing is either good or terrible. Nurses are the ones who end up doing the interpreting when nobody else is available, usually without being asked and without it counting as part of the job.`,
   },
@@ -1122,6 +1144,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Munoz",
     title: "Faculty advisor",
     email: "victor.munoz001@lumc.edu",
+    tier2: true,
     source: "LMSA Loyola chapter page carrying the 2026-2027 board",
     note: `Medical students who grew up interpreting for their parents arrive already carrying this skill and get told nothing about how to use it professionally. If you can get a few of your students to two days of this, they'd be the youngest people in the room and probably not the least experienced.`,
   },
@@ -1181,6 +1204,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Tanksley",
     title: "President; Chief Medical Officer, CountyCare",
     email: "ATanksley123@gmail.com",
+    tier2: true,
     source: "Prairie State Medical Society leadership listing and CountyCare executive listing",
     note: `CountyCare covers a membership where the language mix is closer to the actual county than any commercial plan in Illinois. Whatever your interpreter spend looks like on the claims side, it's a number very few people have seen.`,
   },
@@ -1200,6 +1224,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "President",
     email: "info@chicagochapternbna.org",
     sharedInbox: true,
+    tier2: true,
     source: "Chicago Chapter NBNA leadership listing",
     note: `Language access in Chicago gets discussed as a Spanish question and then a Polish question, and the West African and Haitian Creole speakers on the South and West sides fall out of the conversation entirely. Your members are working with them.`,
   },
@@ -1210,6 +1235,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Co-director",
     email: "ICRaceLab@gmail.com",
     sharedInbox: true,
+    tier2: true,
     source: "IC-RACE Lab site; the lab publishes one shared address for both co-directors",
     note: `The HEART framework paper in American Psychologist put a name to something clinicians were already seeing in Latinx immigrant patients and had no vocabulary for. Trauma that arrives through immigration enforcement rather than through a single event doesn't fit the intake form, and the interpreter is usually the first person in the room to realize what's actually being described.`,
   },
@@ -1230,6 +1256,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Yanguas",
     title: "Director; chair, Illinois Advisory Council on Bilingual Education",
     email: "jyanguas@yahoo.com",
+    tier2: true,
     source: "Illinois Resource Center staff listing and Illinois Advisory Council on Bilingual Education roster",
     note: `You've directed the IRC since 2006 and sat on the IAMME board since 1990, which is longer than most of the policy in this area has existed. Schools and hospitals hit the same wall from opposite sides and almost never compare notes about it.`,
   },
@@ -1255,6 +1282,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Lopez",
     title: "Principal Consultant, Program Compliance — Newcomer",
     email: "mlopez@isbe.net",
+    tier2: true,
     source:
       "ISBE's published contact list (isbe.net Contact Information list). Her direct line is (312) 814-2237 — the 312 exchange is ISBE's Chicago office, 555 W. Monroe St., Suite 900, Chicago 60661, per https://www.isbe.net/Pages/contact-isbe.aspx. Springfield staff on the same list carry 217 numbers and were not used.",
     note: `Newcomer is your portfolio, which makes you one of very few people in the state whose job is specifically the first year — before anybody has a file, a screener result, or a relationship with the school. Hospitals meet the same families in the same window and have no equivalent role at all. What I'd want to ask is what you tell a district that has just enrolled a family it has no staff who can talk to.`,
@@ -1266,6 +1294,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title:
       "Principal Consultant, Grants Review and Technical Assistance — Early Childhood",
     email: "rsucic@isbe.net",
+    tier2: true,
     source:
       "ISBE's published contact list (isbe.net Contact Information list). Direct line (312) 814-5583, the Chicago office exchange. She is the assigned consultant for 141 districts including Waukegan CUSD 60, several of whose staff are also in this file.",
     note: `You've got the early childhood side and something like 141 districts, so you see the same argument play out in a hundred and forty-one slightly different ways. The question I keep getting stuck on is whether a district that does this well is doing anything portable, or whether it always comes down to one bilingual person who has been there nine years. You'd know which.`,
@@ -1377,6 +1406,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Epplin",
     title: "Director of Health Equity",
     email: "wepplin@hmprg.org",
+    tier2: true,
     source: "https://hmprg.org staff listing",
     note: `HMPRG's health equity work is upstream enough that language access usually gets treated as a downstream service problem rather than a determinant. I'd argue it's both and I'd rather argue it with you than about you.`,
   },
@@ -1453,6 +1483,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Hardacker",
     title: "Nursing education leadership (title not currently verifiable; see source)",
     email: "ceciliah@howardbrown.org",
+    tier2: true,
     source: "Address published by Howard Brown in 2019 and still published in 2026; her individual staff page currently 404s, so the exact title is unconfirmed and is deliberately not stated here",
     note: `Howard Brown's patients include people who are navigating language, immigration status and being trans in the same appointment, and the interpreter is part of whether that appointment is safe. Training curricula for interpreters almost never cover gender-affirming care vocabulary in any language.`,
   },
@@ -1483,6 +1514,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Rafas",
     title: "Senior Program Director, Language Access Resource Center",
     email: "erafas@dupagefederation.org",
+    tier2: true,
     source: "https://www.dupagefederation.org/ourteam and https://www.dupagefederation.org/larc",
     note: `LARC is the closest thing in Illinois to the thing this conference is arguing should exist. You pooled interpreters across health, human service, legal and educational organizations in 2005 because those organizations asked for it, you cover forty-plus languages face to face and two hundred by phone, and you're funded by a township mental health board and a hospital rather than by any of the systems that formally owe the obligation. You also announced ten training scholarships last year, which tells me demand outruns supply about the way I'd expect. I would like you at this conference more than almost anyone else on my list.`,
   },
@@ -1525,6 +1557,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Munoz",
     title: "Illinois Welcoming Center Program Manager",
     email: "maria@spanishcenter.org",
+    tier2: true,
     source: "https://www.spanishcenter.org/staffdirectory and https://www.spanishcenter.org/iwc",
     note: `Joliet's Welcoming Center puts Medicaid, SNAP, TANF and WIC enrollment in the same place as translation and interpretation, which means the language help isn't a referral to somewhere else. Will County families otherwise have to solve that themselves across four agencies.`,
   },
@@ -1639,6 +1672,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Ortiz",
     title: "Executive Director",
     email: "dortiz@mamfrc.org",
+    tier2: true,
     source: "mamfrc.org leadership listing (archived) and https://www.waukegantownship.com/154/Dulce-Ortiz",
     note: `You said you were still delivering food to people because they were afraid to leave the house. That is a health outcome and it will never be recorded as one. Between running Mano a Mano, the ICIRR board, a township trustee seat and the state Access to Justice community trust committee, you're connected to more of this than anyone else I've written to in Lake County.`,
   },
@@ -1680,6 +1714,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Forst",
     title: "Center Director and Principal Investigator",
     email: "lforst@uic.edu",
+    tier2: true,
     source: "https://farmworkerhealth.uic.edu and UIC School of Public Health announcement of the NIOSH award",
     note: `Yours is the first federal agricultural safety center in the country built around the whole health of agricultural workers rather than machinery and pesticides alone. Occupational health and language access almost never appear on the same agenda, and I'd like to know whether the center ran into that or built around it from the start.`,
   },
@@ -1709,6 +1744,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Lobo",
     title: "Development Manager and Outreach Coordinator",
     email: "dloboprotti@chpofil.org",
+    tier2: true,
     source: "Published on UIC's Great Lakes Center partners listing; chpofil.org itself blocks automated access",
     note: `Six clinics running a migrant and seasonal farmworker program with promotores de salud, sites from Harvard down to Rantoul, going back to 1970. Aurora, Kankakee and Princeville are three different language situations and one organization is carrying all of them.`,
   },
@@ -1751,6 +1787,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Director",
     email: "CiceroCollaborative@gmail.com",
     sharedInbox: true,
+    tier2: true,
     source: "cicerocommunitycollaborative.org (archived February 2025); the live site is currently down",
     note: `Sixty organizations in one consortium, four hundred thousand pounds of food in two years, and four hundred ninety-five dollar DACA scholarships. You taught ESL at Universidad Popular and computing at Corazón before this, so the language part of it isn't theoretical for you.`,
   },
@@ -1778,6 +1815,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Webber",
     title: "Director of Youth Services",
     email: "lwebber@provisotownship.illinois.gov",
+    tier2: true,
     source: "Proviso Township staff listing and Proviso Partners 4 Health board listing",
     note: `Maywood, Melrose Park and Bellwood are a single township and three different language situations. Young people are the ones interpreting for their parents in all three.`,
   },
@@ -1819,6 +1857,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Chief Clinical Officer",
     email: "info@nicasa.org",
     sharedInbox: true,
+    tier2: true,
     source: "https://www.nicasa.org leadership listing; Nicasa publishes no individual staff addresses",
     note: `Thirty years at one behavioral health agency in Lake County, and a Hispanic Heritage Award from Waukegan Township in 2012 on top of it. Substance use treatment in a second language is one of the places where a slightly wrong word changes the clinical picture entirely.`,
   },
@@ -1828,6 +1867,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Vera",
     title: "Executive Director",
     email: "jvera@ssipchicago.org",
+    tier2: true,
     source: "Address published on dupagefederation.org/ourteam; SSIP's own team page blocks automated access",
     note: `SSIP was started in 2010 by immigrant residents themselves in northern Will and southern DuPage, and was part of getting the Illinois Dream Act and temporary visitor driver's licenses through. Your homepage currently runs a health care is a human right campaign, which is why I'm writing rather than assuming this is only an immigration organization.`,
   },
@@ -1837,6 +1877,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Murphy",
     title: "President",
     email: "kmurphy@accessdupage.org",
+    tier2: true,
     source: "https://www.dupagehealthcoalition.org and Access DuPage program materials",
     note: `Access DuPage has covered more than fifty-six thousand residents since 2001 for under four hundred dollars per member per year, which is a number I keep rechecking because it sounds wrong. Whatever you're doing to keep it there, interpreting is inside it somewhere and I'd like to know how it's paid for.`,
   },
@@ -1866,6 +1907,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Hasnain",
     title: "Contact, Immigrant and Refugee-Led Capacity Development Network of Illinois (no title published)",
     email: "roosheyh@uic.edu",
+    tier2: true,
     source: "https://irlcdn.ahs.uic.edu/, which lists her as the sole contact without stating a title; one is deliberately not invented here",
     note: `The network you're the contact for is funded to build capacity at seventeen community organizations running Illinois Welcoming Centers. Those seventeen are exactly the organizations that field language questions first and have the least money to answer them.`,
   },
@@ -1887,6 +1929,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "de Rama",
     title: "Vice President of Development and Innovation",
     email: "sderama@vnahealth.com",
+    tier2: true,
     source: "Published on https://www.dupagefederation.org/ourteam",
     note: `Your name is on VNA Health Care's development side and on the DuPage Federation's team page, so you see both one organization's funding and the county-wide version of the same question. Language access either gets written into a proposal at the start or it waits for the next cycle.`,
   },
@@ -2986,6 +3029,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Junge",
     title: "EMS Educator",
     email: "nichole.junge@endeavorhealth.org",
+    tier2: true,
     source:
       "https://www.nwcemss.org/assets/1/documents/2026_NWC_EMSS_Directory_01-05.pdf (system directory dated 5 January 2026)",
     note: `Whatever goes into your lesson plans ends up on scene across a lot of northwest suburban towns, which is a wider blast radius than most curriculum jobs have. I'm curious whether patient assessment gets taught with the assumption that the patient answers you. If you've ever used a case in class where that fell apart, I'd like to hear it, and I'd like our audience to hear it more.`,
@@ -3050,6 +3094,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Hayes",
     title: "RN, Paramedic; alternate, NWC EMS System Education Committee",
     email: "thayes@mountprospect.org",
+    tier2: true,
     source:
       "https://www.nwcemss.org — Advisory Board membership list, May 2024, Education Committee section. TITLE CAVEAT: her formal departmental title at the fire department is not published; what is published is her credentials and her committee seat, and the title field says only that.",
     note: `Sitting on the education committee as a working field provider puts you on both sides of the gap I'm interested in — what gets taught, and what actually happens at two in the morning. When a crew can't get a history from the patient, does the current training tell them what to do next, or does everyone improvise it fresh every time?`,
@@ -3070,6 +3115,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Logan",
     title: "EMS Coordinator",
     email: "Virginia.logan@ascension.org",
+    tier2: true,
     source:
       "https://www.nwcemss.org — Advisory Board membership list, May 2024, listed as EMS Coordinator, Ascension Resurrection.",
     note: `Resurrection sits in a part of the Northwest Side with long-settled Polish and Ukrainian households alongside much newer arrivals, so a single shift can cross several languages. I'm trying to work out what crews actually have that works, as opposed to what the policy says they have. Your read from the receiving end would be worth more to me than another literature search.`,
@@ -3080,6 +3126,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Robateau",
     title: "Trauma Program contact, RN (as listed June 2023)",
     email: "Laila.Robateau@sinai.org",
+    tier2: true,
     source:
       "Illinois Trauma Coordinators' Directory, Region 11 section (illinoistraumanurse.org, rev. 06/06/2023). CURRENCY CAVEAT: three years old; current title unconfirmed.",
     note: `In a trauma activation the history often has to come from a relative standing in the corridor, at speed, and a lot of those relatives on the West and Southwest Sides are working in Spanish. Everybody agrees that's not ideal and nobody I've asked can tell me what the alternative looks like at three in the morning. If it's just what happens, I'd rather hear that plainly than hear a policy read to me.`,
@@ -3090,6 +3137,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Rembacz",
     title: "Clinical Nurse Specialist, Emergency Services and CDU; TNS course coordinator (as listed June 2023)",
     email: "Joan.rembacz@nm.org",
+    tier2: true,
     source:
       "Illinois Trauma Coordinators' Directory, TNS Course Coordinator section (illinoistraumanurse.org, rev. 06/06/2023). CURRENCY CAVEAT: three years old; current title unconfirmed.",
     note: `McHenry County's Spanish-speaking population has grown faster than most people's mental map of it, mine included until recently. You're in the unusual position of both seeing it in the department and getting to teach about it through the TNS course. Does triage accuracy actually suffer when the patient can't answer, or does the team route around it well enough that it never shows in the numbers?`,
@@ -3100,6 +3148,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Livett",
     title: "TNS course coordinator (as listed June 2023)",
     email: "leslie.livett@ascension.org",
+    tier2: true,
     source:
       "Illinois Trauma Coordinators' Directory, TNS Course Coordinator section (illinoistraumanurse.org, rev. 06/06/2023). CURRENCY CAVEAT: three years old; current title unconfirmed.",
     note: `Will County grew fast and the population that arrived isn't the one the older protocols were written for. You're teaching the trauma nurses who'll meet that first. I want to know whether the course says anything at all about assessing a patient who can't answer you, and I'd rather ask than assume it doesn't.`,
@@ -3110,6 +3159,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Hardy",
     title: "Trauma Coordinator, RN, BSN (as listed June 2023)",
     email: "Belinda.Hardy@aah.org",
+    tier2: true,
     source:
       "Illinois Trauma Coordinators' Directory, Region 9 section (illinoistraumanurse.org, rev. 06/06/2023). CURRENCY CAVEAT: three years old; current title unconfirmed.",
     note: `Elgin is one of the most heavily Spanish-speaking cities in the six counties and Sherman is where its serious injuries land. Trauma runs on a fixed sequence with a clock attached and the sequence assumes somebody in the room can tell you what happened. What does your team do when nobody can, and does it cost time you can measure?`,
@@ -3120,6 +3170,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Esterquest",
     title: "Trauma Coordinator, BSN, RN (as listed June 2023)",
     email: "Sharon.Esterquest@aah.org",
+    tier2: true,
     source:
       "Illinois Trauma Coordinators' Directory, Region 10 section (illinoistraumanurse.org, rev. 06/06/2023). CURRENCY CAVEAT: three years old; current title unconfirmed.",
     note: `You're the Level I for Lake County, receiving from Waukegan and North Chicago as well as from the parts of the county that look nothing like them. Injury prevention only works if the message gets into the household in a form it can actually use, and that's where I think most of it quietly fails. How have you handled that?`,
@@ -3130,6 +3181,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Conner",
     title: "Lead Instructor, Paramedic Program",
     email: "rconner25@ccc.edu",
+    tier2: true,
     source:
       "Malcolm X College Paramedic Program Student Handbook 2024-2025 (ccc.edu), email printed beside his name in the faculty list",
     note: `Your students go from your classroom into the parts of this city with the widest spread of household languages anywhere in Illinois, so what they practise with you is more or less what those blocks get for the next twenty years. Does the paramedic curriculum give them anything concrete for a patient who can't answer, or is it left to the preceptor?`,
@@ -3150,6 +3202,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Moran",
     title: "EMS Program Director",
     email: "morans33@morainevalley.edu",
+    tier2: true,
     source:
       "Moraine Valley Community College 2026 Paramedic Program Application (morainevalley.edu), name, phone and email printed together",
     note: `Standing up a paramedic program means the curriculum isn't in concrete yet, which is a narrow window and the reason I'm writing now rather than in two years. Your district covers a good deal of the southwest suburbs. If assessment of a patient who can't answer is going to be in there deliberately, it more or less has to go in at the start.`,
@@ -3190,6 +3243,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Chatta",
     title: "EC Diagnostics Nurse",
     email: "pchatta@cicd99.edu",
+    tier2: true,
     source: "https://www.cicd99.edu — district health services staff listing",
     note: `Early childhood diagnostics is where a language difference and a developmental delay are easiest to confuse, and hardest to tell apart quickly. I don't think our field has been honest about how often that goes wrong in the other direction too — a real delay read as "he's just bilingual." You'd know what that actually looks like at intake.`,
   },
@@ -3209,6 +3263,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Cordero",
     title: "Cicero West School Nurse",
     email: "scordero@cicd99.edu",
+    tier2: true,
     source: "https://www.cicd99.edu — building staff listing, Cicero West",
     note: `Cicero West is a dual language site, so your building has made a deliberate institutional choice about language that the clinic down the street has not. I'm curious whether that changes anything in the health office, or whether the health office is still doing what health offices everywhere do.`,
   },
@@ -3236,6 +3291,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Valenzuela",
     title: "Bilingual Literacy Specialist & EL Core Leader",
     email: "svalenzuela@bsd100.org",
+    tier2: true,
     source: "https://www.bsd100.org — Hiawatha",
     note: `Berwyn South names a whole team of EL Core Leaders and I've written to exactly one of you on purpose, because five near-identical letters into one district is how a personal note stops being one. Literacy is the part of this I understand least. A family can be handed a perfectly translated discharge instruction and still not be able to use it, and I don't think medicine has any way of noticing that happened.`,
   },
@@ -3263,6 +3319,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Lopez",
     title: "District 104 Lead Nurse, BSN, RN, PEL-CSN, RNC-OB",
     email: "tlopez@sd104.us",
+    tier2: true,
     source: "https://www.sd104.us — health services; Graves School and Heritage MS, 708-924-7998",
     note: `The RNC-OB alongside the school nurse credentials is an unusual combination and it's why I'm writing to you rather than to your district office. You've done the maternal side and now you're doing the school-age side of the same families. Our conference is on language access in pediatric care and nobody on the agenda has seen both ends of that.`,
   },
@@ -3272,6 +3329,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Romo",
     title: "UNIDOS Parent Liaison",
     email: "rromo@sd104.us",
+    tier2: true,
     source: "https://www.sd104.us — Multilingual Programs. First name published as 'Racheal'.",
     note: `UNIDOS is a named program with a person attached to it, which already puts Summit ahead of most health systems, where family engagement is a line in a strategic plan and nobody's actual job. I'd like to know what you've found works to get parents to show up, because the clinical side has been guessing at that for twenty years.`,
   },
@@ -3281,6 +3339,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Chavez",
     title: "Bilingual School Psychologist",
     email: "ychavez@sd104.us",
+    tier2: true,
     source: "https://www.sd104.us — Walker and Graves schools; published as 'Dr. Yuritzi Chavez'",
     note: `A bilingual school psychologist is a genuinely scarce role and you're doing the assessment work that is most easily wrecked by a language mismatch. Testing a child in a language they're still acquiring produces a number, and the number looks just as authoritative as a real one. I'd like our audience to sit with that for a while.`,
   },
@@ -3340,6 +3399,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Colunga",
     title: "Community Outreach & Engagement Specialist",
     email: "mcolunga@rlas-116.org",
+    tier2: true,
     source: "https://www.rlas-116.org/parent-involvement4/bpac",
     note: `Every district with enough English learners has to convene a Bilingual Parent Advisory Committee, and in most of them it is a compliance artifact that meets three times and produces minutes. You are the name and the phone number on Round Lake's, which means when a parent has been through something at a school or a clinic and wants to say so out loud, the room you run is where it gets said. That is a better record of how interpretation actually went than any of the data the systems collect on themselves, and almost nobody in this field has access to it.`,
   },
@@ -3394,6 +3454,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Rocha-Bueno",
     title: "District Translator",
     email: "nrocha-bueno@wps60.org",
+    tier2: true,
     source: "https://www.wps60.org/o/wcusd/page/bilingual-and-multicultural-department",
     note: `Translation and interpretation are two different professions that districts and hospitals both routinely assume are one, so the person hired to render documents ends up on the phone doing live work with no notice. The document side is also where a bad decision quietly replicates — a mistranslated consent form or discipline notice goes out to thousands of families at once and nobody catches it for a year. Very little of the field's attention goes there.`,
   },
@@ -3412,6 +3473,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Roldan",
     title: "Bilingual Family Support, Waukegan High School Brookside Campus",
     email: "sroldan@wps60.org",
+    tier2: true,
     source: "https://www.wps60.org/o/wcusd/page/bilingual-and-multicultural-department",
     note: `Brookside is where the students who are furthest from a standard path end up, and their families are correspondingly the least likely to have a stable phone number, an English-speaking relative to lean on or any experience getting a straight answer out of an institution. Being the bilingual contact at that particular campus is a harder version of the same job done at the main building. The conference is mostly about medical and legal interpretation, and the families you work with move through both of those systems more than most.`,
   },
@@ -3430,6 +3492,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Aceves",
     title: "Bilingual Coordinator, PreK-12",
     email: "raceves@wps60.org",
+    tier2: true,
     source: "https://www.wps60.org/o/wcusd/page/bilingual-and-multicultural-department",
     note: `Coordinating PreK through twelve means you see the same families for fifteen years, which is longer than any clinician, caseworker or attorney in their lives will get. You know which ones stopped calling the school and why. That longitudinal view is almost impossible to reconstruct from any single institution's records and it is the thing this field is worst at.`,
   },
@@ -3439,6 +3502,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Salcido",
     title: "Multilingual Learner Assessor",
     email: "hsalcido@sd129.org",
+    tier2: true,
     source: "https://www.sd129.org/district/departments/multilingual-learners (published in plaintext as a mailto link; the district's other multilingual staff addresses are obfuscated in JavaScript and were not used)",
     note: `The district points assessment-process questions at you directly, which means you field the calls from parents who do not understand why their child was placed where they were placed. Explaining a testing decision to somebody in their own language, when the decision itself was made through an instrument designed in English, is a specific kind of hard. It has a close cousin in explaining a diagnosis arrived at through an interpreter.`,
   },
@@ -3448,6 +3512,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "McCall",
     title: "Director of Family Support and Educational Equity",
     email: "valerie.mccall@sd129.org",
+    tier2: true,
     source: "https://www.sd129.org/district/departments/student-services (address published in plaintext in the district's nondiscrimination notice, which also names her Nondiscrimination Coordinator)",
     note: `You are also West Aurora's named nondiscrimination coordinator, which means a language complaint arrives on your desk as a civil rights matter rather than a service problem. That framing changes what evidence counts and what a resolution has to look like. Hospitals almost never see language failures arrive in that form until it is a lawsuit, and the difference between the two vantage points is worth an argument in person.`,
   },
@@ -3466,6 +3531,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "De La Mora",
     title: "Multilingual and Multicultural Education Family Welcome Center Facilitator",
     email: "reynadelamora@u-46.org",
+    tier2: true,
     source: "https://www.u-46.org/page/family-welcome-center",
     note: `A welcome center is the first institutional building a newly arrived family walks into, and how that hour goes shapes what they expect from every institution afterward, including the hospital. People who work registration desks and intake windows are structurally the most informed and least consulted group in this whole field. That is the gap the two days are aimed at.`,
   },
@@ -3475,6 +3541,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Ortiz",
     title: "Data Entry Specialist, Family Welcome Center",
     email: "patriciaortiz@u-46.org",
+    tier2: true,
     source: "https://www.u-46.org/page/family-welcome-center",
     note: `The home language survey a family fills out at your counter becomes a field in a system, and from that point on the field is what the district knows — not the conversation, not the nuance about which language the parent actually prefers for serious news versus everyday notices. Medical records work identically and fail identically. You are one of the few people who has seen both the conversation and the field it collapsed into, which is exactly the comparison nobody in this field ever gets to make.`,
   },
@@ -3493,6 +3560,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Vitale",
     title: "Blackhawk Middle School CARE Facilitator",
     email: "svitale@bsd2.org",
+    tier2: true,
     source: "https://www.bsd2.org/departments/teaching-learning",
     note: `Middle school is where a child who has been interpreting for their parents since elementary starts to resent it, and where the family stops being able to rely on them. That transition is invisible to every adult institution around the family, and it is usually the moment a clinic starts getting incomplete histories with no idea why. Somebody in your seat sees it happen in real time.`,
   },
@@ -3511,6 +3579,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Rojas",
     title: "Director of EL Services and World Languages",
     email: "David.Rojas@d300.org",
+    tier2: true,
     source: "https://www.d300.org/academics/english-learners (name, title and address all published as literal plain text)",
     note: `D300 runs three dual language academies, which is a real institutional commitment rather than a compliance minimum, and it means your staff are among the few in the region who treat the home language as an asset to be developed rather than a barrier to be routed around. That premise is almost entirely absent from how medicine and the courts approach the same families. Hearing it argued by someone who has actually built programs on it would change the shape of the two days.`,
   },
@@ -3520,6 +3589,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Coria",
     title: "Translator, Communications",
     email: "nallely.coria@d300.org",
+    tier2: true,
     source: "https://www.d300.org/about/faculty-staff-directory (title verbatim as published: ADM TRANSLATOR-COMMUNICATIONS; the district's directory obfuscates addresses in reversed JavaScript strings and this one was decoded, so it is worth a phone check before sending)",
     note: `Sitting in communications rather than the EL office means you translate the district's voice — closures, emergencies, policy changes — not classroom material. That is the register institutions are worst at, because the English original was written by someone optimising for legal safety rather than comprehension, and no amount of accurate translation fixes a source text nobody can follow. Hospitals produce the same documents and make the same assumption about what translating them accomplishes.`,
   },
@@ -3529,6 +3599,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Torres",
     title: "Family School Liaison, Meadowdale Elementary",
     email: "alma.torres@d300.org",
+    tier2: true,
     source: "https://www.d300.org/about/faculty-staff-directory (Meadowdale is one of D300's three dual language academies; address decoded from the directory's reversed JavaScript, worth a phone check before sending)",
     note: `A liaison at a dual language academy has a different relationship with families than one at a school where the home language is a problem to be managed — parents come in expecting to be understood, and they say more. What they say includes a lot about doctors and courts and landlords that never reaches any of those places. That is the material this conference is short of.`,
   },
@@ -3538,6 +3609,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Chaidez",
     title: "Bilingual School Social Worker, Golfview Elementary",
     email: "cynthia.chaidez@d300.org",
+    tier2: true,
     source: "https://www.d300.org/about/faculty-staff-directory (the -BI suffix marking a bilingual designation is the district's own title string; address decoded from reversed JavaScript, worth a phone check before sending)",
     note: `Bilingual clinical work is not bilingual conversation — assessing a child's mental state in a language means having the vocabulary for symptoms that patients themselves often lack in any language, and doing it without a second adult in the room mediating. There are very few people in the region who do it and they are mostly in schools rather than clinics, which is backwards given where the acute need shows up. That imbalance is one of the things worth naming out loud in a room like this.`,
   },
@@ -3547,6 +3619,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Alvarez",
     title: "Translator, Gompers Junior High School",
     email: "palvarez@joliet86.org",
+    tier2: true,
     source: "https://www.joliet86.org/o/gjh/staff (address published as literal plain text and as a mailto link; title verbatim as published)",
     note: `Being the translator attached to a single junior high rather than a central office means you are on-site when things happen rather than scheduled in advance, so you get the unplanned conversations — the ones in hallways after a meeting has officially ended, which is usually when the real question gets asked. Interpreters in hospitals know that pattern precisely and rarely get to describe it to anyone who designs the systems. Will County is also underrepresented in almost every regional conversation about this.`,
   },
@@ -3556,6 +3629,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Badalamenti",
     title: "Nurse, Hufford Junior High School",
     email: "sbadalamenti@joliet86.org",
+    tier2: true,
     source: "https://www.joliet86.org/o/hjh/staff (address published as literal plain text and as a mailto link, present in both the March and December 2025 captures of the directory)",
     note: `A school nurse making a call home about a medication, an injury or a suspected condition is doing patient communication with none of a hospital's resources — no interpreter line on hold, no bilingual colleague down the hall, frequently no second attempt. You improvise and then the improvisation becomes the record. What happens in that gap between what a hospital can do and what you can do is one of the more useful things this conference could actually get on the table.`,
   },
@@ -3565,6 +3639,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Arroyo",
     title: "Social Worker, Gompers Junior High School",
     email: "mgarroyo@joliet86.org",
+    tier2: true,
     source: "https://www.joliet86.org/o/gjh/staff (address published as literal plain text and as a mailto link)",
     note: `School social work is where the family's whole situation shows up at once — housing, immigration status, a parent's untreated condition, a court date nobody understood — and none of the specialist systems that produced those problems ever see them assembled. You do. Two days of people describing their own narrow slice is worth much less than one person who has seen how the slices fit together.`,
   },
@@ -3583,6 +3658,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Velez",
     title: "Welcome and Assessment Center",
     email: "BarbaraVelez@sd54.org",
+    tier2: true,
     source: "https://www.sd54.org/page/language-and-culture (the district's own directory lists her role as Bilingual; the title above is the department name as published, because no individual job title is given)",
     note: `Running intake and screening means you meet families at the exact moment they have the least information and the most at stake, and you decide in one sitting what the district will believe about their child. Emergency departments do the same thing in triage and have spent decades arguing about how to do it fairly. The two conversations have never been in the same room and there is no good reason for that.`,
   },
@@ -3592,6 +3668,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Flores",
     title: "Bilingual Parent Liasion",
     email: "floresa2@ccsd15.net",
+    tier2: true,
     source: "https://www.ccsd15.net/our-district/departments/multilingual-programs/family-liaisons-enlaces-de-familia (title reproduced exactly as the district publishes it, misspelling and all)",
     note: `Yours is the only staff address CCSD 15 publishes anywhere on that site apart from the director's, which tells you something about how the district expects families to reach it and how much traffic therefore lands on you. Being a single accessible person in front of an otherwise closed institution is a familiar position to anyone who has worked a hospital language line. It is also the position where you learn the most and get asked the least.`,
   },
@@ -3601,6 +3678,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Bottoms",
     title: "BSN, RN, CSN",
     email: "jbottoms@csd99.org",
+    tier2: true,
     source: "https://south.csd99.org/student-life/health-services-nurse (the district publishes the credential string in place of a job title, reproduced here verbatim rather than inventing one)",
     note: `Downers Grove South's catchment has changed considerably faster than the district's reputation has, and a high school nurse is usually the first person in the building to notice a demographic shift because it shows up in what languages the calls home need to be in. High school is also where students start managing their own medical appointments and interpreting for their parents at the same time. Both of those are conference material and neither gets discussed by anyone who has watched it from a school health office.`,
   },
@@ -3610,6 +3688,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Heroff",
     title: "District Nursing Coordinator",
     email: "bheroff@barrington220.org",
+    tier2: true,
     source: "https://www.barrington220.org/families/health-services (the same page also lists her in the building roster as Certified School Nurse, MSN, RN, NCSN, PEL-SN at Barrington High School; hers is the only individual address the health office publishes)",
     note: `Barrington is a district where the affluence of the tax base hides a service population that is not affluent at all, and coordinating nursing across it means you see both halves of that in the same week. Language access resourcing tends to follow a district's average rather than its actual distribution, which leaves the families who need it inside districts that look like they do not need anything. That mismatch is worth describing to a room full of people who allocate by ZIP code.`,
   },
@@ -3619,6 +3698,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Torres Velazquez",
     title: "School Nurse Non-Certified, Lincoln Middle School",
     email: "JTorres@bn98.org",
+    tier2: true,
     source: "https://www.bn98.org/staff (title reproduced exactly as the district publishes it)",
     note: `Non-Certified is the district's word, not mine, and it draws a line that does not exist in practice: the parent on the phone gets the same conversation regardless of which side of it you are on, and in a district where most of those calls are in Spanish you are likely handling more of them than the certified colleague. Health systems draw the identical line around who is allowed to interpret and then quietly depend on the people it excludes. Naming that is most of what the two days are for.`,
   },
@@ -3628,6 +3708,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Huerta",
     title: "Bilingual Interventionist and EL Core Leader, Pershing Elementary",
     email: "mhuerta@bsd100.org",
+    tier2: true,
     source: "https://pershing.bsd100.org/about-us/staff",
     note: `Intervention work is diagnostic in a way general instruction is not — you are trying to establish whether a child cannot do something or cannot do it in English yet, which is a distinction that entire professions get wrong routinely and expensively. Speech pathologists, psychologists and paediatricians all face the same question and mostly answer it with instruments that were never built for it. You answer it several times a week.`,
   },
@@ -3658,6 +3739,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Morfoot",
     title: "Deaf and Hard of Hearing Program Coordinator",
     email: "cmorfoot@ladse.org",
+    tier2: true,
     source: "https://www.ladse.org/deaf--hard-of-hearing.html (address is served in the page og:description; the body renders client-side)",
     note: `Deaf and hard of hearing students in immigrant families are the case that breaks every assumption both fields run on: the child's first language may be ASL while the parents' is Spanish or Polish, so a meeting needs two interpreters working in series and somebody has to have thought about that a week in advance. Hospitals discover this at the bedside and improvise badly. You have presumably had to build a working answer, and there is nobody at this conference who has.`,
   },
@@ -3667,6 +3749,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Vance",
     title: "Interim Nursing Coordinator",
     email: "rvance@ladse.org",
+    tier2: true,
     source: "https://www.ladse.org/nursing.html (address is served in the page og:description; the body renders client-side)",
     note: `Co-op nursing means you carry medically complex students across several districts at once, which is a caseload built out of exactly the children whose care plans depend on a parent understanding something precisely. Seizure protocols and feeding schedules do not survive an approximate translation. Most of the people coming to this argue about interpretation in the abstract and you are administering the consequences of it.`,
   },
@@ -3676,6 +3759,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Bylsma",
     title: "Vocational Transitional Services",
     email: "kbylsma@ladse.org",
+    tier2: true,
     source: "https://www.ladse.org/vocational.html (address is served in the page og:description; the body renders client-side)",
     note: `Transition planning is where a family finds out what adulthood is actually going to look like — guardianship, benefits, whether their child will work — and it is conducted almost entirely in acronyms. Doing that conversation across a language barrier, with parents who may also be navigating their own immigration status, is a genuinely brutal piece of communication. Nobody in medical interpreting has to deliver news with that time horizon and it would be worth their hearing what it takes.`,
   },
@@ -3685,6 +3769,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Rathbun-Hunt",
     title: "Early Childhood Education Program Coordinator",
     email: "krathbun@ladse.org",
+    tier2: true,
     source: "https://www.ladse.org/early-childhood-education.html (address is served in the page og:description; the body renders client-side)",
     note: `At three years old the question of whether a child has a speech delay or is simply acquiring two languages on a normal timeline is close to unanswerable with the tools that exist, and getting it wrong in either direction costs the family years. Paediatricians refer on the same weak signal and rarely find out what happened next. You do find out, repeatedly, which makes you one of very few people with an evidence base on it.`,
   },
@@ -3694,6 +3779,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Meyer",
     title: "LINC Program Coordinator",
     email: "ameyer@ladse.org",
+    tier2: true,
     source: "https://www.ladse.org/linc.html (address is served in the page og:description; the body renders client-side)",
     note: `Programs for students with significant emotional and behavioural needs generate the most interpreted crisis conversations of anything in a school system, and crisis is precisely when interpretation quality collapses — everyone is fast, upset, and reaching for whoever is nearest. Emergency departments have the identical failure and have written it up as though it were unique to them. It is not, and hearing that from the school side would land.`,
   },
@@ -3703,6 +3789,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Ojuolape",
     title: "Coordinator, Early Childhood Special Education, Wood Dale Early Childhood Education Center",
     email: "mojuolape@ndsec.org",
+    tier2: true,
     source: "https://www.ndsec.org/contact_us/administration (address decoded from Cloudflare data-cfemail hex; decoding is deterministic but a browser spot-check before sending is cheap)",
     note: `Early childhood special education is the first time most families meet a formal evaluation process, and the impression it leaves determines how they handle every institutional encounter afterward, including medical ones. If that first meeting went through a bad interpreter, the family becomes cautious in ways that get recorded years later as non-engagement. Nobody tracks that causal chain and you are positioned at the start of it.`,
   },
@@ -3712,6 +3799,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Zinni",
     title: "Coordinator, Language and Social Skills Opportunities Program",
     email: "jzinni@ndsec.org",
+    tier2: true,
     source: "https://www.ndsec.org/contact_us/administration (address decoded from Cloudflare data-cfemail hex; the same page lists him as the Roselle District 12 contact)",
     note: `A program whose subject is language and social skills, serving a county where a growing share of families speak something other than English at home, sits on top of a question the field mostly avoids: what a communication disorder even means when the child is operating across two languages with different competence in each. Speech pathologists in hospitals face the same question with less time to think about it. Two days is enough to actually argue it.`,
   },
@@ -3730,6 +3818,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Cantin",
     title: "Health and Nutrition Manager",
     email: "tanya.cantin@headstartmchenrycounty.org",
+    tier2: true,
     source: "https://www.headstartmchenrycounty.org/contact (also published as Health & Nutrition Manager with a capitalised address variant)",
     note: `Head Start requires a health screening and a dental exam for every enrolled child, which means you are chasing paediatric appointments for hundreds of families and finding out exactly where the system will not accommodate them. That is a census of local clinic access nobody else compiles. The people who commission language services rarely hear from anyone who has tried to book across all of them in the same month.`,
   },
@@ -3775,6 +3864,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Ramos",
     title: "Site Director",
     email: "wramos@eastersealschicago.org",
+    tier2: true,
     source: "https://www.eastersealschicago.org/about (1312 S. Racine Ave., Chicago)",
     note: `A centre on Racine serving Pilsen and the near west side takes in families who are simultaneously dealing with a developmental concern and, often, a precarious status — and the two get tangled, because parents decline evaluations for reasons that have nothing to do with the evaluation. Clinicians read that as refusal. You know what it actually is. That gap between recorded reason and real reason is most of what this conference should be about and rarely is.`,
   },
@@ -3784,6 +3874,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Alexander",
     title: "Site Director",
     email: "jalexander@eastersealschicago.org",
+    tier2: true,
     source: "https://www.eastersealschicago.org/about (8020 87th Street, Hickory Hills)",
     note: `The southwest suburbs have Arabic and Polish speaking populations large enough to matter and small enough that no vendor prioritises them, so a centre out there is regularly the only place a family gets addressed in their own language all week. Suburban language need is consistently underestimated because it is dispersed rather than concentrated. Saying that in a room full of people who plan around density would be useful.`,
   },
@@ -3793,6 +3884,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Neidel",
     title: "Head Start Executive Director",
     email: "kneidel@trhsa.org",
+    tier2: true,
     source: "Two Rivers Head Start Agency Annual Report 2025, https://www.trhsa.org (the only named individual address published anywhere on the site; the public pages otherwise route to a shared family services inbox)",
     note: `Aurora is the second largest city in Illinois with a majority Latino population and a fraction of the attention Chicago gets in any regional planning conversation, including this one. A Head Start agency there is running language access at scale with none of the institutional infrastructure a hospital would consider baseline. That is a more instructive case than another well-resourced programme describing its best practice.`,
   },
@@ -3802,6 +3894,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Delgado",
     title: "Head Start Director",
     email: "delgadoa@metrofamily.org",
+    tier2: true,
     source: "Metropolitan Family Services DuPage Head Start annual report for FY2022-23, published at https://www.metrofamily.org — the most recent one on their site, so the role should be confirmed by phone before sending",
     note: `DuPage has real poverty and real linguistic diversity distributed through towns that do not look like they have either, which means services get sized to a perception rather than a population. Head Start enrolment data is one of the few honest counts of who is actually there. Bringing that to a conference whose mental map stops at the city limits would be worth doing.`,
   },
@@ -3865,6 +3958,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Akbar",
     title: "Senior Program Manager, Language Access",
     email: "sakbar@illinoiscourts.gov",
+    tier2: true,
     source:
       "Address published at https://www.illinoiscourts.gov/public/find-a-language-interpreter/e-services-find-a-language-interpreter-language-access-program-resources/ as the contact for pre-approval of interpreter skill-building hours. Title from https://www.2civility.org/ensuring-language-access-in-illinois-courts/ and MAY HAVE CHANGED — the May 2026 Cook County plan names someone else in a similar role. Neither source states her office; AOIC has Chicago and Springfield offices, so Chicago basing is inferred from the division, not confirmed.",
     note: `You're the person listed for pre-approving interpreter skill-building hours, which means you've had to make judgment calls about what actually counts as training. Medical interpreting has the same argument going on with none of the same infrastructure behind it. I'm also interested in the remote-hearing work — video interpreting broke in courts a few years before it broke in clinics, and I don't think anyone wrote down what you learned.`,
@@ -3875,6 +3969,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Meza",
     title: "Acting Director, Office of Interpreter Services",
     email: "teresa.meza@cookcountyil.gov",
+    tier2: true,
     source:
       "Listed as LAP Contact in the Circuit Court of Cook County Language Access Plan, May 2026, Sec. VIII (https://ocj-web-files.s3.us-east-2.amazonaws.com/documents/2026_Cook_County_Language_Access_Plan_May_2026.pdf)",
     note: `Your plan puts it at 61 full and part-time interpreters with 32 certified, in languages down to Assyrian and Toisan, plus contracted agency coverage when nobody in-house is free. I'd like to ask you about the mornings when the coverage doesn't work — what you do, and who you call. Hospitals hit the same wall and treat it as a vendor's problem rather than a staffing one.`,
@@ -3915,6 +4010,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Carter",
     title: "Senior Staff Attorney",
     email: "mcarter12@luc.edu",
+    tier2: true,
     source:
       "Address and adjunct title published at https://www.luc.edu/law/academics/clinical-programs/healthjusticeproject/aboutus/, which also identifies her as Senior Staff Attorney at Legal Council for Health Justice. THIS IS HER LOYOLA ADJUNCT ADDRESS, not a Legal Council address — Legal Council's public staff page lists no attorney emails.",
     note: `Legal Council's model puts you inside the clinic rather than waiting for a referral to arrive, which is the setting where the interpreter question stops being theoretical. A client can be entitled to a certified interpreter in a courtroom on Tuesday and get a bilingual medical assistant on Thursday for a conversation with higher stakes. I'd like to know whether your clients notice that difference or whether only you do.`,
@@ -3925,6 +4021,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Elgindy",
     title: "Supervisory Attorney, Medical Legal Partnership Group",
     email: "melgind@luc.edu",
+    tier2: true,
     source:
       "Address and adjunct title published at https://www.luc.edu/law/academics/clinical-programs/healthjusticeproject/aboutus/, which identifies her as Supervisory Attorney in Legal Aid Chicago's Medical Legal Partnership Group. Recovery Legal Care co-director role from https://legalaidchicago.org/newsroom/in-the-news/uchicago-medicine-legal-aid-chicago-launch-bedside-program-to-provide-in-hospital-legal-support-for-trauma-patients-injured-by-violence/. THIS IS HER LOYOLA ADJUNCT ADDRESS, not a Legal Aid Chicago address.",
     note: `Recovery Legal Care does bedside intake with trauma patients at UChicago Medicine, which is about the hardest possible setting to get interpretation right — the patient is injured, the family is there, and nobody is in a state to object to whoever ends up doing it. Courts eventually wrote rules about family members interpreting because the errors were provable on the record. There's no record in a trauma bay, and I'd like your view on what that changes.`,
@@ -3935,6 +4032,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Palumbo",
     title: "Director of Immigrants & Workers' Rights Practice Group",
     email: "lpalumbo@legalaidchicago.org",
+    tier2: true,
     source:
       "Title from the legalaidchicago.org full staff listing. Address from her own signature block in Garcia v. Pioneer Hi-Bred International, filed 2024-04-15 (courtlistener.com/docket/18709701/137/), given as her address of record for e-service at Legal Aid Chicago, 120 S. LaSalle St., Suite 900, Chicago 60603. A masked ZoomInfo listing showed the same address; that was ignored and only the filing used. This is the oldest address in the file — 2024.",
     note: `Garcia v. Pioneer is a multi-plaintiff action for Spanish-speaking farmworkers, so I'd guess most of the facts in it reached you through an interpreter before they were ever a pleading. What I'd want to ask is what you do when the interpretation itself is the weakest link in your own evidence. Clinicians have the identical problem and no procedure for it at all.`,
@@ -3945,6 +4043,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Georgevich",
     title: "Senior Litigation Attorney",
     email: "mgeorgevich@immigrantjustice.org",
+    tier2: true,
     source:
       "Title from the NIJC staff page, Wayback snapshot 2026-07-16 (web.archive.org/web/20260716191513/https://immigrantjustice.org/about-nijc/staff/) — the live site is captcha-walled. Address from her own signature block in Z. v. U.S. Dept. of Homeland Security, filed 2026-07-22 (courtlistener.com/docket/73277892/42/), given as her address of record at NIJC's Chicago office, 111 W. Jackson Blvd., Suite 800.",
     note: `You're counsel of record in Amica Center v. EOIR, which is about detained people losing the programming that told them what their rights were. Hospitals have a smaller version of that — the notice of rights exists, it's in English, and nobody reads it out loud. I don't know whether that's a legal problem or just a bad habit, and I'd rather ask someone litigating the harder version of it.`,
@@ -3955,6 +4054,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Romo",
     title: "Equal Justice Works Fellow",
     email: "gromo@immigrantjustice.org",
+    tier2: true,
     source:
       "Title from the NIJC staff page, Wayback snapshot 2026-07-16. Address from his own signature block in Z. v. DHS, filed 2026-07-22 (courtlistener.com/docket/73277892/42/), given as his address of record at NIJC's Chicago office.",
     note: `You're early in a fellowship on NIJC's federal litigation team, and I mention that because the invitation is genuinely open at that stage — most of this room is clinical and mid-career, and it would be a better conference if it weren't. If detention-side language access is anywhere near what your fellowship touches, almost nobody attending has heard it described from that direction.`,
@@ -3975,6 +4075,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Freeman",
     title: "Senior Clinical Monitor, Independent Monitoring Unit",
     email: "myria@equipforequality.org",
+    tier2: true,
     source:
       "Published staff directory, https://www.equipforequality.org/about/staff-directory/ (Chicago office, 312-766-3591)",
     note: `Monitoring puts you inside facilities looking at how residents are actually treated, which is a different vantage point from anyone who works in one. What I'd want to ask is whether a language barrier ever becomes a documented finding, or whether it stays something you notice and can't cite.`,
@@ -3985,6 +4086,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Valenzuela",
     title: "Skadden Fellow and Staff Attorney, Special Education Rights Clinic",
     email: "rene@equipforequality.org",
+    tier2: true,
     source:
       "Published staff directory, https://www.equipforequality.org/about/staff-directory/ (Chicago office, 312-757-6718). His individual case focus is not published.",
     note: `The special education rights clinic is one of the few places a parent gets to push back on an evaluation, and plenty of those evaluations were done across a language gap to begin with. Whether the district got the parent an interpreter for the IEP meeting is the kind of detail that either is or isn't in the file. I'd like to hear which it usually is.`,
@@ -4005,6 +4107,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Weisberg",
     title: "Directing Attorney – Illinois",
     email: "rweisberg@dralegal.org",
+    tier2: true,
     source:
       "Title and address published at https://dralegal.org/staff-members/rachel-weisberg/. Prior Equip for Equality role and the deaf-prisoner case from https://www.equipforequality.org/news/court-sanctions-illinois-prisons-for-failing-deaf-and-hard-of-hearing-prisoners/",
     note: `You were counsel on the sanctions ruling against IDOC over deaf and hard-of-hearing prisoners waiting months for audiological evaluations and hearing aids. That's the clearest case I know of where a language access failure was also plainly a medical one, and a court treated it that way. I'd like the clinical half of this audience to hear it described as something other than a scheduling problem.`,
@@ -4098,6 +4201,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title:
       "Department Chair and Associate Professor, Department of Communication Disorders",
     email: "nbing@govst.edu",
+    tier2: true,
     source:
       "Governors State's published Department of Communication Disorders faculty and staff directory (govst.edu). The exact page path was not captured during research — worth re-opening the directory before this one sends, though the name, title and address were read off it together. Catherine Balthazar, the college dean, was on the same page and deliberately not used.",
     note: `Telling a disorder from a difference in a bilingual child is still the hardest call in your field and one of the fastest ones made, usually by whoever had an opening in their schedule. Governors State sits in a part of the region where it gets made a lot. I'd like a communication disorders view in a room that will otherwise be mostly physicians.`,
@@ -4178,6 +4282,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Brown",
     title: "",
     email: "abrown@lawrencehall.org",
+    tier2: true,
     source:
       "https://lawrencehall.org/our-programs/community-wellness/ — address printed on the page. NO TITLE IS PUBLISHED for him; the page says he handles JAC referrals and nothing more, so the title field is left empty rather than inferred. Programme serves South Shore, Auburn Gresham, Austin, Englewood, Humboldt Park, North Lawndale, Roseland and East/West Garfield Park.",
     note: `You handle the JAC referrals, so the young people who reach you have already been through at least one system that made a decision about them. If a family's English was part of why an early conversation went badly, you'd be one of very few people positioned to notice it after the fact. This is billed as a health conference, but the referral chain runs through both.`,
@@ -4188,6 +4293,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Valenziano",
     title: "",
     email: "fvalenziano@lawrencehall.org",
+    tier2: true,
     source:
       "https://lawrencehall.org/our-programs/community-wellness/ — address printed on the page. NO TITLE IS PUBLISHED; the page says she oversees the mentoring programme. Title deliberately left empty.",
     note: `You oversee the mentoring side, so you're matching adults to young people and thinking hard about who fits with whom. I'd guess language comes into that — a mentee whose parents don't speak English is a different matching problem, and the mentor ends up doing more than mentoring. I'd like to know if you match on it deliberately or if it sorts itself out.`,
@@ -4199,6 +4305,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title:
       "Clinician-researcher, John H. Stroger Jr. Hospital of Cook County (exact job title is not printed in the source)",
     email: "ugoeze.otome@cookcountyhealth.org",
+    tier2: true,
     source:
       "PubMed PMID 41361030 — 'Readmission rates before and after the implementation of 2022 revised AAP clinical practice guidelines for the management of neonatal hyperbilirubinemia: a single center study,' J Perinatol 2026. The address is printed literally in her affiliation string ('John H. Stroger Jr. Hospital of Cook County, Chicago, IL, USA. ugoeze.otome@cookcountyhealth.org.'), which also documents the Chicago siting.",
     note: `Your readmission study is about what happens after a family goes home holding instructions, which is exactly the point where a language problem stops being observable to anyone in the building. Stroger's population makes that a sharper question than it would be almost anywhere else. I don't know whether the data can separate the families who couldn't follow the plan from the ones who couldn't get back — but if it can, I'd like to hear about it before it's written up.`,
@@ -4210,6 +4317,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title:
       "Division of Pediatric Surgery, University of Chicago Medical Center (exact job title is not printed in the source)",
     email: "jayemoba@uchicagomedicine.org",
+    tier2: true,
     source:
       "PubMed PMID 40344996 — 'Addressing disparities in telehealth access for children on the Southside of Chicago,' Am J Surg 2025. The address is printed as the electronic address in her affiliation.",
     note: `The telehealth access work is the clearest description I've read of a service built to remove a barrier and installing a different one on the way in. The language layer of that is worse than the broadband layer and studied far less — a video visit run through a phone interpreter is a three-way call in which nobody can see who is speaking. If your data touches that at all, even at the edges, I'd like to hear it.`,
@@ -4220,6 +4328,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Dowdall",
     title: "Central Nursing Education — MSN, CNL, RN, CMSRN",
     email: "eileen.dowdall@uchicagomedicine.org",
+    tier2: true,
     source:
       "PubMed PMID 41871118 (J Nurs Care Qual 2026), where the byline prints both the unit and the address: 'Eileen Dowdall, MSN, CNL, RN, CMSRN, Central Nursing Education, University of Chicago Medicine, Chicago, Illinois... (eileen.dowdall@uchicagomedicine.org; dowdalle@morainevalley.edu)'. She also holds a concurrent clinical education role at OSF Little Company of Mary in Evergreen Park. Escape-room teaching work is PMID 40865021.",
     note: `You built an escape room to refresh critical skills and a movement-based method for teaching mobility, which tells me you concluded some time ago that lecturing nurses at them doesn't work. I've got a session on communicating with a patient through an interpreter and I keep hitting the same wall — it's a skill, and I'd be teaching it with slides. I'd take any advice you have. I'd rather you came.`,
@@ -4230,6 +4339,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Erbach Barnfield",
     title: "Program Director, Mental Health and Development",
     email: "lbarnfield@illinoisaap.com",
+    tier2: true,
     source:
       "https://illinoisaap.org/about-2/ — NOTE the address domain is illinoisaap.COM while the website is illinoisaap.ORG. Verified twice; the .com is what is published and is not a typo.",
     note: `Developmental screening is where a language barrier does the most damage per minute: a screen that depends entirely on what a parent reports, administered through whoever happened to be free. Your programme sits over that for paediatricians across the state. I'd like to know what ICAAP currently tells them to do when the screen and the family don't share a language.`,
@@ -4240,6 +4350,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Collazo",
     title: "EMS Instructor; Licensing and Continuing Education Specialist",
     email: "samantha.collazo@luhs.org",
+    tier2: true,
     source:
       "Loyola Medicine EMS staff directory (loyolamedicine.org/ems/staff) — address published beside her name and title, listed there as 'Sam Collazo, BA, EMT-P'.",
     note: `You sit on both sides of it — teaching, and tracking whether everyone's hours and licenses are where they need to be. That means you've got a clear view of what people are actually choosing to spend con-ed time on. What I'm trying to find out is whether anything currently in the CE menu touches assessing a patient who can't give you a history, or whether it's all skills and cards.`,
@@ -4250,6 +4361,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Johnson",
     title: "Chief Executive Officer",
     email: "mjohnson@bcfwc.org",
+    tier2: true,
     source:
       "https://www.bcfwc.org/our-services confirms the organisation and her role. THE ADDRESS ITSELF came from a third-party chamber of commerce directory rather than from bcfwc.org — medium confidence. Worth a bounce test or a phone check before this one sends.",
     note: `Working at family level rather than patient level means you see the part clinics never do, which is what happens to the instructions after the visit ends. I'd like this conference to have somebody in it who isn't describing a hospital, and a wellness centre is a different vantage point from a clinic even when the medicine is the same.`,
@@ -4261,6 +4373,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title:
       "Foundation Liaison, IASN; Director of the RN to BSN Program, UIC College of Nursing",
     email: "gloriabarrera.rn@gmail.com",
+    tier2: true,
     source:
       "https://www.iasn.org/board-of-directors (address published there by her, a personal account used professionally) and https://nursing.uic.edu/news-stories/gloria-barrera-named-director-of-rn-bsn-program/ for the UIC role. She is NOT on the current Downers Grove South health services roster, whatever older pages say.",
     note: `School nursing is where I'd start if I wanted to find the children in this region whose health information has never once reached their parents in a language they read. You're teaching working nurses on the RN-to-BSN side at the same time, so you see both the practice and what people were never taught in the first place. And since you're on IASN's board — is this worth putting in front of that membership, or not?`,
@@ -4272,6 +4385,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title:
       "Healthcare Epidemiology and Infection Prevention (department printed in the affiliation; exact job title unconfirmed)",
     email: "angela.helms@nm.org",
+    tier2: true,
     source:
       "PubMed PMID 37939850 — first author of 'Investigation of a pseudo-outbreak of Mycobacterium franklinii,' Am J Infect Control 2024. The address is printed inside that record's affiliation string, which names Northwestern Medicine Palos Hospital, Palos Heights, IL as her site.",
     note: `You ran the investigation that identified and closed out the Mycobacterium franklinii pseudo-outbreak. Infection prevention isn't an obvious invitation to a conference about language, except that isolation precautions get explained at a doorway, quickly, to somebody who is already frightened — and the written version may or may not exist in their language. I'd like to know whose job that is in your building, or whether it turns out to be nobody's.`,
@@ -4282,6 +4396,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Rodriguez",
     title: "Financial Counselor (CAC, CHAA)",
     email: "vrod@uic.edu",
+    tier2: true,
     source:
       "UI Health's published 'Meet the Financial Counseling Team' page, which prints each counsellor's name, credentials and address. Lorena Cruz-Garabito is on the same eleven-person team and was deliberately NOT used — two of these letters landing in one team is exactly the thing that gives the whole list away.",
     note: `Financial counselling might be the hardest conversation in the building to interpret: the vocabulary is bureaucratic, the stakes are immediate, and the patient is being asked to disclose things they may not want to say to a stranger on a phone line. You're doing it as a certified application counsellor, so you're translating in both directions at once. I'd like the clinical people at this to hear that part described by somebody who does it.`,
@@ -4367,13 +4482,20 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
 // raw HTML for every address in this file. No exceptions, however plausible.
 
 /** The rows the loader will actually act on: real, published addresses only. */
-export function loadableChicagoTargets(): ChicagoTarget[] {
+export function loadableChicagoTargets(
+  { includeSecondWave = false }: { includeSecondWave?: boolean } = {},
+): ChicagoTarget[] {
   const seen = new Set<string>();
   return CHICAGO_TARGETS.filter((t) => {
     const email = t.email.trim().toLowerCase();
     if (!email || !email.includes("@")) return false;
     // A real address we have chosen not to use. See `hold` on the type.
     if (t.hold) return false;
+    // Default is the first wave only: the hundred whose name, title and
+    // address were all read off one current page owned by their own employer.
+    // Everyone else is real and sendable but worth a bounce test first, so
+    // they wait for an explicit second-wave load rather than riding along.
+    if (t.tier2 && !includeSecondWave) return false;
     // One letter per address: several people can share a front-desk mailbox,
     // and two "personal" notes landing in one inbox is the exact tell we are
     // trying to avoid.
