@@ -62,11 +62,50 @@
 //   - Pick the contact whose desk this conference is actually about, not the
 //     most senior one. The Language Access Resource Center's program director
 //     beats her own executive director here.
+//   - Never write a hold reason that points at another person. Three of them
+//     ended up naming someone who was later held themselves, and an org goes
+//     silent by accident that way: SWOP's second letter was withdrawn because
+//     of a colleague who was not getting one either. Name the surviving
+//     contact, and re-check the chain after every trim.
+// A university is not one employer, so the cap there is a DOMAIN cap of four
+// rather than one: eleven notes into uic.edu in a week is a campaign to a mail
+// gateway even though the eleven departments have never met. Where the cap
+// bites, prefer the desks furthest from this field — farmworker health,
+// disability, Indigenous health equity — over a second heritage-language
+// linguist, since the near desks are the ones we already reach.
 // A department triage line at a hospital, university or county government is
 // held outright: a letter to a named person read by whoever is on the intake
 // queue that morning has no one whose job it is to care. A shared mailbox at a
 // small nonprofit is different — it is often the director's own inbox — so
 // those still send.
+//
+// ─── PEOPLE WE ALREADY KNOW (added after the second audit) ─────────────────
+// The overlap between this file and AALB's own contact list was never a
+// coincidence and should have been predicted. This list was built by asking
+// who in Chicagoland works on healthcare language access; AALB is one of the
+// organizations that answer names that question, so the search and the address
+// book are close to the same query. The people who rank highest by "their job
+// is language access" are, for that exact reason, the people Kevin already
+// has a number for.
+//
+// A cold-invitation template is the wrong instrument for them, and not because
+// it is impolite. The letters work by showing that someone read the
+// recipient's own work. Coming from a stranger that reads as diligence.
+// Coming from someone who could have called, the same sentence reads as a mail
+// merge — and it retroactively marks every other letter they have had from us
+// as one too. The downside is not a lost registration, it is a damaged
+// relationship, so the trade is bad even at a high response rate.
+//
+// So a known contact carries `hold` with the reason written plainly, and their
+// organization simply goes unwritten-to. That is not a gap: the org is reached
+// by a phone call, which outperforms anything in this file. When a held person
+// was the one holding an org's single letter, do NOT promote a colleague into
+// the slot — the cap exists to stop one office getting three notes, not to
+// guarantee every org gets one. Nobody is deleted; the row keeps its research.
+//
+// Only Kevin can populate this. Nothing in a published title reveals who is
+// already in his network, so this rule is applied on his say-so and there is
+// no way to infer it from a source URL.
 //
 // ─── Deliberately excluded ─────────────────────────────────────────────────
 // Lurie Children's staff (they are the host), confirmed speakers and
@@ -142,6 +181,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Vela",
     title: "Director, Hispanic Center of Excellence; Professor of Medicine",
     email: "mvela@uic.edu",
+    hold:
+      "UIC domain cap. Also the single likeliest name on this list to already be in Kevin's phone — directing a national Hispanic Center of Excellence is how you meet everyone in this field. Promote her first if he says he does not know her.",
     source: "https://medicine.uic.edu/profiles/vela-monica/",
     note: `Your talk last September was called "Language Concordant Care and its Contributions to Health Equity." That's close enough to our whole agenda that I double-checked we hadn't lifted it off you. The Hispanic Center of Excellence has been at UIC since 1991, so you've been at this a great deal longer than we have.`,
   },
@@ -160,6 +201,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Castillo",
     title: "Clinical Assistant Professor, Community Health Sciences",
     email: "amparo@uic.edu",
+    hold: "UIC domain cap: the four kept addresses reach desks further from this field than a school of public health does.",
     source: "https://publichealth.uic.edu/profiles/amparo-castillo/",
     note: `The Diabetes Empowerment Education Program was built in Spanish for low-literacy learners instead of translated into that afterward. It's what I point to when people ask me what "culturally appropriate" is supposed to mean in practice.`,
   },
@@ -178,6 +220,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Mirza",
     title: "Faculty, Department of Occupational Therapy (rank not published)",
     email: "mmirza2@uic.edu",
+    hold: "UIC domain cap, and Rooshey Hasnain already carries the disability lens. Strongest alternate on the whole UIC set — refugee resettlement plus occupational therapy is a combination nobody else here has.",
     source: "https://ahs.uic.edu/disability-human-development/faculty/",
     note: `Your faculty page lists clinical communication with non-English speaking patients as a research area, which is a plainer description of this conference than anything currently on our own website. The disability side is what I'd want you for. A family working through a language barrier and a rehab system at the same time is handling two vocabularies, and interpreters are generally not trained on the second.`,
   },
@@ -189,6 +232,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Potowski",
     title: "Professor of Spanish Linguistics; Director of Undergraduate Studies",
     email: "kimpotow@uic.edu",
+    hold: "UIC domain cap, and heritage-language linguistics is covered twice over on this list by people whose day job is health.",
     source: "https://hip.uic.edu/people/faculty/",
     note: `I read Spanish in Chicago last year and it's a good part of why this conference is happening here and not somewhere else. A hospital intake form has one box for Spanish. Your book is a few hundred pages on why that isn't one thing. I watched the TEDx talk too, and the bit about monolingualism being something done to children has stuck with me longer than most of what I hear at conferences, which is an awkward thing to say while inviting you to one.`,
   },
@@ -198,6 +242,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Betancourt-Ciprian",
     title: "Clinical Assistant Professor; Director, Spanish Heritage Language Program",
     email: "abetan3@uic.edu",
+    hold: "UIC domain cap; same program and same sub-field as Kim Potowski, so holding one without the other would have been arbitrary.",
     source: "https://hip.uic.edu/profiles/betancourt-ciprian-angela/",
     note: `Most of the bilingual staff in Chicago hospitals came up as heritage speakers, and plenty of them were taught somewhere along the way that their Spanish wasn't quite the real article. You run the program where that goes one way or the other. I also saw you were on the organizing committee for the Illinois Dual Language Summit, so you know exactly how much work it is to get people in a room about this, and I'm asking anyway.`,
   },
@@ -379,6 +424,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Mytareva",
     title: "Executive Director",
     email: "managing.director@cchicertification.org",
+    hold:
+      "Kevin knows Natalya. A letter assembled from public sources reads as research to a stranger and as a mail merge to anyone who has his phone number — sending it into his own network spends a real relationship to win a registration he can just ask for.",
     source: "https://cchicertification.org/about-us/",
     note: `CCHI is the only healthcare interpreter credential I know of that covers ASL and spoken languages under one commission instead of splitting them across two bodies with two vocabularies. We're trying to hold both together for two days, which is easier to put in a program than to do in a room.`,
   },
@@ -516,7 +563,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Suarez-Balcazar",
     title: "Faculty, Department of Occupational Therapy (rank not published)",
     email: "ysuarez@uic.edu",
-    hold: "Same UIC occupational therapy department as Mansha Mirza, who is getting the letter.",
+    hold: "UIC domain cap. Neither she nor Mansha Mirza is written to, so UIC occupational therapy receives nothing — a consequence of the cap, not a judgement about the department.",
     source: "https://ahs.uic.edu/disability-human-development/faculty/",
     note: `Community-based participatory work with Latino families with disabilities sits at the intersection this conference is about, and very few people work there.`,
   },
@@ -551,14 +598,18 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     source: "https://idhhc.illinois.gov",
     note: `IDHHC licenses every ASL interpreter working in an Illinois hospital, which makes it the one body that could raise the floor statewide by changing a rule.`,
   },
-  // CCHI and NBCMI: one letter per organization. Natalya Mytareva above has it.
+  // CCHI and NBCMI: one letter per organization — and CCHI's is now nobody's.
+  // Natalya Mytareva held the org's letter until she turned out to be someone
+  // Kevin already knows, so CCHI reaches this conference through him and not
+  // through this file. These two stay held: the point of the cap was never to
+  // guarantee each org a letter, it was to keep one office from getting three.
   {
     org: "CCHI",
     firstName: "Amanda",
     lastName: "David",
     title: "Commissioner (ASL); term Oct 2024 - Oct 2027",
     email: "adavid@cchicertification.org",
-    hold: "Natalya Mytareva at CCHI is getting the letter; three notes into one small national office is the tell we are avoiding.",
+    hold: "CCHI is Kevin's own contact, not a cold target; three notes into one small national office is the tell we are avoiding anyway.",
     source: "https://cchicertification.org/about-us/",
     note: `Being a Sign Language Designated Medical Interpreter inside a medical school is a job almost nobody holds, and the reason almost nobody holds it is the reason this conference exists.`,
   },
@@ -568,7 +619,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Rueda Will",
     title: "Commissioner; term Oct 2024 - Oct 2027",
     email: "mruedawill@cchicertification.org",
-    hold: "Natalya Mytareva at CCHI is getting the letter.",
+    hold: "CCHI is Kevin's own contact, not a cold target.",
     source: "https://cchicertification.org/about-us/",
     note: `Building an interpreter training company from a working interpreter's chair rather than from a curriculum office produces a different kind of training.`,
   },
@@ -588,7 +639,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Andrews",
     title: "Cook County Health leadership",
     email: "patientexperience@cookcountyhealth.org",
-    hold: "Shares the patient experience mailbox with Linh Dang, who is getting the letter.",
+    hold: "Cook County Health gets no letter from this file: the only published address for either leader is the shared patientexperience@ triage line, and a named note read by whoever is on that queue has nobody whose job it is to care.",
     source: "Leadership page, cookcountyhealth.org",
     note: `Cook County Health serves more languages than almost any system in the country and does it on a public budget.`,
   },
@@ -956,6 +1007,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Ortega",
     title: "President and Chief Executive Officer; CEO, Center for Clinician Multilingualism",
     email: "portega1@uic.edu",
+    hold:
+      "Kevin knows Pilar. This note quotes her own April 2025 paper back at her, which is exactly the move that reads as diligence from a stranger and as a form letter from someone who already has her number.",
     source: "medicalspanish.org leadership page and UIC College of Medicine faculty listing",
     note: `Your April 2025 paper in the Journal of Graduate Medical Education sets out a five-level proficiency standard covering more than fifty-five languages for graduate medical education. That is the piece of infrastructure this whole field has been missing, because until you can score a clinician's language the honest answer to whether they can practice in it is a shrug. You also built UIC's first medical Spanish program, taught it for nine years, wrote the textbook, and founded MOLA. If there's one session I'd want you to shape, it's the one about clinicians who speak the language versus clinicians who think they do.`,
   },
@@ -996,6 +1049,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Aquino",
     title: "Associate Dean; past President, NAHN Illinois, 2017-2021",
     email: "eaquino@uic.edu",
+    hold: "UIC domain cap.",
     source: "UIC College of Nursing directory and NAHN Illinois past-president listing",
     note: `You interviewed seventeen Latina nurse leaders and came out with six obstacles, including imposter syndrome, age discrimination and the absence of mentorship. Those are the reasons the bilingual nurse who's been interpreting for her unit for eight years is still not the one running it.`,
   },
@@ -1016,6 +1070,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Angulo",
     title: "Faculty; director, Clinical Medical Spanish elective",
     email: "angulo@uic.edu",
+    hold: "UIC domain cap.",
     source: "UIC College of Medicine course listing for the Clinical Medical Spanish elective",
     note: `Running the elective with live and simulated patient interviews in Spanish rather than vocabulary drills is the difference between a student who can name the organs and a student who can take a history. Two weeks isn't long, and I'd guess you know exactly which parts you'd extend if anybody gave you the room.`,
   },
@@ -1026,7 +1081,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Director of Educational Research",
     email: "nperez57@uic.edu",
     hold:
-      "One letter per employer: the center's director Monica Vela is already getting one. This row said \"UIC Hispanic Center of Excellence\" and hers said \"UIC's Hispanic Center of Excellence\" — one apostrophe was the entire reason a dedupe by organization name did not catch it.",
+      "UIC domain cap; the center's director Monica Vela is held too, so the center receives nothing. Worth keeping the original finding: this row said \"UIC Hispanic Center of Excellence\" and hers said \"UIC's Hispanic Center of Excellence\" — one apostrophe was the entire reason a dedupe by organization name did not catch the pair.",
     source: "UIC Hispanic Center of Excellence staff listing",
     note: `Somebody has to measure whether any of the pipeline work is producing clinicians who can actually practice in Spanish, as opposed to producing clinicians who identify as Hispanic. Those are different outcomes and they get reported as one number more often than they should.`,
   },
@@ -1315,7 +1370,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Director of Operations",
     email: "pseguil@communityhealth.org",
     hold:
-      "One letter per org: CommunityHealth is written to through Vickie Chester. Patient access is a step below director of operations and is also the desk where a patient's language first gets asked about.",
+      "CommunityHealth is Kevin's own contact through Vickie Chester, so nobody here is written to cold.",
     source: "https://www.communityhealth.org staff and volunteer listings",
     note: `CommunityHealth publishes its site in English, Spanish and Polish and recruits volunteer interpreters in both alongside bilingual nurses. Running that on a volunteer clinical model means you're scheduling language capacity and clinical capacity against each other every week, which is a harder operations problem than any salaried clinic has.`,
   },
@@ -1325,6 +1380,8 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Chester",
     title: "Patient Access Manager",
     email: "vchester@communityhealth.org",
+    hold:
+      "Kevin knows Vickie. CommunityHealth therefore gets no letter from this file at all, which is the right outcome: it is reached by someone who can call.",
     source: "https://www.communityhealth.org staff listing",
     note: `Patient access at CommunityHealth is where a patient's language gets asked about for the first time, usually by whoever picks up the phone, and whatever gets written down then follows them through everything after.`,
   },
@@ -1778,8 +1835,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
   // somebody else is already using; or the address as published looks wrong
   // and should be confirmed by a human before anything is sent to it.
 
-  // SWOP: Jeff Bartow, Jessica Biggs and Adriana Velazquez are already three
-  // letters into one organization. Five would be a mailing.
+  // SWOP: Jeff Bartow has the org's single letter; the other four staff are
+  // held. This comment used to say three of them were getting letters, which
+  // was true for about an hour.
   {
     org: "Southwest Organizing Project",
     firstName: "Edy",
@@ -1796,7 +1854,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Reddy",
     title: "Healthy Chicago Zone Health Organizer",
     email: "preddy@swopchicago.org",
-    hold: "Jessica Biggs runs Healthy Southwest and is getting the letter.",
+    hold: "One letter per org: SWOP is written to through Jeff Bartow. (This used to name Jessica Biggs, who is herself held — a hold pointing at a held person, which is how an org goes quiet by accident.)",
     source: "https://swopchicago.org/staff",
     note: `Leads Healthy Chicago Zone organizing across thirteen neighborhoods, which is a wider footprint than the name suggests.`,
   },
@@ -1806,7 +1864,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Oviedo",
     title: "Promotora de Salud",
     email: "paes@enlacechicago.org",
-    hold: "Same shared promotores inbox as Sahida Martinez, who is getting the letter.",
+    hold: "GAP, not a decision. Enlace Chicago receives nothing: both promotoras publish only the shared paes@ program mailbox and the executive director has no published address at all. Little Village has the densest promotora network in the city and this file cannot reach it. Worth a phone call.",
     source: "Enlace Chicago promotores program page",
     note: `A pediatric nurse in Mexico for eighteen years, joined Enlace in 2020, earned her community health worker certificate through Enlace's own Spanish-language program and then started a women's mental health support group.`,
   },
@@ -2036,15 +2094,16 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     note: `Co-leads the big-city mortality comparisons that put Chicago's numbers next to everyone else's.`,
   },
 
-  // CommunityHealth: Paola Seguil and Vickie Chester are getting letters. The
-  // rest of the published staff addresses are kept here rather than deleted.
+  // CommunityHealth: nobody here is written to. Kevin knows Vickie Chester, so
+  // the org is reached by phone and every published staff address below is kept
+  // as a record rather than deleted.
   {
     org: "CommunityHealth",
     firstName: "Marzena",
     lastName: "Zagata",
     title: "Staff",
     email: "mzagata@communityhealth.org",
-    hold: "Two CommunityHealth colleagues are already getting letters.",
+    hold: "CommunityHealth is Kevin's own contact and is not written to cold.",
     source: "https://www.communityhealth.org staff listing",
     note: `CommunityHealth runs in English, Spanish and Polish, and the Polish side of that is the part almost nobody else in the city staffs.`,
   },
@@ -2054,7 +2113,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Hendel",
     title: "Staff",
     email: "ehendel@communityhealth.org",
-    hold: "Two CommunityHealth colleagues are already getting letters.",
+    hold: "CommunityHealth is Kevin's own contact and is not written to cold.",
     source: "https://www.communityhealth.org staff listing",
     note: `Published address, no further detail found.`,
   },
@@ -2064,7 +2123,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Doerr",
     title: "Staff",
     email: "mdoerr@communityhealth.org",
-    hold: "Two CommunityHealth colleagues are already getting letters.",
+    hold: "CommunityHealth is Kevin's own contact and is not written to cold.",
     source: "https://www.communityhealth.org staff listing",
     note: `Published address, no further detail found.`,
   },
@@ -2074,7 +2133,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Alvarez",
     title: "Staff",
     email: "galvarez@communityhealth.org",
-    hold: "Two CommunityHealth colleagues are already getting letters.",
+    hold: "CommunityHealth is Kevin's own contact and is not written to cold.",
     source: "https://www.communityhealth.org staff listing",
     note: `Published address, no further detail found.`,
   },
@@ -2084,7 +2143,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Barger",
     title: "Staff",
     email: "mbarger@communityhealth.org",
-    hold: "Two CommunityHealth colleagues are already getting letters.",
+    hold: "CommunityHealth is Kevin's own contact and is not written to cold.",
     source: "https://www.communityhealth.org staff listing",
     note: `Published address, no further detail found.`,
   },
