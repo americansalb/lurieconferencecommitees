@@ -1143,6 +1143,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     lastName: "Zea",
     title: "President, 2026",
     email: "azea@bu.edu",
+    hold: "GEOGRAPHY. She is the national HDA president, but the only address published for her is a Boston University one, which means the seat is in Boston and not in this metro. The rule is that a statewide or national body qualifies only when that specific person sits at a Chicago-area desk. Caught in a retroactive audit of the rows written before the county rule existed; she was the only one of 92 who failed it.",
     source: "Hispanic Dental Association 2026 leadership listing",
     note: `You're president of the Hispanic Dental Association this year, and dental is close to absent from language access planning. Hospitals write interpreter policies and the dental clinic down the hall is not in them.`,
   },
@@ -1240,6 +1241,34 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     email: "jclyde@isbe.net",
     source: "ISBE Multilingual and Language Development division listing and board reporting on Title III",
     note: `You've reported that Title III LIEP and ISEP have been flat funded since 2010 while the number of eligible students keeps rising. That's the same arithmetic hospitals run on interpreter budgets, and it produces the same result, which is that the service quietly gets rationed without anyone deciding to ration it.`,
+  },
+  // Two of Clyde's consultants, restored after the geography error described
+  // in the collar-county section header. Both are line staff with their own
+  // district caseloads, and both sit at ISBE's Chicago office — the 312
+  // numbers on ISBE's published contact list are what places them there, and
+  // are the reason the Springfield staff on the same list were not used.
+  // Two, not nine: the whole department is about eleven people who sit
+  // together, and three letters into it (with Clyde) is already the ceiling.
+  {
+    org: "Illinois State Board of Education — Multilingual/Language Development",
+    firstName: "Michelle",
+    lastName: "Lopez",
+    title: "Principal Consultant, Program Compliance — Newcomer",
+    email: "mlopez@isbe.net",
+    source:
+      "ISBE's published contact list (isbe.net Contact Information list). Her direct line is (312) 814-2237 — the 312 exchange is ISBE's Chicago office, 555 W. Monroe St., Suite 900, Chicago 60661, per https://www.isbe.net/Pages/contact-isbe.aspx. Springfield staff on the same list carry 217 numbers and were not used.",
+    note: `Newcomer is your portfolio, which makes you one of very few people in the state whose job is specifically the first year — before anybody has a file, a screener result, or a relationship with the school. Hospitals meet the same families in the same window and have no equivalent role at all. What I'd want to ask is what you tell a district that has just enrolled a family it has no staff who can talk to.`,
+  },
+  {
+    org: "Illinois State Board of Education — Multilingual/Language Development",
+    firstName: "Randi",
+    lastName: "Sucic",
+    title:
+      "Principal Consultant, Grants Review and Technical Assistance — Early Childhood",
+    email: "rsucic@isbe.net",
+    source:
+      "ISBE's published contact list (isbe.net Contact Information list). Direct line (312) 814-5583, the Chicago office exchange. She is the assigned consultant for 141 districts including Waukegan CUSD 60, several of whose staff are also in this file.",
+    note: `You've got the early childhood side and something like 141 districts, so you see the same argument play out in a hundred and forty-one slightly different ways. The question I keep getting stuck on is whether a district that does this well is doing anything portable, or whether it always comes down to one bilingual person who has been there nine years. You'd know which.`,
   },
   {
     org: "Chicago Public Schools",
@@ -3291,9 +3320,18 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
   // several of them publish a staff directory precisely because there is no
   // switchboard to hide behind.
   // Two whole blocks came out of this section on the geography rule rather
-  // than for cause: ISBE's multilingual department and HFS's Division of
-  // Medical Programs are both statewide bodies whose named staff I could not
-  // place at a Chicago-area desk, and Northern Illinois University is DeKalb.
+  // than for cause: HFS's Division of Medical Programs is a statewide body
+  // whose named staff could not be placed at a Chicago-area desk, and
+  // Northern Illinois University is DeKalb.
+  // CORRECTION, made after this section shipped: ISBE's multilingual
+  // department was dropped here too, on a research note claiming it is
+  // Springfield-based. That note was wrong, and a second researcher's data
+  // contradicts it person by person — ISBE's own contact list gives every one
+  // of these consultants a 312 number matching the Chicago office at 555 W.
+  // Monroe St., Suite 900, and the Springfield staff (217 numbers) were
+  // separately identified and dropped. Two of them are restored below. Not
+  // all nine: they are one department of about eleven who sit together, and
+  // the compare-notes cap binds harder than the county rule here.
   // Per-employer reading is per DEPARTMENT: a district's nurses are one unit,
   // its EL office another, its social workers a third.
   {
