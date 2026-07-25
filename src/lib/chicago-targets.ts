@@ -207,7 +207,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Director, CAHRA; James R. Webster Jr. Professor",
     email: "mswolf@northwestern.edu",
     source: "https://www.feinberg.northwestern.edu/sites/cahra/about/our-team/",
-    note: `I've been reading the ConcordantRx work, mostly the studies on liquid dosing errors among Spanish-speaking parents. We built this program around the interpreted visit and I've come round to thinking that's the easier half of the problem. Nobody on our agenda right now speaks to what happens once the family is home with the bottle and the label, and I'd rather that be you than nobody.`,
+    note: `I've been reading the ConcordantRx work, mostly the studies on liquid dosing errors among Spanish-speaking parents.
+
+We built this program around the interpreted visit and I've come round to thinking that's the easier half of the problem. Nobody on our agenda right now speaks to what happens once the family is home with the bottle and the label, and I'd rather that be you than nobody.`,
   },
   {
     org: "Health Literacy & Learning at Northwestern",
@@ -258,7 +260,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Clinical Associate Professor; Chair, APHA Caucus on Refugee and Immigrant Health",
     email: "klamber4@uic.edu",
     source: "https://blst.uic.edu/profiles/ibe-lamberts-kelechi",
-    note: `Something I'm worried about with our program: language access in this country tends to mean Spanish and then stop. African immigrant families end up off the edge of the plan, frequently multilingual, frequently speaking a language the hospital holds no contract for. You chair the APHA caucus on refugee and immigrant health and you built the Interconnected African Wellness Assembly. I'd rather you said that in the room than have us talk around it for two days and work it out afterward.`,
+    note: `Something I'm worried about with our program: language access in this country tends to mean Spanish and then stop. African immigrant families end up off the edge of the plan, frequently multilingual, frequently speaking a language the hospital holds no contract for. You chair the APHA caucus on refugee and immigrant health and you built the Interconnected African Wellness Assembly.
+
+I'd rather you said that in the room than have us talk around it for two days and work it out afterward.`,
   },
   {
     org: "UIC Occupational Therapy",
@@ -298,7 +302,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Professor of Spanish",
     email: "cburgo@luc.edu",
     source: "https://www.luc.edu/modernlang/profiles/burgoclara.shtml",
-    note: `Clases mixtas is about heritage speakers and second-language learners being taught as though they're doing the same task. The hospital version is a bilingual nurse who grew up speaking Spanish and a physician who took Medical Spanish getting counted as the same resource, and it usually ends with the nurse interpreting for free. Nobody on our program can speak to the classroom end of it yet.`,
+    note: `Clases mixtas is about heritage speakers and second-language learners being taught as though they're doing the same task. The hospital version is a bilingual nurse who grew up speaking Spanish and a physician who took Medical Spanish getting counted as the same resource, and it usually ends with the nurse interpreting for free.
+
+Nobody on our program can speak to the classroom end of it yet.`,
   },
   {
     org: "Truman College",
@@ -319,7 +325,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "SVP Community Health Equity; Co-Director, RUSH BMO Institute for Health Equity",
     email: "David_Ansell@rush.edu",
     source: "https://rushu.rush.edu/rush-medical-college/departments/department-internal-medicine/division-community-global-health-equity",
-    note: `Rush lists you on its health equity experts page and on its Spanish-speaking physicians page. You're the only person I found in the city on both, and it's odd to me that being on both is rare. I've spent a fair amount of time with the Chicago Health Map as well. A life expectancy gap that big across a few miles has no single cause, but a parent who can't ask a question in their own language is somewhere in most versions of it.`,
+    note: `Rush lists you on its health equity experts page and on its Spanish-speaking physicians page.
+
+You're the only person I found in the city on both, and it's odd to me that being on both is rare. I've spent a fair amount of time with the Chicago Health Map as well. A life expectancy gap that big across a few miles has no single cause, but a parent who can't ask a question in their own language is somewhere in most versions of it.`,
   },
   {
     org: "Shirley Ryan AbilityLab",
@@ -387,7 +395,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "VP Development and External Affairs",
     email: "mwysoglad@larabida.org",
     source: "https://www.larabida.org/contact/",
-    note: `La Rabida is the only hospital around here built entirely for children with complex chronic conditions, so your families aren't passing through. They come back for years, and a language barrier in that arrangement compounds instead of resolving. With better than nine in ten of your patients on Medicaid I'd guess a good number of them are doing all of it in a language the system defaults away from. I'm writing to you because external affairs is the front door. If someone at La Rabida owns interpreting I'd be grateful if you sent this along to them, or come yourself.`,
+    note: `La Rabida is the only hospital around here built entirely for children with complex chronic conditions, so your families aren't passing through. They come back for years, and a language barrier in that arrangement compounds instead of resolving. With better than nine in ten of your patients on Medicaid I'd guess a good number of them are doing all of it in a language the system defaults away from.
+
+I'm writing to you because external affairs is the front door. If someone at La Rabida owns interpreting I'd be grateful if you sent this along to them, or come yourself.`,
   },
 
   // ─── Public health, government, and the courts ────────────────────────────
@@ -434,7 +444,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Senior Program Manager, Language Access",
     email: "nalawawda@illinoiscourts.gov",
     source: "https://www.illinoiscourts.gov/public/find-a-language-interpreter/",
-    note: `The court interpreter registry is the closest thing Illinois has to a settled answer on who's qualified to interpret when the stakes are high. Healthcare has nothing equivalent. A hospital can put very nearly anyone in the room and still call it access. You've been at the AOIC since roughly the start of certification here, spoken language and sign language both, and I'd like the clinicians and interpreters coming to this to hear how that got built from someone who was actually there.`,
+    note: `The court interpreter registry is the closest thing Illinois has to a settled answer on who's qualified to interpret when the stakes are high. Healthcare has nothing equivalent. A hospital can put very nearly anyone in the room and still call it access.
+
+You've been at the AOIC since roughly the start of certification here, spoken language and sign language both, and I'd like the clinicians and interpreters coming to this to hear how that got built from someone who was actually there.`,
   },
   {
     org: "the Illinois School for the Deaf",
@@ -465,7 +477,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Senior Program Manager, Health Equity Initiatives",
     email: "acreek@illinoisaap.com",
     source: "https://illinoisaap.org/about-2/",
-    note: `ICAAP publishes a bilingual flyer on interpretation services for pediatric practices, which puts your chapter ahead of most of the state chapters I've looked at, where interpreting turns up as a compliance footnote if it turns up. The flyer sits under health equity initiatives, so I'm guessing you're the one fielding calls from practices that want to do this properly and can't afford a full-time interpreter. Those calls are more or less what the conference is built around.`,
+    note: `ICAAP publishes a bilingual flyer on interpretation services for pediatric practices, which puts your chapter ahead of most of the state chapters I've looked at, where interpreting turns up as a compliance footnote if it turns up.
+
+The flyer sits under health equity initiatives, so I'm guessing you're the one fielding calls from practices that want to do this properly and can't afford a full-time interpreter. Those calls are more or less what the conference is built around.`,
   },
   {
     org: "CCHI",
@@ -987,7 +1001,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Executive Director",
     email: "mnava@corazoncs.org",
     source: "https://www.corazoncs.org/our-team",
-    note: `You started as ED in January, coming from Trilogy with a master's in health communications, which is close to the exact subject of this conference. Cicero is about ninety-one percent Latino and Corazón has been at 5339 W. 25th since 2006, so the line you used about being an organic extension of the community isn't the usual thing an incoming director says. I'd be interested in what you've found in six months that the org chart didn't tell you.`,
+    note: `You started as ED in January, coming from Trilogy with a master's in health communications, which is close to the exact subject of this conference. Cicero is about ninety-one percent Latino and Corazón has been at 5339 W. 25th since 2006, so the line you used about being an organic extension of the community isn't the usual thing an incoming director says.
+
+I'd be interested in what you've found in six months that the org chart didn't tell you.`,
   },
   {
     org: "Latino Union of Chicago",
@@ -1051,7 +1067,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Chief Operating Officer",
     email: "Blanca@littlevillagechamber.org",
     source: "https://littlevillagechamber.org",
-    note: `The chamber hosts a Community Health and Resource Fair, which as far as I can tell makes it the only Hispanic chamber in the Chicago area running anything like a health program. You've held both of the chamber's top jobs and you manage SSA #25 along the 26th Street corridor. If a business district is going to be the front door to care for people who don't have another one, I'd like to understand how that happened here and not elsewhere.`,
+    note: `The chamber runs a Community Health and Resource Fair, which as far as I can tell makes it the only Hispanic chamber in the Chicago area doing anything like a health program. You've held both of the chamber's top jobs and you manage SSA #25 along 26th Street.
+
+If a business district ends up being the front door to care for people who have no other one, I'd like to understand how that happened here and not anywhere else. Nobody I've asked can tell me whether it was deliberate.`,
   },
 
   // ─── Latino health professional associations ──────────────────────────────
@@ -1187,7 +1205,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Co-advisor",
     email: "marcelo.vinces@northwestern.edu",
     source: "Northwestern SACNAS chapter page and the 2024 Linzer Award announcement",
-    note: `You grew up in an Ecuadorian immigrant family and were undocumented, and you now advise the students coming through the same door. The Linzer Award in 2024 says the university noticed. Most of the people who fix language access in a hospital twenty years from now are undergraduates somewhere right now, and a good share of them are in chapters like yours.`,
+    note: `You grew up in an Ecuadorian immigrant family, were undocumented, and now advise the students coming through the same door — the Linzer Award in 2024 says the university noticed.
+
+Most of the people who will fix this inside a hospital twenty years from now are undergraduates somewhere right now, and a good share of them are sitting in chapters like yours.`,
   },
   {
     org: "NAHJ Chicago",
@@ -1196,7 +1216,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Vice President; anchor, WBEZ",
     email: "agomez@wbez.org",
     source: "NAHJ Chicago board listing and WBEZ staff page",
-    note: `Your February piece on the Operation Midway Blitz fallout still being felt in Latino neighborhoods got at something the health data won't show for another two years. People stop showing up for care and it doesn't register anywhere until the numbers get bad enough to publish. Coming as press is fine, coming as a participant is better, and you're welcome either way.`,
+    note: `Your February piece on the Operation Midway Blitz fallout still being felt in Latino neighborhoods got at something the health data won't show for another two years. People stop showing up for care and it doesn't register anywhere until the numbers get bad enough to publish.
+
+Coming as press is fine, coming as a participant is better, and you're welcome either way.`,
   },
   {
     org: "Prairie State Medical Society",
@@ -1248,7 +1270,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Program Director, Clear Language Lab",
     email: "melanie@litworks.org",
     source: "https://www.litworks.org and HealthLiterateCookCounty.org",
-    note: `The Clear Language Lab work with Cook County Health on health literacy for community health workers is the piece almost everybody skips. Material gets translated into Spanish at a reading level that was already too high in English, and then everyone is surprised it doesn't land. Your Community Voices Project seems to be the part where you check with actual readers instead of assuming.`,
+    note: `The Clear Language Lab work with Cook County Health is the piece almost everybody skips. Material gets translated into Spanish at a reading level that was already too high in English, and then everyone is surprised when it doesn't land.
+
+Community Voices looks like the part where you check with actual readers instead of assuming. I'd like to know what that turns up that a readability score doesn't, and whether anyone acts on it.`,
   },
   {
     org: "Illinois Resource Center",
@@ -1725,7 +1749,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "President and Chief Executive Officer",
     email: "mrivera@illinoismigrant.org",
     source: "https://illinoismigrant.org/staff",
-    note: `Sixty years, four regions, about forty counties, and your health program is pesticide safety and heat stress education with screening referrals for diabetes, TB and cancers. That's the whole care pathway for people who are in a county for eight weeks. Your site footer says auxiliary aids and services available on request, and I'd like to know how often anybody actually requests one.`,
+    note: `Sixty years, four regions, about forty counties, and your health program is pesticide safety and heat stress education with screening referrals for diabetes, TB and cancers. That's the whole care pathway for people who are in a county for eight weeks.
+
+Your site footer says auxiliary aids and services available on request, and I'd like to know how often anybody actually requests one.`,
   },
   {
     org: "Illinois Migrant Council",
@@ -2909,7 +2935,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Community Health Worker",
     email: "fkhatoon@indoamerican.org",
     source: "https://indoamerican.org/about-us/staff",
-    note: `Interpreter vendors treat Hindi, Urdu, Gujarati and Punjabi as more or less interchangeable, and a Gujarati speaker handed a Hindi interpreter will usually go along with it rather than make a fuss in a clinic. You do the accompaniment and the follow-up afterward, which means you are one of the few people who finds out what was actually understood. The distance between what a chart records as interpreted and what the patient walked out knowing is most of what we want to spend two days on.`,
+    note: `Interpreter vendors treat Hindi, Urdu, Gujarati and Punjabi as more or less interchangeable, and a Gujarati speaker handed a Hindi interpreter will usually go along with it rather than make a fuss in a clinic. You do the accompaniment and the follow-up afterward, which means you are one of the few people who finds out what was actually understood.
+
+The distance between what a chart records as interpreted and what the patient walked out knowing is most of what we want to spend two days on.`,
   },
   {
     org: "Indo-American Center",
@@ -2918,7 +2946,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Public Benefits Case Manager",
     email: "bvasani@indoamerican.org",
     source: "https://indoamerican.org/about-us/staff",
-    note: `Medicaid redetermination notices go out in a short list of languages, and Gujarati is generally not one of them on the assumption that a Gujarati speaker reads Hindi. The coverage gap that follows turns up months later at a clinic with no idea why the person went uninsured. Most of the people coming to this are on the clinical end of that sequence and very few are on the paperwork end, which is the wrong balance.`,
+    note: `Medicaid redetermination notices go out in a short list of languages, and Gujarati is generally not one of them on the assumption that a Gujarati speaker reads Hindi.
+
+The coverage gap that follows turns up months later at a clinic with no idea why the person went uninsured. Most of the people coming to this are on the clinical end of that sequence and very few are on the paperwork end, which is the wrong balance.`,
   },
   {
     org: "Assyrian National Council of Illinois",
@@ -2927,7 +2957,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Assistant Director",
     email: "shoshan@ancil.org",
     source: "https://ancil.org/contact",
-    note: `Chicagoland has one of the largest Assyrian populations anywhere and close to no trained medical interpreter capacity in Neo-Aramaic, so clinical conversations tend to route through whichever relative came along, often a young one. ANCIL running home care puts you nearest the elders least likely to have any English at all. What a hospital actually does when it has nothing at all for a language is the part no procedure manual covers.`,
+    note: `Chicagoland has one of the largest Assyrian populations anywhere and close to no trained interpreter capacity in Neo-Aramaic. So the conversation routes through whichever relative came along, often a young one. Running home care puts you nearest the elders least likely to have any English at all.
+
+What a hospital actually does when it has nothing for a language is the part no procedure manual covers. I'd rather hear it from you than guess at it.`,
   },
   {
     org: "Assyrian National Council of Illinois",
@@ -2947,7 +2979,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Nutrition Program Manager, Chicago",
     email: "nyang@hanulusa.org",
     source: "https://hanulusa.org/what-we-do/senior-services",
-    note: `A congregate meal site sees the same older adults every week, which is more contact than any clinic gets, and it makes the staff there the first to notice when something is going wrong medically. The Kedzie site skews lower income and more likely to be on Medicaid than the suburban ones. What an elder says about a doctor's visit a week afterward is usually more accurate than what they said in the room.`,
+    note: `A congregate meal site sees the same older adults every week, which is more contact than any clinic gets, and it makes the staff there the first to notice when something is going wrong medically. The Kedzie site skews lower income and more likely to be on Medicaid than the suburban ones.
+
+What an elder says about a doctor's visit a week afterward is usually more accurate than what they said in the room.`,
   },
   {
     org: "Hanul Family Alliance",
@@ -3021,7 +3055,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     email: "kourtney.chesney@endeavorhealth.org",
     source:
       "https://www.nwcemss.org/assets/1/documents/2026_NWC_EMSS_Directory_01-05.pdf (system directory dated 5 January 2026, email printed beside her name)",
-    note: `Here's the thing I can't get anyone to answer. When a crew burns four extra minutes on scene because they can't get a history, does that show up in your run review as anything at all, or does it just look like a slow call? You'd know. I'm putting together a conference on language access in pediatric care and almost everyone coming works in a building, not a driveway, which is most of why I'm writing to you.`,
+    note: `Here's the thing I can't get anyone to answer. When a crew burns four extra minutes on scene because they can't get a history, does that show up in your run review as anything at all, or does it just look like a slow call? You'd know.
+
+I'm putting together a conference on language access in pediatric care and almost everyone coming works in a building, not a driveway, which is most of why I'm writing to you.`,
   },
   {
     org: "Northwest Community EMS System (Endeavor Health)",
@@ -3041,7 +3077,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "ECRN Coordinator / EMS Instructor",
     email: "Marlo.Jorgenson@luhs.org",
     source: "https://www.loyolamedicine.org/ems/staff",
-    note: `ECRNs give orders off a picture somebody else built over a radio. If the crew couldn't get a history, you're the next person the problem lands on and you still have to decide. That's a failure mode I've never seen written up anywhere, and it's the one I'd most like on our agenda.`,
+    note: `ECRNs give orders off a picture somebody else built, over a radio, and if the crew couldn't get a history you're the next person the problem lands on — still having to decide.
+
+I've never seen that written up anywhere.`,
   },
   {
     org: "Loyola University Medical Center EMS System",
@@ -3050,7 +3088,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Paramedic Program Coordinator, NREMT Course Coordinator",
     email: "Joshua.Hintz@luhs.org",
     source: "https://www.loyolamedicine.org/ems/staff",
-    note: `You're training people to a national registry standard while they do clinicals in Maywood and the towns around it. The exam rewards a clean, fast history and those streets don't always hand you one. I'd genuinely like to know whether you prepare students for that on purpose or whether they find out in the field.`,
+    note: `You're training people to a national registry standard while they do clinicals in Maywood and the towns around it. The exam rewards a clean, fast history and those streets don't always hand you one.
+
+I'd genuinely like to know whether you prepare students for that on purpose or whether they find out in the field.`,
   },
   {
     org: "Cook County Health — Chicago West EMS System (Stroger)",
@@ -3059,7 +3099,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "EMS Educator",
     email: "mstrzalka@cookcountyhhs.org",
     source: "https://chicagoems.org/resource-hospitals/",
-    note: `Your system covers the West Side, so your crews walk into households where the patient, the family and whoever called 911 may each be working in a different language. You're the one who has to turn that into something teachable. What do you tell a new medic to do in the first sixty seconds? I'd like to put that answer in front of a room of pediatricians who have never had to give one.`,
+    note: `Your system covers the West Side, so your crews walk into households where the patient, the family and whoever called 911 may each be working in a different language. You're the one who has to turn that into something teachable. What do you tell a new medic to do in the first sixty seconds?
+
+I'd like to put that answer in front of a room of pediatricians who have never had to give one.`,
   },
   {
     org: "Advocate Illinois Masonic — Chicago North EMS System",
@@ -3068,7 +3110,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "EMS Operations Coordinator",
     email: "Rachel.Thornburg@aah.org",
     source: "https://chicagoems.org/resource-hospitals/",
-    note: `Chicago North covers a stretch where the household language changes street to street. My suspicion is that the friction from that is real and measured nowhere, because it doesn't have a field to go in. If I'm wrong I'd like to be told so before I say it out loud at a conference in front of three hundred people.`,
+    note: `Chicago North covers a stretch where the household language changes street to street. My suspicion is that the friction from that is real and measured nowhere, because there's no field for it to go in.
+
+If I'm wrong I'd like to be told so before I say it out loud in front of three hundred people. That isn't a rhetorical offer. I'd genuinely rather be corrected in June than in August.`,
   },
   {
     org: "UChicago Medicine — Chicago South EMS System",
@@ -3077,7 +3121,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "EMS System Coordinator",
     email: "cynthia.gajewski@uchicagomedicine.org",
     source: "https://chicagoems.org/resource-hospitals/",
-    note: `Where I keep getting stuck is the handoff. What the crew couldn't establish on scene becomes what the ED doesn't know on arrival, and I can't tell from outside whether that gap gets closed in practice or just gets absorbed. You run one set of protocols across a very varied South Side catchment, so you'd know how often it happens.`,
+    note: `Where I keep getting stuck is the handoff. What the crew couldn't establish on scene becomes what the ED doesn't know on arrival, and I can't tell from outside whether that gap gets closed in practice or just gets absorbed.
+
+You run one set of protocols across a very varied South Side catchment, so you'd know how often it happens.`,
   },
   {
     org: "Northwestern Memorial — Chicago Central EMS System",
@@ -3086,7 +3132,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "EMS System Coordinator",
     email: "plindema@nm.org",
     source: "https://chicagoems.org/resource-hospitals/",
-    note: `Chicago Central takes in downtown, which means a real share of your patients are people nobody on scene knows, who can't say where they're from and have nobody with them who can. That's a triage accuracy problem before it's a language problem. How does your system handle an unaccompanied patient who can't give a history?`,
+    note: `Chicago Central takes in downtown, which means a real share of your patients are people nobody on scene knows, who can't say where they're from and have nobody with them who can.
+
+That's a triage accuracy problem before it's a language problem. How does your system handle an unaccompanied patient who can't give a history?`,
   },
   {
     org: "Mount Prospect Fire Department",
@@ -3107,7 +3155,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     email: "Danielle.albinger@illinois.gov",
     source:
       "https://www.nwcemss.org — Advisory Board membership list, May 2024, listing her IDPH title and the West Chicago office at 245 W Roosevelt Rd (DuPage County) beside this address.",
-    note: `Region 9 takes in Elgin and Aurora, and you're the person the system plans get submitted to. Narrow question: does anything in any of those plans address a patient who can't answer assessment questions? If the answer is no, has anyone ever raised it with you? I'd rather know that than guess at it from the outside.`,
+    note: `Region 9 takes in Elgin and Aurora, and you're the person the system plans get submitted to. Narrow question: does anything in any of those plans address a patient who can't answer assessment questions? If the answer is no, has anyone ever raised it with you?
+
+I'd rather know that than guess at it from the outside.`,
   },
   {
     org: "Ascension Resurrection Medical Center",
@@ -3194,7 +3244,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     email: "ceasley2@ccc.edu",
     source:
       "Malcolm X College Paramedic Program Student Handbook 2024-2025 (ccc.edu), email printed beside his name in the faculty list",
-    note: `You place students into clinical sites and then hear back about how they did, which is a view of where new medics freeze that almost nobody else has. Is not being able to get a history off a patient one of the recurring ones? What do your preceptors say about it when they're being honest?`,
+    note: `You place students into clinical sites and then hear back about how they did, which is a view of where new medics freeze that almost nobody else has. Is not being able to get a history off a patient one of the recurring ones?
+
+What do your preceptors say about it when they're being honest?`,
   },
   {
     org: "Moraine Valley Community College",
@@ -3235,7 +3287,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Lead Nurse",
     email: "aplaku@cicd99.edu",
     source: "https://www.cicd99.edu — district health services staff listing",
-    note: `District 99 is around twelve thousand students and the great majority of your families speak Spanish at home. You're the person those health office calls eventually roll up to. I'm organising a conference on language access in pediatric care and the agenda so far is heavy on hospitals, which is a mistake — a school nurse handles more real conversations with LEP parents in a week than most clinics manage in a month. I'd like you in the room.`,
+    note: `District 99 is around twelve thousand students and the great majority of your families speak Spanish at home. You're the person those health office calls eventually roll up to. I'm organising a conference on language access in pediatric care and the agenda so far is heavy on hospitals, which is a mistake — a school nurse handles more real conversations with LEP parents in a week than most clinics manage in a month.
+
+I'd like you in the room.`,
   },
   {
     org: "Cicero School District 99",
@@ -3274,7 +3328,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Family Liaison",
     email: "jescobar@bsd100.org",
     source: "https://www.bsd100.org — Emerson, Room 105, 708-303-4135",
-    note: `You're the district's dedicated bilingual family liaison, which means you are the answer to the question hospitals keep asking themselves in strategy documents. They pay consultants for a version of what you already do daily. I'm putting together a conference on language access in pediatric care and I'd rather hear from you than from another vendor.`,
+    note: `You're the district's dedicated bilingual family liaison, which means you are the answer to the question hospitals keep asking themselves in strategy documents. They pay consultants for a version of what you already do daily.
+
+I'm putting together a conference on language access in pediatric care and I'd rather hear from you than from another vendor.`,
   },
   {
     org: "Berwyn South School District 100",
@@ -3283,7 +3339,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "School Nurse",
     email: "maria.torres@bsd100.org",
     source: "https://www.bsd100.org — health services listing; splits Emerson and Heritage",
-    note: `Splitting two buildings means you're the health office for a lot of families and physically present for about half of them at any given moment. The medication and asthma-plan conversations that go through you are the same conversations a pediatric clinic has, with less time and no interpreter line. I'd like the clinic half of our audience to hear what that's actually like.`,
+    note: `Splitting two buildings means you're the health office for a lot of families and physically present for about half of them at any given moment. The medication and asthma-plan conversations that go through you are the same conversations a pediatric clinic has, with less time and no interpreter line.
+
+I'd like the clinic half of our audience to hear what that's actually like.`,
   },
   {
     org: "Berwyn South School District 100",
@@ -3302,7 +3360,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Home School Community Liaison",
     email: "MArenella@bn98.org",
     source: "https://www.bn98.org — District Office, 708-484-6200",
-    note: `Home school community liaison is one of those titles that sounds administrative and turns out to be the person who knows which families are actually reachable and how. That knowledge doesn't exist anywhere in a hospital. We're running a conference on language access in pediatric care in Chicago and I think you'd change what the clinical people in the room think the problem is.`,
+    note: `Home school community liaison sounds administrative, and turns out to mean you're the person who knows which families are actually reachable and how — knowledge that doesn't exist anywhere inside a hospital.
+
+I think you'd change what the clinical people in the room believe the problem is.`,
   },
   {
     org: "Berwyn North School District 98",
@@ -3350,7 +3410,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "EL Program Coordinator",
     email: "mkuhn@sd104.us",
     source: "https://www.sd104.us — Multilingual Programs page, where she is listed simply as 'Coordinator'",
-    note: `Summit is small enough that the EL program is a person rather than a department, which I suspect makes you the one who notices when something isn't working. Do the health forms and the emergency contact cards actually get back from families in usable shape? That's a mundane question and I think it's a much bigger deal than the conference circuit realises.`,
+    note: `Summit is small enough that the EL program is a person rather than a department, which I suspect makes you the one who notices when something isn't working.
+
+Do the health forms and the emergency contact cards actually get back from families in usable shape? That's a mundane question and I think it's a much bigger deal than the conference circuit realises.`,
   },
   {
     org: "Leyden High School District 212",
@@ -3360,7 +3422,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     email: "adiaz@leyden212.org",
     source:
       "https://www.leyden212.org/academics/departments — her name links to mailto:adiaz@leyden212.org under 'Multilingual Learners and Literacy'. CAVEAT: that link's screen-reader-only label wrongly reads cschmidt@leyden212.org, a stale copy-paste; the actual href is adiaz@. There is no Christina Schmidt on any Leyden page.",
-    note: `Leyden's own page tells families to contact the Multilingual Department Chair at their campus, which makes you the district's front door for more than thirty language groups. Two high schools, 3,500 students, and the translation resources page lists Google Translate and Microsoft Translate by name. I'd like you to say out loud at our conference what that's like, because the hospitals in the room are quietly doing the same thing and calling it a strategy.`,
+    note: `Leyden's own page tells families to contact the Multilingual Department Chair at their campus, which makes you the district's front door for more than thirty language groups. Two high schools, 3,500 students, and the translation resources page lists Google Translate and Microsoft Translate by name.
+
+I'd like you to say out loud at our conference what that's like, because the hospitals in the room are quietly doing the same thing and calling it a strategy.`,
   },
   {
     org: "Leyden High School District 212",
@@ -3370,7 +3434,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     email: "mcuevas@leyden212.org",
     source:
       "https://www.leyden212.org/parents-community/health-care-services/contact-us — East Leyden, Franklin Park, 847-451-3084. TITLE CAVEAT: Leyden publishes no job-title string for its nurses, only credentials under an 'East'/'West' heading. The title field holds exactly what is published; she is the building nurse by page context.",
-    note: `East Leyden's health office covers a student body drawn from more than thirty language groups. That's a harder job than the equivalent in a hospital, because you don't have a phone line to call and you have to finish the conversation before the bell. I'm inviting you to a conference on language access in pediatric care and I'd like it to be less hospital-shaped than it currently is.`,
+    note: `East Leyden's health office covers a student body drawn from more than thirty language groups. That's a harder job than the equivalent in a hospital, because you don't have a phone line to call and you have to finish the conversation before the bell.
+
+I'm inviting you to a conference on language access in pediatric care and I'd like it to be less hospital-shaped than it currently is.`,
   },
   // ─── Collar-county districts: Lake, Kane, Will, DuPage, McHenry ───────────
   // Cook County is not where the pressure is. The districts below sit in towns
@@ -3410,7 +3476,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Social Worker",
     email: "cherrera@rlas-116.org",
     source: "https://rlhs.rlas-116.org/school-services/educational-services/social-workers",
-    note: `The high school's own page lists your caseload as ESL 1 and ESL 2. Not a grade level, not an alphabet split, not a building — a language program. Whatever the intention, the district has organised clinical support around the fact of not speaking English yet, and you are the person living inside that arrangement daily. We spend two days on interpretation in medical and legal settings and rarely hear from anyone whose assignment was drawn that way to begin with.`,
+    note: `The high school's own page lists your caseload as ESL 1 and ESL 2.
+
+Not a grade level, not an alphabet split, not a building — a language program. Whatever the intention, the district has organised clinical support around the fact of not speaking English yet, and you are the person living inside that arrangement daily. We spend two days on interpretation in medical and legal settings and rarely hear from anyone whose assignment was drawn that way to begin with.`,
   },
   {
     org: "Round Lake Area Schools CUSD 116 (Lake County)",
@@ -3419,7 +3487,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Multilingual Learner Department Chair",
     email: "azermeno@rlas-116.org",
     source: "https://rlhs.rlas-116.org/academics/departments/english-as-a-new-language",
-    note: `Round Lake High School's newcomers arrive with medical histories that live in another country and often another language, and the first person a family tells anything to is usually somebody in your department rather than a nurse or a doctor. Teachers end up interpreting in situations nobody trained them for and no policy acknowledges. What that costs, and who absorbs it, is a fair amount of what the two days are about.`,
+    note: `Your newcomers arrive with medical histories that live in another country and usually another language. The first person a family tells any of it to is somebody in your department, not a nurse and not a doctor. Teachers then end up interpreting in situations nobody trained them for and no policy acknowledges.
+
+What that costs, and who absorbs it, is a fair amount of what the two days are about.`,
   },
   {
     org: "Round Lake Area Schools CUSD 116 (Lake County)",
@@ -3428,7 +3498,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Round Lake Middle School Nurse, RN",
     email: "drodriguez@rlas-116.org",
     source: "https://rlms.rlas-116.org/our-school/school-nurse",
-    note: `Your school page says Hablo espanol, with the exclamation mark. That single line does more work than it looks like: it means you get every Spanish-language call in the building, including the ones about students who are not yours and the ones that are not medical at all. Health systems solve that by procuring a vendor. A school nurse solves it by being the person who picks up, which is a different job with none of the same protections.`,
+    note: `Your school page says Hablo espanol, with the exclamation mark. That single line does more work than it looks like: it means you get every Spanish-language call in the building, including the ones about students who are not yours and the ones that are not medical at all. Health systems solve that by procuring a vendor.
+
+A school nurse solves it by being the person who picks up, which is a different job with none of the same protections.`,
   },
   {
     org: "Round Lake Area Schools CUSD 116 (Lake County)",
@@ -3437,7 +3509,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Raymond Ellis Elementary School Nurse, BSN, RN, TNS",
     email: "amelesio@rlas-116.org",
     source: "https://rees.rlas-116.org/our-school/school-nurse",
-    note: `A Trauma Nurse Specialist credential in an elementary building is an unusual combination — it means the emergency side of your training is mostly idle and then occasionally the only thing that matters. Add Spanish, which your page advertises, and you are the person who both handles the injury and explains it to a parent who will not otherwise be told anything until an ambulance arrives. The handoff between those two moments is one of the places this conference actually digs into.`,
+    note: `A Trauma Nurse Specialist credential in an elementary building is an unusual combination — it means the emergency side of your training is mostly idle and then occasionally the only thing that matters.
+
+Add Spanish, which your page advertises, and you are the person who both handles the injury and explains it to a parent who will not otherwise be told anything until an ambulance arrives. The handoff between those two moments is one of the places this conference actually digs into.`,
   },
   {
     org: "Round Lake Area Schools CUSD 116 (Lake County)",
@@ -3446,7 +3520,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Multilingual Learner Teaching Assistant",
     email: "cgomez@rlas-116.org",
     source: "https://rlhs.rlas-116.org/academics/departments/english-as-a-new-language",
-    note: `Teaching assistants get pulled into parent conferences, discipline meetings and phone calls home as the person who speaks the language, without the title, the training or the pay that would come with being called an interpreter. It happens in hospitals to housekeeping staff and in schools to TAs, for the same reason and with the same consequences. This is one of the few rooms where that is treated as the substantive problem it is rather than a scheduling inconvenience.`,
+    note: `Teaching assistants get pulled into parent conferences, discipline meetings and phone calls home as the person who speaks the language, with none of the title, training or pay that would come with being called an interpreter. It happens to housekeeping staff in hospitals for exactly the same reason.
+
+This is one of the few rooms where that gets treated as a real problem rather than a scheduling inconvenience. I'd like you in it.`,
   },
   {
     org: "Waukegan CUSD 60 (Lake County)",
@@ -3465,7 +3541,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Language Assessor",
     email: "hcaceres@wps60.org",
     source: "https://www.wps60.org/o/wcusd/page/bilingual-and-multicultural-department",
-    note: `You administer the screener that decides whether a child is an English learner, and that determination follows them for years through placement, testing and sometimes special education referral. It is a fifteen-minute interaction with a very long tail. The parallel in medicine is the intake question about preferred language, asked once, entered once, and then trusted by every clinician downstream who never repeats it.`,
+    note: `You administer the screener that decides whether a child is an English learner, and that determination follows them for years through placement, testing and sometimes special education referral. It is a fifteen-minute interaction with a very long tail.
+
+The parallel in medicine is the intake question about preferred language, asked once, entered once, and then trusted by every clinician downstream who never repeats it.`,
   },
   {
     org: "Waukegan CUSD 60 (Lake County)",
@@ -3484,7 +3562,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "PreK-12 Specialist",
     email: "hbachiri@wps60.org",
     source: "https://www.wps60.org/o/wcusd/page/bilingual-and-multicultural-department",
-    note: `Waukegan's bilingual department is built for Spanish because most of the district is, which leaves whoever handles everything else doing a lot of improvising with no vendor contract behind them. That is the exact position a hospital finds itself in at two in the morning with a language it has never encountered, and hospitals tend to think of it as a rare event rather than a standing condition. Two days on what people actually do in that situation is the point of this.`,
+    note: `Waukegan's bilingual department is built for Spanish because most of the district is, which leaves whoever handles everything else doing a lot of improvising with no vendor contract behind them.
+
+That is the exact position a hospital finds itself in at two in the morning with a language it has never encountered, and hospitals tend to think of it as a rare event rather than a standing condition. Two days on what people actually do in that situation is the point of this.`,
   },
   {
     org: "Waukegan CUSD 60 (Lake County)",
@@ -3523,7 +3603,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Multilingual and Multicultural Education Program Placement Specialist",
     email: "lauragodinez@u-46.org",
     source: "https://www.u-46.org/page/family-welcome-center",
-    note: `U-46 is the second largest district in the state and you do the English proficiency screening and the placement recommendation, so a very large number of children in the Fox Valley pass through a judgment you make. The volume is what makes it interesting: at that scale the shortcuts and defaults become visible in a way they never are in a single clinic. Whatever your screening process does badly, it does badly thousands of times, and you are one of the few people positioned to say what that is.`,
+    note: `U-46 is the second largest district in the state, and you do the proficiency screening and the placement recommendation. So a very large number of children in the Fox Valley pass through a judgment you make. The volume is what makes it interesting — at that scale the shortcuts and the defaults become visible in a way they never are in one clinic.
+
+Whatever the process does badly, it does badly thousands of times. You're one of very few people positioned to say what that is.`,
   },
   {
     org: "School District U-46 (Elgin, Kane/Cook/DuPage)",
@@ -3552,7 +3634,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Community Liaison and CARE Coordinator",
     email: "lschwarz@bsd2.org",
     source: "https://www.bsd2.org/departments/superintendent-s-office/community-relations",
-    note: `Bensenville sits under the flight path with a large immigrant workforce attached to the airport, which produces a particular pattern: shift work, no daytime availability, and appointments that get missed for reasons that look like non-compliance on paper. You are the person who finds out the real reason. Health systems build no-show interventions without ever hearing that explanation from someone who has actually asked.`,
+    note: `Bensenville sits under the flight path with a large immigrant workforce attached to the airport, which produces a particular pattern: shift work, no daytime availability, and appointments that get missed for reasons that look like non-compliance on paper. You are the person who finds out the real reason.
+
+Health systems build no-show interventions without ever hearing that explanation from someone who has actually asked.`,
   },
   {
     org: "Bensenville SD 2 (DuPage County)",
@@ -3571,7 +3655,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Student Services Coordinator, Tioga School",
     email: "kstalzer@bsd2.org",
     source: "https://www.bsd2.org/departments/student-services",
-    note: `Special education evaluation across a language barrier is the single most consequential place this goes wrong, because a language difference and a disability look alike on the wrong instrument and the resulting placement lasts years. The medical version is a mental health assessment done through an interpreter nobody briefed. Both fail the same way and neither field talks to the other about it.`,
+    note: `Special education evaluation across a language barrier is the single most consequential place this goes wrong, because a language difference and a disability look alike on the wrong instrument and the resulting placement lasts years.
+
+The medical version is a mental health assessment done through an interpreter nobody briefed. Both fail the same way and neither field talks to the other about it.`,
   },
   {
     org: "Community Unit School District 300 (Kane/McHenry)",
@@ -3650,7 +3736,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Parent Liaison",
     email: "CinziaBellarosa@sd54.org",
     source: "https://www.sd54.org/page/language-and-culture",
-    note: `Schaumburg's newcomer population is unusually varied for a suburban district — it is not one language with a long tail but genuinely many, which makes every standard solution a partial one. A liaison in that setting develops a working sense of which languages the systems around you can actually serve and which ones you have to route around personally. Nobody publishes that map and it is one of the more valuable things anyone could bring into this room.`,
+    note: `Schaumburg's newcomer population is unusually varied for a suburban district — not one language with a long tail but genuinely many, which makes every standard solution a partial one. A liaison in that setting builds up a working sense of which languages the systems around you can actually serve, and which ones you have to route around personally.
+
+Nobody publishes that map. It's one of the more valuable things anyone could carry into this room.`,
   },
   {
     org: "Schaumburg CCSD 54 (Cook County)",
@@ -3719,7 +3807,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Social Worker, Graves Dual Language School",
     email: "ecampuzano@sd104.us",
     source: "https://www.sd104.us/page/school-social-work",
-    note: `Clinical work in a dual language building means the language question is settled before you start, which is rare enough that it makes the rest visible — you find out what the actual difficulty was once the interpretation problem is removed. Almost every other setting in this field is still stuck on the first problem and assumes it is the only one. A description of what remains after it is solved would be genuinely new information for most of this room.`,
+    note: `Clinical work in a dual language building means the language question is settled before you start, which is rare enough that it makes the rest visible — you find out what the actual difficulty was once the interpretation problem is removed. Almost every other setting in this field is still stuck on the first problem and assumes it is the only one.
+
+A description of what remains after it is solved would be genuinely new information for most of this room.`,
   },
   // ─── Special education co-ops and early childhood ─────────────────────────
   // Two seats nobody in language access ever writes to. Special education
@@ -3810,7 +3900,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Family Services Manager",
     email: "araceli.jimenez@headstartmchenrycounty.org",
     source: "https://www.headstartmchenrycounty.org (listed under Management Team)",
-    note: `McHenry County has a large agricultural and food processing workforce and almost none of the language infrastructure that Cook County takes for granted, so families there are further from every service and further from any interpreter. Family services in that setting means you are frequently the referral, not the person making one. What a county without capacity actually does is a more useful case study than another account of how a large hospital system runs its program.`,
+    note: `McHenry County has a large agricultural and food processing workforce and almost none of the language infrastructure that Cook County takes for granted, so families there are further from every service and further from any interpreter.
+
+Family services in that setting means you are frequently the referral, not the person making one. What a county without capacity actually does is a more useful case study than another account of how a large hospital system runs its program.`,
   },
   {
     org: "Community Action Agency for McHenry County (Head Start), Woodstock",
@@ -3829,7 +3921,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Site Supervisor",
     email: "aphillips@cc-doj.org",
     source: "https://catholiccharitiesjoliet.org/services/ecsd-alexandria-center",
-    note: `Running a Head Start centre means the daily language work is not scheduled — it is a parent at the door at pickup, a bus driver relaying something, a form nobody can fill in. None of it is billable or documented and all of it is the actual mechanism by which a family stays connected to services. Will County is also barely represented in any regional conversation about this, which is its own reason.`,
+    note: `Running a Head Start centre means the daily language work is never scheduled. It's a parent at the door at pickup, a bus driver relaying something, a form nobody can fill in. None of it is billable and none of it is documented, and all of it is the actual mechanism by which a family stays connected to anything.
+
+Will County is barely represented in any regional conversation about this. That's its own reason for writing to you.`,
   },
   {
     org: "Catholic Charities Diocese of Joliet — Early Childhood Services, Broadway Center (Will County)",
@@ -3838,7 +3932,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Site Supervisor",
     email: "ldees@cc-doj.org",
     source: "https://catholiccharitiesjoliet.org/services/ecsd-broadway-center",
-    note: `Head Start's home visiting requirement puts your staff inside apartments, which is a level of access no clinic or court will ever have and which produces a completely different picture of why a family missed something. Home visitors also end up interpreting for whatever else is going on in the household that day. That role has no name, no training and no boundary, and it is worth putting in front of a room that thinks of interpretation as a scheduled service.`,
+    note: `Head Start's home visiting requirement puts your staff inside apartments, which is a level of access no clinic or court will ever have and which produces a completely different picture of why a family missed something. Home visitors also end up interpreting for whatever else is going on in the household that day.
+
+That role has no name, no training and no boundary, and it is worth putting in front of a room that thinks of interpretation as a scheduled service.`,
   },
   {
     org: "Catholic Charities Diocese of Joliet — Early Childhood Services, Rockdale Center (Will County)",
@@ -3847,7 +3943,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Site Supervisor",
     email: "ealzamora@cc-doj.org",
     source: "https://catholiccharitiesjoliet.org/services/ecsd-rockdale-center (Rockdale operates on the Joliet Junior College campus and runs both Head Start and Early Head Start)",
-    note: `Early Head Start reaches infants and pregnant women, which puts your centre in contact with families during prenatal care and delivery — the setting where language failures are both most consequential and most studied, and where the studies almost never include anyone outside the hospital. Being on a community college campus also means a share of your parents are students, which changes what they can and cannot ask for. Both of those are angles this conference does not currently have.`,
+    note: `Early Head Start reaches infants and pregnant women, which puts your centre in contact with families during prenatal care and delivery — the setting where language failures are both most consequential and most studied, and where the studies almost never include anyone outside the hospital.
+
+Being on a community college campus also means a share of your parents are students, which changes what they can and cannot ask for. Both of those are angles this conference does not currently have.`,
   },
   {
     org: "Clearbrook — Child and Family Connections #6 (Early Intervention), Arlington Heights",
@@ -3856,7 +3954,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Local Interagency Council Coordinator and Parent Liaison",
     email: "smackey@clearbrook.org",
     source: "https://www.clearbrook.org/cfc",
-    note: `Early Intervention is the one system that is legally obliged to deliver services in the family's home and in a way the family can actually use, which makes it the closest thing this country has to a working language access mandate at the point of care. Whether that obligation survives contact with a therapist shortage and a per-visit funding model is the question. You would know better than almost anyone, and it is a much more concrete conversation than the one this field usually has.`,
+    note: `Early Intervention is the one system that is legally obliged to deliver services in the family's home and in a way the family can actually use, which makes it the closest thing this country has to a working language access mandate at the point of care.
+
+Whether that obligation survives contact with a therapist shortage and a per-visit funding model is the question. You would know better than almost anyone, and it is a much more concrete conversation than the one this field usually has.`,
   },
   {
     org: "Easterseals — Gilchrist Marchman Child Development Center, Chicago (Cook County)",
@@ -3905,7 +4005,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Head Start Director",
     email: "amcmillen@sga-youth.org",
     source: "Start Early, Early Head Start Network FY24 Annual Report (address published verbatim); sga-youth.org itself was returning errors, so the address should be confirmed by phone before sending. Center at 3501 W. 48th Place, serving Brighton Park and McKinley Park",
-    note: `Brighton Park and McKinley Park are among the neighbourhoods that absorbed the most recent arrivals with the least warning, and Early Head Start there means infants whose mothers may have delivered days after arriving. The prenatal and postpartum window is where interpretation failures cause the most measurable harm and where the least outreach happens. A description of the last two years from inside that catchment would change the tenor of the room.`,
+    note: `Brighton Park and McKinley Park are among the neighbourhoods that absorbed the most recent arrivals with the least warning, and Early Head Start there means infants whose mothers may have delivered days after arriving. The prenatal and postpartum window is where interpretation failures cause the most measurable harm and where the least outreach happens.
+
+A description of the last two years from inside that catchment would change the tenor of the room.`,
   },
   {
     org: "Onward Neighborhood House, Chicago",
@@ -3914,7 +4016,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Program Director, Early Childhood Education",
     email: "dcharles@onwardhouse.org",
     source: "https://onwardhouse.org/programs/early-childhood-education",
-    note: `A settlement house that has been on the northwest side for over a century has watched the same building serve four or five different language communities in sequence, which is a perspective almost nothing else in this field can offer. The mistakes institutions make with each new group are apparently identical each time and nobody who makes them has the memory to notice. Somebody in the room should be able to say that.`,
+    note: `A settlement house that has been on the northwest side for over a century has watched the same building serve four or five different language communities in sequence, which is a perspective almost nothing else in this field can offer.
+
+The mistakes institutions make with each new group are apparently identical each time and nobody who makes them has the memory to notice. Somebody in the room should be able to say that.`,
   },
   {
     org: "One Hope United, Waukegan Early Learning Center (Lake County)",
@@ -3982,7 +4086,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     email: "nicaciojazmin@16thcircuit.illinoiscourts.gov",
     source:
       "Sixteenth Judicial Circuit Court Language Access Plan, Part 7, Language Access Contact Information (https://www.illinois16thjudicialcircuit.org/Documents/LAJP.pdf)",
-    note: `You and Elizabeth are the two names on the Kane County plan, so I assume the day-to-day scheduling lands on you. The thing I'd want your read on is what happens when a party brings a relative to interpret and the court has to say no. Clinics say no to that far less often, and when they do they usually lose the argument.`,
+    note: `You and Elizabeth are the two names on the Kane County plan, so I assume the day-to-day scheduling lands on you.
+
+The thing I'd want your read on is what happens when a party brings a relative to interpret and the court has to say no. Clinics say no to that far less often, and when they do they usually lose the argument.`,
   },
   {
     org: "Loyola University Chicago School of Law, Health Justice Project",
@@ -3992,7 +4098,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     email: "asetrini@luc.edu",
     source:
       "https://www.luc.edu/law/academics/clinical-programs/healthjusticeproject/aboutus/ — the same bio states she previously managed Legal Aid Chicago's Medical-Legal Partnerships Project.",
-    note: `You've now seen medical-legal partnership from the legal aid side and from the law school side, which is a fairly rare vantage point. My interest is narrower than the usual MLP conversation: what happens to an intake done through a phone interpreter, and whether anything gets lost there that later turns into a bad case. You'd know better than most whether that's a real failure mode or one I've invented.`,
+    note: `You've now seen medical-legal partnership from the legal aid side and from the law school side, which is a fairly rare vantage point. My interest is narrower than the usual MLP conversation: what happens to an intake done through a phone interpreter, and whether anything gets lost there that later turns into a bad case.
+
+You'd know better than most whether that's a real failure mode or one I've invented.`,
   },
   {
     org: "Loyola University Chicago School of Law, Health Justice Project",
@@ -4002,7 +4110,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     email: "mgarcia15@luc.edu",
     source:
       "https://www.luc.edu/law/academics/clinical-programs/healthjusticeproject/aboutus/",
-    note: `You supervise the students doing the actual client interviews, which makes you the one who catches it when an interview goes sideways. I'm interested in the bilingual-attorney question specifically — the courts have a formal answer about when speaking the language is enough and when you still need an interpreter, and healthcare mostly doesn't. Curious whether you apply a rule or a feel.`,
+    note: `You supervise the students doing the actual client interviews, which makes you the one who catches it when an interview goes sideways. I'm interested in the bilingual-attorney question specifically — the courts have a formal answer about when speaking the language is enough and when you still need an interpreter, and healthcare mostly doesn't.
+
+Curious whether you apply a rule or a feel.`,
   },
   {
     org: "Legal Council for Health Justice",
@@ -4099,7 +4209,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     email: "mariangela@equipforequality.org",
     source:
       "Published staff directory, https://www.equipforequality.org/about/staff-directory/ (Chicago office, 312-895-7358)",
-    note: `You run intake, so you hear the complaint before anyone has shaped it into anything. That's the version I'm most interested in — how many callers can't get through the front door of the system they're calling about because of the language it's conducted in. And if the brain injury side of your work has anything to say about capacity and interpretation together, that's a conversation nobody is having.`,
+    note: `You run intake, so you hear the complaint before anyone has shaped it into anything. That's the version I'm most interested in — how many callers can't get through the front door of the system they're calling about because of the language it's conducted in.
+
+And if the brain injury side of your work has anything to say about capacity and interpretation together, that's a conversation nobody is having.`,
   },
   {
     org: "Disability Rights Advocates",
@@ -4120,7 +4232,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     email: "kfennell@hsplegal.com",
     source:
       "Title, practice description and address published at https://www.hsplegal.com/attorneys/kelli-fennell; the AILA role and the identical address are published at https://ailachicago.org/officers-liaisons/",
-    note: `Your caseload — family-based, naturalization, asylum, U visa, deferred action — is the one that generates psychological evaluations conducted through an interpreter. Those get written by clinicians who mostly have no training in working through one, and then read by adjudicators as though they were routine. I'd like to know how often you've had an evaluation come back weak for that reason.`,
+    note: `Your caseload — family-based, naturalization, asylum, U visa, deferred action — is the one that generates psychological evaluations conducted through an interpreter. Those get written by clinicians who mostly have no training in working through one, and then read by adjudicators as though they were routine.
+
+I'd like to know how often you've had an evaluation come back weak for that reason.`,
   },
   {
     org: "Law Offices of KiKi M. Mosley",
@@ -4148,7 +4262,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Director of Communications",
     email: "blee@icirr.org",
     source: "https://www.icirr.org/contact",
-    note: `Communications is an odd invitation to a clinical conference, which is roughly why I'm sending it. ICIRR has to say things in a lot of languages quickly, usually about something frightening and often before the agencies have said anything. I'd like to ask how you actually do that — who translates, how fast, and what you do when there's no vendor for the language.`,
+    note: `Communications is an odd invitation to a clinical conference, which is roughly why I'm sending it. ICIRR has to say things in a lot of languages quickly, usually about something frightening and often before the agencies have said anything.
+
+I'd like to ask how you actually do that — who translates, how fast, and what you do when there's no vendor for the language.`,
   },
   // ─── Higher education, health services research and policy ────────────────
   // The last section, and the one furthest from the usual list. Two seats:
@@ -4182,7 +4298,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
       "Professor of Language and Literacy; Director, Dual Language Teacher Leadership M.A. Program",
     email: "tobergdelagarza@roosevelt.edu",
     source: "https://blogs.roosevelt.edu/dual-language/faculty/",
-    note: `The teachers coming out of your programme are going to spend part of their careers being asked to interpret — for a colleague, for a school nurse, for a parent conference nobody planned as a bilingual meeting. It's relied on constantly and trained for almost never. I'd like to know whether the M.A. touches it at all or whether it's the thing they work out in year two.`,
+    note: `The teachers coming out of your programme are going to spend part of their careers being asked to interpret — for a colleague, for a school nurse, for a parent conference nobody planned as a bilingual meeting. It's relied on constantly and trained for almost never.
+
+I'd like to know whether the M.A. touches it at all or whether it's the thing they work out in year two.`,
   },
   {
     org: "Roosevelt University",
@@ -4214,7 +4332,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
       "Professor of ESL/Bilingual Education, National College of Education",
     email: "klems@nl.edu",
     source: "https://nl.edu/faculty/l/lems-kristin/",
-    note: `Your work is on reading in a second language, which is the part that gets skipped whenever someone says a patient is bilingual. Discharge instructions get handed to people who speak English fine and read it at a level nobody has ever measured. I'd like to know what you'd do to a discharge sheet if somebody let you.`,
+    note: `Your work is on reading in a second language, which is the part that gets skipped whenever someone says a patient is bilingual. Discharge instructions get handed to people who speak English fine and read it at a level nobody has ever measured.
+
+I'd like to know what you'd do to a discharge sheet if somebody let you.`,
   },
   {
     org: "Concordia University Chicago",
@@ -4225,7 +4345,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     email: "erin.real@cuchicago.edu",
     source:
       "https://www.cuchicago.edu/faculty/college-of-theology-arts--humanities/division-humanities/erin-real/",
-    note: `Whether somebody who has finished four semesters of Spanish should be talking to a patient without an interpreter is a question health systems answer by never asking it. You'd have a defensible answer. I'd like it said out loud in front of people who currently staff on self-reported fluency.`,
+    note: `Whether somebody who has finished four semesters of Spanish should be talking to a patient without an interpreter is a question health systems answer by never asking it. You'd have a defensible answer.
+
+I'd like it said out loud in front of people who currently staff on self-reported fluency.`,
   },
   {
     org: "City Colleges of Chicago — Harry S Truman College",
@@ -4234,7 +4356,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Senior Dean of Adult Education",
     email: "ljackson410@ccc.edu",
     source: "https://www.ccc.edu/truman/site/adult-education/",
-    note: `Your adult education students are, demographically, the same people every hospital in this city describes as hard to reach. They come to you voluntarily, at night, after work. Whatever you understand about why they turn up for you and not for a follow-up appointment is worth more than another outreach plan, and I'd rather hear it from you than infer it.`,
+    note: `Your adult education students are, demographically, the same people every hospital in this city describes as hard to reach. They come to you voluntarily, at night, after work.
+
+Whatever you understand about why they turn up for you and not for a follow-up appointment is worth more than another outreach plan, and I'd rather hear it from you than infer it.`,
   },
   {
     org: "DePaul University",
@@ -4244,7 +4368,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
       "Senior Professional Lecturer, Spanish, Department of Modern Languages",
     email: "mlortega@depaul.edu",
     source: "https://www.depaul.edu/faculty/maria-luisa-ortega-hernandez",
-    note: `I'm inviting some language faculty because this is otherwise going to be clinicians talking to clinicians about what is fundamentally a linguistics problem. Register is the specific thing I'd want in the room — the way one speaker sounds different depending on who they're addressing. It's behind a lot of what gets misheard in an exam room and medicine has no name for it.`,
+    note: `I'm inviting some language faculty because this is otherwise going to be clinicians talking to clinicians about what is fundamentally a linguistics problem.
+
+Register is the specific thing I'd want in the room — the way one speaker sounds different depending on who they're addressing. It's behind a lot of what gets misheard in an exam room and medicine has no name for it.`,
   },
   {
     org: "University of Illinois Chicago — School of Public Health",
@@ -4265,7 +4391,9 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     email: "namora@luc.edu",
     source:
       "https://www.luc.edu/parkinson/ourpeople/facultystaffprofiles/nallelymorafaculty.shtml",
-    note: `You decide what an MPH is required to contain. Language access is in almost none of them and graduates walk into it in their first job. I'd want to ask what it would actually take to put it in a curriculum, and whether you think it belongs there or somewhere else.`,
+    note: `You decide what an MPH is required to contain. Language access is in almost none of them and graduates walk into it in their first job.
+
+I'd want to ask what it would actually take to put it in a curriculum, and whether you think it belongs there or somewhere else.`,
   },
   {
     org: "Health & Medicine Policy Research Group",

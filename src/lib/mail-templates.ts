@@ -3232,14 +3232,41 @@ export function plainDirectInviteEmail(args: AttendeeInviteArgs) {
   const note = (inviteMessage || "").trim();
   if (!note) return plainStandardInviteEmail(args);
   const paras: string[] = [];
-  // Paragraph one, in their words-about-them. Hand-written per person in
-  // lib/chicago-targets; blank lines in it stay as real paragraph breaks.
-  paras.push(escapeHtml(note).replace(/\n{2,}/g, "</div>\n  <div><br></div>\n  <div>").replace(/\n/g, "<br>"));
+  // The hand-written material, from lib/chicago-targets. A blank line in it is
+  // a SPLIT POINT, not just a paragraph break: everything before it is said
+  // before the invitation, everything after it is said after.
+  //
+  // That split is the whole structure of this letter, and it exists because
+  // the previous shape was a mail merge no matter how good paragraph one was.
+  // It went: something true about you, then the ask, then the speakers, then
+  // the link — which is hook / pitch / proof / CTA, the marketing skeleton,
+  // with the personal part quarantined at the top where it reads as the
+  // variable field it literally is. Three of the four blocks were identical
+  // across every recipient, so anyone who saw a second copy could see exactly
+  // where the writing stopped and the template started.
+  //
+  // Wrapping the personal material around the invitation is what a person
+  // actually does: you say why you're writing, you ask, and then you keep
+  // talking to them about the thing you're asking about. The second half is
+  // usually the question the letter exists to ask, which is the strongest
+  // possible thing to put directly after "I'd like you to be there" and the
+  // weakest thing to bury above it.
+  //
+  // Where the split falls varies by person on purpose — some letters ask
+  // almost immediately and then talk, some say nearly everything first. A
+  // note with no blank line renders as before, all of it up front.
+  const chunks = note.split(/\n{2,}/).map((s) => s.trim()).filter(Boolean);
+  const opening = chunks.length > 1 ? chunks.slice(0, -1).join("\n\n") : note;
+  const afterTheAsk = chunks.length > 1 ? chunks[chunks.length - 1] : null;
+  const asHtml = (s: string) =>
+    escapeHtml(s).replace(/\n{2,}/g, "</div>\n  <div><br></div>\n  <div>").replace(/\n/g, "<br>");
+  paras.push(asHtml(opening));
   // The bridge. Deliberately one short sentence: the reader has just been
   // told why they were written to, and a long pitch here would undo it.
   paras.push(
     `AALB is putting on its second conference with Lurie Children's on August 15 and 16, and I'd like you to be there.`
   );
+  if (afterTheAsk) paras.push(asHtml(afterTheAsk));
   // Everything after the note is deliberately NOT the shared boilerplate.
   //
   // The standard paragraphs (PLAIN_KEYNOTE_PARA, plainDetailsPara,
@@ -3275,14 +3302,20 @@ export function plainDirectInviteEmail(args: AttendeeInviteArgs) {
   // reason for this particular reader, a longer paragraph was never going to
   // be either.
   const site = (args.learnMoreUrl || "https://conference.aalb.org").replace(/\/$/, "");
+  // One block, not two. This and the bridge are the only sentences every
+  // recipient gets word for word, so the less of the letter they occupy the
+  // better. Splitting the program line and the link into separate paragraphs
+  // gave the ending the cadence of a landing page: claim, then button.
   paras.push(
-    `The Joint Commission is keynoting on language access, and Michael Mul&eacute;, who ran language access enforcement at the DOJ civil rights division, is speaking. The rest of the program is at <a href="${site}">conference.aalb.org</a>.`
+    `The Joint Commission is keynoting on language access, and Michael Mul&eacute;, who ran language access enforcement at the DOJ civil rights division, is speaking. The rest of the program is at <a href="${site}">conference.aalb.org</a>, and you can <a href="${url}">sign up here</a>.`
   );
-  // No price in the ask. The discount rides on the URL and applies itself at
-  // checkout, so it costs nothing to leave unmentioned — and a rate quoted
-  // inside an invitation is the most sales-sounding move available to this
-  // letter. An invitation says come; a promotion says act now.
-  paras.push(`You can <a href="${url}">sign up here</a>.`);
+  // No price anywhere in this letter. The discount rides on the URL and
+  // applies itself at checkout, so it costs nothing to leave unmentioned — and
+  // a rate quoted inside an invitation is the most sales-sounding move
+  // available to it. An invitation says come; a promotion says act now.
+  // The link itself now lives at the end of the paragraph above, because a
+  // one-line call to action sitting on its own is the single most recognisable
+  // shape in commercial email.
   // No gray footer on this one, and that is the whole point of the template.
   // A reason-for-receipt line, a postal address and an Unsubscribe link are
   // things only a sending platform appends; nobody writing one person a real
