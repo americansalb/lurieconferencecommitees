@@ -53,6 +53,20 @@ export async function GET() {
     estimateNextSend(),
   ]);
 
+  // True per-list totals, counted in the database rather than derived from the
+  // page of rows below. The pending list is capped, so anything counted from it
+  // is a count of the cap and not of the queue — which is how "Showing 138 of
+  // 500" came to be displayed while 1,701 were actually waiting. One grouped
+  // query; the prefix folding happens client-side.
+  const byBatch = await prisma.emailQueue.groupBy({
+    by: ["batchId"],
+    where: { status: "pending" },
+    _count: { _all: true },
+  });
+  const pendingByBatch = byBatch
+    .map((b) => ({ batchId: b.batchId || "", count: b._count._all }))
+    .filter((b) => b.batchId);
+
   // The individual queued sends, so the dashboard can show who is waiting and
   // let an admin push any single one out now.
   const pending = await prisma.emailQueue.findMany({
@@ -94,6 +108,7 @@ export async function GET() {
 
   return NextResponse.json({
     counts: counts.reduce<Record<string, number>>((acc, c) => ((acc[c.status] = c._count._all), acc), {}),
+    pendingByBatch,
     nextScheduledFor: nextDue?.scheduledFor || null,
     nextSend,
     sentLast24h: last24h,
@@ -240,18 +255,33 @@ export async function POST(req: Request) {
     const cancelIds = Array.isArray(body?.ids)
       ? (body.ids as unknown[]).filter((x): x is string => typeof x === "string")
       : null;
-    if (!cancelIds || !cancelIds.length) {
-      return NextResponse.json({ error: "Pass ids to cancel." }, { status: 400 });
+    // Cancelling a whole list by its batch prefix, the same way "front"
+    // already does. This exists because cancelling by id could only ever
+    // reach the rows the page had actually loaded, and the page loads 500
+    // while the queue can hold thousands — so "remove everything I am looking
+    // at" silently meant "remove the first 500 of them", left the rest
+    // scheduled, and they resumed the moment sending was switched back on.
+    // A prefix is also the only precise way to name a list: free-text search
+    // matches subject lines, and a subject that merely mentions Chicago is not
+    // a Chicago letter.
+    const batchPrefix = typeof body?.batchPrefix === "string" && body.batchPrefix.trim()
+      ? body.batchPrefix.trim()
+      : null;
+    if ((!cancelIds || !cancelIds.length) && !batchPrefix) {
+      return NextResponse.json({ error: "Pass ids or a batchPrefix to cancel." }, { status: 400 });
     }
+    const scope = cancelIds && cancelIds.length
+      ? { id: { in: cancelIds } }
+      : { batchId: { startsWith: batchPrefix! } };
     // Grab the rows first so the recipients can be released below — without
     // this, a canceled sponsor/ambassador stays at "queued" forever and can
     // never be re-queued from its own page.
     const rows = await prisma.emailQueue.findMany({
-      where: { status: "pending", id: { in: cancelIds } },
+      where: { status: "pending", ...scope },
       select: { id: true, recipientType: true, recipientId: true },
     });
     const r = await prisma.emailQueue.updateMany({
-      where: { status: "pending", id: { in: cancelIds } },
+      where: { status: "pending", ...scope },
       data: { status: "canceled" },
     });
     const sponsorIds = rows.filter((x) => x.recipientType === "sponsor" && x.recipientId).map((x) => x.recipientId!);

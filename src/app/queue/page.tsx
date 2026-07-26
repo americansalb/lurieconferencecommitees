@@ -45,6 +45,9 @@ type QueueData = {
   policy: { maxPerHour: number; maxPerDay: number; minGapSeconds: number; maxGapSeconds: number; sendStartHour: number; sendEndHour: number; sendTimezone: string };
   paused: boolean;
   pending: PendingItem[];
+  // True per-list pending totals from the database. `pending` above is capped,
+  // so it must never be used to count anything.
+  pendingByBatch?: { batchId: string; count: number }[];
   recent?: RecentItem[];
   sponsorProspects?: number;
   ambassadorsPending?: number;
@@ -136,6 +139,13 @@ export default function EmailQueuePage() {
   // Bulk remove is armed by a first click and only fires on the second, since
   // it can drop hundreds of scheduled letters in one go.
   const [armRemove, setArmRemove] = useState(false);
+  // Which mailing list is being looked at, held as a batchId PREFIX rather
+  // than a name. Free-text search cannot identify a list: a standard invite
+  // whose subject line says "in Chicago" matches a search for chicago and is
+  // not a Chicago letter, so searching and then removing what you found could
+  // cancel the wrong campaign entirely. The prefix is the only thing that
+  // actually says which list a row came from.
+  const [listFilter, setListFilter] = useState<string | null>(null);
 
   const role = (session?.user as { role?: string })?.role;
   const isAdmin = role === "admin" || role === "developer";
@@ -292,12 +302,19 @@ export default function EmailQueuePage() {
   // were never moved off "not emailed" by queueing in the first place; the
   // server puts sponsors back to prospect and ambassadors back to pending. So
   // everyone stays on their own page, ready to queue again or send directly.
-  async function removeShown(ids: string[], label: string) {
+  // `batchPrefix` removes the WHOLE list on the server. Passing ids could only
+  // ever reach rows this page had loaded, and it loads a capped page, so on a
+  // long queue "remove what I am looking at" quietly meant "remove the first
+  // page of them" and left the rest scheduled to resume.
+  async function removeShown(
+    scope: { ids: string[] } | { batchPrefix: string },
+    label: string,
+  ) {
     setBusy("remove");
     try {
       const r = await fetch("/api/admin/email-queue", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "cancel", ids }),
+        body: JSON.stringify({ action: "cancel", ...scope }),
       });
       const j = await r.json().catch(() => ({}));
       flash(r.ok
@@ -327,7 +344,25 @@ export default function EmailQueuePage() {
   const q = search.trim().toLowerCase();
   const matches = (r: { to: string; subject: string; batchId?: string | null }) =>
     !q || r.to.toLowerCase().includes(q) || r.subject.toLowerCase().includes(q) || (listLabel(r.batchId) || "").toLowerCase().includes(q);
-  const shown = (typeFilter === "all" ? pending : pending.filter((p) => p.recipientType === typeFilter)).filter(matches);
+  // Every list currently waiting, with its REAL total, folded from the grouped
+  // server counts onto the known prefixes. Counting these off `pending` would
+  // count the page cap instead of the queue.
+  const listTotals = (() => {
+    const out = new Map<string, { label: string; count: number }>();
+    for (const b of data?.pendingByBatch || []) {
+      const hit = LIST_LABELS.find(([prefix]) => b.batchId.startsWith(prefix));
+      if (!hit) continue;
+      const cur = out.get(hit[0]);
+      out.set(hit[0], { label: hit[1], count: (cur?.count || 0) + b.count });
+    }
+    return Array.from(out.entries())
+      .map(([prefix, v]) => ({ prefix, ...v }))
+      .sort((a, b) => b.count - a.count);
+  })();
+  const activeList = listTotals.find((l) => l.prefix === listFilter) || null;
+  const shown = (typeFilter === "all" ? pending : pending.filter((p) => p.recipientType === typeFilter))
+    .filter((p) => !listFilter || (p.batchId || "").startsWith(listFilter))
+    .filter(matches);
   const shownRecent = recent.filter(matches);
   const overdueCount = pending.filter((p) => isOverdue(p.scheduledFor)).length;
   // The effective drip gap, mirroring runEmailQueue: the period of the
@@ -509,41 +544,81 @@ export default function EmailQueuePage() {
               )}
             </div>
 
-            {/* Take the listed letters back out of the queue. Paired with the
-                search above: find the batch you didn't mean to queue, then
-                remove it in one click instead of cancelling row by row. */}
-            {isAdmin && view === "queued" && shown.length > 0 && (
+            {/* Pick a mailing list by its batch, not by searching for its name.
+                A search matches subject lines, so "chicago" also matches every
+                standard invite whose subject says "in Chicago" — searching and
+                then removing what you found could cancel the wrong campaign.
+                Counts here are the real database totals, not counts of the
+                capped page below. */}
+            {view === "queued" && listTotals.length > 0 && (
+              <div className="mb-3 flex flex-wrap items-center gap-1.5">
+                <span className="text-[11px] font-bold uppercase tracking-wide text-slate-400 mr-1">List</span>
+                <button
+                  onClick={() => { setListFilter(null); setArmRemove(false); }}
+                  className={`px-2.5 py-1 rounded-full text-[11px] font-bold border ${!listFilter ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"}`}
+                >
+                  All {(data?.counts?.pending || 0).toLocaleString()}
+                </button>
+                {listTotals.map((l) => (
+                  <button
+                    key={l.prefix}
+                    onClick={() => { setListFilter(listFilter === l.prefix ? null : l.prefix); setArmRemove(false); }}
+                    className={`px-2.5 py-1 rounded-full text-[11px] font-bold border ${listFilter === l.prefix ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"}`}
+                    title={`Batch prefix ${l.prefix}`}
+                  >
+                    {l.label} {l.count.toLocaleString()}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Take letters back out of the queue. With a list selected this
+                removes the ENTIRE list on the server, including the rows this
+                page never loaded. Without one it can only reach what is
+                listed, and says so. */}
+            {isAdmin && view === "queued" && (shown.length > 0 || activeList) && (
               <div className={`mb-3 rounded-xl border px-4 py-2.5 flex flex-wrap items-center gap-3 ${armRemove ? "border-rose-300 bg-rose-50" : "border-slate-200 bg-white"}`}>
                 {armRemove ? (
                   <>
                     <X className="w-4 h-4 text-rose-600 shrink-0" />
                     <span className="text-sm text-rose-900">
-                      Take <strong>{shown.length}</strong> letter{shown.length === 1 ? "" : "s"} out of the queue? Nobody is deleted — everyone stays on their own page as not emailed, so you can queue them again or send to them directly.
+                      {activeList
+                        ? <>Take all <strong>{activeList.count.toLocaleString()}</strong> {activeList.label} letter{activeList.count === 1 ? "" : "s"} out of the queue?</>
+                        : <>Take <strong>{shown.length}</strong> listed letter{shown.length === 1 ? "" : "s"} out of the queue?</>}
+                      {" "}Nobody is deleted — everyone stays on their own page as not emailed, so you can queue them again or send to them directly.
                     </span>
                     <div className="ml-auto flex items-center gap-2 shrink-0">
                       <button onClick={() => setArmRemove(false)} className="text-xs font-semibold text-slate-500 hover:text-slate-700 px-2 py-1.5">Keep them</button>
                       <button
-                        onClick={() => removeShown(shown.map((p) => p.id), `letter${shown.length === 1 ? "" : "s"}`)}
+                        onClick={() => activeList
+                          ? removeShown({ batchPrefix: activeList.prefix }, `${activeList.label} letters`)
+                          : removeShown({ ids: shown.map((p) => p.id) }, `letter${shown.length === 1 ? "" : "s"}`)}
                         disabled={busy !== null}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50"
                       >
-                        {busy === "remove" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />} Yes, remove {shown.length}
+                        {busy === "remove" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />} Yes, remove {(activeList ? activeList.count : shown.length).toLocaleString()}
                       </button>
                     </div>
                   </>
                 ) : (
                   <>
                     <span className="text-[13px] text-slate-500">
-                      {q || typeFilter !== "all"
-                        ? <>Showing <strong className="text-slate-700">{shown.length}</strong> of {pending.length} waiting {q && <>for &ldquo;{search}&rdquo;</>}.</>
-                        : <>All <strong className="text-slate-700">{pending.length}</strong> waiting to send.</>}
+                      {activeList
+                        ? <><strong className="text-slate-700">{activeList.count.toLocaleString()}</strong> {activeList.label} letter{activeList.count === 1 ? "" : "s"} waiting{activeList.count > shown.length && <> ({shown.length} shown on this page)</>}.</>
+                        : q || typeFilter !== "all"
+                          ? <>Showing <strong className="text-slate-700">{shown.length}</strong> of the {pending.length.toLocaleString()} loaded {q && <>for &ldquo;{search}&rdquo;</>} — the queue holds {(data?.counts?.pending || 0).toLocaleString()}. Pick a list above to act on all of one.</>
+                          : <><strong className="text-slate-700">{(data?.counts?.pending || 0).toLocaleString()}</strong> waiting to send, {pending.length.toLocaleString()} loaded here.</>}
                     </span>
                     <button
                       onClick={() => setArmRemove(true)}
                       className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-rose-700 bg-white border border-rose-200 hover:bg-rose-50 shrink-0"
-                      title="Unschedule everything currently listed. Nothing is deleted — everyone stays on their own page as not emailed."
+                      title={activeList
+                        ? `Unschedule every ${activeList.label} letter, including any not loaded on this page. Nothing is deleted.`
+                        : "Unschedule the letters listed on this page only. Nothing is deleted."}
                     >
-                      <X className="w-3.5 h-3.5" /> {q || typeFilter !== "all" ? `Remove these ${shown.length}` : `Remove all ${shown.length}`}
+                      <X className="w-3.5 h-3.5" /> {activeList
+                        ? `Remove all ${activeList.count.toLocaleString()} ${activeList.label}`
+                        : `Remove the ${shown.length} listed`}
                     </button>
                   </>
                 )}
