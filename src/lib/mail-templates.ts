@@ -3273,14 +3273,22 @@ export function plainDirectInviteEmail(args: AttendeeInviteArgs) {
     escapeHtml(s).replace(/\n{2,}/g, "</div>\n  <div><br></div>\n  <div>").replace(/\n/g, "<br>");
   paras.push(asHtml(note));
 
-  // One line at the end, and it is a location, not an invitation to act. The
-  // keynote is a single clause because naming more speakers stops reading as
-  // information and starts reading as a lineup. The registration link lives
-  // under the plain domain text: same site, no button, nothing to click that
-  // announces itself as a conversion.
+  // One line, and it is an address, not a close.
+  //
+  // This used to name the keynote first: "The Joint Commission is keynoting on
+  // language access." That sentence does exactly one job, which is to impress,
+  // and it did it identically in all hundred letters. Dressing it down did not
+  // help and neither did shortening it, because the problem was never the
+  // wording. A person writing to one person does not list their headliner. If
+  // the reader wants to know who is speaking, the program is one click away
+  // and says so.
+  //
+  // What is left is where to look. The registration link sits under the plain
+  // domain text: same site, no button, no verb, nothing that announces itself
+  // as a conversion.
   const site = (args.learnMoreUrl || "https://conference.aalb.org").replace(/\/$/, "");
   paras.push(
-    `The Joint Commission is keynoting on language access. The rest of the program, and registration, are at <a href="${url}">${site.replace(/^https?:\/\//, "")}</a>.`
+    `The program is at <a href="${url}">${site.replace(/^https?:\/\//, "")}</a>.`
   );
 
   // No gray footer, no reason-for-receipt line, no postal address, no
