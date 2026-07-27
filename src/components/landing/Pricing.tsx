@@ -5,7 +5,7 @@ import Countdown from "./Countdown";
 
 // These bullets are a promise, so they stay inside what we can actually
 // deliver. We record as much as we can and the vast majority of sessions are
-// recorded, but it is the presenter's call and a few decline — hence "most"
+// recorded, but it is the presenter's call and a few decline, hence "most"
 // rather than a flat "recordings after the event". CEUs need live attendance,
 // on camera for virtual attendees. Both conditions are spelled out in the FAQ;
 // an unqualified "CEU certificate" sells the one thing we cannot give someone
@@ -14,7 +14,7 @@ const VIRTUAL_FEATURES = [
   "Live stream of both days",
   "On-demand recordings of most sessions",
   "Digital program and speaker materials",
-  "CEU certificate — live attendance, camera on, required",
+  "CEU certificate (live attendance, camera on, required)",
 ];
 
 const IN_PERSON_FEATURES = [

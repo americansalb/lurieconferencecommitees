@@ -1309,7 +1309,7 @@ Community Voices looks like the part where you check with actual readers instead
     tier2: true,
     source:
       "ISBE's published contact list (isbe.net Contact Information list). Her direct line is (312) 814-2237 — the 312 exchange is ISBE's Chicago office, 555 W. Monroe St., Suite 900, Chicago 60661, per https://www.isbe.net/Pages/contact-isbe.aspx. Springfield staff on the same list carry 217 numbers and were not used.",
-    note: `Newcomer is your portfolio, so your job is the first year specifically — before anybody has a file, a screener result, or a relationship with the school. Hospitals meet the same families in the same window and have no equivalent role at all. What I'd want to ask is what you tell a district that has just enrolled a family it has no staff who can talk to.`,
+    note: `Newcomer is your portfolio, so your job is the first year specifically, before anybody has a file, a screener result, or a relationship with the school. Hospitals meet the same families in the same window and have no equivalent role at all. What I'd want to ask is what you tell a district that has just enrolled a family it has no staff who can talk to.`,
   },
   {
     org: "Illinois State Board of Education — Multilingual/Language Development",
@@ -1645,7 +1645,7 @@ Community Voices looks like the part where you check with actual readers instead
     title: "Citizenship Assistance Director",
     email: "adelgado@thetownofcicero.com",
     source: "https://www.thetownofcicero.com/citizenship/",
-    note: `Your department lists translation for citizenship appointments as a named free service alongside the ESL and citizenship classes — language help written down as a service rather than an accommodation. Cicero is about ninety-one percent Latino and the town's health department page is an empty stub, so in practice you're part of the health infrastructure whether that's in your job description or not.`,
+    note: `Your department lists translation for citizenship appointments as a named free service alongside the ESL and citizenship classes. Language help written down as a service rather than an accommodation. Cicero is about ninety-one percent Latino and the town's health department page is an empty stub, so in practice you're part of the health infrastructure whether that's in your job description or not.`,
   },
   {
     org: "Town of Cicero, 708 Community Mental Health Board",
@@ -2991,7 +2991,7 @@ What an elder says about a doctor's visit a week afterward is usually more accur
     email: "mlee@hanulusa.org",
     hold: "Same program and same job title as Nayeon Yang, one site apart. Two identical roles at one organisation is the clearest case there is for sending one letter.",
     source: "https://hanulusa.org/what-we-do/senior-services",
-    note: `Runs the suburban end of a program feeding several hundred Korean older adults, which is a different population from the Chicago site — more settled, further from any clinic with Korean capacity.`,
+    note: `Runs the suburban end of a program feeding several hundred Korean older adults, which is a different population from the Chicago site, more settled, further from any clinic with Korean capacity.`,
   },
   {
     org: "Indo-American Center",
@@ -3077,7 +3077,7 @@ I'm putting together a conference on language access in pediatric care and almos
     title: "ECRN Coordinator / EMS Instructor",
     email: "Marlo.Jorgenson@luhs.org",
     source: "https://www.loyolamedicine.org/ems/staff",
-    note: `ECRNs give orders off a picture somebody else built, over a radio, and if the crew couldn't get a history you're the next person the problem lands on — still having to decide.
+    note: `ECRNs give orders off a picture somebody else built, over a radio, and if the crew couldn't get a history you're the next person the problem lands on, still having to decide.
 
 I've never seen that written up anywhere.`,
   },
@@ -3145,7 +3145,7 @@ That's a triage accuracy problem before it's a language problem. How does your s
     tier2: true,
     source:
       "https://www.nwcemss.org — Advisory Board membership list, May 2024, Education Committee section. TITLE CAVEAT: her formal departmental title at the fire department is not published; what is published is her credentials and her committee seat, and the title field says only that.",
-    note: `Sitting on the education committee as a working field provider puts you on both sides of the gap I'm interested in — what gets taught, and what actually happens at two in the morning. When a crew can't get a history from the patient, does the current training tell them what to do next, or does everyone improvise it fresh every time?`,
+    note: `Sitting on the education committee as a working field provider puts you on both sides of the gap I'm interested in, what gets taught, and what actually happens at two in the morning. When a crew can't get a history from the patient, does the current training tell them what to do next, or does everyone improvise it fresh every time?`,
   },
   {
     org: "Illinois Department of Public Health, Division of EMS",
@@ -3287,7 +3287,7 @@ What do your preceptors say about it when they're being honest?`,
     title: "Lead Nurse",
     email: "aplaku@cicd99.edu",
     source: "https://www.cicd99.edu — district health services staff listing",
-    note: `District 99 is around twelve thousand students and the great majority of your families speak Spanish at home. You're the person those health office calls eventually roll up to. I'm organising a conference on language access in pediatric care and the agenda so far is heavy on hospitals, which is a mistake — a school nurse handles more real conversations with LEP parents in a week than most clinics manage in a month.
+    note: `District 99 is around twelve thousand students and the great majority of your families speak Spanish at home. You're the person those health office calls eventually roll up to. I'm organising a conference on language access in pediatric care and the agenda so far is heavy on hospitals, which is a mistake. A school nurse handles more real conversations with LEP parents in a week than most clinics manage in a month.
 
 I'd like you in the room.`,
   },
@@ -3299,7 +3299,7 @@ I'd like you in the room.`,
     email: "pchatta@cicd99.edu",
     tier2: true,
     source: "https://www.cicd99.edu — district health services staff listing",
-    note: `Early childhood diagnostics is where a language difference and a developmental delay are easiest to confuse, and hardest to tell apart quickly. I don't think our field has been honest about how often that goes wrong in the other direction too — a real delay read as "he's just bilingual." You'd know what that actually looks like at intake.`,
+    note: `Early childhood diagnostics is where a language difference and a developmental delay are easiest to confuse, and hardest to tell apart quickly. I don't think our field has been honest about how often that goes wrong in the other direction too. A real delay read as "he's just bilingual." You'd know what that actually looks like at intake.`,
   },
   {
     org: "Cicero School District 99",
@@ -3360,7 +3360,7 @@ I'd like the clinic half of our audience to hear what that's actually like.`,
     title: "Home School Community Liaison",
     email: "MArenella@bn98.org",
     source: "https://www.bn98.org — District Office, 708-484-6200",
-    note: `Home school community liaison sounds administrative, and turns out to mean you're the person who knows which families are actually reachable and how — knowledge that doesn't exist anywhere inside a hospital.
+    note: `Home school community liaison sounds administrative, and turns out to mean you're the person who knows which families are actually reachable and how. Knowledge that doesn't exist anywhere inside a hospital.
 
 I think you'd change what the clinical people in the room believe the problem is.`,
   },
@@ -3371,7 +3371,7 @@ I think you'd change what the clinical people in the room believe the problem is
     title: "School Nurse Certified",
     email: "mhenderson@bn98.org",
     source: "https://www.bn98.org — Jefferson Elementary, 708-795-2454",
-    note: `Jefferson's health office sees the same children a pediatric practice does, roughly two hundred times more often. What I want to know is what you do when you need a parent on the phone right now and there isn't a shared language — because whatever that is, it's the honest answer, and the honest answer isn't in anyone's policy.`,
+    note: `Jefferson's health office sees the same children a pediatric practice does, roughly two hundred times more often. What I want to know is what you do when you need a parent on the phone right now and there isn't a shared language, because whatever that is, it's the honest answer, and the honest answer isn't in anyone's policy.`,
   },
   {
     org: "Summit School District 104",
@@ -3478,7 +3478,7 @@ I'm inviting you to a conference on language access in pediatric care and I'd li
     source: "https://rlhs.rlas-116.org/school-services/educational-services/social-workers",
     note: `The high school's own page lists your caseload as ESL 1 and ESL 2.
 
-Not a grade level, not an alphabet split, not a building — a language program. Whatever the intention, the district has organised clinical support around the fact of not speaking English yet, and you are the person living inside that arrangement daily. We spend two days on interpretation in medical and legal settings and rarely hear from anyone whose assignment was drawn that way to begin with.`,
+Not a grade level, not an alphabet split, not a building. A language program. Whatever the intention, the district has organised clinical support around the fact of not speaking English yet, and you are the person living inside that arrangement daily. We spend two days on interpretation in medical and legal settings and rarely hear from anyone whose assignment was drawn that way to begin with.`,
   },
   {
     org: "Round Lake Area Schools CUSD 116 (Lake County)",
@@ -3509,7 +3509,7 @@ A school nurse solves it by being the person who picks up, which is a different 
     title: "Raymond Ellis Elementary School Nurse, BSN, RN, TNS",
     email: "amelesio@rlas-116.org",
     source: "https://rees.rlas-116.org/our-school/school-nurse",
-    note: `A Trauma Nurse Specialist credential in an elementary building is an unusual combination — it means the emergency side of your training is mostly idle and then occasionally the only thing that matters.
+    note: `A Trauma Nurse Specialist credential in an elementary building is an unusual combination. It means the emergency side of your training is mostly idle and then occasionally the only thing that matters.
 
 Add Spanish, which your page advertises, and you are the person who both handles the injury and explains it to a parent who will not otherwise be told anything until an ambulance arrives. The handoff between those two moments is one of the places this conference actually digs into.`,
   },
@@ -3532,7 +3532,7 @@ This is one of the few rooms where that gets treated as a real problem rather th
     email: "nrocha-bueno@wps60.org",
     tier2: true,
     source: "https://www.wps60.org/o/wcusd/page/bilingual-and-multicultural-department",
-    note: `Translation and interpretation are two different professions that districts and hospitals both routinely assume are one, so the person hired to render documents ends up on the phone doing live work with no notice. The document side is also where a bad decision quietly replicates — a mistranslated consent form or discipline notice goes out to thousands of families at once and nobody catches it for a year. Very little of the field's attention goes there.`,
+    note: `Translation and interpretation are two different professions that districts and hospitals both routinely assume are one, so the person hired to render documents ends up on the phone doing live work with no notice. The document side is also where a bad decision quietly replicates. A mistranslated consent form or discipline notice goes out to thousands of families at once and nobody catches it for a year. Very little of the field's attention goes there.`,
   },
   {
     org: "Waukegan CUSD 60 (Lake County)",
@@ -3603,7 +3603,7 @@ That is the exact position a hospital finds itself in at two in the morning with
     title: "Multilingual and Multicultural Education Program Placement Specialist",
     email: "lauragodinez@u-46.org",
     source: "https://www.u-46.org/page/family-welcome-center",
-    note: `U-46 is the second largest district in the state, and you do the proficiency screening and the placement recommendation. So a very large number of children in the Fox Valley pass through a judgment you make. The volume is what makes it interesting — at that scale the shortcuts and the defaults become visible in a way they never are in one clinic.
+    note: `U-46 is the second largest district in the state, and you do the proficiency screening and the placement recommendation. So a very large number of children in the Fox Valley pass through a judgment you make. The volume is what makes it interesting. At that scale the shortcuts and the defaults become visible in a way they never are in one clinic.
 
 Whatever the process does badly, it does badly thousands of times. You're one of very few people positioned to say what that is.`,
   },
@@ -3625,7 +3625,7 @@ Whatever the process does badly, it does badly thousands of times. You're one of
     email: "patriciaortiz@u-46.org",
     tier2: true,
     source: "https://www.u-46.org/page/family-welcome-center",
-    note: `The home language survey a family fills out at your counter becomes a field in a system, and from that point on the field is what the district knows — not the conversation, not the nuance about which language the parent actually prefers for serious news versus everyday notices. Medical records work identically and fail identically. You are one of the few people who has seen both the conversation and the field it collapsed into, which is exactly the comparison nobody in this field ever gets to make.`,
+    note: `The home language survey a family fills out at your counter becomes a field in a system, and from that point on the field is what the district knows, not the conversation, not the nuance about which language the parent actually prefers for serious news versus everyday notices. Medical records work identically and fail identically. You are one of the few people who has seen both the conversation and the field it collapsed into, which is exactly the comparison nobody in this field ever gets to make.`,
   },
   {
     org: "Bensenville SD 2 (DuPage County)",
@@ -3677,7 +3677,7 @@ The medical version is a mental health assessment done through an interpreter no
     email: "nallely.coria@d300.org",
     tier2: true,
     source: "https://www.d300.org/about/faculty-staff-directory (title verbatim as published: ADM TRANSLATOR-COMMUNICATIONS; the district's directory obfuscates addresses in reversed JavaScript strings and this one was decoded, so it is worth a phone check before sending)",
-    note: `Sitting in communications rather than the EL office means you translate the district's voice — closures, emergencies, policy changes — not classroom material. That is the register institutions are worst at, because the English original was written by someone optimising for legal safety rather than comprehension, and no amount of accurate translation fixes a source text nobody can follow. Hospitals produce the same documents and make the same assumption about what translating them accomplishes.`,
+    note: `Sitting in communications rather than the EL office means you translate the district's voice, closures, emergencies, policy changes, not classroom material. That is the register institutions are worst at, because the English original was written by someone optimising for legal safety rather than comprehension, and no amount of accurate translation fixes a source text nobody can follow. Hospitals produce the same documents and make the same assumption about what translating them accomplishes.`,
   },
   {
     org: "Community Unit School District 300 (Kane/McHenry)",
@@ -3687,7 +3687,7 @@ The medical version is a mental health assessment done through an interpreter no
     email: "alma.torres@d300.org",
     tier2: true,
     source: "https://www.d300.org/about/faculty-staff-directory (Meadowdale is one of D300's three dual language academies; address decoded from the directory's reversed JavaScript, worth a phone check before sending)",
-    note: `A liaison at a dual language academy has a different relationship with families than one at a school where the home language is a problem to be managed — parents come in expecting to be understood, and they say more. What they say includes a lot about doctors and courts and landlords that never reaches any of those places. That is the material this conference is short of.`,
+    note: `A liaison at a dual language academy has a different relationship with families than one at a school where the home language is a problem to be managed. Parents come in expecting to be understood, and they say more. What they say includes a lot about doctors and courts and landlords that never reaches any of those places. That is the material this conference is short of.`,
   },
   {
     org: "Community Unit School District 300 (Kane/McHenry)",
@@ -3697,7 +3697,7 @@ The medical version is a mental health assessment done through an interpreter no
     email: "cynthia.chaidez@d300.org",
     tier2: true,
     source: "https://www.d300.org/about/faculty-staff-directory (the -BI suffix marking a bilingual designation is the district's own title string; address decoded from reversed JavaScript, worth a phone check before sending)",
-    note: `Bilingual clinical work is not bilingual conversation — assessing a child's mental state in a language means having the vocabulary for symptoms that patients themselves often lack in any language, and doing it without a second adult in the room mediating. There are very few people in the region who do it and they are mostly in schools rather than clinics, which is backwards given where the acute need shows up. That imbalance is one of the things worth naming out loud in a room like this.`,
+    note: `Bilingual clinical work is not bilingual conversation. Assessing a child's mental state in a language means having the vocabulary for symptoms that patients themselves often lack in any language, and doing it without a second adult in the room mediating. There are very few people in the region who do it and they are mostly in schools rather than clinics, which is backwards given where the acute need shows up. That imbalance is one of the things worth naming out loud in a room like this.`,
   },
   {
     org: "Joliet Public Schools District 86 (Will County)",
@@ -3707,7 +3707,7 @@ The medical version is a mental health assessment done through an interpreter no
     email: "palvarez@joliet86.org",
     tier2: true,
     source: "https://www.joliet86.org/o/gjh/staff (address published as literal plain text and as a mailto link; title verbatim as published)",
-    note: `Being the translator attached to a single junior high rather than a central office means you are on-site when things happen rather than scheduled in advance, so you get the unplanned conversations — the ones in hallways after a meeting has officially ended, which is usually when the real question gets asked. Interpreters in hospitals know that pattern precisely and rarely get to describe it to anyone who designs the systems. Will County is also underrepresented in almost every regional conversation about this.`,
+    note: `Being the translator attached to a single junior high rather than a central office means you are on-site when things happen rather than scheduled in advance, so you get the unplanned conversations. The ones in hallways after a meeting has officially ended, which is usually when the real question gets asked. Interpreters in hospitals know that pattern precisely and rarely get to describe it to anyone who designs the systems. Will County is also underrepresented in almost every regional conversation about this.`,
   },
   {
     org: "Joliet Public Schools District 86 (Will County)",
@@ -3717,7 +3717,7 @@ The medical version is a mental health assessment done through an interpreter no
     email: "sbadalamenti@joliet86.org",
     tier2: true,
     source: "https://www.joliet86.org/o/hjh/staff (address published as literal plain text and as a mailto link, present in both the March and December 2025 captures of the directory)",
-    note: `A school nurse making a call home about a medication, an injury or a suspected condition is doing patient communication with none of a hospital's resources — no interpreter line on hold, no bilingual colleague down the hall, frequently no second attempt. You improvise and then the improvisation becomes the record. What happens in that gap between what a hospital can do and what you can do is one of the more useful things this conference could actually get on the table.`,
+    note: `A school nurse making a call home about a medication, an injury or a suspected condition is doing patient communication with none of a hospital's resources, no interpreter line on hold, no bilingual colleague down the hall, frequently no second attempt. You improvise and then the improvisation becomes the record. What happens in that gap between what a hospital can do and what you can do is one of the more useful things this conference could actually get on the table.`,
   },
   {
     org: "Joliet Public Schools District 86 (Will County)",
@@ -3727,7 +3727,7 @@ The medical version is a mental health assessment done through an interpreter no
     email: "mgarroyo@joliet86.org",
     tier2: true,
     source: "https://www.joliet86.org/o/gjh/staff (address published as literal plain text and as a mailto link)",
-    note: `School social work is where the family's whole situation shows up at once — housing, immigration status, a parent's untreated condition, a court date nobody understood — and none of the specialist systems that produced those problems ever see them assembled. You do. Two days of people describing their own narrow slice is worth much less than one person who has seen how the slices fit together.`,
+    note: `School social work is where the family's whole situation shows up at once, housing, immigration status, a parent's untreated condition, a court date nobody understood, and none of the specialist systems that produced those problems ever see them assembled. You do. Two days of people describing their own narrow slice is worth much less than one person who has seen how the slices fit together.`,
   },
   {
     org: "Schaumburg CCSD 54 (Cook County)",
@@ -3736,7 +3736,7 @@ The medical version is a mental health assessment done through an interpreter no
     title: "Parent Liaison",
     email: "CinziaBellarosa@sd54.org",
     source: "https://www.sd54.org/page/language-and-culture",
-    note: `Schaumburg's newcomer population is unusually varied for a suburban district — not one language with a long tail but genuinely many, which makes every standard solution a partial one. A liaison in that setting builds up a working sense of which languages the systems around you can actually serve, and which ones you have to route around personally.
+    note: `Schaumburg's newcomer population is unusually varied for a suburban district, not one language with a long tail but genuinely many, which makes every standard solution a partial one. A liaison in that setting builds up a working sense of which languages the systems around you can actually serve, and which ones you have to route around personally.
 
 Nobody publishes that map. It's one of the more valuable things anyone could carry into this room.`,
   },
@@ -3798,7 +3798,7 @@ Nobody publishes that map. It's one of the more valuable things anyone could car
     email: "mhuerta@bsd100.org",
     tier2: true,
     source: "https://pershing.bsd100.org/about-us/staff",
-    note: `Intervention work is diagnostic in a way general instruction is not — you are trying to establish whether a child cannot do something or cannot do it in English yet, which is a distinction that entire professions get wrong routinely and expensively. Speech pathologists, psychologists and paediatricians all face the same question and mostly answer it with instruments that were never built for it. You answer it several times a week.`,
+    note: `Intervention work is diagnostic in a way general instruction is not. You are trying to establish whether a child cannot do something or cannot do it in English yet, which is a distinction that entire professions get wrong routinely and expensively. Speech pathologists, psychologists and paediatricians all face the same question and mostly answer it with instruments that were never built for it. You answer it several times a week.`,
   },
   {
     org: "Summit SD 104 (Cook County)",
@@ -3807,7 +3807,7 @@ Nobody publishes that map. It's one of the more valuable things anyone could car
     title: "Social Worker, Graves Dual Language School",
     email: "ecampuzano@sd104.us",
     source: "https://www.sd104.us/page/school-social-work",
-    note: `Clinical work in a dual language building means the language question is settled before you start, which is rare enough that it makes the rest visible — you find out what the actual difficulty was once the interpretation problem is removed. Almost every other setting in this field is still stuck on the first problem and assumes it is the only one.
+    note: `Clinical work in a dual language building means the language question is settled before you start, which is rare enough that it makes the rest visible. You find out what the actual difficulty was once the interpretation problem is removed. Almost every other setting in this field is still stuck on the first problem and assumes it is the only one.
 
 A description of what remains after it is solved would be genuinely new information for most of this room.`,
   },
@@ -3851,7 +3851,7 @@ A description of what remains after it is solved would be genuinely new informat
     email: "kbylsma@ladse.org",
     tier2: true,
     source: "https://www.ladse.org/vocational.html (address is served in the page og:description; the body renders client-side)",
-    note: `Transition planning is where a family finds out what adulthood is actually going to look like — guardianship, benefits, whether their child will work — and it is conducted almost entirely in acronyms. Doing that conversation across a language barrier, with parents who may also be navigating their own immigration status, is a genuinely brutal piece of communication. Nobody in medical interpreting has to deliver news with that time horizon and it would be worth their hearing what it takes.`,
+    note: `Transition planning is where a family finds out what adulthood is actually going to look like, guardianship, benefits, whether their child will work, and it is conducted almost entirely in acronyms. Doing that conversation across a language barrier, with parents who may also be navigating their own immigration status, is a genuinely brutal piece of communication. Nobody in medical interpreting has to deliver news with that time horizon and it would be worth their hearing what it takes.`,
   },
   {
     org: "LADSE — La Grange Area Department of Special Education (Cook County)",
@@ -3871,7 +3871,7 @@ A description of what remains after it is solved would be genuinely new informat
     email: "ameyer@ladse.org",
     tier2: true,
     source: "https://www.ladse.org/linc.html (address is served in the page og:description; the body renders client-side)",
-    note: `Programs for students with significant emotional and behavioural needs generate the most interpreted crisis conversations of anything in a school system, and crisis is precisely when interpretation quality collapses — everyone is fast, upset, and reaching for whoever is nearest. Emergency departments have the identical failure and have written it up as though it were unique to them. It is not, and hearing that from the school side would land.`,
+    note: `Programs for students with significant emotional and behavioural needs generate the most interpreted crisis conversations of anything in a school system, and crisis is precisely when interpretation quality collapses. Everyone is fast, upset, and reaching for whoever is nearest. Emergency departments have the identical failure and have written it up as though it were unique to them. It is not, and hearing that from the school side would land.`,
   },
   {
     org: "NDSEC — North DuPage Special Education Cooperative (DuPage County)",
@@ -3943,7 +3943,7 @@ That role has no name, no training and no boundary, and it is worth putting in f
     title: "Site Supervisor",
     email: "ealzamora@cc-doj.org",
     source: "https://catholiccharitiesjoliet.org/services/ecsd-rockdale-center (Rockdale operates on the Joliet Junior College campus and runs both Head Start and Early Head Start)",
-    note: `Early Head Start reaches infants and pregnant women, which puts your centre in contact with families during prenatal care and delivery — the setting where language failures are both most consequential and most studied, and where the studies almost never include anyone outside the hospital.
+    note: `Early Head Start reaches infants and pregnant women, which puts your centre in contact with families during prenatal care and delivery. The setting where language failures are both most consequential and most studied, and where the studies almost never include anyone outside the hospital.
 
 Being on a community college campus also means a share of your parents are students, which changes what they can and cannot ask for. Both of those are angles this conference does not currently have.`,
   },
@@ -3966,7 +3966,7 @@ Whether that obligation survives contact with a therapist shortage and a per-vis
     email: "wramos@eastersealschicago.org",
     tier2: true,
     source: "https://www.eastersealschicago.org/about (1312 S. Racine Ave., Chicago)",
-    note: `A centre on Racine serving Pilsen and the near west side takes in families who are simultaneously dealing with a developmental concern and, often, a precarious status — and the two get tangled, because parents decline evaluations for reasons that have nothing to do with the evaluation. Clinicians read that as refusal. You know what it actually is. That gap between recorded reason and real reason is most of what this conference should be about and rarely is.`,
+    note: `A centre on Racine serving Pilsen and the near west side takes in families who are simultaneously dealing with a developmental concern and, often, a precarious status, and the two get tangled, because parents decline evaluations for reasons that have nothing to do with the evaluation. Clinicians read that as refusal. You know what it actually is. That gap between recorded reason and real reason is most of what this conference should be about and rarely is.`,
   },
   {
     org: "Easterseals — Early Learning Center, Hickory Hills (Cook County)",
@@ -4065,7 +4065,7 @@ The mistakes institutions make with each new group are apparently identical each
     tier2: true,
     source:
       "Address published at https://www.illinoiscourts.gov/public/find-a-language-interpreter/e-services-find-a-language-interpreter-language-access-program-resources/ as the contact for pre-approval of interpreter skill-building hours. Title from https://www.2civility.org/ensuring-language-access-in-illinois-courts/ and MAY HAVE CHANGED — the May 2026 Cook County plan names someone else in a similar role. Neither source states her office; AOIC has Chicago and Springfield offices, so Chicago basing is inferred from the division, not confirmed.",
-    note: `You're the person listed for pre-approving interpreter skill-building hours, which means you've had to make judgment calls about what actually counts as training. Medical interpreting has the same argument going on with none of the same infrastructure behind it. I'm also interested in the remote-hearing work — video interpreting broke in courts a few years before it broke in clinics, and I don't think anyone wrote down what you learned.`,
+    note: `You're the person listed for pre-approving interpreter skill-building hours, which means you've had to make judgment calls about what actually counts as training. Medical interpreting has the same argument going on with none of the same infrastructure behind it. I'm also interested in the remote-hearing work. Video interpreting broke in courts a few years before it broke in clinics, and I don't think anyone wrote down what you learned.`,
   },
   {
     org: "Circuit Court of Cook County, Office of Interpreter Services",
@@ -4076,7 +4076,7 @@ The mistakes institutions make with each new group are apparently identical each
     tier2: true,
     source:
       "Listed as LAP Contact in the Circuit Court of Cook County Language Access Plan, May 2026, Sec. VIII (https://ocj-web-files.s3.us-east-2.amazonaws.com/documents/2026_Cook_County_Language_Access_Plan_May_2026.pdf)",
-    note: `Your plan puts it at 61 full and part-time interpreters with 32 certified, in languages down to Assyrian and Toisan, plus contracted agency coverage when nobody in-house is free. I'd like to ask you about the mornings when the coverage doesn't work — what you do, and who you call. Hospitals hit the same wall and treat it as a vendor's problem rather than a staffing one.`,
+    note: `Your plan puts it at 61 full and part-time interpreters with 32 certified, in languages down to Assyrian and Toisan, plus contracted agency coverage when nobody in-house is free. I'd like to ask you about the mornings when the coverage doesn't work, what you do, and who you call. Hospitals hit the same wall and treat it as a vendor's problem rather than a staffing one.`,
   },
   {
     org: "Sixteenth Judicial Circuit (Kane County)",
@@ -4110,7 +4110,7 @@ You'd know better than most whether that's a real failure mode or one I've inven
     email: "mgarcia15@luc.edu",
     source:
       "https://www.luc.edu/law/academics/clinical-programs/healthjusticeproject/aboutus/",
-    note: `You supervise the students doing the actual client interviews, which makes you the one who catches it when an interview goes sideways. I'm interested in the bilingual-attorney question specifically — the courts have a formal answer about when speaking the language is enough and when you still need an interpreter, and healthcare mostly doesn't.
+    note: `You supervise the students doing the actual client interviews, which makes you the one who catches it when an interview goes sideways. I'm interested in the bilingual-attorney question specifically. The courts have a formal answer about when speaking the language is enough and when you still need an interpreter, and healthcare mostly doesn't.
 
 Curious whether you apply a rule or a feel.`,
   },
@@ -4134,7 +4134,7 @@ Curious whether you apply a rule or a feel.`,
     tier2: true,
     source:
       "Address and adjunct title published at https://www.luc.edu/law/academics/clinical-programs/healthjusticeproject/aboutus/, which identifies her as Supervisory Attorney in Legal Aid Chicago's Medical Legal Partnership Group. Recovery Legal Care co-director role from https://legalaidchicago.org/newsroom/in-the-news/uchicago-medicine-legal-aid-chicago-launch-bedside-program-to-provide-in-hospital-legal-support-for-trauma-patients-injured-by-violence/. THIS IS HER LOYOLA ADJUNCT ADDRESS, not a Legal Aid Chicago address.",
-    note: `Recovery Legal Care does bedside intake with trauma patients at UChicago Medicine, which is about the hardest possible setting to get interpretation right — the patient is injured, the family is there, and nobody is in a state to object to whoever ends up doing it. Courts eventually wrote rules about family members interpreting because the errors were provable on the record. There's no record in a trauma bay, and I'd like your view on what that changes.`,
+    note: `Recovery Legal Care does bedside intake with trauma patients at UChicago Medicine, which is about the hardest possible setting to get interpretation right. The patient is injured, the family is there, and nobody is in a state to object to whoever ends up doing it. Courts eventually wrote rules about family members interpreting because the errors were provable on the record. There's no record in a trauma bay, and I'd like your view on what that changes.`,
   },
   {
     org: "Legal Aid Chicago",
@@ -4156,7 +4156,7 @@ Curious whether you apply a rule or a feel.`,
     tier2: true,
     source:
       "Title from the NIJC staff page, Wayback snapshot 2026-07-16 (web.archive.org/web/20260716191513/https://immigrantjustice.org/about-nijc/staff/) — the live site is captcha-walled. Address from her own signature block in Z. v. U.S. Dept. of Homeland Security, filed 2026-07-22 (courtlistener.com/docket/73277892/42/), given as her address of record at NIJC's Chicago office, 111 W. Jackson Blvd., Suite 800.",
-    note: `You're counsel of record in Amica Center v. EOIR, which is about detained people losing the programming that told them what their rights were. Hospitals have a smaller version of that — the notice of rights exists, it's in English, and nobody reads it out loud. I don't know whether that's a legal problem or just a bad habit, and I'd rather ask someone litigating the harder version of it.`,
+    note: `You're counsel of record in Amica Center v. EOIR, which is about detained people losing the programming that told them what their rights were. Hospitals have a smaller version of that. The notice of rights exists, it's in English, and nobody reads it out loud. I don't know whether that's a legal problem or just a bad habit, and I'd rather ask someone litigating the harder version of it.`,
   },
   {
     org: "National Immigrant Justice Center",
@@ -4167,7 +4167,7 @@ Curious whether you apply a rule or a feel.`,
     tier2: true,
     source:
       "Title from the NIJC staff page, Wayback snapshot 2026-07-16. Address from his own signature block in Z. v. DHS, filed 2026-07-22 (courtlistener.com/docket/73277892/42/), given as his address of record at NIJC's Chicago office.",
-    note: `You're early in a fellowship on NIJC's federal litigation team, and I mention that because the invitation is genuinely open at that stage — most of this room is clinical and mid-career, and it would be a better conference if it weren't. If detention-side language access is anywhere near what your fellowship touches, almost nobody attending has heard it described from that direction.`,
+    note: `You're early in a fellowship on NIJC's federal litigation team, and I mention that because the invitation is genuinely open at that stage. Most of this room is clinical and mid-career, and it would be a better conference if it weren't. If detention-side language access is anywhere near what your fellowship touches, almost nobody attending has heard it described from that direction.`,
   },
   {
     org: "Equip for Equality",
@@ -4209,7 +4209,7 @@ Curious whether you apply a rule or a feel.`,
     email: "mariangela@equipforequality.org",
     source:
       "Published staff directory, https://www.equipforequality.org/about/staff-directory/ (Chicago office, 312-895-7358)",
-    note: `You run intake, so you hear the complaint before anyone has shaped it into anything. That's the version I'm most interested in — how many callers can't get through the front door of the system they're calling about because of the language it's conducted in.
+    note: `You run intake, so you hear the complaint before anyone has shaped it into anything. That's the version I'm most interested in. How many callers can't get through the front door of the system they're calling about because of the language it's conducted in.
 
 And if the brain injury side of your work has anything to say about capacity and interpretation together, that's a conversation nobody is having.`,
   },
@@ -4232,7 +4232,7 @@ And if the brain injury side of your work has anything to say about capacity and
     email: "kfennell@hsplegal.com",
     source:
       "Title, practice description and address published at https://www.hsplegal.com/attorneys/kelli-fennell; the AILA role and the identical address are published at https://ailachicago.org/officers-liaisons/",
-    note: `Your caseload — family-based, naturalization, asylum, U visa, deferred action — is the one that generates psychological evaluations conducted through an interpreter. Those get written by clinicians who mostly have no training in working through one, and then read by adjudicators as though they were routine.
+    note: `Your caseload, which is family-based, naturalization, asylum, U visa and deferred action, is the one that generates psychological evaluations conducted through an interpreter. Those get written by clinicians who mostly have no training in working through one, and then read by adjudicators as though they were routine.
 
 I'd like to know how often you've had an evaluation come back weak for that reason.`,
   },
@@ -4244,7 +4244,7 @@ I'd like to know how often you've had an evaluation come back weak for that reas
     email: "kiki@kikislaw.com",
     source:
       "Published on the official AILA Chicago officers page, https://ailachicago.org/officers-liaisons/, and independently on her own firm site kikislaw.com — identical address in both places. Office at 401 S. LaSalle St., Chicago.",
-    note: `You're chairing the chapter, so part of this is asking whether it's worth putting in front of your members — but I'd rather you came. The asylum office liaison work is the part I'd want to ask about: what that office does and doesn't do about interpretation during an interview, and whether an applicant has any way to object to it.`,
+    note: `You're chairing the chapter, so part of this is asking whether it's worth putting in front of your members, but I'd rather you came. The asylum office liaison work is the part I'd want to ask about: what that office does and doesn't do about interpretation during an interview, and whether an applicant has any way to object to it.`,
   },
   {
     org: "Shriver Center on Poverty Law",
@@ -4264,7 +4264,7 @@ I'd like to know how often you've had an evaluation come back weak for that reas
     source: "https://www.icirr.org/contact",
     note: `Communications is an odd invitation to a clinical conference, which is roughly why I'm sending it. ICIRR has to say things in a lot of languages quickly, usually about something frightening and often before the agencies have said anything.
 
-I'd like to ask how you actually do that — who translates, how fast, and what you do when there's no vendor for the language.`,
+I'd like to ask how you actually do that, who translates, how fast, and what you do when there's no vendor for the language.`,
   },
   // ─── Higher education, health services research and policy ────────────────
   // The last section, and the one furthest from the usual list. Two seats:
@@ -4298,7 +4298,7 @@ I'd like to ask how you actually do that — who translates, how fast, and what 
       "Professor of Language and Literacy; Director, Dual Language Teacher Leadership M.A. Program",
     email: "tobergdelagarza@roosevelt.edu",
     source: "https://blogs.roosevelt.edu/dual-language/faculty/",
-    note: `The teachers coming out of your programme are going to spend part of their careers being asked to interpret — for a colleague, for a school nurse, for a parent conference nobody planned as a bilingual meeting. It's relied on constantly and trained for almost never.
+    note: `The teachers coming out of your programme are going to spend part of their careers being asked to interpret, for a colleague, for a school nurse, for a parent conference nobody planned as a bilingual meeting. It's relied on constantly and trained for almost never.
 
 I'd like to know whether the M.A. touches it at all or whether it's the thing they work out in year two.`,
   },
@@ -4370,7 +4370,7 @@ Whatever you understand about why they turn up for you and not for a follow-up a
     source: "https://www.depaul.edu/faculty/maria-luisa-ortega-hernandez",
     note: `I'm inviting some language faculty because this is otherwise going to be clinicians talking to clinicians about what is fundamentally a linguistics problem.
 
-Register is the specific thing I'd want in the room — the way one speaker sounds different depending on who they're addressing. It's behind a lot of what gets misheard in an exam room and medicine has no name for it.`,
+Register is the specific thing I'd want in the room. The way one speaker sounds different depending on who they're addressing. It's behind a lot of what gets misheard in an exam room and medicine has no name for it.`,
   },
   {
     org: "University of Illinois Chicago — School of Public Health",
@@ -4424,7 +4424,7 @@ I'd want to ask what it would actually take to put it in a curriculum, and wheth
     tier2: true,
     source:
       "https://lawrencehall.org/our-programs/community-wellness/ — address printed on the page. NO TITLE IS PUBLISHED; the page says she oversees the mentoring programme. Title deliberately left empty.",
-    note: `You oversee the mentoring side, so you're matching adults to young people and thinking hard about who fits with whom. I'd guess language comes into that — a mentee whose parents don't speak English is a different matching problem, and the mentor ends up doing more than mentoring. I'd like to know if you match on it deliberately or if it sorts itself out.`,
+    note: `You oversee the mentoring side, so you're matching adults to young people and thinking hard about who fits with whom. I'd guess language comes into that. A mentee whose parents don't speak English is a different matching problem, and the mentor ends up doing more than mentoring. I'd like to know if you match on it deliberately or if it sorts itself out.`,
   },
   {
     org: "Cook County Health — John H. Stroger Jr. Hospital",
@@ -4436,7 +4436,7 @@ I'd want to ask what it would actually take to put it in a curriculum, and wheth
     tier2: true,
     source:
       "PubMed PMID 41361030 — 'Readmission rates before and after the implementation of 2022 revised AAP clinical practice guidelines for the management of neonatal hyperbilirubinemia: a single center study,' J Perinatol 2026. The address is printed literally in her affiliation string ('John H. Stroger Jr. Hospital of Cook County, Chicago, IL, USA. ugoeze.otome@cookcountyhealth.org.'), which also documents the Chicago siting.",
-    note: `Your readmission study is about what happens after a family goes home holding instructions, which is exactly the point where a language problem stops being observable to anyone in the building. Stroger's population makes that a sharper question than it would be almost anywhere else. I don't know whether the data can separate the families who couldn't follow the plan from the ones who couldn't get back — but if it can, I'd like to hear about it before it's written up.`,
+    note: `Your readmission study is about what happens after a family goes home holding instructions, which is exactly the point where a language problem stops being observable to anyone in the building. Stroger's population makes that a sharper question than it would be almost anywhere else. I don't know whether the data can separate the families who couldn't follow the plan from the ones who couldn't get back, but if it can, I'd like to hear about it before it's written up.`,
   },
   {
     org: "University of Chicago Medicine",
@@ -4448,7 +4448,7 @@ I'd want to ask what it would actually take to put it in a curriculum, and wheth
     tier2: true,
     source:
       "PubMed PMID 40344996 — 'Addressing disparities in telehealth access for children on the Southside of Chicago,' Am J Surg 2025. The address is printed as the electronic address in her affiliation.",
-    note: `The telehealth access work is the clearest description I've read of a service built to remove a barrier and installing a different one on the way in. The language layer of that is worse than the broadband layer and studied far less — a video visit run through a phone interpreter is a three-way call in which nobody can see who is speaking. If your data touches that at all, even at the edges, I'd like to hear it.`,
+    note: `The telehealth access work is the clearest description I've read of a service built to remove a barrier and installing a different one on the way in. The language layer of that is worse than the broadband layer and studied far less. A video visit run through a phone interpreter is a three-way call in which nobody can see who is speaking. If your data touches that at all, even at the edges, I'd like to hear it.`,
   },
   {
     org: "University of Chicago Medicine",
@@ -4459,7 +4459,7 @@ I'd want to ask what it would actually take to put it in a curriculum, and wheth
     tier2: true,
     source:
       "PubMed PMID 41871118 (J Nurs Care Qual 2026), where the byline prints both the unit and the address: 'Eileen Dowdall, MSN, CNL, RN, CMSRN, Central Nursing Education, University of Chicago Medicine, Chicago, Illinois... (eileen.dowdall@uchicagomedicine.org; dowdalle@morainevalley.edu)'. She also holds a concurrent clinical education role at OSF Little Company of Mary in Evergreen Park. Escape-room teaching work is PMID 40865021.",
-    note: `You built an escape room to refresh critical skills and a movement-based method for teaching mobility, which tells me you concluded some time ago that lecturing nurses at them doesn't work. I've got a session on communicating with a patient through an interpreter and I keep hitting the same wall — it's a skill, and I'd be teaching it with slides. I'd take any advice you have. I'd rather you came.`,
+    note: `You built an escape room to refresh critical skills and a movement-based method for teaching mobility, which tells me you concluded some time ago that lecturing nurses at them doesn't work. I've got a session on communicating with a patient through an interpreter and I keep hitting the same wall. It's a skill, and I'd be teaching it with slides. I'd take any advice you have. I'd rather you came.`,
   },
   {
     org: "Illinois Chapter, American Academy of Pediatrics (ICAAP)",
@@ -4481,7 +4481,7 @@ I'd want to ask what it would actually take to put it in a curriculum, and wheth
     tier2: true,
     source:
       "Loyola Medicine EMS staff directory (loyolamedicine.org/ems/staff) — address published beside her name and title, listed there as 'Sam Collazo, BA, EMT-P'.",
-    note: `You sit on both sides of it — teaching, and tracking whether everyone's hours and licenses are where they need to be. That means you've got a clear view of what people are actually choosing to spend con-ed time on. What I'm trying to find out is whether anything currently in the CE menu touches assessing a patient who can't give you a history, or whether it's all skills and cards.`,
+    note: `You sit on both sides of it. Teaching, and tracking whether everyone's hours and licenses are where they need to be. That means you've got a clear view of what people are actually choosing to spend con-ed time on. What I'm trying to find out is whether anything currently in the CE menu touches assessing a patient who can't give you a history, or whether it's all skills and cards.`,
   },
   {
     org: "Beloved Community Family Wellness Center",
@@ -4504,7 +4504,7 @@ I'd want to ask what it would actually take to put it in a curriculum, and wheth
     tier2: true,
     source:
       "https://www.iasn.org/board-of-directors (address published there by her, a personal account used professionally) and https://nursing.uic.edu/news-stories/gloria-barrera-named-director-of-rn-bsn-program/ for the UIC role. She is NOT on the current Downers Grove South health services roster, whatever older pages say.",
-    note: `School nursing is where I'd start if I wanted to find the children in this region whose health information has never once reached their parents in a language they read. You're teaching working nurses on the RN-to-BSN side at the same time, so you see both the practice and what people were never taught in the first place. And since you're on IASN's board — is this worth putting in front of that membership, or not?`,
+    note: `School nursing is where I'd start if I wanted to find the children in this region whose health information has never once reached their parents in a language they read. You're teaching working nurses on the RN-to-BSN side at the same time, so you see both the practice and what people were never taught in the first place. And since you're on IASN's board: is this worth putting in front of that membership, or not?`,
   },
   {
     org: "Northwestern Medicine Palos Hospital (Palos Heights, Cook County)",
@@ -4516,7 +4516,7 @@ I'd want to ask what it would actually take to put it in a curriculum, and wheth
     tier2: true,
     source:
       "PubMed PMID 37939850 — first author of 'Investigation of a pseudo-outbreak of Mycobacterium franklinii,' Am J Infect Control 2024. The address is printed inside that record's affiliation string, which names Northwestern Medicine Palos Hospital, Palos Heights, IL as her site.",
-    note: `You ran the investigation that identified and closed out the Mycobacterium franklinii pseudo-outbreak. Infection prevention isn't an obvious invitation to a conference about language, except that isolation precautions get explained at a doorway, quickly, to somebody who is already frightened — and the written version may or may not exist in their language. I'd like to know whose job that is in your building, or whether it turns out to be nobody's.`,
+    note: `You ran the investigation that identified and closed out the Mycobacterium franklinii pseudo-outbreak. Infection prevention isn't an obvious invitation to a conference about language, except that isolation precautions get explained at a doorway, quickly, to somebody who is already frightened, and the written version may or may not exist in their language. I'd like to know whose job that is in your building, or whether it turns out to be nobody's.`,
   },
   {
     org: "UI Health (University of Illinois Hospital & Health Sciences System)",

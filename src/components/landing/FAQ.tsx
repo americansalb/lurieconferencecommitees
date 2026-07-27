@@ -12,15 +12,15 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "Will every session be recorded?",
-    a: "We record as much as we can, and the vast majority of sessions and workshops will be recorded. It isn't always possible, though — recording is ultimately the presenter's call, and a few ask us not to. This year we expect the sessions led by Jane Crandall Kontrimas and Wilma Alvarado-Little to be live only, and there may be one or two others as presenters finalize their permissions. If a particular session is the reason you are registering, it is worth attending that one live.",
+    a: "We record as much as we can, and the vast majority of sessions and workshops will be recorded. It isn't always possible, though. Recording is ultimately the presenter's call, and a few ask us not to. This year we expect the sessions led by Jane Crandall Kontrimas and Wilma Alvarado-Little to be live only, and there may be one or two others as presenters finalize their permissions. If a particular session is the reason you are registering, it is worth attending that one live.",
   },
   {
     q: "Is the conference CEU accredited?",
-    a: "Yes. The conference will be accredited for 10+ hours of NBCMI and CCHI CEUs. CEUs are earned by attending live — see the next answer for what that requires. Additional discipline-specific accreditation details will be announced as the program is finalized.",
+    a: "Yes. The conference will be accredited for 10+ hours of NBCMI and CCHI CEUs. CEUs are earned by attending live. See the next answer for what that requires. Additional discipline-specific accreditation details will be announced as the program is finalized.",
   },
   {
     q: "Can I earn CEUs by watching the recordings on my own time?",
-    a: "No. CEUs are not available for self-paced or on-demand viewing. Our accreditors require live attendance, which for virtual attendees means being present in the live session with your camera on and visible for the duration. Watching a recording afterward does not qualify, and neither does joining live with your camera off. You are welcome to watch the recordings either way — they just cannot be credited.",
+    a: "No. CEUs are not available for self-paced or on-demand viewing. Our accreditors require live attendance, which for virtual attendees means being present in the live session with your camera on and visible for the duration. Watching a recording afterward does not qualify, and neither does joining live with your camera off. You are welcome to watch the recordings either way. They just cannot be credited.",
   },
   {
     q: "How is registration priced?",
