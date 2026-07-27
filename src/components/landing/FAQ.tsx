@@ -8,11 +8,11 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "Can I attend virtually?",
-    a: "Yes. The conference is offered as a hybrid event. The Virtual ticket gives you a live stream of both days, digital materials, and on-demand recordings of the sessions that are recorded. You can attend from anywhere in the world. Please read the two answers below before registering if recordings or CEUs are the reason you are coming: not every session is recorded, and CEUs require live attendance.",
+    a: "Yes. The conference is offered as a hybrid event. The Virtual ticket gives you a live stream of both days, digital materials, and on-demand recordings of most sessions afterward. You can attend from anywhere in the world. Please read the two answers below before registering if recordings or CEUs are the reason you are coming: not every session is recorded, and CEUs require live attendance.",
   },
   {
     q: "Will every session be recorded?",
-    a: "No. Recording is each presenter's decision, and some ask us not to record. This year we expect the sessions led by Jane Crandall Kontrimas and Wilma Alvarado-Little will not be recorded, so they will be available live only. We may have to add to that list as presenters finalize their permissions, and we will keep this answer current. If a particular session is the reason you are registering, plan to attend it live.",
+    a: "We record as much as we can, and the vast majority of sessions and workshops will be recorded. It isn't always possible, though — recording is ultimately the presenter's call, and a few ask us not to. This year we expect the sessions led by Jane Crandall Kontrimas and Wilma Alvarado-Little to be live only, and there may be one or two others as presenters finalize their permissions. If a particular session is the reason you are registering, it is worth attending that one live.",
   },
   {
     q: "Is the conference CEU accredited?",
