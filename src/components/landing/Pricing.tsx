@@ -3,11 +3,17 @@ import { TOKENS } from "./tokens";
 import { SCHEDULE, PRICES, activeTier } from "./pricing-data";
 import Countdown from "./Countdown";
 
+// These bullets are a promise, so they say what is actually true rather than
+// the tidier version. Not every session is recorded — recording is each
+// presenter's own decision — and CEUs require live attendance, on camera for
+// virtual attendees. Both conditions are spelled out in the FAQ; a bullet that
+// reads "on-demand recordings" and "CEU certificate" flat sells something we
+// cannot deliver to someone planning to watch on their own time.
 const VIRTUAL_FEATURES = [
   "Live stream of both days",
-  "On-demand recordings after the event",
+  "Recordings of the sessions presenters allow us to record",
   "Digital program and speaker materials",
-  "CEU certificate of attendance",
+  "CEU certificate — live attendance, camera on, required",
 ];
 
 const IN_PERSON_FEATURES = [
@@ -15,7 +21,7 @@ const IN_PERSON_FEATURES = [
   "Lunch and refreshments included",
   "Printed program and conference materials",
   "CEU certificate of attendance",
-  "Recordings to keep after the event",
+  "Recordings of the sessions presenters allow us to record",
 ];
 
 export default function Pricing() {

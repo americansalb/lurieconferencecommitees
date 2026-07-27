@@ -8,11 +8,19 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "Can I attend virtually?",
-    a: "Yes. The conference is offered as a hybrid event. The Virtual ticket gives you a live stream of both days, on-demand recordings afterward, digital materials, and a CEU certificate of attendance. You can attend from anywhere in the world.",
+    a: "Yes. The conference is offered as a hybrid event. The Virtual ticket gives you a live stream of both days, digital materials, and on-demand recordings of the sessions that are recorded. You can attend from anywhere in the world. Please read the two answers below before registering if recordings or CEUs are the reason you are coming: not every session is recorded, and CEUs require live attendance.",
+  },
+  {
+    q: "Will every session be recorded?",
+    a: "No. Recording is each presenter's decision, and some ask us not to record. This year we expect the sessions led by Jane Crandall Kontrimas and Wilma Alvarado-Little will not be recorded, so they will be available live only. We may have to add to that list as presenters finalize their permissions, and we will keep this answer current. If a particular session is the reason you are registering, plan to attend it live.",
   },
   {
     q: "Is the conference CEU accredited?",
-    a: "Yes. The conference will be accredited for 10+ hours of NBCMI and CCHI CEUs, and attendees receive a CEU certificate of attendance for both days. Additional discipline-specific accreditation details will be announced as the program is finalized.",
+    a: "Yes. The conference will be accredited for 10+ hours of NBCMI and CCHI CEUs. CEUs are earned by attending live — see the next answer for what that requires. Additional discipline-specific accreditation details will be announced as the program is finalized.",
+  },
+  {
+    q: "Can I earn CEUs by watching the recordings on my own time?",
+    a: "No. CEUs are not available for self-paced or on-demand viewing. Our accreditors require live attendance, which for virtual attendees means being present in the live session with your camera on and visible for the duration. Watching a recording afterward does not qualify, and neither does joining live with your camera off. You are welcome to watch the recordings either way — they just cannot be credited.",
   },
   {
     q: "How is registration priced?",
