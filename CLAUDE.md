@@ -27,6 +27,16 @@ rewrite the sentence. This is a hard rule, not a preference: an em
 dash is one of the loudest tells that a machine wrote the text, and
 these letters only work if they read as written by a person.
 
+Never invent something the sender did. A published fact about the
+recipient is fine, because it is on a page and we can point at it if
+they ask. A claim about what Kevin personally read, watched, looked
+up, checked or asked around about is not, unless he actually did it.
+"I looked up what it meant before writing to you" is the shape to
+watch for: it manufactures a private act to buy warmth, and it falls
+apart the moment someone replies asking which study, which report, or
+who else was asked. Say the fact. Say what you want to ask them. Do
+not narrate research that may not have happened.
+
 ## Database safety
 
 This Postgres database is shared with other apps. Prisma must stay

@@ -207,7 +207,7 @@ export const CHICAGO_TARGETS: ChicagoTarget[] = [
     title: "Director, CAHRA; James R. Webster Jr. Professor",
     email: "mswolf@northwestern.edu",
     source: "https://www.feinberg.northwestern.edu/sites/cahra/about/our-team/",
-    note: `I've been reading the ConcordantRx work, mostly the studies on liquid dosing errors among Spanish-speaking parents.
+    note: `The ConcordantRx work on liquid dosing errors among Spanish-speaking parents puts a number on something this field usually argues about without one.
 
 We built this program around the interpreted visit and I've come round to thinking that's the easier half of the problem. Nobody on our agenda right now speaks to what happens once the family is home with the bottle and the label, and I'd rather that be you than nobody.`,
   },
@@ -242,7 +242,7 @@ We built this program around the interpreted visit and I've come round to thinki
     title: "Director of Health Equity Innovation and Collaboration; Founding Director, Odehmenan Health Equity Center",
     email: "ablack3@uic.edu",
     source: "https://publichealth.uic.edu/profiles/adriana-black",
-    note: `Odehmenan. This heart of ours. I looked up what it meant before writing to you, which I suppose is part of the point of naming it that. Your center hosted Monica Vela's talk on language-concordant care last fall so none of this is new to you, but I wanted to ask you directly rather than hope you came across us somewhere.`,
+    note: `Odehmenan. This heart of ours. Naming a centre something a stranger has to stop and ask about is presumably part of the point. Your center hosted Monica Vela's talk on language-concordant care last fall so none of this is new to you, but I wanted to ask you directly rather than hope you came across us somewhere.`,
   },
   {
     org: "UIC School of Public Health",
@@ -283,7 +283,7 @@ I'd rather you said that in the room than have us talk around it for two days an
     title: "Professor of Spanish Linguistics; Director of Undergraduate Studies",
     email: "kimpotow@uic.edu",
     source: "https://hip.uic.edu/people/faculty/",
-    note: `I read Spanish in Chicago last year and it's a good part of why this conference is happening here and not somewhere else. A hospital intake form has one box for Spanish. Your book is a few hundred pages on why that isn't one thing. I watched the TEDx talk too, and the bit about monolingualism being something done to children has stuck with me longer than most of what I hear at conferences, which is an awkward thing to say while inviting you to one.`,
+    note: `Spanish in Chicago is a good part of why this conference is happening here and not somewhere else. A hospital intake form has one box for Spanish. Your book is a few hundred pages on why that isn't one thing. And your line about monolingualism being something done to children is a harder idea than most of what gets said at conferences, which is an awkward thing to say while inviting you to one.`,
   },
   {
     org: "UIC Spanish Heritage Language Program",
@@ -327,7 +327,7 @@ Nobody on our program can speak to the classroom end of it yet.`,
     source: "https://rushu.rush.edu/rush-medical-college/departments/department-internal-medicine/division-community-global-health-equity",
     note: `Rush lists you on its health equity experts page and on its Spanish-speaking physicians page.
 
-You're the only person I found in the city on both, and it's odd to me that being on both is rare. I've spent a fair amount of time with the Chicago Health Map as well. A life expectancy gap that big across a few miles has no single cause, but a parent who can't ask a question in their own language is somewhere in most versions of it.`,
+Being on both of those lists at once is rarer than it ought to be. Then there is the Chicago Health Map. A life expectancy gap that big across a few miles has no single cause, but a parent who can't ask a question in their own language is somewhere in most versions of it.`,
   },
   {
     org: "Shirley Ryan AbilityLab",
@@ -374,7 +374,7 @@ You're the only person I found in the city on both, and it's odd to me that bein
     tier2: true,
     source:
       "Listed as Department Contact in the 2025 CHNA implementation report for Loyola University Medical Center and Gottlieb Memorial Hospital, loyolamedicine.org. Note the address is on sjrmc.com, not luhs.org.",
-    note: `Loyola's FY2024 community benefit report puts language assistance at $3,886,246, over thirty thousand minutes of interpreting a month. I read a lot of these reports and yours is one of the very few that breaks the line out at all. The other number in it is the one that explains it: roughly one in ten households in your service area is limited English proficient, against about four percent statewide.`,
+    note: `Loyola's FY2024 community benefit report puts language assistance at $3,886,246, over thirty thousand minutes of interpreting a month. Very few community benefit reports break that line out at all. The other number in it is the one that explains it: roughly one in ten households in your service area is limited English proficient, against about four percent statewide.`,
   },
   {
     org: "UI Health",
@@ -411,7 +411,7 @@ I'm writing to you because external affairs is the front door. If someone at La 
     hold:
       "Front desk: dph.cmhs.info@illinois.gov is a state agency information line. Held until a direct address turns up.",
     source: "IDPH Language Access Plan approved February 2026, dph.illinois.gov",
-    note: `I read the Language Access Plan IDPH approved in February, the whole way through, which I suspect is a small club. What I kept looking at was the dates. Training for front-line and managerial staff starting this quarter, new hires inside sixty days, I Speak cards in every IDPH building by the end of December. Most of the plans I read don't carry dates at all. You coordinate that one, so you'll be the first to find out whether they hold.`,
+    note: `The Language Access Plan IDPH approved in February is unusually specific for the genre. The dates are the part that stands out. Training for front-line and managerial staff starting this quarter, new hires inside sixty days, I Speak cards in every IDPH building by the end of December. Most language access plans carry no dates at all. You coordinate that one, so you'll be the first to find out whether they hold.`,
   },
   {
     org: "the Cook County Department of Public Health",
@@ -477,7 +477,7 @@ You've been at the AOIC since roughly the start of certification here, spoken la
     title: "Senior Program Manager, Health Equity Initiatives",
     email: "acreek@illinoisaap.com",
     source: "https://illinoisaap.org/about-2/",
-    note: `ICAAP publishes a bilingual flyer on interpretation services for pediatric practices. Most of what I read from state chapters treats interpreting as a compliance footnote if it appears at all.
+    note: `ICAAP publishes a bilingual flyer on interpretation services for pediatric practices. In most state chapters interpreting turns up as a compliance footnote if it turns up at all.
 
 The flyer sits under health equity initiatives, so I'm guessing you're the one fielding calls from practices that want to do this properly and can't afford a full-time interpreter. Those calls are more or less what the conference is built around.`,
   },
@@ -1069,7 +1069,7 @@ I'd be interested in what you've found in six months that the org chart didn't t
     source: "https://littlevillagechamber.org",
     note: `The chamber runs a Community Health and Resource Fair, which is not something I expected to find a business association doing. You've held both of the chamber's top jobs and you manage SSA #25 along 26th Street.
 
-If a business district ends up being the front door to care for people who have no other one, I'd like to understand how that happened here and not anywhere else. Nobody I've asked can tell me whether it was deliberate.`,
+If a business district ends up being the front door to care for people who have no other one, I'd like to understand how that happened here and not anywhere else. I can't tell from the outside whether it was deliberate.`,
   },
 
   // ─── Latino health professional associations ──────────────────────────────
@@ -1176,7 +1176,7 @@ If a business district ends up being the front door to care for people who have 
     hold:
       "Front desk, and the Hispanic Dental Association is already written to through its 2026 president Ana Zea: info@healthytoothdental.com is her private dental practice's general inbox, not an HDA address.",
     source: "Hispanic Dental Association board listing and RefugeeOne clinical staff page; address is her practice",
-    note: `What you said about dialect, that patients can tell your intentions are good even when you get a word wrong for their region, is the most useful sentence I've read about this all year. It cuts against the instinct to stay silent unless your Spanish is perfect. Being lead dentist at RefugeeOne on top of the HDA seat also means you're working across languages that have almost no dental vocabulary support at all.`,
+    note: `Your point about dialect, that patients can tell your intentions are good even when you get a word wrong for their region, is the useful part. It cuts against the instinct to stay silent unless your Spanish is perfect. Being lead dentist at RefugeeOne on top of the HDA seat also means you're working across languages that have almost no dental vocabulary support at all.`,
   },
   {
     org: "Hispanic Dental Association",
@@ -1781,7 +1781,7 @@ Your site footer says auxiliary aids and services available on request, and I'd 
     title: "Executive Director",
     email: "CHoff@lakecountyil.gov",
     source: "Lake County official staff directory (archived February 2026); lakecountyil.gov blocks automated access",
-    note: `You came to Lake County last March after a decade at DuPage and seven years at Kane, so you've now run public health in three counties whose immigrant populations look nothing alike. Your department runs a promotoras de salud program out of North Shore Health Center and names no lead for it anywhere public, which I mention because I looked hard and would have written to that person instead of bothering you.`,
+    note: `You came to Lake County last March after a decade at DuPage and seven years at Kane, so you've now run public health in three counties whose immigrant populations look nothing alike. Your department runs a promotoras de salud program out of North Shore Health Center and names no lead for it anywhere public, which is why this is landing with you rather than with whoever runs it.`,
   },
   {
     org: "Lake County Health Department and Community Health Center",
@@ -1833,7 +1833,7 @@ Your site footer says auxiliary aids and services available on request, and I'd 
     title: "Associate Director",
     email: "lloster@ptmhc.org",
     source: "https://ptmhc.org/funding-information/",
-    note: `You're the named contact for every FY26-27 funding application, so you see what every mental health provider in Proviso Township claims it can do before anybody checks. The commission publishes its own release of information form in English and Spanish, which I noticed because I went looking for it.`,
+    note: `You're the named contact for every FY26-27 funding application, so you see what every mental health provider in Proviso Township claims it can do before anybody checks. The commission publishes its own release of information form in English and Spanish, which is a small thing that suggests somebody thought about it.`,
   },
   {
     org: "Proviso Township",
@@ -3079,7 +3079,7 @@ I'm putting together a conference on language access in pediatric care and almos
     source: "https://www.loyolamedicine.org/ems/staff",
     note: `ECRNs give orders off a picture somebody else built, over a radio, and if the crew couldn't get a history you're the next person the problem lands on, still having to decide.
 
-I've never seen that written up anywhere.`,
+It does not seem to be written up anywhere.`,
   },
   {
     org: "Loyola University Medical Center EMS System",
@@ -3179,7 +3179,7 @@ I'd rather know that than guess at it from the outside.`,
     tier2: true,
     source:
       "Illinois Trauma Coordinators' Directory, Region 11 section (illinoistraumanurse.org, rev. 06/06/2023). CURRENCY CAVEAT: three years old; current title unconfirmed.",
-    note: `In a trauma activation the history often has to come from a relative standing in the corridor, at speed, and a lot of those relatives on the West and Southwest Sides are working in Spanish. Everybody agrees that's not ideal and nobody I've asked can tell me what the alternative looks like at three in the morning. If it's just what happens, I'd rather hear that plainly than hear a policy read to me.`,
+    note: `In a trauma activation the history often has to come from a relative standing in the corridor, at speed, and a lot of those relatives on the West and Southwest Sides are working in Spanish. Everybody agrees that's not ideal and nobody seems able to say what the alternative looks like at three in the morning. If it's just what happens, I'd rather hear that plainly than hear a policy read to me.`,
   },
   {
     org: "Northwestern Medicine McHenry Hospital",
@@ -4448,7 +4448,7 @@ I'd want to ask what it would actually take to put it in a curriculum, and wheth
     tier2: true,
     source:
       "PubMed PMID 40344996 — 'Addressing disparities in telehealth access for children on the Southside of Chicago,' Am J Surg 2025. The address is printed as the electronic address in her affiliation.",
-    note: `The telehealth access work is the clearest description I've read of a service built to remove a barrier and installing a different one on the way in. The language layer of that is worse than the broadband layer and studied far less. A video visit run through a phone interpreter is a three-way call in which nobody can see who is speaking. If your data touches that at all, even at the edges, I'd like to hear it.`,
+    note: `The telehealth access work describes a service built to remove a barrier that installed a different one on the way in. The language layer of that is worse than the broadband layer and studied far less. A video visit run through a phone interpreter is a three-way call in which nobody can see who is speaking. If your data touches that at all, even at the edges, I'd like to hear it.`,
   },
   {
     org: "University of Chicago Medicine",
