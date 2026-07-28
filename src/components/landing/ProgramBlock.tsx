@@ -1,6 +1,6 @@
-import { Download } from "lucide-react";
+import { Download, Award } from "lucide-react";
 import { TOKENS } from "./tokens";
-import { PROGRAM_DAYS, PROGRAM_NOTE, type SessionKind } from "./program-data";
+import { PROGRAM_DAYS, PROGRAM_NOTE, CEU_TOTAL_LABEL, CEU_PENDING_NOTE, formatCeu, type SessionKind } from "./program-data";
 
 // Program section: the complete two-day schedule rendered directly on the
 // page — one column per day on desktop, stacked on phones — so nobody has to
@@ -28,6 +28,18 @@ export default function ProgramBlock() {
           <p className="mt-5 text-base sm:text-lg leading-relaxed" style={{ color: TOKENS.muted }}>
             {PROGRAM_NOTE}
           </p>
+          <div
+            className="mt-6 inline-flex items-center gap-2.5 rounded-full px-5 py-2.5"
+            style={{ background: "#FBF4E2", border: "1px solid #EAD9AE" }}
+          >
+            <Award className="w-4 h-4 shrink-0" style={{ color: TOKENS.gold }} />
+            <span className="text-[13.5px] font-bold" style={{ color: "#6B5316" }}>
+              {CEU_TOTAL_LABEL} of CEUs across both days
+            </span>
+            <span className="text-[11px] font-bold tracking-wide uppercase rounded-full px-2 py-0.5" style={{ background: "#F3E4BF", color: "#8A6A20" }}>
+              Pending
+            </span>
+          </div>
         </div>
 
         {/* The whole schedule, in the open: one card per day. */}
@@ -39,6 +51,9 @@ export default function ProgramBlock() {
                 <div className="mt-1 flex items-baseline justify-between gap-3">
                   <h3 className="text-[19px] font-bold tracking-tight" style={{ color: TOKENS.ink }}>{day.date}</h3>
                   <div className="text-[12px] font-semibold shrink-0" style={{ color: TOKENS.mutedSoft }}>{day.hours}</div>
+                </div>
+                <div className="mt-2 inline-flex items-center gap-1.5 text-[12px] font-bold" style={{ color: "#8A6A20" }}>
+                  <Award className="w-3.5 h-3.5" /> {day.ceuLabel}
                 </div>
               </div>
               <ul className="px-2 sm:px-3 py-2">
@@ -61,10 +76,15 @@ export default function ProgramBlock() {
                         <div className="text-[14px] font-semibold leading-snug" style={{ color: TOKENS.ink }}>{s.title}</div>
                         {s.who && <div className="mt-0.5 text-[12.5px] leading-snug" style={{ color: TOKENS.muted }}>{s.who}</div>}
                       </div>
-                      <div className="shrink-0 pt-0.5">
+                      <div className="shrink-0 pt-0.5 text-right">
                         <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide uppercase" style={{ background: chip.bg, color: chip.fg }}>
                           {chip.label}
                         </span>
+                        {s.ceuMinutes ? (
+                          <div className="mt-1 text-[11px] font-bold tabular-nums whitespace-nowrap" style={{ color: "#8A6A20" }}>
+                            {formatCeu(s.ceuMinutes)} CEU
+                          </div>
+                        ) : null}
                       </div>
                     </li>
                   );
@@ -74,6 +94,9 @@ export default function ProgramBlock() {
           ))}
         </div>
 
+        <p className="text-center text-[12.5px] mb-2 max-w-2xl mx-auto leading-relaxed" style={{ color: TOKENS.mutedSoft }}>
+          {CEU_PENDING_NOTE}
+        </p>
         <p className="text-center text-[12.5px] mb-9" style={{ color: TOKENS.mutedSoft }}>
           Sessions and times may shift slightly as the program is finalized.
         </p>
