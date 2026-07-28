@@ -17,6 +17,7 @@ import { ATTENDEE_TEMPLATES, type AttendeeTemplate } from "@/lib/attendees";
 import EmailPreviewModal from "@/components/attendees/EmailPreviewModal";
 import QueueSettingsModal from "@/components/email/QueueSettingsModal";
 import AttendeesView, { type Attendee } from "./AttendeesView";
+import LogisticsView from "./LogisticsView";
 import AttendeeDrawer from "./AttendeeDrawer";
 import BroadcastComposer from "./BroadcastComposer";
 import EventSettingsModal from "./EventSettingsModal";
@@ -55,7 +56,7 @@ type InviteSubTab = "quick" | "bulk";
 export default function AttendeesPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [tab, setTab] = useState<"attendees" | "invite">("attendees");
+  const [tab, setTab] = useState<"attendees" | "logistics" | "invite">("attendees");
   const [inviteSubTab, setInviteSubTab] = useState<InviteSubTab>("quick");
   const [attendees, setAttendees] = useState<Attendee[]>([]);
   const [queueStatus, setQueueStatus] = useState<QueueStatus | null>(null);
@@ -974,8 +975,11 @@ export default function AttendeesPage() {
             {/* Top tabs */}
             <div className="flex gap-1 bg-slate-100 rounded-lg p-1 mb-4 w-fit">
               <TabBtn active={tab === "attendees"} onClick={() => setTab("attendees")} label="Attendees" />
+              <TabBtn active={tab === "logistics"} onClick={() => setTab("logistics")} label="Accommodations" />
               <TabBtn active={tab === "invite"} onClick={() => setTab("invite")} label="Invite" />
             </div>
+
+            {tab === "logistics" && <LogisticsView />}
 
             {tab === "invite" && (
               <div>
