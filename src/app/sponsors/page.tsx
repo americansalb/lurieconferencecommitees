@@ -99,6 +99,7 @@ export default function SponsorsAdminPage() {
   const [sendingInviteId, setSendingInviteId] = useState<string | null>(null);
   const [sendingLetterId, setSendingLetterId] = useState<string | null>(null);
   const [sendingTeamId, setSendingTeamId] = useState<string | null>(null);
+  const [ticketsSavingId, setTicketsSavingId] = useState<string | null>(null);
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
   const [mergeFor, setMergeFor] = useState<Sponsor | null>(null);
   const [mergeOtherId, setMergeOtherId] = useState("");
@@ -178,37 +179,62 @@ export default function SponsorsAdminPage() {
     if (status === "authenticated") load();
   }, [status, load]);
 
-  // Per-org override of the tier's included tickets. Needed whenever a deal
-  // differs from the standard level, e.g. a donated table where the staff
-  // still buy their own tickets. Blank restores the tier default.
-  async function setIncludedTickets(sp: Sponsor, tierDefault: number) {
-    const current = sp.ticketsIncluded ?? tierDefault;
+  // Whether this partner's deal includes conference tickets.
+  //
+  // Exhibitors normally get a table plus one ticket. A donated ("free") table
+  // is the exception: they get the table, and every person they bring buys a
+  // ticket. That's a one-click classification, since it's the only case that
+  // comes up regularly. Every other level's allowance comes from its tier, so
+  // those keep the rarely-needed numeric override.
+  async function saveIncludedTickets(sp: Sponsor, value: number | null, note: string) {
+    setTicketsSavingId(sp.id);
+    try {
+      await fetch(`/api/sponsors/${sp.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ticketsIncluded: value }),
+      });
+      setActionNote(`${sp.companyName}: ${note}`);
+      await load();
+    } catch {
+      setActionNote("Network error saving the ticket allowance.");
+    } finally {
+      setTicketsSavingId(null);
+      setTimeout(() => setActionNote(null), 6000);
+    }
+  }
+
+  // Exhibitors: flip between a free table (nobody gets a ticket) and the
+  // standard table-plus-ticket.
+  function toggleFreeTable(sp: Sponsor, tierDefault: number) {
+    const isFree = sp.ticketsIncluded === 0;
+    if (isFree) {
+      saveIncludedTickets(sp, null, `standard table, ${tierDefault} ticket${tierDefault === 1 ? "" : "s"} included.`);
+    } else {
+      saveIncludedTickets(sp, 0, "free table. Everyone they bring buys their own ticket.");
+    }
+  }
+
+  // Any other level, for the occasional deal that differs from its tier.
+  function promptIncludedTickets(sp: Sponsor, tierDefault: number) {
     const answer = window.prompt(
-      `How many tickets are included for ${sp.companyName}?\n\n` +
-      `Their level (${tierDefault} ${tierDefault === 1 ? "ticket" : "tickets"}) is the default. ` +
-      `Enter 0 if they get the table but pay for every attendee. Leave blank to use the level default.`,
-      String(current)
+      `How many conference tickets are included for ${sp.companyName}?\n\n` +
+      `Their level includes ${tierDefault}. Enter 0 if every attendee pays. Leave blank to use the level default.`,
+      String(sp.ticketsIncluded ?? tierDefault)
     );
     if (answer === null) return;
     const trimmed = answer.trim();
-    const value = trimmed === "" ? null : Number(trimmed);
-    if (value !== null && (!Number.isFinite(value) || value < 0)) {
+    if (trimmed === "") {
+      saveIncludedTickets(sp, null, `back to the level default (${tierDefault}).`);
+      return;
+    }
+    const value = Number(trimmed);
+    if (!Number.isFinite(value) || value < 0) {
       setActionNote("Included tickets must be 0 or more.");
       setTimeout(() => setActionNote(null), 6000);
       return;
     }
-    await fetch(`/api/sponsors/${sp.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ticketsIncluded: value }),
-    });
-    setActionNote(
-      value === null
-        ? `${sp.companyName}: back to the level default (${tierDefault}).`
-        : `${sp.companyName}: ${value} included ${value === 1 ? "ticket" : "tickets"}.`
-    );
-    await load();
-    setTimeout(() => setActionNote(null), 6000);
+    saveIncludedTickets(sp, value, `${value} included ticket${value === 1 ? "" : "s"}.`);
   }
 
   async function applyStatus(id: string, newStatus: string) {
@@ -976,16 +1002,35 @@ export default function SponsorsAdminPage() {
                               Ask who&rsquo;s coming
                             </button>
                           )}
-                          {isAdmin && (s.paid || s.status === "confirmed") && (
-                            <button
-                              onClick={() => setIncludedTickets(s, tier?.ticketsIncluded ?? 0)}
-                              className="text-[10px] font-bold px-2 py-1 rounded-full border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 inline-flex items-center gap-1 shrink-0"
-                              title="How many conference tickets this organization's deal includes. Overrides their level; set 0 when they get the table but pay for each attendee."
-                            >
-                              <Ticket className="w-3 h-3" />
-                              {s.ticketsIncluded ?? tier?.ticketsIncluded ?? 0} incl.
-                            </button>
-                          )}
+                          {isAdmin && (s.paid || s.status === "confirmed") && (() => {
+                            const tierDefault = tier?.ticketsIncluded ?? 0;
+                            const included = s.ticketsIncluded ?? tierDefault;
+                            const isExhibitor = s.tier === "exhibitor";
+                            const isFreeTable = isExhibitor && s.ticketsIncluded === 0;
+                            return (
+                              <button
+                                onClick={() => isExhibitor ? toggleFreeTable(s, tierDefault) : promptIncludedTickets(s, tierDefault)}
+                                disabled={ticketsSavingId === s.id}
+                                className={`text-[10px] font-bold px-2 py-1 rounded-full border inline-flex items-center gap-1 shrink-0 disabled:opacity-50 ${
+                                  isFreeTable
+                                    ? "border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
+                                    : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                                }`}
+                                title={isExhibitor
+                                  ? (isFreeTable
+                                      ? "Free table: everyone they bring buys their own ticket. Click for the standard table plus ticket."
+                                      : `Standard table, ${tierDefault} ticket${tierDefault === 1 ? "" : "s"} included. Click to mark it a free table where every attendee pays.`)
+                                  : `${included} conference ticket${included === 1 ? "" : "s"} included at this level. Click to set a different number for this organization.`}
+                              >
+                                {ticketsSavingId === s.id
+                                  ? <Loader2 className="w-3 h-3 animate-spin" />
+                                  : <Ticket className="w-3 h-3" />}
+                                {isFreeTable
+                                  ? "Free table \u00b7 no tickets"
+                                  : `${included} ticket${included === 1 ? "" : "s"}`}
+                              </button>
+                            );
+                          })()}
                           {showPayAction && (
                             <button
                               onClick={() => confirmPayment(s.id)}
