@@ -617,6 +617,11 @@ model Sponsor {
   // level, e.g. a donated table where the staff still buy their own tickets.
   ticketsIncluded Int?
 
+  // Payment chasing for an accepted sponsor who has not paid yet.
+  // Count is shown on the row so nobody gets nagged twice by accident.
+  paymentRemindedAt  DateTime?
+  paymentRemindCount Int       @default(0)
+
   inviteMessage   String?
   // VIP courtesy: when set (e.g. 20), checkout applies this percentage off the
   // chosen sponsorship level. Excludes exhibitor tables; applied at checkout.

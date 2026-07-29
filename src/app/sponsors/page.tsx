@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback, useRef } from "react";
 import {
   Award, Trash2, RefreshCw, Search, Filter, ExternalLink, Mail, Building2, Copy, Plus,
-  Clock, Pause, Play, X, SlidersHorizontal, Loader2, BadgeCheck, Send, FileText, Combine, Eye, Shuffle, Users, Ticket,
+  Clock, Pause, Play, X, SlidersHorizontal, Loader2, BadgeCheck, Send, FileText, Combine, Eye, Shuffle, Users, Ticket, CreditCard,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
@@ -40,6 +40,8 @@ type Sponsor = {
   logistics: Record<string, string> | null;
   applicationToken: string;
   ticketsIncluded: number | null;
+  paymentRemindCount?: number;
+  paymentRemindedAt?: string | null;
   createdAt: string;
   invitedAt: string | null;
   lastSentAt: string | null;
@@ -99,6 +101,7 @@ export default function SponsorsAdminPage() {
   const [sendingInviteId, setSendingInviteId] = useState<string | null>(null);
   const [sendingLetterId, setSendingLetterId] = useState<string | null>(null);
   const [sendingTeamId, setSendingTeamId] = useState<string | null>(null);
+  const [remindingId, setRemindingId] = useState<string | null>(null);
   const [ticketsSavingId, setTicketsSavingId] = useState<string | null>(null);
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
   const [mergeFor, setMergeFor] = useState<Sponsor | null>(null);
@@ -362,6 +365,37 @@ export default function SponsorsAdminPage() {
   // Per-org "Ask who's coming": queues the letter with their shareable team
   // link, so the people attending under their included tickets land in the
   // Attendees list instead of turning up unregistered on the day.
+  // Chase an accepted sponsor who has not paid. Confirmed first, since a
+  // payment chaser is a pointed thing to send by accident.
+  function remindPayment(id: string) {
+    const sp = sponsors.find((x) => x.id === id);
+    const n = (sp?.paymentRemindCount || 0) + 1;
+    setConfirmDialog({
+      title: n > 1 ? `Chase ${sp?.companyName || "them"} again?` : "Send a payment reminder?",
+      message: `${sp?.companyName || "This organization"} will get a letter saying their place is not confirmed until payment, with a link to pay their ${sp ? `$${(sp.amountCents / 100).toFixed(0)}` : "balance"}. It sends right away.${n > 1 ? ` This would be reminder number ${n}.` : ""}`,
+      confirmLabel: n > 1 ? "Send another reminder" : "Send reminder",
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        setRemindingId(id);
+        setActionNote(null);
+        try {
+          const res = await fetch(`/api/sponsors/${id}/payment-reminder`, { method: "POST" });
+          const j = await res.json().catch(() => ({}));
+          const who = sp?.companyName || "Sponsor";
+          setActionNote(res.ok && j.ok
+            ? `${who}: payment reminder sent${j.reminderNumber > 1 ? ` (number ${j.reminderNumber})` : ""}.`
+            : `${who}: could not send. ${j.error || "Unknown error."}`);
+          await load();
+        } catch {
+          setActionNote("Network error sending the payment reminder.");
+        } finally {
+          setRemindingId(null);
+          setTimeout(() => setActionNote(null), 8000);
+        }
+      },
+    });
+  }
+
   async function sendTeamInvite(id: string) {
     const s2 = sponsors.find((x) => x.id === id);
     setSendingTeamId(id);
@@ -1031,6 +1065,18 @@ export default function SponsorsAdminPage() {
                               </button>
                             );
                           })()}
+                          {isAdmin && !s.paid && !s.donateFoodInstead && s.amountCents > 0
+                            && ["awaiting_payment", "accepted", "confirmed"].includes(s.status) && (
+                            <button
+                              onClick={() => remindPayment(s.id)}
+                              disabled={remindingId === s.id}
+                              className="text-[10px] font-bold px-2 py-1 rounded-full border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 inline-flex items-center gap-1 shrink-0 disabled:opacity-50"
+                              title="Email them that their place isn't confirmed until payment, with a link to pay. Sends right away."
+                            >
+                              {remindingId === s.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CreditCard className="w-3 h-3" />}
+                              {(s.paymentRemindCount || 0) > 0 ? `Chase again (${s.paymentRemindCount})` : "Remind to pay"}
+                            </button>
+                          )}
                           {showPayAction && (
                             <button
                               onClick={() => confirmPayment(s.id)}

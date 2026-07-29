@@ -9,6 +9,7 @@ import {
   bookingConfirmedInviteeEmail,
   ambassadorInviteEmail,
   sponsorTeamInviteEmail,
+  sponsorPaymentReminderEmail,
   plainStandardInviteEmail,
   plainCommunityInviteEmail,
 } from "@/lib/mail-templates";
@@ -197,6 +198,21 @@ export async function GET(
       });
       break;
     }
+    case "payment-reminder":
+      html = sponsorPaymentReminderEmail({
+        contactName: "Martha Nava",
+        companyName: "Global Talk LLC",
+        tierName: "Exhibitor Table",
+        amountLabel: "$650",
+        payUrl: `${base}/sponsor/status/demo-token`,
+        hasLogo: true,
+        reminderNumber: 1,
+        siteUrl: base,
+        unsubscribeUrl: `${base}/api/sponsors/unsubscribe/demo-token`,
+        dateLabel: "July 29, 2026",
+        assetBase: base,
+      });
+      break;
     case "sponsor-team":
       html = sponsorTeamInviteEmail({
         contactName: "Jace Rivera",
