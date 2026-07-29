@@ -482,6 +482,13 @@ model Attendee {
   // skews the numbers.
   isTest Boolean @default(false)
 
+  // Set when this person is attending under a sponsor's or exhibitor's
+  // allocation. compFromSponsor marks the ones using a free ticket included
+  // with the tier, as opposed to extra staff who paid their own way.
+  sponsorId       String?
+  compFromSponsor Boolean  @default(false)
+  sponsor         Sponsor? @relation("SponsorTeam", fields: [sponsorId], references: [id], onDelete: SetNull)
+
   // Set when the recipient uses one-click unsubscribe. Suppresses all further
   // sends to this person and is honored before every send.
   unsubscribedAt DateTime?
@@ -493,6 +500,7 @@ model Attendee {
   events AttendeeEvent[]
 
   @@index([status])
+  @@index([sponsorId])
   @@map("lcc_attendees")
   @@schema("lcc")
 }
@@ -593,6 +601,12 @@ model Sponsor {
 
   applicationToken String @unique
 
+  // Shareable link for the sponsor's own team to register themselves. Kept
+  // separate from applicationToken so forwarding it around never exposes the
+  // payment portal. Null until the team invite is first sent.
+  teamToken     String?   @unique
+  teamInvitedAt DateTime?
+
   inviteMessage   String?
   // VIP courtesy: when set (e.g. 20), checkout applies this percentage off the
   // chosen sponsorship level. Excludes exhibitor tables; applied at checkout.
@@ -608,8 +622,11 @@ model Sponsor {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime? @updatedAt
 
-  events SponsorEvent[]
-  logo   SponsorLogo?
+  events        SponsorEvent[]
+  logo          SponsorLogo?
+  // People attending under this partner: their included tickets plus any
+  // colleagues who registered through the shared team link.
+  teamAttendees Attendee[]     @relation("SponsorTeam")
 
   @@index([status])
   @@index([tier])

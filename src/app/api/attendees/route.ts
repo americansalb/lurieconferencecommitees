@@ -25,6 +25,9 @@ export async function GET() {
   const rows = await prisma.attendee.findMany({
     where: { isTest: false },
     orderBy: { createdAt: "desc" },
+    // The partner they're attending under, so the list can show who is here
+    // on a sponsor's table rather than as an individual registration.
+    include: { sponsor: { select: { id: true, companyName: true } } },
   });
   // Attach the A/B subject variant (derived from the token) so the dashboard
   // can report click rate per subject line. Alumni and students draw from

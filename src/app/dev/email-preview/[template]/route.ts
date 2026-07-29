@@ -8,6 +8,7 @@ import {
   bookingInviteEmail,
   bookingConfirmedInviteeEmail,
   ambassadorInviteEmail,
+  sponsorTeamInviteEmail,
   plainStandardInviteEmail,
   plainCommunityInviteEmail,
 } from "@/lib/mail-templates";
@@ -196,6 +197,16 @@ export async function GET(
       });
       break;
     }
+    case "sponsor-team":
+      html = sponsorTeamInviteEmail({
+        contactName: "Jace Rivera",
+        companyName: "Maya Bridge Language Services",
+        tierName: "Exhibitor Table",
+        ticketsIncluded: 1,
+        teamUrl: `${base}/exhibitor/demo-team-token`,
+        siteUrl: base,
+      });
+      break;
     case "attendee":
       html = plainStandardInviteEmail({
         firstName: "Jordan",

@@ -1,0 +1,42 @@
+import { notFound } from "next/navigation";
+import { prisma } from "@/lib/db";
+import { teamUrl } from "@/lib/sponsor-team";
+import TeamManager from "./TeamManager";
+
+export const dynamic = "force-dynamic";
+
+// The sponsor's own team page. Reached from the "who is coming?" email and
+// freely shareable with colleagues: the token here only ever exposes this
+// list, never the payment portal.
+export default async function ExhibitorTeamPage({ params }: { params: { token: string } }) {
+  const sponsor = await prisma.sponsor.findUnique({
+    where: { teamToken: params.token },
+    select: { companyName: true, mergedIntoId: true },
+  });
+  if (!sponsor || sponsor.mergedIntoId) notFound();
+
+  return (
+    <div className="min-h-screen" style={{ background: "linear-gradient(135deg, #f7f3ea 0%, #ffffff 60%, #f0f6f7 100%)" }}>
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
+        <div className="text-center mb-7">
+          <div className="text-[10px] font-bold tracking-[0.28em] uppercase mb-2" style={{ color: "#C99A2E" }}>
+            2026 AALB &amp; Lurie Children&rsquo;s Conference
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+            Who is coming from {sponsor.companyName}?
+          </h1>
+          <p className="mt-2 text-sm text-slate-500">
+            August 15 and 16, 2026 &middot; Lurie Children&rsquo;s, Chicago and live online
+          </p>
+        </div>
+
+        <TeamManager token={params.token} shareUrl={teamUrl(params.token)} />
+
+        <p className="text-center text-[11.5px] text-slate-400 mt-6">
+          Questions? Reply to the email that brought you here, or write to{" "}
+          <a href="mailto:contact@aalb.org" className="underline">contact@aalb.org</a>.
+        </p>
+      </div>
+    </div>
+  );
+}

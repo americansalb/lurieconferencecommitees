@@ -3408,3 +3408,46 @@ export function plainFinishRegistrationEmail(args: {
     siteUrl: args.siteUrl,
   });
 }
+
+// Sent to a confirmed sponsor or exhibitor: tell us who is coming on the
+// tickets your level includes, and share the link with anyone else you want
+// to bring. Same plain-note format as the attendee invitations, signed by the
+// same person the email is From.
+export function sponsorTeamInviteEmail({
+  contactName,
+  companyName,
+  tierName,
+  ticketsIncluded,
+  teamUrl,
+  siteUrl,
+}: {
+  contactName: string;
+  companyName: string;
+  tierName: string;
+  ticketsIncluded: number;
+  teamUrl: string;
+  siteUrl?: string | null;
+}) {
+  const first = (contactName || "").trim().split(/\s+/)[0] || "there";
+  const paras: string[] = [];
+  paras.push(
+    `The conference is <strong>August 15-16</strong>, and we are putting the attendee list together. I need to know who is coming from ${escapeHtml(companyName)}.`
+  );
+  paras.push(
+    ticketsIncluded > 0
+      ? `Your ${escapeHtml(tierName)} includes <strong>${ticketsIncluded} ${ticketsIncluded === 1 ? "ticket" : "tickets"}</strong>. <strong><a href="${teamUrl}">Add your people here</a></strong> and they are registered, with nothing to pay.`
+      : `<strong><a href="${teamUrl}">Add your people here</a></strong> so everyone attending from ${escapeHtml(companyName)} is on our list.`
+  );
+  paras.push(
+    `Bringing more of the team? That same link is shareable. Send it to any colleague and they can add themselves; anyone who signs up through it is recorded under ${escapeHtml(companyName)}, so we both know exactly who is at your table.${ticketsIncluded > 0 ? " Beyond your included tickets they register at the standard rate." : ""}`
+  );
+  paras.push(
+    `It helps us with badges, seating and catering, and it means nobody from your team turns up without a registration.`
+  );
+  return plainNoteEmail({
+    firstName: first,
+    paras,
+    footerReason: `You're getting this because ${escapeHtml(companyName)} is a partner of the 2026 conference.`,
+    siteUrl,
+  });
+}

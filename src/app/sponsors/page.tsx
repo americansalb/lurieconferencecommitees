@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback, useRef } from "react";
 import {
   Award, Trash2, RefreshCw, Search, Filter, ExternalLink, Mail, Building2, Copy, Plus,
-  Clock, Pause, Play, X, SlidersHorizontal, Loader2, BadgeCheck, Send, FileText, Combine, Eye, Shuffle,
+  Clock, Pause, Play, X, SlidersHorizontal, Loader2, BadgeCheck, Send, FileText, Combine, Eye, Shuffle, Users,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
@@ -97,6 +97,7 @@ export default function SponsorsAdminPage() {
   const [requestingLogoId, setRequestingLogoId] = useState<string | null>(null);
   const [sendingInviteId, setSendingInviteId] = useState<string | null>(null);
   const [sendingLetterId, setSendingLetterId] = useState<string | null>(null);
+  const [sendingTeamId, setSendingTeamId] = useState<string | null>(null);
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
   const [mergeFor, setMergeFor] = useState<Sponsor | null>(null);
   const [mergeOtherId, setMergeOtherId] = useState("");
@@ -298,6 +299,31 @@ export default function SponsorsAdminPage() {
   // Per-org "Send + 20% offer": the same letter as the standard invite, but
   // with the 20% VIP courtesy discount that auto-applies at checkout. For the
   // handful of prospects you want to give the deal. Admin only.
+  // Per-org "Ask who's coming": queues the letter with their shareable team
+  // link, so the people attending under their included tickets land in the
+  // Attendees list instead of turning up unregistered on the day.
+  async function sendTeamInvite(id: string) {
+    const s2 = sponsors.find((x) => x.id === id);
+    setSendingTeamId(id);
+    setActionNote(null);
+    try {
+      const res = await fetch(`/api/sponsors/${id}/send-team-invite`, { method: "POST" });
+      const j = await res.json().catch(() => ({}));
+      const who = s2?.companyName || "Sponsor";
+      setActionNote(
+        res.ok && j.ok
+          ? `${who}: attendee-list request queued. It sends from the Email Queue.`
+          : `${who}: could not queue. ${j.error || "Unknown error."}`
+      );
+      await load();
+    } catch {
+      setActionNote("Network error queueing the attendee-list request.");
+    } finally {
+      setSendingTeamId(null);
+      setTimeout(() => setActionNote(null), 8000);
+    }
+  }
+
   async function sendLetter(id: string) {
     const s = sponsors.find((x) => x.id === id);
     setSendingLetterId(id);
@@ -903,6 +929,17 @@ export default function SponsorsAdminPage() {
                             >
                               {acceptingId === s.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <BadgeCheck className="w-3 h-3" />}
                               Accept
+                            </button>
+                          )}
+                          {isAdmin && (s.paid || s.status === "confirmed") && (
+                            <button
+                              onClick={() => sendTeamInvite(s.id)}
+                              disabled={sendingTeamId === s.id}
+                              className="text-[10px] font-bold px-2 py-1 rounded-full border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 inline-flex items-center gap-1 shrink-0 disabled:opacity-50"
+                              title="Email them for the names attending on their included tickets, with a shareable link for the rest of their team. Queues in the Email Queue."
+                            >
+                              {sendingTeamId === s.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Users className="w-3 h-3" />}
+                              Ask who&rsquo;s coming
                             </button>
                           )}
                           {showPayAction && (

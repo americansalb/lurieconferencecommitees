@@ -33,6 +33,11 @@ export type Attendee = {
   notes?: string | null;
   nudgeCount?: number;
   lastNudgedAt?: string | null;
+  // Set when they're attending under a partner's table rather than as an
+  // individual registration. compFromSponsor means one of that partner's
+  // included tickets.
+  sponsor?: { id: string; companyName: string } | null;
+  compFromSponsor?: boolean;
 };
 
 // "1st reminder", "2nd reminder", "3rd reminder", "4 reminders".
@@ -478,6 +483,16 @@ export default function AttendeesView({
                         </span>
                       )}
                       <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded text-slate-500 bg-slate-100">{ATTENDEE_SOURCE_LABELS[source]}</span>
+                      {a.sponsor && (
+                        <span
+                          className="text-[10px] font-bold px-1.5 py-0.5 rounded border border-indigo-200 bg-indigo-50 text-indigo-700 shrink-0"
+                          title={a.compFromSponsor
+                            ? `Attending on an included ticket from ${a.sponsor.companyName}`
+                            : `Registered through ${a.sponsor.companyName}'s team link`}
+                        >
+                          {a.sponsor.companyName}{a.compFromSponsor ? " · comp" : ""}
+                        </span>
+                      )}
                     </div>
                     <div className="text-xs text-slate-500 truncate">{a.email}{a.affiliation && ` · ${a.affiliation}`}{a.cohort && ` · Session ${a.cohort}`}</div>
                     {clickedOnly && clickAt(a) && (
