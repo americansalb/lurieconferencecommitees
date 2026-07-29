@@ -4,14 +4,18 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sponsorTeamInviteEmail } from "@/lib/mail-templates";
 import { compAllowance, ensureTeamToken, teamUrl } from "@/lib/sponsor-team";
-import { tierById } from "@/lib/sponsors";
+import { tierById, sponsorFromHeader, sponsorLetterReplyTo, sponsorUnsubHeaders, sponsorUnsubscribeUrl } from "@/lib/sponsors";
 import { appUrl } from "@/lib/presenters";
-import { getPolicy, planSendTimes } from "@/lib/email-queue";
+import { sendMail } from "@/lib/mail";
 
 // Admin: ask a confirmed sponsor or exhibitor who is attending on their
 // included tickets, with the shareable link for the rest of their team.
-// Goes through the paced Email Queue like everything else, so nothing sends
-// straight out of a button click.
+//
+// Sends immediately, like the acceptance letter. The Email Queue exists to
+// pace cold outreach so a few thousand invitations don't wreck the sending
+// domain; this is a one-off operational note to a partner who is already
+// signed up and waiting to hear from us, so drip-feeding it would only add
+// delay.
 export async function POST(_req: Request, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -49,33 +53,36 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
     ticketsIncluded: compAllowance(sponsor),
     teamUrl: url,
     siteUrl: appUrl(),
+    unsubscribeUrl: sponsorUnsubscribeUrl(sponsor.applicationToken),
+    assetBase: appUrl(),
   });
   const subject = `Who is joining us from ${sponsor.companyName}?`;
 
-  // Never leave two of these pending against the same organization.
-  await prisma.emailQueue.updateMany({
-    where: { recipientType: "sponsor", recipientId: sponsor.id, status: "pending", subject },
-    data: { status: "cancelled" },
-  });
-
-  const policy = await getPolicy();
-  const [scheduledFor] = await planSendTimes(1, policy);
-  await prisma.emailQueue.create({
-    data: {
-      batchId: `sponsor-team-${sponsor.id}`,
-      recipientType: "sponsor",
-      recipientId: sponsor.id,
+  try {
+    await sendMail({
       to: sponsor.contactEmail,
       subject,
       html,
-      scheduledFor,
-      status: "pending",
-    },
+      from: sponsorFromHeader(),
+      replyTo: sponsorLetterReplyTo(),
+      cc: sponsor.additionalEmails,
+      headers: sponsorUnsubHeaders(sponsor.applicationToken),
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    await prisma.sponsorEvent
+      .create({ data: { sponsorId: sponsor.id, type: "team_invite_failed", meta: msg.slice(0, 300), actorEmail } })
+      .catch(() => {});
+    return NextResponse.json({ ok: false, sent: false, error: msg }, { status: 502 });
+  }
+
+  await prisma.sponsor.update({
+    where: { id: sponsor.id },
+    data: { teamInvitedAt: new Date(), lastSentAt: new Date() },
   });
-  await prisma.sponsor.update({ where: { id: sponsor.id }, data: { teamInvitedAt: new Date() } });
   await prisma.sponsorEvent.create({
-    data: { sponsorId: sponsor.id, type: "team_invite_queued", meta: url, actorEmail },
+    data: { sponsorId: sponsor.id, type: "team_invite_sent", meta: url, actorEmail },
   }).catch(() => {});
 
-  return NextResponse.json({ ok: true, queued: true, teamUrl: url });
+  return NextResponse.json({ ok: true, sent: true, teamUrl: url });
 }

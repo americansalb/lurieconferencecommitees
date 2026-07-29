@@ -205,6 +205,9 @@ export async function GET(
         ticketsIncluded: 1,
         teamUrl: `${base}/exhibitor/demo-team-token`,
         siteUrl: base,
+        unsubscribeUrl: `${base}/api/sponsors/unsubscribe/demo-token`,
+        dateLabel: "July 29, 2026",
+        assetBase: base,
       });
       break;
     case "attendee":

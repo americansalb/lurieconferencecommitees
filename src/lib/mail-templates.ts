@@ -3411,8 +3411,10 @@ export function plainFinishRegistrationEmail(args: {
 
 // Sent to a confirmed sponsor or exhibitor: tell us who is coming on the
 // tickets your level includes, and share the link with anyone else you want
-// to bring. Same plain-note format as the attendee invitations, signed by the
-// same person the email is From.
+// to bring. Set as the same engraved gold-foil letter as the acceptance and
+// invitation letters: this goes to a partner who already said yes and is
+// expecting to hear from us, so it should look like the conference, not like
+// a plain note engineered to slip past a spam filter.
 export function sponsorTeamInviteEmail({
   contactName,
   companyName,
@@ -3420,6 +3422,9 @@ export function sponsorTeamInviteEmail({
   ticketsIncluded,
   teamUrl,
   siteUrl,
+  unsubscribeUrl,
+  dateLabel,
+  assetBase,
 }: {
   contactName: string;
   companyName: string;
@@ -3427,27 +3432,192 @@ export function sponsorTeamInviteEmail({
   ticketsIncluded: number;
   teamUrl: string;
   siteUrl?: string | null;
+  unsubscribeUrl?: string | null;
+  dateLabel?: string;
+  assetBase?: string;
 }) {
-  const first = (contactName || "").trim().split(/\s+/)[0] || "there";
-  const paras: string[] = [];
-  paras.push(
-    `The conference is <strong>August 15-16</strong>, and we are putting the attendee list together. I need to know who is coming from ${escapeHtml(companyName)}.`
-  );
-  paras.push(
-    ticketsIncluded > 0
-      ? `Your ${escapeHtml(tierName)} includes <strong>${ticketsIncluded} ${ticketsIncluded === 1 ? "ticket" : "tickets"}</strong>. <strong><a href="${teamUrl}">Add your people here</a></strong> and they are registered, with nothing to pay.`
-      : `<strong><a href="${teamUrl}">Add your people here</a></strong> so everyone attending from ${escapeHtml(companyName)} is on our list.`
-  );
-  paras.push(
-    `Bringing more of the team? That same link is shareable. Send it to any colleague and they can add themselves; anyone who signs up through it is recorded under ${escapeHtml(companyName)}, so we both know exactly who is at your table.${ticketsIncluded > 0 ? " Beyond your included tickets they register at the standard rate." : ""}`
-  );
-  paras.push(
-    `It helps us with badges, seating and catering, and it means nobody from your team turns up without a registration.`
-  );
-  return plainNoteEmail({
-    firstName: first,
-    paras,
-    footerReason: `You're getting this because ${escapeHtml(companyName)} is a partner of the 2026 conference.`,
-    siteUrl,
-  });
+  const postalAddress = process.env.MAIL_POSTAL_ADDRESS?.trim() || "Americans Against Language Barriers, Chicago, IL";
+  const TEAL_DEEP = "#0C3B4B", INK = "#0B1F25", SOFT = "#5A6E76", GOLD_SOFT = "#F4E9CD", LINK = "#1E6FA2";
+  const base = (assetBase || ASSET_BASE).replace(/\/$/, "");
+  const site = (siteUrl || base).replace(/\/$/, "");
+  const today = dateLabel || new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+
+  // Greeting: a person's first name when we have one, otherwise the org name.
+  const cn = (contactName || "").trim();
+  const isPerson = !!cn && cn.toLowerCase() !== companyName.trim().toLowerCase();
+  const honorific = /^(dr|mr|mrs|ms|prof|rev|hon|sr|fr|chef)\.?$/i;
+  const firstNameOf = (n: string) => { const t = n.replace(/,.*$/, "").trim().split(/\s+/); return honorific.test(t[0]) ? (t[1] || t[0]) : t[0]; };
+  const greeting = (isPerson ? firstNameOf(cn) : companyName.replace(/\s*\([^)]*\)\s*$/, "").trim()) || "there";
+
+  const hasTickets = ticketsIncluded > 0;
+  const ticketWord = ticketsIncluded === 1 ? "ticket" : "tickets";
+
+  const p = (html: string, mb = 18) =>
+    `<p style="margin:0 0 ${mb}px 0;font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.85;color:${INK};">${html}</p>`;
+  const sig = (img: string, name: string, title: string) => `
+        <img src="${base}/sig/${img}" alt="${escapeHtml(name)}" height="40" style="height:40px;width:auto;display:block;margin:0 0 4px 0;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="width:140px;height:1px;background-color:${GOLD};font-size:0;line-height:0;">&nbsp;</td></tr></table>
+        <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:${INK};font-weight:bold;padding-top:8px;">${escapeHtml(name)}</div>
+        <div style="font-family:Helvetica,Arial,sans-serif;font-size:12px;line-height:1.5;color:${SOFT};padding-top:2px;">${escapeHtml(title)}</div>`;
+  const eyebrow = (text: string) =>
+    `<div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:${GOLD};font-weight:bold;margin:26px 0 12px 0;">${text}</div>`;
+
+  // The headline number, when there is one: a gold seal with the ticket count.
+  const ticketPanel = hasTickets ? `
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 22px 0;">
+        <tr><td bgcolor="#FBF4E2" style="background-color:#FBF4E2;border:1px solid #EAD9AE;border-radius:10px;padding:18px 22px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+            <td valign="middle" style="width:58px;">
+              <table role="presentation" width="52" height="52" cellpadding="0" cellspacing="0" border="0" style="width:52px;height:52px;background-color:${GOLD};background-image:linear-gradient(135deg,#F4E9CD 0%,#D9B863 30%,#C9A14B 58%,#9C7A2E 88%);border-radius:50%;box-shadow:inset 0 1px 2px rgba(255,255,255,0.55);">
+                <tr><td align="center" valign="middle" style="font-family:Georgia,'Times New Roman',serif;font-size:24px;color:#3C2E10;font-weight:bold;line-height:1;">${ticketsIncluded}</td></tr>
+              </table>
+            </td>
+            <td valign="middle" style="padding-left:16px;">
+              <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:${GOLD};font-weight:bold;padding-bottom:5px;">Included with your ${escapeHtml(tierName)}</div>
+              <div style="font-family:Georgia,'Times New Roman',serif;font-size:15px;line-height:1.65;color:#3C2E10;">Complimentary conference ${ticketWord}, already paid for. Tell us who ${ticketsIncluded === 1 ? "is using it" : "they are for"} and they are registered.</div>
+            </td>
+          </tr></table>
+        </td></tr>
+      </table>` : "";
+
+  return `<!doctype html>
+<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="x-apple-disable-message-reformatting">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<title>Your team &middot; 2026 Lurie Children&rsquo;s &amp; AALB Conference</title>
+<!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
+<style>
+  body{margin:0;padding:0;}
+  a{color:${LINK};}
+  @media only screen and (max-width:600px){
+    .sl-card{width:100%!important;}
+    .sl-body{padding:32px 24px 30px 24px!important;}
+    .sl-head{padding:36px 22px 30px 22px!important;}
+    .sl-foot{padding:24px 22px!important;}
+    .sl-display{font-size:25px!important;line-height:31px!important;}
+    .sl-seal{width:96px!important;height:96px!important;}
+    .sl-dropcap{font-size:46px!important;line-height:36px!important;}
+    .sl-cta{display:block!important;width:100%!important;}
+  }
+</style>
+</head>
+<body style="margin:0;padding:0;width:100%;background-color:#ECE6D7;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#ECE6D7;">Tell us who is joining us from ${escapeHtml(companyName)} on August 15 and 16, and share the link with your team.</div>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#ECE6D7;background-image:linear-gradient(180deg,#F0EBDD 0%,#E6DECB 100%);">
+<tr><td align="center" style="padding:34px 14px 44px 14px;">
+
+  <table role="presentation" class="sl-card" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background-color:#FBF8F1;border:1px solid #E4DAC4;box-shadow:0 18px 48px rgba(12,59,75,0.18);">
+
+    <tr><td align="center" bgcolor="${TEAL_DEEP}" class="sl-head" style="background-color:${TEAL_DEEP};background-image:linear-gradient(160deg,${TEAL} 0%,${TEAL_DEEP} 100%);padding:44px 40px 34px 40px;">
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;line-height:18px;letter-spacing:4px;text-transform:uppercase;color:${GOLD_SOFT};font-weight:bold;">Lurie Children&rsquo;s &middot; AALB</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:9px;line-height:16px;letter-spacing:3px;text-transform:uppercase;color:#7FA7B1;padding-top:6px;">Your Team at the Conference</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:8px;line-height:10px;letter-spacing:4px;text-transform:uppercase;color:${GOLD};font-weight:bold;padding:22px 0 8px 0;">&middot;&nbsp;Second Joint Conference&nbsp;&middot;</div>
+
+      <!--[if !mso]><!-->
+      <div class="sl-seal" style="width:116px;height:116px;border-radius:50%;background-color:${GOLD};background-image:linear-gradient(135deg,#F4E9CD 0%,#D9B863 28%,#C9A14B 52%,#9C7A2E 78%,#E7D5A4 100%);border:2px solid #F4E9CD;box-shadow:0 6px 16px rgba(0,0,0,0.30),inset 0 1px 2px rgba(255,255,255,0.55);display:inline-block;">
+        <table role="presentation" width="116" height="116" cellpadding="0" cellspacing="0" border="0" style="width:116px;height:116px;"><tr><td align="center" valign="middle" style="text-align:center;">
+          <div style="font-family:Georgia,'Times New Roman',serif;font-size:31px;line-height:30px;color:#3C2E10;font-weight:bold;letter-spacing:1px;">2026</div>
+        </td></tr></table>
+      </div>
+      <!--<![endif]-->
+      <!--[if mso]>
+      <v:oval fill="true" stroke="true" strokecolor="#F4E9CD" strokeweight="2px" style="width:116px;height:116px;">
+        <v:fill type="solid" color="#C9A14B"/>
+        <v:textbox inset="0,0,0,0"><center><div style="font-family:Georgia,serif;font-size:30px;color:#3C2E10;font-weight:bold;">2026</div></center></v:textbox>
+      </v:oval>
+      <![endif]-->
+
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:9px;line-height:13px;letter-spacing:3px;text-transform:uppercase;color:${GOLD};padding:10px 0 0 0;">True Language Access</div>
+      <div class="sl-display" style="font-family:Georgia,'Times New Roman',serif;font-size:31px;line-height:38px;color:#FFFFFF;padding:18px 0 0 0;">The Second Joint Conference</div>
+      <div style="font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:15px;line-height:22px;color:#A9C6CD;padding:7px 0 0 0;">on Language Access in American Healthcare</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;line-height:16px;letter-spacing:3px;text-transform:uppercase;color:#7FA7B1;padding:14px 0 0 0;">August 15&ndash;16, 2026 &middot; Chicago, Illinois</div>
+    </td></tr>
+
+    <tr><td style="height:3px;line-height:3px;font-size:0;background-color:${GOLD};background-image:linear-gradient(90deg,#9C7A2E 0%,#F4E9CD 50%,#9C7A2E 100%);">&nbsp;</td></tr>
+
+    <tr><td class="sl-body" style="padding:40px 52px 36px 52px;background-color:#FBF8F1;">
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2.5px;text-transform:uppercase;color:${SOFT};">${escapeHtml(today)}</div>
+
+      <div style="padding:20px 0 18px 0;">
+        <div style="font-family:Georgia,'Times New Roman',serif;font-size:17px;line-height:1.4;color:${INK};font-weight:bold;">${escapeHtml(companyName)}</div>
+        <div style="font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:14px;line-height:1.5;color:${SOFT};padding-top:2px;">${escapeHtml(tierName)}</div>
+      </div>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="width:46px;height:2px;background-color:${GOLD};font-size:0;line-height:0;">&nbsp;</td></tr></table>
+      <div style="height:22px;line-height:22px;font-size:0;">&nbsp;</div>
+
+      ${p(`Dear ${escapeHtml(greeting)},`)}
+
+      <p style="margin:0 0 18px 0;font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.85;color:${INK};">
+        <span class="sl-dropcap" style="float:left;font-family:Georgia,'Times New Roman',serif;font-size:54px;line-height:42px;color:${TEAL};padding:6px 11px 0 0;">A</span>ugust is close now, and the room is coming together. As we finalize badges, seating and catering, there is one thing we need from you: the names of the people joining us from <strong>${escapeHtml(companyName)}</strong>.
+      </p>
+
+      ${ticketPanel}
+
+      ${hasTickets
+        ? p(`Adding them takes about a minute, and once they are on the list there is nothing further to pay and nothing further to do.`, 20)
+        : p(`Adding them takes about a minute, and it means everyone from ${escapeHtml(companyName)} arrives with a badge waiting for them rather than sorting it out at the door.`, 20)}
+
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:20px 0 2px 0;">
+        <tr><td align="center">
+          <!--[if mso]><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
+          <table role="presentation" class="sl-cta" cellpadding="0" cellspacing="0" border="0" style="display:inline-block;vertical-align:middle;margin:6px;"><tr>
+            <td align="center" bgcolor="${TEAL}" style="background-color:${TEAL};border-radius:9px;">
+              <a href="${teamUrl}" style="display:inline-block;padding:15px 30px;font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:bold;letter-spacing:0.4px;color:#ffffff;text-decoration:none;border-radius:9px;">Tell us who is coming &nbsp;&rarr;</a>
+            </td>
+          </tr></table>
+          <table role="presentation" class="sl-cta" cellpadding="0" cellspacing="0" border="0" style="display:inline-block;vertical-align:middle;margin:6px;"><tr>
+            <td align="center" bgcolor="#FBF8F1" style="background-color:#FBF8F1;border:1.5px solid ${GOLD};border-radius:9px;">
+              <a href="${site}" style="display:inline-block;padding:13.5px 28px;font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:bold;letter-spacing:0.4px;color:${TEAL};text-decoration:none;border-radius:9px;">See the program</a>
+            </td>
+          </tr></table>
+          <!--[if mso]></td></tr></table><![endif]-->
+        </td></tr>
+      </table>
+
+      ${eyebrow("Bringing more of the team?")}
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 8px 0;">
+        <tr><td bgcolor="#F2F6F6" style="background-color:#F2F6F6;border:1px solid #D9E6E8;border-left:3px solid ${TEAL};border-radius:10px;padding:16px 20px;">
+          <div style="font-family:Georgia,'Times New Roman',serif;font-size:15px;line-height:1.75;color:${INK};">
+            That same page has a link you can forward to colleagues so they can add themselves. Everyone who signs up through it is recorded under <strong>${escapeHtml(companyName)}</strong>, so you and we both know exactly who is at your table.${hasTickets ? ` Beyond your ${ticketsIncluded} included ${ticketWord}, they register at the standard rate.` : ""}
+          </div>
+        </td></tr>
+      </table>
+
+      ${p(`Any questions at all, just reply to this letter and it comes straight to us.`, 22)}
+
+      <div style="font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.85;color:${INK};padding-bottom:16px;">With thanks,</div>
+
+      ${sig("kevin.png", "Kevin Thakkar", "Founder & Executive Director, Americans Against Language Barriers")}
+
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:34px 0 0 0;border-top:1px solid #ECE3D0;">
+        <tr><td align="center" style="padding:24px 0 4px 0;">
+          <div style="font-family:Helvetica,Arial,sans-serif;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#9A8B6A;padding-bottom:16px;">Presented Jointly By</div>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+            <td align="center" style="padding:0 18px;"><img src="${base}/logos/aalb.png" alt="Americans Against Language Barriers" height="40" style="height:40px;width:auto;display:block;"></td>
+            <td style="border-left:1px solid #E0D5BD;width:1px;font-size:0;">&nbsp;</td>
+            <td align="center" style="padding:0 18px;"><img src="${base}/logos/lurie.png" alt="Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago" height="34" style="height:34px;width:auto;display:block;"></td>
+          </tr></table>
+        </td></tr>
+      </table>
+    </td></tr>
+
+    <tr><td class="sl-foot" align="center" bgcolor="${TEAL_DEEP}" style="background-color:${TEAL_DEEP};background-image:linear-gradient(180deg,${TEAL_DEEP} 0%,#0A3340 100%);padding:26px 40px 28px 40px;">
+      <div style="font-family:Georgia,'Times New Roman',serif;font-size:13px;letter-spacing:0.5px;color:${GOLD_SOFT};">2026 Lurie Children&rsquo;s &amp; AALB Conference</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;line-height:18px;color:#9FB6BC;padding-top:8px;">August 15&ndash;16, 2026 &middot; Chicago, Illinois</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;line-height:18px;color:#9FB6BC;">conference.aalb.org &middot; contact@aalb.org</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;line-height:16px;color:#6E8B93;padding-top:12px;">${escapeHtml(postalAddress)}${unsubscribeUrl ? ` &middot; <a href="${unsubscribeUrl}" style="color:#6E8B93;text-decoration:underline;">Unsubscribe</a>` : ""}</div>
+    </td></tr>
+
+  </table>
+
+</td></tr>
+</table>
+</body>
+</html>`;
 }
