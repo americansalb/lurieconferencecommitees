@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   X, Copy, Check, Mail, Loader2, Trash2, ExternalLink, MapPin, Monitor,
-  CreditCard, Clock, Tag, Send, LinkIcon,
+  CreditCard, Clock, Tag, Send, LinkIcon, Pencil,
 } from "lucide-react";
 import {
   ATTENDEE_STEP_LABELS, ATTENDEE_SOURCE_LABELS, ATTENDEE_STATUS_LABELS,
@@ -67,6 +67,39 @@ export default function AttendeeDrawer({
   const [savingNotes, setSavingNotes] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  // Correcting the amount on file. A correction, not a new transaction: it
+  // writes no timeline entry, so the record simply reads as though it had
+  // been right from the start.
+  const [editingPay, setEditingPay] = useState(false);
+  const [payInput, setPayInput] = useState("");
+  const [savingPay, setSavingPay] = useState(false);
+
+  function startEditPay() {
+    setPayInput(a?.finalPriceCents != null ? (a.finalPriceCents / 100).toFixed(2) : "");
+    setEditingPay(true);
+  }
+
+  async function savePay() {
+    const trimmed = payInput.trim().replace(/^\$/, "");
+    const dollars = trimmed === "" ? null : Number(trimmed);
+    if (dollars !== null && (!Number.isFinite(dollars) || dollars < 0)) return;
+    setSavingPay(true);
+    try {
+      const res = await fetch(`/api/attendees/${attendeeId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paidAmountCents: dollars === null ? null : Math.round(dollars * 100) }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setA((prev) => (prev ? { ...prev, ...updated } : prev));
+        setEditingPay(false);
+        onChanged();
+      }
+    } finally {
+      setSavingPay(false);
+    }
+  }
 
   useEffect(() => {
     let alive = true;
@@ -140,7 +173,40 @@ export default function AttendeeDrawer({
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <Fact label="Source" value={source ? ATTENDEE_SOURCE_LABELS[source] : "Not set"} />
                 <Fact label="Attendance" value={a.attendanceMode === "in-person" ? "In-person" : a.attendanceMode === "virtual" ? "Virtual" : "Not chosen"} icon={a.attendanceMode === "virtual" ? Monitor : MapPin} />
-                <Fact label="Payment" value={a.paid ? `${formatPrice(a.finalPriceCents)} paid` : "Not paid"} icon={CreditCard} accent={a.paid ? "#16a34a" : undefined} />
+                <div>
+                  <div className="text-[10px] font-bold tracking-wide uppercase text-slate-400 flex items-center gap-1.5">
+                    Payment
+                    {isAdmin && !editingPay && (
+                      <button onClick={startEditPay} className="text-slate-300 hover:text-slate-600" title="Correct the amount on file. No timeline entry is written.">
+                        <Pencil className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                  {editingPay ? (
+                    <div className="mt-1 flex items-center gap-1">
+                      <span className="text-sm text-slate-400">$</span>
+                      <input
+                        autoFocus
+                        value={payInput}
+                        onChange={(e) => setPayInput(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") savePay(); if (e.key === "Escape") setEditingPay(false); }}
+                        placeholder="0.00"
+                        inputMode="decimal"
+                        className="w-20 px-2 py-1 text-sm border border-slate-200 rounded-md outline-none focus:border-teal-500"
+                      />
+                      <button onClick={savePay} disabled={savingPay} className="p-1 text-emerald-600 hover:text-emerald-700 disabled:opacity-50" title="Save">
+                        {savingPay ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                      </button>
+                      <button onClick={() => setEditingPay(false)} className="p-1 text-slate-400 hover:text-slate-600" title="Cancel">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="text-sm font-semibold inline-flex items-center gap-1.5 mt-0.5" style={{ color: a.paid ? "#16a34a" : "#1e293b" }}>
+                      <CreditCard className="w-3.5 h-3.5" />{a.paid ? `${formatPrice(a.finalPriceCents)} paid` : "Not paid"}
+                    </div>
+                  )}
+                </div>
                 <Fact label="Status" value={(ATTENDEE_STATUS_LABELS[a.status]?.label) || a.status} />
                 {a.phone && <Fact label="Phone" value={a.phone} />}
                 {a.affiliation && <Fact label="Organization" value={a.affiliation} />}
