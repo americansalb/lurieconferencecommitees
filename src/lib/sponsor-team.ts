@@ -26,9 +26,13 @@ export async function ensureTeamToken(sponsorId: string): Promise<string> {
   return token;
 }
 
-// How many free tickets the level includes. A custom-named tier still carries
-// its base tier's allowance; an unknown tier gets none rather than guessing.
-export function compAllowance(sponsor: { tier: string }): number {
+// How many free tickets this organization gets. A per-sponsor override wins
+// over the tier, so a deal that differs from the standard level (a donated
+// table whose staff still buy their own tickets, say) is respected. A
+// custom-named tier still carries its base tier's allowance; an unknown tier
+// gets none rather than guessing.
+export function compAllowance(sponsor: { tier: string; ticketsIncluded?: number | null }): number {
+  if (sponsor.ticketsIncluded != null) return Math.max(0, sponsor.ticketsIncluded);
   return tierById(sponsor.tier)?.ticketsIncluded ?? 0;
 }
 

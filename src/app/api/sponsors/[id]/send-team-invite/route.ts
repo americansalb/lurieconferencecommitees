@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sponsorTeamInviteEmail } from "@/lib/mail-templates";
-import { ensureTeamToken, teamUrl } from "@/lib/sponsor-team";
+import { compAllowance, ensureTeamToken, teamUrl } from "@/lib/sponsor-team";
 import { tierById } from "@/lib/sponsors";
 import { appUrl } from "@/lib/presenters";
 import { getPolicy, planSendTimes } from "@/lib/email-queue";
@@ -44,7 +44,9 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
     contactName: sponsor.contactName,
     companyName: sponsor.companyName,
     tierName,
-    ticketsIncluded: tier?.ticketsIncluded ?? 0,
+    // Honours a per-sponsor override, so the letter never promises a free
+    // ticket the deal did not include.
+    ticketsIncluded: compAllowance(sponsor),
     teamUrl: url,
     siteUrl: appUrl(),
   });

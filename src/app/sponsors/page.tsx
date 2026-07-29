@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback, useRef } from "react";
 import {
   Award, Trash2, RefreshCw, Search, Filter, ExternalLink, Mail, Building2, Copy, Plus,
-  Clock, Pause, Play, X, SlidersHorizontal, Loader2, BadgeCheck, Send, FileText, Combine, Eye, Shuffle, Users,
+  Clock, Pause, Play, X, SlidersHorizontal, Loader2, BadgeCheck, Send, FileText, Combine, Eye, Shuffle, Users, Ticket,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
@@ -39,6 +39,7 @@ type Sponsor = {
   paidAt: string | null;
   logistics: Record<string, string> | null;
   applicationToken: string;
+  ticketsIncluded: number | null;
   createdAt: string;
   invitedAt: string | null;
   lastSentAt: string | null;
@@ -176,6 +177,39 @@ export default function SponsorsAdminPage() {
   useEffect(() => {
     if (status === "authenticated") load();
   }, [status, load]);
+
+  // Per-org override of the tier's included tickets. Needed whenever a deal
+  // differs from the standard level, e.g. a donated table where the staff
+  // still buy their own tickets. Blank restores the tier default.
+  async function setIncludedTickets(sp: Sponsor, tierDefault: number) {
+    const current = sp.ticketsIncluded ?? tierDefault;
+    const answer = window.prompt(
+      `How many tickets are included for ${sp.companyName}?\n\n` +
+      `Their level (${tierDefault} ${tierDefault === 1 ? "ticket" : "tickets"}) is the default. ` +
+      `Enter 0 if they get the table but pay for every attendee. Leave blank to use the level default.`,
+      String(current)
+    );
+    if (answer === null) return;
+    const trimmed = answer.trim();
+    const value = trimmed === "" ? null : Number(trimmed);
+    if (value !== null && (!Number.isFinite(value) || value < 0)) {
+      setActionNote("Included tickets must be 0 or more.");
+      setTimeout(() => setActionNote(null), 6000);
+      return;
+    }
+    await fetch(`/api/sponsors/${sp.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ticketsIncluded: value }),
+    });
+    setActionNote(
+      value === null
+        ? `${sp.companyName}: back to the level default (${tierDefault}).`
+        : `${sp.companyName}: ${value} included ${value === 1 ? "ticket" : "tickets"}.`
+    );
+    await load();
+    setTimeout(() => setActionNote(null), 6000);
+  }
 
   async function applyStatus(id: string, newStatus: string) {
     await fetch(`/api/sponsors/${id}`, {
@@ -940,6 +974,16 @@ export default function SponsorsAdminPage() {
                             >
                               {sendingTeamId === s.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Users className="w-3 h-3" />}
                               Ask who&rsquo;s coming
+                            </button>
+                          )}
+                          {isAdmin && (s.paid || s.status === "confirmed") && (
+                            <button
+                              onClick={() => setIncludedTickets(s, tier?.ticketsIncluded ?? 0)}
+                              className="text-[10px] font-bold px-2 py-1 rounded-full border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 inline-flex items-center gap-1 shrink-0"
+                              title="How many conference tickets this organization's deal includes. Overrides their level; set 0 when they get the table but pay for each attendee."
+                            >
+                              <Ticket className="w-3 h-3" />
+                              {s.ticketsIncluded ?? tier?.ticketsIncluded ?? 0} incl.
                             </button>
                           )}
                           {showPayAction && (

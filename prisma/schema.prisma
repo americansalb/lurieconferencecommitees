@@ -607,6 +607,11 @@ model Sponsor {
   teamToken     String?   @unique
   teamInvitedAt DateTime?
 
+  // Overrides the tier's ticketsIncluded for this organization only. Null
+  // means use the tier default. Set it when a deal differs from the standard
+  // level, e.g. a donated table where the staff still buy their own tickets.
+  ticketsIncluded Int?
+
   inviteMessage   String?
   // VIP courtesy: when set (e.g. 20), checkout applies this percentage off the
   // chosen sponsorship level. Excludes exhibitor tables; applied at checkout.

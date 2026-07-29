@@ -20,7 +20,7 @@ async function loadSponsor(token: string) {
   if (!token) return null;
   return prisma.sponsor.findUnique({
     where: { teamToken: token },
-    select: { id: true, companyName: true, tier: true, customTierName: true, mergedIntoId: true },
+    select: { id: true, companyName: true, tier: true, customTierName: true, mergedIntoId: true, ticketsIncluded: true },
   });
 }
 

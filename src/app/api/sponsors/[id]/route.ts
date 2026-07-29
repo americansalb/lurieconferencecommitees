@@ -29,7 +29,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const body = await req.json();
-  const allowed = ["adminNotes", "status"] as const;
+  const allowed = ["adminNotes", "status", "ticketsIncluded"] as const;
   const data: Record<string, unknown> = {};
   for (const k of allowed) {
     if (body[k] !== undefined) data[k] = body[k];
