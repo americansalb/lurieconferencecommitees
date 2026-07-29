@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { CHICAGO_TARGETS, loadableChicagoTargets } from "@/lib/chicago-targets";
 import { newAttendeeToken, buildAttendeeInvite } from "@/lib/attendees";
 import { ensureFirstNameCode } from "@/lib/discounts";
+import { GUEST_SHARE_PERCENT } from "@/lib/codes";
 import { getPolicy, planSendTimes } from "@/lib/email-queue";
 
 function isAdmin(role?: string) {
@@ -102,7 +103,11 @@ export async function POST(req: Request) {
   const includeSecondWave = body?.secondWave === true;
 
   if (action === "load") {
-    const pct = Math.max(0, Math.min(100, Number.isFinite(body?.discountPercent) ? body.discountPercent : 25));
+    // These people are invited guests, not prospects, so the default is a full
+    // comp: 100% leaves nothing to charge and the checkout route completes the
+    // registration directly rather than opening a Stripe session it cannot
+    // bill. Pass discountPercent explicitly to override.
+    const pct = Math.max(0, Math.min(100, Number.isFinite(body?.discountPercent) ? body.discountPercent : 100));
     let created = 0;
     let retagged = 0;
     let leftAlone = 0;
@@ -242,7 +247,11 @@ export async function POST(req: Request) {
     const key = (t.firstName || "").toLowerCase();
     if (!key || seenNames.has(key)) continue;
     seenNames.add(key);
-    await ensureFirstNameCode(t.firstName, t.discountPercent, adminEmail).catch(() => {});
+    // GUEST_SHARE_PERCENT, never t.discountPercent. See the note on the
+    // constant: the guest's own rate is a full comp, and minting their
+    // first-name code at that rate would publish a 100%-off code called
+    // JAZMIN to anyone who types a common first name on the public site.
+    await ensureFirstNameCode(t.firstName, GUEST_SHARE_PERCENT, adminEmail).catch(() => {});
   }
 
   const policy = await getPolicy();

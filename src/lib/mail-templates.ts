@@ -1,4 +1,5 @@
 import { SPEAKERS } from "@/components/landing/speakers-data";
+import { GUEST_SHARE_PERCENT } from "@/lib/codes";
 import { sponsorFirstName } from "@/lib/sponsors";
 
 type InviteArgs = {
@@ -3226,69 +3227,69 @@ export function plainStandardInviteEmail(args: AttendeeInviteArgs) {
 // The note is therefore required, not optional. Without one this letter has
 // no opening at all, so it falls back to the standard invite rather than
 // sending a headless message.
+// The invited-guest link. /invited/[code] is a purpose-built comp flow: it
+// checks the code really is 100% off both modes, registers the person as a
+// paid-$0 attendee, and writes a redemption row so the Discounts dashboard
+// shows who came in through which link. It is not a discount on a purchase,
+// it is a seat that was already paid for.
+const GUEST_LINK_CODE = "INVITEDGUEST";
+
 export function plainDirectInviteEmail(args: AttendeeInviteArgs) {
-  // discountPercent is deliberately not read: this letter never states a rate.
-  const { firstName, url, inviteMessage } = args;
+  const { firstName, inviteMessage, personalCode } = args;
   const note = (inviteMessage || "").trim();
   if (!note) return plainStandardInviteEmail(args);
+  const site = (args.learnMoreUrl || "https://conference.aalb.org").replace(/\/$/, "");
+  const bare = site.replace(/^https?:\/\//, "");
+  const guestUrl = `${site}/invited/${GUEST_LINK_CODE}`;
   const paras: string[] = [];
 
   // ─── Why this letter is shaped the way it is ─────────────────────────────
   //
-  // Every earlier version of it opened with a researched fact about the
-  // recipient's own organization, then asked a question, then asked them to
-  // come, then listed the speakers, then linked. That is the cold-sales
-  // skeleton exactly: flatter, hook, pitch, proof, call to action. It read as
-  // dishonest to the people receiving it, and it read that way because it was
-  // dishonest. Opening by telling a stranger something they already know
-  // about their own work is not interest, it is a dossier being read back to
-  // them, and its function in the letter was to buy attention for an ask that
-  // hadn't been disclosed yet. Restructuring inside that skeleton — which an
-  // earlier pass did — changes nothing, because the deception is the skeleton.
+  // Every earlier version opened with a researched fact about the recipient,
+  // then asked a question, then asked them to register, then listed speakers,
+  // then linked. That is the cold-sales skeleton: flatter, hook, pitch, proof,
+  // call to action. It read as dishonest because it was, and rearranging
+  // inside that skeleton changes nothing, because the deception IS the
+  // skeleton.
   //
-  // So the order is inverted. The ask comes first, in the first sentence.
-  // It does NOT open by pointing out that we have never met — naming that is
-  // meta-commentary about the email rather than the email, it draws attention
-  // to the coldness of the contact instead of just getting on with it, and it
-  // is not something a person writing another person would ever say out loud.
-  // Nothing is bought on credit: by the time the reader sees anything about
-  // themselves, they
-  // already know who is writing, what it is, and what is wanted. That turns
-  // the researched material from a hook into what it should have been from
-  // the beginning, which is an answer to "why me and not somebody else."
+  // Two things fix it, and only the second one is about words.
   //
-  // Rules for anyone editing this. Do not reintroduce a complimentary opener.
-  // Do not ask a question the letter will not wait for an answer to. Do not
-  // add a second speaker, a second link, a deadline, a seat count, a rate, or
-  // a standalone call-to-action line. If a sentence would be at home in a
-  // campaign, it does not belong in a letter to one person.
+  // First, the order. The ask comes in the opening sentence, with who is
+  // writing. Nothing is bought on credit: by the time the reader sees anything
+  // about themselves, they already know what is wanted, which turns the
+  // researched material from a hook into an answer to "why me".
+  //
+  // Second, and this is the real one: the letter is no longer selling
+  // anything. These people are invited guests. Their seat is already covered,
+  // and the only link in the letter registers them for free. A letter that
+  // gives something cannot be a sales letter, whatever its wording, and that
+  // is a structural fact rather than a stylistic one. The last shared line
+  // used to name the keynote; a sentence whose only job is to impress has no
+  // place in a letter to one person, so it is gone.
+  //
+  // Rules for anyone editing this. No complimentary opener. No question the
+  // letter will not wait for an answer to. No speaker names, no deadline, no
+  // seat count, no rate for their own ticket, no standalone call to action. If
+  // a sentence would be at home in a campaign, it does not belong here.
   paras.push(
-    `I'm Kevin Thakkar, and I run a nonprofit called Americans Against Language Barriers. We're doing our second conference with Lurie Children's on August 15 and 16 in Chicago, about language access in healthcare, and I'm writing to ask you to come.`
+    `I'm Kevin Thakkar, and I run a nonprofit called Americans Against Language Barriers. We're doing our second conference with Lurie Children's on August 15 and 16 in Chicago, about language access in healthcare, and I'd like you there as my guest.`
   );
 
   // The hand-written material, from lib/chicago-targets. A blank line in it
-  // stays a paragraph break. It now sits after the ask rather than in front
-  // of it, so it reads as a reason rather than as an approach.
-  const asHtml = (s: string) =>
-    escapeHtml(s).replace(/\n{2,}/g, "</div>\n  <div><br></div>\n  <div>").replace(/\n/g, "<br>");
-  paras.push(asHtml(note));
-
-  // One line, and it is an address, not a close.
-  //
-  // This used to name the keynote first: "The Joint Commission is keynoting on
-  // language access." That sentence does exactly one job, which is to impress,
-  // and it did it identically in all hundred letters. Dressing it down did not
-  // help and neither did shortening it, because the problem was never the
-  // wording. A person writing to one person does not list their headliner. If
-  // the reader wants to know who is speaking, the program is one click away
-  // and says so.
-  //
-  // What is left is where to look. The registration link sits under the plain
-  // domain text: same site, no button, no verb, nothing that announces itself
-  // as a conversion.
-  const site = (args.learnMoreUrl || "https://conference.aalb.org").replace(/\/$/, "");
+  // stays a paragraph break. It sits after the ask rather than in front of it,
+  // so it reads as a reason rather than as an approach.
   paras.push(
-    `The program is at <a href="${url}">${site.replace(/^https?:\/\//, "")}</a>.`
+    escapeHtml(note).replace(/\n{2,}/g, "</div>\n  <div><br></div>\n  <div>").replace(/\n/g, "<br>")
+  );
+
+  // Where to look, what is already paid for, and something to pass on. The
+  // code is theirs to give away; GUEST_SHARE_PERCENT in lib/codes explains why
+  // it is deliberately NOT worth what their own seat is worth.
+  const share = personalCode
+    ? ` And if there's someone you'd want in the room with you, the code ${escapeHtml(personalCode)} takes ${GUEST_SHARE_PERCENT}% off their ticket.`
+    : "";
+  paras.push(
+    `The program is at <a href="${site}">${bare}</a>. Your seat is already covered, so there's nothing to pay: <a href="${guestUrl}">this link</a> registers you.${share}`
   );
 
   // No gray footer, no reason-for-receipt line, no postal address, no
@@ -3298,8 +3299,8 @@ export function plainDirectInviteEmail(args: AttendeeInviteArgs) {
   // The opt-out does not disappear with it. Attendee sends carry RFC 8058
   // List-Unsubscribe and List-Unsubscribe-Post headers (attendeeUnsubHeaders
   // in lib/attendees, applied in lib/email-queue), so Gmail and Outlook draw
-  // their own one-click unsubscribe control at the top of the message. That
-  // is the mechanism that actually works, and it is invisible in the body.
+  // their own one-click unsubscribe control at the top of the message. That is
+  // the mechanism that actually works, and it is invisible in the body.
   //
   // This is a hand-built list of named people written to individually. Do not
   // reuse this template for a list that isn't.
