@@ -7,7 +7,12 @@ type Member = {
   id: string; name: string; email: string; comp: boolean; paid: boolean;
   status: string; attendanceMode: string | null; payUrl: string | null;
 };
+type Prefill = {
+  firstName: string; lastName: string; email: string;
+  dietary: string; accessibilityNotes: string;
+};
 type Data = {
+  prefill: Prefill | null;
   company: string;
   tierName: string;
   seats: { allowance: number; used: number; remaining: number };
@@ -22,7 +27,15 @@ export default function TeamManager({ token, shareUrl }: { token: string; shareU
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [form, setForm] = useState({ firstName: "", lastName: "", email: "", attendanceMode: "in-person" });
+  const BLANK = {
+    firstName: "", lastName: "", email: "", attendanceMode: "in-person",
+    phone: "", primaryLanguages: "", dietary: "", accessibilityNotes: "",
+    needsParking: null as boolean | null,
+  };
+  const [form, setForm] = useState(BLANK);
+  // True while the form is showing back what their application already told
+  // us, so the copy asks them to confirm rather than to fill it in.
+  const [confirming, setConfirming] = useState(false);
   const [justAdded, setJustAdded] = useState<{ comp: boolean; payUrl: string | null } | null>(null);
 
   const load = useCallback(async () => {
@@ -40,6 +53,22 @@ export default function TeamManager({ token, shareUrl }: { token: string; shareU
 
   useEffect(() => { load(); }, [load]);
 
+  // Drop their application details into the form the first time we see them.
+  const prefillKey = data?.prefill ? data.prefill.email + data.prefill.firstName : null;
+  useEffect(() => {
+    if (!data?.prefill) return;
+    setForm((f) => ({
+      ...f,
+      firstName: data.prefill!.firstName,
+      lastName: data.prefill!.lastName,
+      email: data.prefill!.email,
+      dietary: data.prefill!.dietary,
+      accessibilityNotes: data.prefill!.accessibilityNotes,
+    }));
+    setConfirming(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefillKey]);
+
   async function add() {
     setSaving(true);
     setError(null);
@@ -53,7 +82,8 @@ export default function TeamManager({ token, shareUrl }: { token: string; shareU
       const j = await r.json();
       if (!r.ok) { setError(j.error || "Could not add that person."); return; }
       setJustAdded({ comp: j.comp, payUrl: j.payUrl || null });
-      setForm({ firstName: "", lastName: "", email: "", attendanceMode: form.attendanceMode });
+      setForm({ ...BLANK, attendanceMode: form.attendanceMode });
+      setConfirming(false);
       await load();
     } catch {
       setError("Could not add that person.");
@@ -167,9 +197,14 @@ export default function TeamManager({ token, shareUrl }: { token: string; shareU
 
       {/* Add someone */}
       <div className="rounded-2xl bg-white p-5 mb-4" style={{ border: "1px solid #E2E8F0", boxShadow: "0 8px 22px -16px rgba(11,31,37,0.18)" }}>
-        <div className="text-[11px] font-bold uppercase tracking-wider mb-3" style={{ color: TEAL }}>
-          Add someone
+        <div className="text-[11px] font-bold uppercase tracking-wider mb-1" style={{ color: TEAL }}>
+          {confirming ? "Confirm your table representative" : "Add someone"}
         </div>
+        {confirming && (
+          <p className="text-[12.5px] text-slate-500 mb-3">
+            This is what you told us on your application. Change anything that has moved on, then confirm.
+          </p>
+        )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <input
             value={form.firstName}
@@ -204,6 +239,47 @@ export default function TeamManager({ token, shareUrl }: { token: string; shareU
               </button>
             ))}
           </div>
+
+          {/* The same questions every other attendee answers, so this person
+              lands in the accommodations and catering lists like anyone else. */}
+          <input
+            value={form.primaryLanguages}
+            onChange={(e) => setForm({ ...form, primaryLanguages: e.target.value })}
+            placeholder="Working language(s), e.g. English, Spanish, ASL"
+            className="sm:col-span-2 px-3 py-2.5 text-sm border border-slate-200 rounded-lg outline-none focus:border-teal-500"
+          />
+          <input
+            value={form.dietary}
+            onChange={(e) => setForm({ ...form, dietary: e.target.value })}
+            placeholder="Dietary needs or allergies (optional)"
+            className="sm:col-span-2 px-3 py-2.5 text-sm border border-slate-200 rounded-lg outline-none focus:border-teal-500"
+          />
+          <textarea
+            value={form.accessibilityNotes}
+            onChange={(e) => setForm({ ...form, accessibilityNotes: e.target.value })}
+            placeholder="Accessibility accommodations (optional). ASL, CART, wheelchair access, a quiet space, anything else."
+            rows={2}
+            className="sm:col-span-2 px-3 py-2.5 text-sm border border-slate-200 rounded-lg outline-none focus:border-teal-500"
+          />
+          {form.attendanceMode === "in-person" && (
+            <div className="sm:col-span-2">
+              <div className="text-[11px] font-semibold text-slate-500 mb-1.5">Parking at Lurie Children&rsquo;s?</div>
+              <div className="grid grid-cols-3 gap-1.5">
+                {([["Yes", true], ["No", false], ["Not sure", null]] as const).map(([label, v]) => (
+                  <button
+                    key={label}
+                    onClick={() => setForm({ ...form, needsParking: v })}
+                    className="py-2 rounded-lg border text-[13px] font-semibold transition-colors"
+                    style={form.needsParking === v
+                      ? { borderColor: TEAL, background: TEAL + "10", color: TEAL }
+                      : { borderColor: "#E2E8F0", background: "#fff", color: "#64748B" }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {error && <div className="mt-2 text-[13px] font-medium text-rose-600">{error}</div>}
@@ -224,7 +300,11 @@ export default function TeamManager({ token, shareUrl }: { token: string; shareU
           className="mt-3 w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-bold text-white disabled:opacity-50"
           style={{ background: TEAL }}
         >
-          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Plus className="w-4 h-4" /> Add to our list</>}
+          {saving
+            ? <Loader2 className="w-4 h-4 animate-spin" />
+            : confirming
+              ? <><Check className="w-4 h-4" /> Confirm and register them</>
+              : <><Plus className="w-4 h-4" /> Add to our list</>}
         </button>
         <p className="mt-2 text-[11.5px] text-slate-400">
           {seats.remaining > 0

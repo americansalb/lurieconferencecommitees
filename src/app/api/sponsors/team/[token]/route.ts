@@ -20,7 +20,12 @@ async function loadSponsor(token: string) {
   if (!token) return null;
   return prisma.sponsor.findUnique({
     where: { teamToken: token },
-    select: { id: true, companyName: true, tier: true, customTierName: true, mergedIntoId: true, ticketsIncluded: true },
+    select: {
+      id: true, companyName: true, tier: true, customTierName: true, mergedIntoId: true, ticketsIncluded: true,
+      // What they already told us on their application, so the page can ask
+      // them to confirm rather than type it a second time.
+      registreeName: true, registreeEmail: true, dietary: true, accessibility: true,
+    },
   });
 }
 
@@ -30,7 +35,22 @@ export async function GET(_req: Request, { params }: { params: { token: string }
     return NextResponse.json({ error: "This link is no longer active." }, { status: 404 });
   }
   const team = await teamFor(sponsor.id);
+  // Their application named someone to staff the table and gave us that
+  // person's dietary and accessibility needs. Offer it back for confirmation
+  // instead of asking again, and only until they have actually added someone.
+  const rn = (sponsor.registreeName || "").trim();
+  const parts = rn.split(/\s+/);
+  const prefill = (team.length === 0 && (rn || sponsor.registreeEmail))
+    ? {
+        firstName: parts[0] || "",
+        lastName: parts.slice(1).join(" "),
+        email: (sponsor.registreeEmail || "").trim(),
+        dietary: (sponsor.dietary || "").trim(),
+        accessibilityNotes: (sponsor.accessibility || "").trim(),
+      }
+    : null;
   return NextResponse.json({
+    prefill,
     company: sponsor.companyName,
     tierName: sponsor.customTierName || tierById(sponsor.tier)?.name || sponsor.tier,
     seats: seatSummary(team, compAllowance(sponsor)),
@@ -54,6 +74,20 @@ export async function POST(req: Request, { params }: { params: { token: string }
   const lastName = String(body.lastName || "").trim();
   const email = String(body.email || "").trim().toLowerCase();
   const attendanceMode = body.attendanceMode === "virtual" ? "virtual" : "in-person";
+  // The same questions the attendee portal asks, so exhibitor staff show up
+  // in the Accommodations view like everyone else instead of as a blank row.
+  const str = (v: unknown) => { const t = String(v ?? "").trim(); return t || null; };
+  const logistics = {
+    phone: str(body.phone),
+    primaryLanguages: str(body.primaryLanguages),
+    dietary: str(body.dietary),
+    accessibilityNotes: str(body.accessibilityNotes),
+    needsParking: typeof body.needsParking === "boolean" ? body.needsParking : null,
+  };
+  // Only overwrite with an answer; a blank field never wipes what we hold.
+  const logisticsSet = Object.fromEntries(
+    Object.entries(logistics).filter(([, v]) => v !== null)
+  );
 
   if (!firstName) return NextResponse.json({ error: "First name is required." }, { status: 400 });
   if (!isEmail(email)) return NextResponse.json({ error: "A valid email address is required." }, { status: 400 });
@@ -79,6 +113,7 @@ export async function POST(req: Request, { params }: { params: { token: string }
         sponsorId: sponsor.id,
         compFromSponsor: comp,
         affiliation: existing.affiliation || sponsor.companyName,
+        ...logisticsSet,
         ...(comp
           ? {
               basePriceCents: 0, finalPriceCents: 0, discountPercent: 100,
@@ -103,6 +138,7 @@ export async function POST(req: Request, { params }: { params: { token: string }
       lastName,
       affiliation: sponsor.companyName,
       attendanceMode,
+      ...logistics,
       sponsorId: sponsor.id,
       compFromSponsor: comp,
       inviteToken: newAttendeeToken(),
