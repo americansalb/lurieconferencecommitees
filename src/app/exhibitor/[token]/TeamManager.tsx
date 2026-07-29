@@ -306,6 +306,10 @@ export default function TeamManager({ token, shareUrl }: { token: string; shareU
               ? <><Check className="w-4 h-4" /> Confirm and register them</>
               : <><Plus className="w-4 h-4" /> Add to our list</>}
         </button>
+        <div className="mt-3 rounded-lg px-3 py-2.5 text-[12.5px] leading-relaxed" style={{ background: "#F2F6F6", border: "1px solid #D9E6E8", color: "#26363B" }}>
+          <strong>Speaking at the conference?</strong> Presenters attend free, both days, and are already
+          registered. Don&rsquo;t use one of your tickets on them, and don&rsquo;t add them here.
+        </div>
         <p className="mt-2 text-[11.5px] text-slate-400">
           {seats.remaining > 0
             ? `The next ${seats.remaining === 1 ? "person uses your last included ticket" : `${seats.remaining} people use your included tickets`}. After that, anyone you add registers at the standard rate and still shows up under ${data.company}.`

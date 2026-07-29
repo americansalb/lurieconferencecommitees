@@ -354,9 +354,14 @@ model Presenter {
   token            String    @unique
   invitedAt        DateTime  @default(now())
   confirmedAt      DateTime?
-  lastSentAt       DateTime?
-  adminNotes       String?
-  invitedById      String?
+
+  // When we confirmed this presenter as an attendee too and sent them their
+  // attendee portal link. Presenters attend free; this only tracks that the
+  // note went out, so a second run doesn't mail them twice.
+  attendeeInvitedAt DateTime?
+  lastSentAt        DateTime?
+  adminNotes        String?
+  invitedById       String?
 
   // Presentation-deck collection: when we first asked for their slides and
   // how many reminder emails have gone out since. The deck itself lives in

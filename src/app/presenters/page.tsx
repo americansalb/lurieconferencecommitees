@@ -7,8 +7,7 @@ import Link from "next/link";
 import {
   Mic, Search, UserCheck, Download, Send, Check,
   Clock, XCircle, RefreshCw, AlertCircle, CircleHelp, Trash2, Megaphone, Inbox,
-  Presentation, ExternalLink, StickyNote,
-} from "lucide-react";
+  Presentation, ExternalLink, StickyNote, Ticket } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
 import MobileNav from "@/components/layout/MobileNav";
@@ -37,6 +36,9 @@ interface PresenterRow {
   lastSentAt: string | null;
   headshotMime: string | null;
   slidesRequestedAt: string | null;
+  // Set once we've registered them as a complimentary attendee and sent
+  // them their portal link.
+  attendeeInvitedAt: string | null;
   slidesRemindCount: number;
   slideNotes: string | null;
   slide: { fileName: string | null; sizeBytes: number | null; linkUrl: string | null; updatedAt: string | null; createdAt: string } | null;
@@ -59,6 +61,8 @@ export default function PresentersPage() {
   const [showProposalCall, setShowProposalCall] = useState(false);
   const [acceptTarget, setAcceptTarget] = useState<InviteEditable | null>(null);
   const [slidesBusy, setSlidesBusy] = useState<"initial" | "remind" | null>(null);
+  const [seatBusy, setSeatBusy] = useState<"initial" | "all" | null>(null);
+  const [seatNote, setSeatNote] = useState<string | null>(null);
   const [slidesNote, setSlidesNote] = useState<string | null>(null);
 
   const role = (session?.user as { role?: string } | undefined)?.role;
@@ -138,8 +142,35 @@ export default function PresentersPage() {
       received: confirmed.filter((r) => r.slide).length,
       notAsked: confirmed.filter((r) => !r.slidesRequestedAt).length,
       askedPending: confirmed.filter((r) => r.slidesRequestedAt && !r.slide).length,
+      // Presenters attend free; this is who has not yet been told so and
+      // given their attendee page.
+      seatNotSent: confirmed.filter((r) => !r.attendeeInvitedAt).length,
     };
   }, [rows]);
+
+  // Confirm presenters as attendees: creates their attendee record with the
+  // details their proposal already gave us, and mails them the portal link.
+  async function confirmSeats(mode: "initial" | "all") {
+    setSeatBusy(mode);
+    setSeatNote(null);
+    try {
+      const res = await fetch("/api/presenters/confirm-attendance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode }),
+      });
+      const json = await res.json().catch(() => ({}));
+      setSeatNote(res.ok
+        ? `Confirmed ${json.sent || 0} presenter${json.sent === 1 ? "" : "s"} as attendees${json.failed ? ` · ${json.failed} failed` : ""}${json.skipped ? ` · ${json.skipped} skipped` : ""}.`
+        : (json.error || "Could not send."));
+      await load();
+    } catch {
+      setSeatNote("Network error.");
+    } finally {
+      setSeatBusy(null);
+      setTimeout(() => setSeatNote(null), 9000);
+    }
+  }
 
   async function requestSlides(mode: "initial" | "remind") {
     setSlidesBusy(mode);
@@ -286,6 +317,50 @@ export default function PresentersPage() {
                   </div>
                 </div>
                 {slidesNote && <div className="mt-2 text-xs font-semibold text-teal-700">{slidesNote}</div>}
+              </div>
+            )}
+
+            {isAdmin && slides.confirmed > 0 && (
+              <div className="rounded-2xl p-4 shadow-sm mb-4 border" style={{ background: "linear-gradient(180deg,#FBF8F1,#ffffff)", borderColor: "#E6D9B8" }}>
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <div className="min-w-0">
+                    <div className="text-sm font-bold text-slate-900 inline-flex items-center gap-1.5">
+                      <Ticket className="w-4 h-4" style={{ color: "#9A7B2E" }} /> Presenter seats
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                        {slides.confirmed - slides.seatNotSent}/{slides.confirmed} confirmed
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1 max-w-xl">
+                      Presenters attend free, both days. This registers each confirmed presenter as an
+                      attendee at no charge and emails them their attendee page, carrying over the dietary,
+                      accessibility, parking and phone answers from their proposal so they only have to check
+                      them. They then appear in Attendees and in the Accommodations view like everyone else.
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => confirmSeats("initial")}
+                      disabled={seatBusy !== null || slides.seatNotSent === 0}
+                      className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white shadow-sm disabled:opacity-50 bg-gradient-to-r from-[#0E5566] to-[#0066B3]"
+                      title="Register every confirmed presenter as a complimentary attendee and email them their page"
+                    >
+                      {seatBusy === "initial" ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                      {slides.seatNotSent === 0 ? "All confirmed" : `Confirm seats (${slides.seatNotSent})`}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => confirmSeats("all")}
+                      disabled={seatBusy !== null}
+                      className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold border disabled:opacity-50 text-[#0E5566] border-[#0E5566] bg-white"
+                      title="Send again to every confirmed presenter, including those already sent"
+                    >
+                      {seatBusy === "all" ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Clock className="w-4 h-4" />}
+                      Re-send to all
+                    </button>
+                  </div>
+                </div>
+                {seatNote && <div className="mt-2 text-xs font-semibold text-teal-700">{seatNote}</div>}
               </div>
             )}
 
