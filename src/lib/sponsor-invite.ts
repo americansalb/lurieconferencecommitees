@@ -1,10 +1,11 @@
 import { prisma } from "@/lib/db";
 import {
   isFoodProspect, isAslProspect, isCompExhibitor, isOfficialPartner,
-  sponsorInviteSubject, sponsorFoodSubject, sponsorAslSubject, sponsorArrangedSubject,
+  sponsorInviteSubject, sponsorFoodSubject, sponsorAslSubject, sponsorAslUrgentSubject, sponsorArrangedSubject,
   sponsorUnsubscribeUrl, sponsorFirstName, tierById,
 } from "@/lib/sponsors";
-import { sponsorLetterEmail, sponsorFoodLetterEmail, sponsorAslLetterEmail, sponsorInviteEmail } from "@/lib/mail-templates";
+import { sponsorLetterEmail, sponsorFoodLetterEmail, sponsorAslLetterEmail, sponsorAslUrgentLetterEmail, sponsorInviteEmail } from "@/lib/mail-templates";
+import { ASL_REQUEST_OPEN } from "@/lib/asl-request";
 
 function letterDate() {
   // Dated in Chicago, where the letter is "from" — a UTC server would
@@ -61,10 +62,12 @@ export function renderSponsorInvite(
     };
   }
   if (isAslProspect(s)) {
-    return {
-      subject: sponsorAslSubject(s.companyName),
-      html: sponsorAslLetterEmail({ contactName: s.contactName, companyName: s.companyName, note: s.inviteMessage, pledgeUrl: `${base}/sponsor/asl/${token}`, learnMoreUrl: base, unsubscribeUrl: unsub, assetBase: base }),
-    };
+    // While a registered attendee's request is open, send the letter about
+    // that request instead of the general sponsorship pitch.
+    const args = { contactName: s.contactName, companyName: s.companyName, note: s.inviteMessage, pledgeUrl: `${base}/sponsor/asl/${token}`, learnMoreUrl: base, unsubscribeUrl: unsub, assetBase: base };
+    return ASL_REQUEST_OPEN
+      ? { subject: sponsorAslUrgentSubject(s.companyName), html: sponsorAslUrgentLetterEmail(args) }
+      : { subject: sponsorAslSubject(s.companyName), html: sponsorAslLetterEmail(args) };
   }
   if (isCompExhibitor(s)) {
     return {

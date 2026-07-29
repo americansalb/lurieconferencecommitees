@@ -339,6 +339,15 @@ export function sponsorAslSubject(companyName: string): string {
   return `${co}: an invitation to be an ASL Interpreter Sponsor of the 2026 Lurie Children's & AALB Conference`;
 }
 
+// Subject while the live request is open. An invitation-shaped subject buries
+// the one thing that would make an interpreting agency open this: somebody
+// actually needs interpreters, on a named date, soon. So it leads with that
+// and leaves the sponsorship framing to the letter.
+export function sponsorAslUrgentSubject(companyName: string): string {
+  const co = (companyName || "").trim() || "your team";
+  return `A Deaf attendee asked us for ASL on August 15. Can ${co} help?`;
+}
+
 // Subject for an invite-only (arranged) tier: the deal was agreed over email,
 // so the subject confirms it rather than pitching it.
 export function sponsorArrangedSubject(companyName: string, tierName: string): string {

@@ -3,8 +3,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
-import { newSponsorToken, tierById, sponsorFromHeader, sponsorReplyTo, sponsorLetterReplyTo, sponsorInviteSubject, sponsorFoodSubject, sponsorAslSubject, sponsorArrangedSubject, sponsorUnsubHeaders, sponsorUnsubscribeUrl, isOfficialPartner, sponsorFirstName } from "@/lib/sponsors";
-import { sponsorInviteEmail, sponsorLetterEmail, sponsorFoodLetterEmail, sponsorAslLetterEmail } from "@/lib/mail-templates";
+import { newSponsorToken, tierById, sponsorFromHeader, sponsorReplyTo, sponsorLetterReplyTo, sponsorInviteSubject, sponsorFoodSubject, sponsorAslSubject, sponsorAslUrgentSubject, sponsorArrangedSubject, sponsorUnsubHeaders, sponsorUnsubscribeUrl, isOfficialPartner, sponsorFirstName } from "@/lib/sponsors";
+import { sponsorInviteEmail, sponsorLetterEmail, sponsorFoodLetterEmail, sponsorAslLetterEmail, sponsorAslUrgentLetterEmail } from "@/lib/mail-templates";
+import { ASL_REQUEST_OPEN } from "@/lib/asl-request";
 
 // The formal letter is the standard sponsor invitation. Complimentary
 // exhibitor tables (a free table, not a sponsorship) keep the dedicated
@@ -123,7 +124,8 @@ export async function POST(req: Request) {
     });
     subject = sponsorFoodSubject(sponsor.companyName);
   } else if (asl) {
-    html = sponsorAslLetterEmail({
+    // A registered attendee's open request beats the generic pitch.
+    const aslArgs = {
       contactName: sponsor.contactName,
       companyName: sponsor.companyName,
       note: sponsor.inviteMessage,
@@ -131,8 +133,11 @@ export async function POST(req: Request) {
       learnMoreUrl: appUrl(),
       unsubscribeUrl: sponsorUnsubscribeUrl(token),
       assetBase: appUrl(),
-    });
-    subject = sponsorAslSubject(sponsor.companyName);
+    };
+    html = ASL_REQUEST_OPEN ? sponsorAslUrgentLetterEmail(aslArgs) : sponsorAslLetterEmail(aslArgs);
+    subject = ASL_REQUEST_OPEN
+      ? sponsorAslUrgentSubject(sponsor.companyName)
+      : sponsorAslSubject(sponsor.companyName);
   } else if (compTable) {
     html = sponsorInviteEmail({
       contactFirstName: sponsorFirstName(sponsor.contactName, sponsor.companyName),
@@ -274,7 +279,7 @@ async function bulkInvite(
             assetBase: appUrl(),
           })
         : asl
-        ? sponsorAslLetterEmail({
+        ? (ASL_REQUEST_OPEN ? sponsorAslUrgentLetterEmail : sponsorAslLetterEmail)({
             contactName: c.contactName,
             companyName: c.companyName,
             note: c.note,
@@ -313,7 +318,7 @@ async function bulkInvite(
           subject: food
             ? sponsorFoodSubject(c.companyName)
             : asl
-            ? sponsorAslSubject(c.companyName)
+            ? (ASL_REQUEST_OPEN ? sponsorAslUrgentSubject(c.companyName) : sponsorAslSubject(c.companyName))
             : sponsorInviteSubject(c.companyName, { comp: compTable, partner: isOfficialPartner(c.companyName) }),
           html, scheduledFor: times[i], status: "pending",
         },

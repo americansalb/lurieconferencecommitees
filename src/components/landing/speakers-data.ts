@@ -107,7 +107,7 @@ export const SPEAKERS: Speaker[] = [
     name: "Linda G. Coronado",
     title: "Pioneer of Hospital Interpreter Services",
     org: "Stroger Hospital of Cook County · Day 1 Panelist",
-    bio: "Linda G. Coronado spent 21 years at the Stroger Hospital of Cook County, where she was responsible for developing the first hospital-based interpreter services in Cook County (1984–2005), and went on to help create the Language Access Resource Center (LARC) in DuPage County. As an instructor at the City Colleges of Chicago, she facilitated the first — and only — medical interpreter training program at the college level. Her civic leadership runs just as deep: she served as member and chairperson of the Mayor’s Advisory Commission on Latino Affairs during the Harold Washington administration, co-convenes the 7th Cook County District Health Task Force, serves on the Board of Directors of the Brighton Park Neighborhood Council, and is an active member of the Peace and Education Coalition in the Back of the Yards — the neighborhood where she has lived her whole life. She holds a Bachelor’s in Spanish Secondary Education from Northeastern Illinois University and a Master’s from Roosevelt University.",
+    bio: "Linda G. Coronado spent 21 years at the Stroger Hospital of Cook County, where she was responsible for developing the first hospital-based interpreter services in Cook County (1984–2005), and went on to help create the Language Access Resource Center (LARC) in DuPage County. As an instructor at the City Colleges of Chicago, she facilitated the first and only medical interpreter training program at the college level. Her civic leadership runs just as deep: she served as member and chairperson of the Mayor’s Advisory Commission on Latino Affairs during the Harold Washington administration, co-convenes the 7th Cook County District Health Task Force, serves on the Board of Directors of the Brighton Park Neighborhood Council, and is an active member of the Peace and Education Coalition in the Back of the Yards, the neighborhood where she has lived her whole life. She holds a Bachelor’s in Spanish Secondary Education from Northeastern Illinois University and a Master’s from Roosevelt University.",
     photo: "/speakers/linda-coronado.webp",
   },
   {
@@ -133,9 +133,9 @@ export const SPEAKERS: Speaker[] = [
     slug: "hugo-juarez",
     name: "Hugo Juarez",
     title: "Certified Medical Interpreter (Spanish)",
-    org: "Staff interpreter — pediatric & adult Level 1 trauma centers",
+    org: "Staff interpreter, pediatric & adult Level 1 trauma centers",
     talk: "Beyond Accuracy: The Invisible Skills in Healthcare Interpreting",
-    bio: "Hugo Juarez is a certified Spanish medical interpreter who has worked as a staff interpreter in both pediatric and adult hospitals for over 15 years. His experience at adult and pediatric Level 1 Trauma Centers and teaching hospitals in a major U.S. city has allowed him to serve patients and families of diverse backgrounds across a wide range of clinical settings. His Day 1 session names the practices interpreters routinely use to bridge the gap between accurate interpretation and effective communication — the work ethical guidelines from the NCIHC and IMIA make room for but never give a vocabulary — and explores how those practices adapt to remote interpreting.",
+    bio: "Hugo Juarez is a certified Spanish medical interpreter who has worked as a staff interpreter in both pediatric and adult hospitals for over 15 years. His experience at adult and pediatric Level 1 Trauma Centers and teaching hospitals in a major U.S. city has allowed him to serve patients and families of diverse backgrounds across a wide range of clinical settings. His Day 1 session names the practices interpreters routinely use to bridge the gap between accurate interpretation and effective communication (the work ethical guidelines from the NCIHC and IMIA make room for but never give a vocabulary), and explores how those practices adapt to remote interpreting.",
     photo: "/speakers/hugo-juarez.webp",
   },
   {
@@ -144,7 +144,7 @@ export const SPEAKERS: Speaker[] = [
     title: "Certified Medical Interpreter (Spanish)",
     org: "Nationally ranked pediatric hospital, Chicago",
     talk: "Beyond Accuracy: The Invisible Skills in Healthcare Interpreting",
-    bio: "Mercedes Martin is a certified Spanish medical interpreter working at a nationally ranked pediatric hospital in Chicago. She holds a BS in Community Health & American Studies from Tufts University. Her Day 1 session identifies and names the invisible practices in-person interpreters use every day to turn accurate interpretation into effective communication — and explores how those practices carry over to remote interpretation.",
+    bio: "Mercedes Martin is a certified Spanish medical interpreter working at a nationally ranked pediatric hospital in Chicago. She holds a BS in Community Health & American Studies from Tufts University. Her Day 1 session identifies and names the invisible practices in-person interpreters use every day to turn accurate interpretation into effective communication, and explores how those practices carry over to remote interpretation.",
     photo: "/speakers/mercedes-martin.webp",
   },
   {

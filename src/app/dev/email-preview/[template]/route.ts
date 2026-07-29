@@ -10,6 +10,9 @@ import {
   ambassadorInviteEmail,
   sponsorTeamInviteEmail,
   sponsorPaymentReminderEmail,
+  sponsorAslUrgentLetterEmail,
+  sponsorAslLetterEmail,
+  sponsorFoodLetterEmail,
   plainStandardInviteEmail,
   plainCommunityInviteEmail,
 } from "@/lib/mail-templates";
@@ -97,6 +100,39 @@ export async function GET(
         assetBase: base,
         arranged: true,
         unsubscribeUrl: `${base}/api/sponsors/unsubscribe/demo-token`,
+      });
+      break;
+    case "asl-invite":
+      html = sponsorAslLetterEmail({
+        contactName: "",
+        companyName: "Chicago Hearing Society (Anixter Center)",
+        note: "Chicago Hearing Society has been the city's own answer to this question for decades, and your interpreting and captioning desk is the number Chicago institutions call when a Deaf patient or family needs access.",
+        pledgeUrl: `${base}/sponsor/asl/demo-token`,
+        learnMoreUrl: base,
+        unsubscribeUrl: `${base}/api/sponsors/unsubscribe/demo-token`,
+        assetBase: base,
+      });
+      break;
+    case "food-invite":
+      html = sponsorFoodLetterEmail({
+        contactName: "Jules",
+        companyName: "The Chicago Diner",
+        note: "The Chicago Diner has been serving meat-free comfort food in Lakeview since 1983, long before anyone called it a trend.",
+        pledgeUrl: `${base}/sponsor/food/demo-token`,
+        learnMoreUrl: base,
+        unsubscribeUrl: `${base}/api/sponsors/unsubscribe/demo-token`,
+        assetBase: base,
+      });
+      break;
+    case "asl-urgent":
+      html = sponsorAslUrgentLetterEmail({
+        contactName: "",
+        companyName: "Chicago Hearing Society (Anixter Center)",
+        note: "Chicago Hearing Society has been the city's own answer to this question for decades, and your interpreting and captioning desk is the number Chicago institutions call when a Deaf patient or family needs access. We are a language access conference at a Chicago children's hospital, so you are the first organization we thought of, and the closest to home. Interpreters, clinicians, and hospital language services leaders will be in the room, and Deaf and hard of hearing attendees are among them.",
+        pledgeUrl: `${base}/sponsor/asl/demo-token`,
+        learnMoreUrl: base,
+        unsubscribeUrl: `${base}/api/sponsors/unsubscribe/demo-token`,
+        assetBase: base,
       });
       break;
     case "inkind-accepted-food":

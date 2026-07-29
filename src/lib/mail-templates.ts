@@ -1,6 +1,9 @@
 import { SPEAKERS } from "@/components/landing/speakers-data";
 import { GUEST_SHARE_PERCENT } from "@/lib/codes";
 import { sponsorFirstName } from "@/lib/sponsors";
+import {
+  ASL_COVERAGE_LABEL, ASL_DECISION_LABEL, ASL_SCOPE_NOTE, ASL_TEAM_NOTE, ASL_UNITS,
+} from "@/lib/asl-request";
 
 type InviteArgs = {
   name: string;
@@ -1469,6 +1472,12 @@ type SponsorFoodLetterArgs = {
   // One-click unsubscribe URL (deliverability / CAN-SPAM).
   unsubscribeUrl?: string;
   assetBase?: string;
+  // ASL only. Set this when the letter is chasing the LIVE request rather than
+  // making the general accessibility pitch: a registered attendee has asked
+  // for ASL interpretation and we are trying to staff it with donated hours
+  // before the conference budget pays for it. It swaps the aspirational
+  // paragraphs for the actual situation and adds a dated decision panel.
+  urgentRequest?: boolean;
 };
 
 // The in-kind INVITE (food & ASL), set in the same engraved gold-foil style as
@@ -1481,7 +1490,7 @@ type SponsorFoodLetterArgs = {
 // both host institutions named. sponsorFoodLetterEmail / sponsorAslLetterEmail
 // stay as thin wrappers so the send routes are unchanged.
 function engravedInKindInvite(kind: "food" | "asl", {
-  contactName, companyName, note, pledgeUrl, learnMoreUrl, unsubscribeUrl, assetBase,
+  contactName, companyName, note, pledgeUrl, learnMoreUrl, unsubscribeUrl, assetBase, urgentRequest,
 }: SponsorFoodLetterArgs) {
   const postalAddress = process.env.MAIL_POSTAL_ADDRESS?.trim() || "Americans Against Language Barriers, Chicago, IL";
   const TEAL_DEEP = "#0C3B4B", INK = "#0B1F25", SOFT = "#5A6E76", GOLD_SOFT = "#F4E9CD", LINK = "#1E6FA2";
@@ -1489,6 +1498,12 @@ function engravedInKindInvite(kind: "food" | "asl", {
   const site = (learnMoreUrl || base).replace(/\/$/, "");
   const isAsl = kind === "asl";
   const sponsorLabel = isAsl ? "ASL Interpreter Sponsor" : "Food Sponsor";
+  // "a ASL Interpreter Sponsor" reads as a mail-merge slip. The article has to
+  // agree with whichever label this letter carries.
+  const aLabel = `${isAsl ? "an" : "a"} ${sponsorLabel}`;
+  // Chasing the live request from a registered attendee, not making the
+  // general accessibility pitch. Only ever true for the ASL letter.
+  const urgent = isAsl && !!urgentRequest;
 
   const cn = (contactName || "").trim();
   const isPerson = !!cn && cn.toLowerCase() !== companyName.trim().toLowerCase();
@@ -1500,10 +1515,14 @@ function engravedInKindInvite(kind: "food" | "asl", {
   const inviteTail = isAsl
     ? `to help keep every session of our Second Joint Conference on language access in American healthcare, August 15 and 16, 2026, in Chicago, accessible in American Sign Language, as an <strong>ASL Interpreter Sponsor</strong>`
     : `to help feed our Second Joint Conference on language access in American healthcare, August 15 and 16, 2026, in Chicago, as a <strong>Food Sponsor</strong>`;
-  const missionPara = isAsl
+  const missionPara = urgent
+    ? `One of our registered attendees has asked us for ASL interpretation. That request is the whole reason for this letter. We are about to spend two days insisting that no patient should go unheard, and we are not willing to do that while someone in our own room watches a stage they cannot follow. So we are asking the people who actually do this work, before we quietly hand the problem to our budget.`
+    : isAsl
     ? `A conference about being heard has to include the people for whom American Sign Language is that voice. We are committed to interpreting our sessions in ASL so that Deaf and hard-of-hearing attendees are full participants, never an afterthought, and that commitment is only as real as the interpreters who make it happen.`
     : `We have kept every conference we host meat-free, and this one will be no different: every meal will be fully plant-based, with no meat served. It would ring hollow to spend two days insisting that no one should go unheard, and then serve animals who cannot speak for themselves at all. A fully meat-free conference of this size is only possible with Chicago kitchens like yours.`;
-  const askPara = isAsl
+  const askPara = urgent
+    ? `${ASL_SCOPE_NOTE} Either kind of coverage answers the request, so we are not going to make you guess at our preference: ${ASL_COVERAGE_LABEL}. ${ASL_TEAM_NOTE} A partial gift is genuinely useful, so ${ASL_UNITS.slice(0, -1).join(", ")} or ${ASL_UNITS[ASL_UNITS.length - 1]} all help, and we will build the rest of the schedule around whatever you can staff. Donated hours make you an official ASL Interpreter Sponsor.`
+    : isAsl
     ? `We are expecting about seventy to eighty attendees in person, plus a virtual audience. What we are really hoping for is a donation of your interpreters&rsquo; time, ASL interpretation for a session, a day, or the full event. If donating the whole thing is not possible, there is an easy middle ground: you could donate some hours and let us cover the rest. Either way, your in-kind donation makes you an official ASL Interpreter Sponsor.`
     : `We are expecting about seventy to eighty attendees in person, plus a virtual audience, so even part of a meal goes a long way. What we are really hoping for is a donation of your food, a plant-based meal, or part of one. If donating the whole thing is not possible, there is an easy middle ground: you could donate part and let us purchase the rest. Either way, your in-kind donation makes you an official Food Sponsor.`;
   // Recognition mirrors the published tier benefits (sponsors.ts TIERS) so the
@@ -1529,9 +1548,24 @@ function engravedInKindInvite(kind: "food" | "asl", {
   const taxLine = isAsl
     ? "Out-of-pocket costs connected to your donation may be tax-deductible (donated services themselves generally are not), and we will gladly provide a written acknowledgment describing your gift"
     : "A food donation from your business may be tax-deductible, and we will gladly provide a written acknowledgment describing your gift";
-  const ctaLabel = isAsl ? "Sponsor ASL interpretation in kind" : "Sponsor our food in kind";
+  const ctaLabel = urgent ? "Tell us what you can cover" : isAsl ? "Sponsor ASL interpretation in kind" : "Sponsor our food in kind";
   const ctaHref = pledgeUrl || site;
   const noteLabel = isAsl ? "Why we thought of you" : "Why we thought of your kitchen";
+  const askEyebrow = urgent ? "What we need, and by when" : "The ask";
+  // The opening sentence. The urgent letter asks a question instead of
+  // extending an invitation, because that is what it actually is.
+  const openingBody = urgent
+    ? `we are writing to ask whether <strong>${escapeHtml(companyName)}</strong> could help us interpret our Second Joint Conference on language access in American healthcare, August 15 and 16, 2026, in Chicago, into American Sign Language.`
+    : `it is our privilege to invite <strong>${escapeHtml(companyName)}</strong> ${inviteTail}.`;
+  // The only reason for a date. Stated plainly so it cannot read as a
+  // manufactured deadline: past it, we pay, and the attendee gets an answer.
+  const deadlinePanel = urgent ? `
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 26px 0;">
+        <tr><td bgcolor="#FBF4E2" style="background-color:#FBF4E2;border:1px solid #EAD9AE;border-left:4px solid ${GOLD};border-radius:10px;padding:18px 22px;">
+          <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:#8A6D1F;font-weight:bold;padding-bottom:8px;">A date, and the reason for it</div>
+          <div style="font-family:Georgia,'Times New Roman',serif;font-size:15px;line-height:1.8;color:#3C2E10;">If donated hours are not in place by <strong>${ASL_DECISION_LABEL}</strong>, we will book a paid team and cover it ourselves, because the person who asked deserves a straight answer either way. That is the only reason for the date. Even a no by then is more useful to us than silence.</div>
+        </td></tr>
+      </table>` : "";
   const footNote = isAsl
     ? "You received this invitation to provide ASL interpretation for the conference."
     : "You received this invitation to provide food for the conference.";
@@ -1574,7 +1608,7 @@ function engravedInKindInvite(kind: "food" | "asl", {
 <meta name="x-apple-disable-message-reformatting">
 <meta name="color-scheme" content="light">
 <meta name="supported-color-schemes" content="light">
-<title>An Invitation to be a ${escapeHtml(sponsorLabel)} &middot; 2026 Lurie Children&rsquo;s &amp; AALB Conference</title>
+<title>${urgent ? "A request for ASL interpretation" : `An Invitation to be ${escapeHtml(aLabel)}`} &middot; 2026 Lurie Children&rsquo;s &amp; AALB Conference</title>
 <!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
 <style>
   body{margin:0;padding:0;}
@@ -1592,7 +1626,9 @@ function engravedInKindInvite(kind: "food" | "asl", {
 </style>
 </head>
 <body style="margin:0;padding:0;width:100%;background-color:#ECE6D7;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
-<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#ECE6D7;">An invitation for ${escapeHtml(companyName)} to stand with us as a ${escapeHtml(sponsorLabel)} of the Second Joint Conference on language access, August 15 and 16, 2026, in Chicago.</div>
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#ECE6D7;">${urgent
+  ? `A registered attendee asked us for ASL interpretation on August 15 and 16 in Chicago. We are asking ${escapeHtml(companyName)} whether you could donate interpreter hours, in the room or on the livestream.`
+  : `An invitation for ${escapeHtml(companyName)} to stand with us as ${escapeHtml(aLabel)} of the Second Joint Conference on language access, August 15 and 16, 2026, in Chicago.`}</div>
 
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#ECE6D7;background-image:linear-gradient(180deg,#F0EBDD 0%,#E6DECB 100%);">
 <tr><td align="center" style="padding:34px 14px 44px 14px;">
@@ -1601,7 +1637,7 @@ function engravedInKindInvite(kind: "food" | "asl", {
 
     <tr><td align="center" bgcolor="${TEAL_DEEP}" class="sl-head" style="background-color:${TEAL_DEEP};background-image:linear-gradient(160deg,${TEAL} 0%,${TEAL_DEEP} 100%);padding:44px 40px 34px 40px;">
       <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;line-height:18px;letter-spacing:4px;text-transform:uppercase;color:${GOLD_SOFT};font-weight:bold;">Lurie Children&rsquo;s &middot; AALB</div>
-      <div style="font-family:Helvetica,Arial,sans-serif;font-size:9px;line-height:16px;letter-spacing:3px;text-transform:uppercase;color:#7FA7B1;padding-top:6px;">An Invitation to Sponsor</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:9px;line-height:16px;letter-spacing:3px;text-transform:uppercase;color:#7FA7B1;padding-top:6px;">${urgent ? "A Request for ASL Interpretation" : "An Invitation to Sponsor"}</div>
       <div style="font-family:Helvetica,Arial,sans-serif;font-size:8px;line-height:10px;letter-spacing:4px;text-transform:uppercase;color:${GOLD};font-weight:bold;padding:22px 0 8px 0;">&middot;&nbsp;Second Joint Conference&nbsp;&middot;</div>
 
       <!--[if !mso]><!-->
@@ -1629,7 +1665,7 @@ function engravedInKindInvite(kind: "food" | "asl", {
     <tr><td class="sl-body" style="padding:40px 52px 36px 52px;background-color:#FBF8F1;">
       <div style="padding:0 0 18px 0;">
         <div style="font-family:Georgia,'Times New Roman',serif;font-size:17px;line-height:1.4;color:${INK};font-weight:bold;">${escapeHtml(companyName)}</div>
-        <div style="font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:14px;line-height:1.5;color:${SOFT};padding-top:2px;">Invited to be a ${escapeHtml(sponsorLabel)}</div>
+        <div style="font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:14px;line-height:1.5;color:${SOFT};padding-top:2px;">${urgent ? "August 15 and 16, 2026 &middot; Chicago" : `Invited to be ${escapeHtml(aLabel)}`}</div>
       </div>
       <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="width:46px;height:2px;background-color:${GOLD};font-size:0;line-height:0;">&nbsp;</td></tr></table>
       <div style="height:22px;line-height:22px;font-size:0;">&nbsp;</div>
@@ -1637,15 +1673,17 @@ function engravedInKindInvite(kind: "food" | "asl", {
       ${p(`Dear ${escapeHtml(greeting)},`)}
 
       <p style="margin:0 0 18px 0;font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.85;color:${INK};">
-        <span class="sl-dropcap" style="float:left;font-family:Georgia,'Times New Roman',serif;font-size:54px;line-height:42px;color:${TEAL};padding:6px 11px 0 0;">O</span>n behalf of Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers, it is our privilege to invite <strong>${escapeHtml(companyName)}</strong> ${inviteTail}.
+        <span class="sl-dropcap" style="float:left;font-family:Georgia,'Times New Roman',serif;font-size:54px;line-height:42px;color:${TEAL};padding:6px 11px 0 0;">O</span>n behalf of Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers, ${openingBody}
       </p>
 
       ${p(missionPara)}
 
       ${notePanel}
 
-      ${eyebrow("The ask")}
+      ${eyebrow(askEyebrow)}
       ${p(askPara, 22)}
+
+      ${deadlinePanel}
 
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:2px 0 28px 0;">
         <tr><td align="center">
@@ -1665,7 +1703,7 @@ function engravedInKindInvite(kind: "food" | "asl", {
         </td></tr>
       </table>
 
-      ${eyebrow("Your recognition as a " + sponsorLabel)}
+      ${eyebrow(urgent ? "What you get for it" : "Your recognition as " + aLabel)}
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 14px 0;">
         <tr><td bgcolor="#FBF4E2" style="background-color:#FBF4E2;border:1px solid #EAD9AE;border-radius:10px;padding:16px 20px;">
           ${goldList(recognitionItems, "#3C2E10")}
@@ -1673,7 +1711,7 @@ function engravedInKindInvite(kind: "food" | "asl", {
       </table>
       <div style="font-family:Georgia,'Times New Roman',serif;font-size:13px;line-height:1.7;color:${SOFT};padding:0 0 6px 0;">${taxLine}. Please consult your tax advisor.</div>
 
-      ${p(`The easiest next step is to tell us what you could provide. It takes a minute, it does not commit you to anything final, and it puts you on our ${sponsorLabel} list right away. Or simply reply, straight to us at <a href="mailto:kevin@aalb.org" style="color:${LINK};text-decoration:none;">kevin@aalb.org</a>, and we will sort out the details together.`, 22)}
+      ${p(`${urgent ? "The easiest next step is to tell us what you could cover, even roughly." : "The easiest next step is to tell us what you could provide."} It takes a minute, it does not commit you to anything final, and it puts you on our ${sponsorLabel} list right away. Or simply reply, straight to us at <a href="mailto:kevin@aalb.org" style="color:${LINK};text-decoration:none;">kevin@aalb.org</a>, and we will sort out the details together.`, 22)}
 
       <div style="font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.85;color:${INK};padding-bottom:16px;">With gratitude,</div>
 
@@ -1722,6 +1760,14 @@ export function sponsorFoodLetterEmail(args: SponsorFoodLetterArgs) {
 // interpretation in kind as an ASL Interpreter Sponsor.
 export function sponsorAslLetterEmail(args: SponsorFoodLetterArgs) {
   return engravedInKindInvite("asl", args);
+}
+
+// Same letter, chasing the live request: a registered attendee asked for ASL
+// interpretation and we are trying to staff it with donated hours before the
+// budget covers it. Leads with the actual situation and carries the decision
+// date. Use this one while the request is open.
+export function sponsorAslUrgentLetterEmail(args: SponsorFoodLetterArgs) {
+  return engravedInKindInvite("asl", { ...args, urgentRequest: true });
 }
 
 type AmbassadorInviteArgs = {

@@ -11,7 +11,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
 import MobileNav from "@/components/layout/MobileNav";
 import { SPONSOR_STATUS_LABELS, TIERS } from "@/lib/sponsors";
-import { PROSPECT_TARGETS_TSV, FOOD_PROSPECT_TARGETS_TSV } from "@/lib/prospect-targets";
+import { PROSPECT_TARGETS_TSV, FOOD_PROSPECT_TARGETS_TSV, ASL_PROSPECT_TARGETS_TSV } from "@/lib/prospect-targets";
 import InviteSponsorComposer from "./InviteSponsorComposer";
 import QueueSettingsModal from "@/components/email/QueueSettingsModal";
 import { fmtElapsed, medianLabel } from "@/lib/engagement";
@@ -515,6 +515,34 @@ export default function SponsorsAdminPage() {
     }
   }
 
+  // One click: load the ASL interpreting agencies and Deaf-serving orgs
+  // (tier "asl", so they get the ASL letter about the live request and the ASL
+  // pledge funnel). Only rows with a published email are loadable; the rest
+  // wait in prospect-targets.ts, see docs/asl-sponsor-prospects.md.
+  async function loadAslTargets() {
+    setLoadingTargets(true);
+    setActionNote(null);
+    try {
+      const res = await fetch("/api/sponsors/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ csv: ASL_PROSPECT_TARGETS_TSV, tier: "asl", draftOnly: true }),
+      });
+      const j = await res.json().catch(() => ({}));
+      setActionNote(
+        res.ok
+          ? (j.created ?? 0) === 0
+            ? "No ASL prospects with a verified email yet. Add emails in prospect-targets.ts (see docs/asl-sponsor-prospects.md)."
+            : `${j.created} ASL prospect${j.created === 1 ? "" : "s"} added to Pending invite${j.skipped?.length ? `, ${j.skipped.length} already there` : ""}.`
+          : `Could not load. ${j.error || ""}`
+      );
+      await load();
+    } finally {
+      setLoadingTargets(false);
+      setTimeout(() => setActionNote(null), 9000);
+    }
+  }
+
   // Consolidate two co-applicant profiles into one (merge emails to CC, combine
   // the company name, hide the folded-in record).
   function openMerge(s: Sponsor) {
@@ -841,6 +869,16 @@ export default function SponsorsAdminPage() {
                   title="Add the vegan/vegetarian food-sponsor restaurants (with verified emails) to Pending invite. No emails are sent."
                 >
                   {loadingTargets ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />} Load food prospects
+                </button>
+              )}
+              {filter === "pending_invite" && isAdmin && (
+                <button
+                  onClick={loadAslTargets}
+                  disabled={loadingTargets}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white bg-gradient-to-r from-violet-700 to-purple-600 disabled:opacity-50"
+                  title="Add the ASL interpreting agencies and Deaf-serving organizations (with published emails) to Pending invite. No emails are sent."
+                >
+                  {loadingTargets ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />} Load ASL prospects
                 </button>
               )}
             </div>

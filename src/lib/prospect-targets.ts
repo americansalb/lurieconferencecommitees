@@ -584,3 +584,52 @@ export const FOOD_PROSPECT_TARGETS_TSV =
   ["Company", "Contact", "Email", "Website", "Note"].join("\t") +
   "\n" +
   FOOD_TARGETS.filter((r) => r[2].trim()).map((r) => r.join("\t")).join("\n");
+
+// ───────────────────────────────────────────────────────────────────────────
+// ASL INTERPRETER SPONSORS — in-kind interpretation for the live request.
+//
+// A registered attendee asked for ASL interpretation. These orgs are asked to
+// donate interpreter hours, in the room in Chicago or on camera for the
+// livestream, and become ASL Interpreter Sponsors for it. Loaded with the
+// "asl" tier from the "Load ASL prospects" button, which sends the urgent
+// letter (src/lib/asl-request.ts holds the decision date and the scope).
+//
+// EMAIL VERIFICATION. This session's network policy blocked opening any of
+// these organizations' websites, so an address is filled in below ONLY where
+// the organization's own published contact details surfaced in search results.
+// Every row with an email has one that was published; rows with a blank email
+// are real organizations whose address still has to be read off their contact
+// page, and they are NOT loadable until it is filled in. See
+// docs/asl-sponsor-prospects.md for the page to check per organization, and
+// for the amplifiers (a state commission, an interpreter registry) that should
+// be emailed by hand rather than pitched a sponsorship.
+//
+// Ordered deliberately: Chicago nonprofits and the local interpreter community
+// first, because they can staff a room, then the national and remote-capable
+// agencies, which can realistically only cover the livestream.
+// ───────────────────────────────────────────────────────────────────────────
+const ASL_TARGETS: Target[] = [
+  ["Chicago Hearing Society (Anixter Center)", "", "CHSInterp@anixter.org", "https://chicagohearingsociety.org", "Chicago Hearing Society has been the city's own answer to this question for decades, and your interpreting and captioning desk is the number Chicago institutions call when a Deaf patient or family needs access. We are a language access conference at a Chicago children's hospital, so you are the first organization we thought of, and the closest to home. Interpreters, clinicians, and hospital language services leaders will be in the room, and Deaf and hard of hearing attendees are among them."],
+  ["Illinois Registry of Interpreters for the Deaf", "", "info@irid.org", "https://www.irid.org", "IRID is the professional home of Illinois interpreters, and this is the kind of assignment your members would find worth their day: two days of sessions on language access in American healthcare, with medical interpreters, clinicians, and federal civil rights and hospital accreditation speakers on the same stage. If donating hours as an organization is not how IRID works, circulating the request to your membership would help us just as much, and we would credit IRID either way."],
+  ["Illinois Association of the Deaf", "", "eb@iadeaf.org", "https://www.iadeaf.org", "IAD is the civil rights organization of, by, and for Deaf and hard of hearing Illinoisans, which makes this request yours as much as ours: a Deaf attendee asked for ASL at a healthcare language access conference, and we would rather solve it with the community than around it. If IAD can point us to interpreters willing to donate hours, or lend its name to the ask, that is exactly the help we need."],
+  ["Deaf Services Unlimited", "", "Talktous@deafservicesunlimited.com", "https://deafservicesunlimited.com", "Deaf Services Unlimited covers all fifty states with both on-site interpreting and VRI, and a large share of your staff is Deaf or hard of hearing, which is the reason we are writing rather than just booking. Either kind of coverage works for us: an interpreter in the room in Chicago, or one on camera for our virtual audience. Our attendees are the medical interpreters and hospital language services leaders who arrange this for patients every day."],
+  ["TransCultures", "", "info@TransCultures.com", "https://www.transcultures.com", "TransCultures supplies certified ASL interpreters, including certified tactile interpreters, for Chicago settings both in person and remotely, which is precisely the flexibility our request needs. A conference on language access in American healthcare, hosted at a Chicago children's hospital, is the natural room for that work, and your name would sit alongside the hospital accreditation and federal civil rights speakers on our program."],
+  ["American Language Services", "", "interpreting@alsglobal.net", "https://www.alsglobal.net", "American Language Services runs ASL and CART in Chicago alongside spoken language interpreting, so you already work both halves of what this conference is about. Two days of sessions on language access in American healthcare, roughly seventy to eighty people in the room and a virtual audience, and a Deaf attendee who has asked for interpretation. Donated hours in either setting would make you an ASL Interpreter Sponsor."],
+  // Real organizations, emails still to be verified off their own contact
+  // pages (see docs/asl-sponsor-prospects.md). Not loadable while blank.
+  ["Columbia College Chicago, ASL-English Interpretation", "", "", "https://www.colum.edu", "Columbia College Chicago runs the only nationally accredited BA in ASL-English Interpretation in the Chicago metropolitan area, and your department has been building interpreters in this city since 1993. Two days of medical and legal language access content, with The Joint Commission and a former U.S. Department of Justice Civil Rights Division attorney on the program, is a genuine teaching room as well as an assignment. Faculty hours, or a mentored team working alongside a certified interpreter, would both work for us."],
+  ["5 Star Interpreting", "", "", "https://5starinterpreting.com", "5 Star Interpreting is Deaf-owned and covers Chicago both on-site and by video remote, and universities here call you as their referral agency. That is the exact shape of what we need: a Deaf attendee at our conference asked for ASL, and either an interpreter in the room or one on camera for the livestream answers it. Your name would go on the program next to the hospital and federal speakers our attendees came for."],
+  ["Metaphrasis Language & Cultural Solutions", "", "", "https://metaphrasislcs.com", "Metaphrasis works out of Chicago placing ASL interpreters into hospitals, schools, and courts, which is the same set of institutions our attendees run language services for. We are two days of sessions on language access in American healthcare at a Chicago children's hospital, with a Deaf attendee who has asked for interpretation. Donated hours, in the room or remote, would make Metaphrasis an ASL Interpreter Sponsor."],
+  ["Illinois Language Services", "", "", "https://illinoislanguageservices.com", "Illinois Language Services provides ASL interpretation to medical centers, hospitals, and doctors' offices across the state, so our audience is your customer base: hospital language services leaders, medical interpreters, and clinicians, gathered for two days at a Chicago children's hospital. A Deaf attendee has asked us for interpretation, and donated hours in the room or on the livestream would put your name on the program."],
+  ["Linguabee", "", "", "https://www.linguabee.com", "Linguabee is Deaf-owned and built its platform to put interpreter choice back in Deaf people's hands, which is the argument our whole conference makes about patients. We have a Deaf attendee who asked for ASL at two days of sessions on language access in American healthcare, and a virtual audience as well as a room in Chicago, so remote coverage counts every bit as much as on-site."],
+  ["Convo Communications", "", "", "https://www.convo.io", "Convo is Deaf-owned and Deaf-run, connecting people to qualified ASL interpreters on demand, and that model is exactly what a conference about language access should be showing off rather than just discussing. Our request is simple: a Deaf attendee asked for interpretation on August 15 and 16, and coverage on camera for our livestream would answer it as fully as coverage in the room."],
+];
+
+// Only rows whose Email has been filled in are loadable; the rest wait until
+// their published address has been read off their own contact page. Loaded
+// with the "asl" tier, so they receive the ASL letter and the ASL pledge
+// funnel rather than the standard sponsorship pitch.
+export const ASL_PROSPECT_TARGETS_TSV =
+  ["Company", "Contact", "Email", "Website", "Note"].join("\t") +
+  "\n" +
+  ASL_TARGETS.filter((r) => r[2].trim()).map((r) => r.join("\t")).join("\n");
