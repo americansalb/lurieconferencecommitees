@@ -147,3 +147,133 @@ function timingSafeEqual(a: string, b: string): boolean {
   for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
   return diff === 0;
 }
+
+// ─── Settlement: what actually landed, per payment ─────────────────────────
+//
+// Everything else in this app records what we MEANT to charge: finalPriceCents
+// on an attendee, amountCents on a sponsor. Neither is money. Stripe takes a
+// processing fee out of every charge before it reaches the balance, refunds
+// come back out afterwards, and neither event is written to our database. A
+// dashboard that sums our own price columns and calls the total "revenue
+// actually collected" is reporting an intention.
+//
+// The balance transaction is the deterministic record. Every charge has one,
+// and it carries three numbers Stripe computed and we cannot: `amount` (gross),
+// `fee` (what Stripe kept), and `net` (what reached the balance). Every refund
+// has its own balance transaction with a negative net, and if Stripe returned
+// part of its fee that shows there too.
+//
+//   net received = charge.balance_transaction.net + Σ refund.balance_transaction.net
+//
+// That identity is the whole point of this function: no arithmetic of ours is
+// involved beyond the sum, so the result cannot drift from Stripe.
+
+export type Settlement = {
+  paymentIntentId: string;
+  chargeId: string | null;
+  /** What the customer was charged, in cents. */
+  grossCents: number;
+  /** What Stripe kept, in cents, net of any fee refunded. Always >= 0. */
+  feeCents: number;
+  /** Gross value of refunds issued, in cents. Always >= 0. */
+  refundedCents: number;
+  /** What actually reached the Stripe balance after fees and refunds. */
+  netCents: number;
+  currency: string;
+  /** Stripe's own status. Anything other than "succeeded" is not money. */
+  status: string;
+  /** False for test-mode payments, which must never be counted as income. */
+  livemode: boolean;
+  /** When the funds became available, if Stripe has settled them. */
+  availableOn: Date | null;
+};
+
+async function stripeGet(path: string): Promise<Record<string, unknown>> {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) throw new Error("STRIPE_SECRET_KEY not configured");
+  const res = await fetch(`https://api.stripe.com/v1/${path}`, {
+    headers: { Authorization: `Bearer ${key}` },
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    if (res.status === 404) return {};
+    throw new Error(`Stripe error ${res.status}: ${(data as { error?: { message?: string } })?.error?.message || "unknown"}`);
+  }
+  return data as Record<string, unknown>;
+}
+
+const num = (v: unknown): number => (typeof v === "number" && Number.isFinite(v) ? v : 0);
+
+/**
+ * The money that actually landed for one payment intent, straight from Stripe.
+ * Returns null when Stripe has no record of the id.
+ */
+export async function retrieveSettlement(paymentIntentId: string): Promise<Settlement | null> {
+  const pi = await stripeGet(
+    `payment_intents/${encodeURIComponent(paymentIntentId)}?expand[]=latest_charge.balance_transaction`,
+  );
+  if (!pi || !pi.id) return null;
+
+  const charge = (pi.latest_charge && typeof pi.latest_charge === "object"
+    ? pi.latest_charge
+    : null) as Record<string, unknown> | null;
+  const bt = (charge?.balance_transaction && typeof charge.balance_transaction === "object"
+    ? charge.balance_transaction
+    : null) as Record<string, unknown> | null;
+
+  // No charge means no money, whatever the intent's status says.
+  if (!charge || !bt) {
+    return {
+      paymentIntentId: String(pi.id),
+      chargeId: null,
+      grossCents: 0, feeCents: 0, refundedCents: 0, netCents: 0,
+      currency: String(pi.currency || "usd"),
+      status: String(pi.status || "unknown"),
+      livemode: Boolean(pi.livemode),
+      availableOn: null,
+    };
+  }
+
+  // Refunds are paginated and each carries its own balance transaction. Sum the
+  // nets rather than trusting charge.amount_refunded, which is a gross figure
+  // and says nothing about whether Stripe gave the fee back.
+  let refundedCents = 0;
+  let refundNetCents = 0;
+  let startingAfter: string | null = null;
+  for (let page = 0; page < 10; page++) {
+    const qs = new URLSearchParams({ charge: String(charge.id), limit: "100" });
+    qs.append("expand[]", "data.balance_transaction");
+    if (startingAfter) qs.set("starting_after", startingAfter);
+    const list = await stripeGet(`refunds?${qs.toString()}`);
+    const data = Array.isArray(list.data) ? (list.data as Record<string, unknown>[]) : [];
+    for (const r of data) {
+      if (r.status !== "succeeded" && r.status !== "pending") continue;
+      refundedCents += num(r.amount);
+      const rbt = (r.balance_transaction && typeof r.balance_transaction === "object"
+        ? r.balance_transaction
+        : null) as Record<string, unknown> | null;
+      // A refund's balance transaction net is negative. Falling back to the
+      // gross amount would understate what came back if Stripe kept its fee.
+      refundNetCents += rbt ? num(rbt.net) : -num(r.amount);
+    }
+    if (!list.has_more || !data.length) break;
+    startingAfter = String(data[data.length - 1].id);
+  }
+
+  const grossCents = num(bt.amount);
+  const netCents = num(bt.net) + refundNetCents;
+  return {
+    paymentIntentId: String(pi.id),
+    chargeId: String(charge.id),
+    grossCents,
+    // Derived, not read: this is the fee Stripe ended up keeping once refunded
+    // fees are accounted for, which is the only fee figure worth reporting.
+    feeCents: Math.max(0, grossCents - refundedCents - netCents),
+    refundedCents,
+    netCents,
+    currency: String(bt.currency || "usd"),
+    status: String(pi.status || "unknown"),
+    livemode: Boolean(pi.livemode),
+    availableOn: typeof bt.available_on === "number" ? new Date(bt.available_on * 1000) : null,
+  };
+}
