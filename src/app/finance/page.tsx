@@ -8,46 +8,34 @@ import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
 import MobileNav from "@/components/layout/MobileNav";
 
-// What actually arrived, per payer, from Stripe's own balance transactions.
+// Income, and where it came from.
 //
-// Everywhere else in this app, a revenue figure is a price we wrote down:
-// Sponsors sums `amountCents`, the agreed tier, and calls it "revenue actually
-// collected"; attendee totals sum `finalPriceCents`, what checkout meant to
-// charge. Neither has ever seen a Stripe fee or a refund. This page never
-// touches those columns for its totals, and shows the expected figure only
-// beside the real one so the gap is visible instead of arguable.
+// The population is Stripe's charge list, not our own rows. `paid` is a
+// boolean somebody sets from a dashboard, and it was never evidence: the
+// Sponsors page reported 8 paid worth $3,440 while Stripe had taken money from
+// four of them. Nothing on this page is gated on that flag. Every live charge
+// is income, and the only question asked of each one is who it came from.
 
 type Group = { payments: number; grossCents: number; feeCents: number; refundedCents: number; netCents: number };
 type Line = {
-  kind: "attendee" | "sponsor";
-  name: string; email: string; detail: string;
-  expectedCents: number | null; paidAt: string | null;
+  chargeId: string;
+  source: "attendee" | "sponsor" | "unattributed";
+  matchedBy: string;
+  name: string; email: string | null; detail: string;
   grossCents: number; feeCents: number; refundedCents: number; netCents: number;
-  currency: string; availableOn: string | null;
+  paidAt: string;
+  flagMissing: boolean;
 };
-type OffStripe = {
-  kind: string; name: string; email: string; detail: string;
-  expectedCents: number | null; paidAt: string | null; reason: string;
-};
-type KindClaim = { records?: number; expectedCents: number };
 type Report = {
   generatedAt: string;
+  truncated: boolean;
   totals: Group;
   attendees: Group;
   sponsors: Group;
-  expectedCentsForSettled: number;
-  offStripe: OffStripe[];
-  offStripeExpectedCents: number;
-  claimed: { attendee: KindClaim; sponsor: KindClaim };
-  offStripeByKind: { attendee: KindClaim; sponsor: KindClaim };
-  comps: { kind: string; name: string; email: string; detail: string; paidAt: string | null }[];
-  ledger: {
-    charges: number; netCents: number; truncated: boolean;
-    unmatchedCount: number; unmatchedNetCents: number;
-    unmatched: { id: string; email: string | null; description: string | null; grossCents: number; netCents: number; created: string }[];
-  } | null;
-  testModeCount: number;
-  unresolved: { kind: string; name: string; email: string }[];
+  unattributed: Group;
+  flaggedPaid: { attendee: number; sponsor: number };
+  flaggedWithoutCharge: { attendee: number; sponsor: number };
+  unflagged: { name: string; email: string | null; detail: string; netCents: number; chargeId: string }[];
   errors: { name: string; message: string }[];
   lines: Line[];
 };
@@ -61,14 +49,12 @@ export default function FinancePage() {
   const [data, setData] = useState<Report | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [kind, setKind] = useState<"all" | "attendee" | "sponsor">("all");
+  const [src, setSrc] = useState<"all" | "attendee" | "sponsor" | "unattributed">("all");
 
   useEffect(() => {
     if (status === "unauthenticated") router.replace("/login");
   }, [status, router]);
 
-  // Not loaded on mount: the report makes one Stripe call per payment, so it is
-  // a deliberate action rather than something that fires because a page opened.
   const run = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -86,27 +72,24 @@ export default function FinancePage() {
 
   function downloadCsv() {
     if (!data) return;
-    const head = ["type", "name", "email", "detail", "paid_at", "expected", "gross", "stripe_fee", "refunded", "net"];
-    const esc = (v: string | number | null) =>
-      `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const head = ["source", "matched_by", "name", "email", "detail", "date", "gross", "stripe_fee", "refunded", "net", "charge_id"];
+    const esc = (v: string | number | null) => `"${String(v ?? "").replace(/"/g, '""')}"`;
     const body = data.lines.map((l) => [
-      l.kind, l.name, l.email, l.detail, l.paidAt || "",
-      ((l.expectedCents ?? 0) / 100).toFixed(2),
-      (l.grossCents / 100).toFixed(2),
-      (l.feeCents / 100).toFixed(2),
-      (l.refundedCents / 100).toFixed(2),
-      (l.netCents / 100).toFixed(2),
+      l.source, l.matchedBy, l.name, l.email, l.detail, l.paidAt,
+      (l.grossCents / 100).toFixed(2), (l.feeCents / 100).toFixed(2),
+      (l.refundedCents / 100).toFixed(2), (l.netCents / 100).toFixed(2), l.chargeId,
     ].map(esc).join(","));
-    const csv = [head.join(","), ...body].join("\n");
-    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    const url = URL.createObjectURL(new Blob([[head.join(","), ...body].join("\n")], { type: "text/csv" }));
     const a = document.createElement("a");
     a.href = url;
-    a.download = `stripe-income-${data.generatedAt.slice(0, 10)}.csv`;
+    a.download = `income-${data.generatedAt.slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }
 
-  const shown = data ? data.lines.filter((l) => kind === "all" || l.kind === kind) : [];
+  const shown = data ? data.lines.filter((l) => src === "all" || l.source === src) : [];
+  const pct = (g: Group) =>
+    data && data.totals.netCents ? Math.round((1000 * g.netCents) / data.totals.netCents) / 10 : 0;
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">
@@ -121,25 +104,20 @@ export default function FinancePage() {
                 <Banknote className="w-5 h-5 text-white" />
               </div>
               <div className="flex-1 min-w-0">
-                <h1 className="text-xl font-bold text-slate-900">Income received</h1>
+                <h1 className="text-xl font-bold text-slate-900">Income</h1>
                 <p className="text-sm text-slate-500">
-                  Read from Stripe&rsquo;s balance transactions, not from our own price columns.
+                  Every charge Stripe took, and where it came from. Nothing here reads the paid flag.
                 </p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 {data && (
-                  <button
-                    onClick={downloadCsv}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50"
-                  >
+                  <button onClick={downloadCsv}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50">
                     <Download className="w-3.5 h-3.5" /> CSV
                   </button>
                 )}
-                <button
-                  onClick={run}
-                  disabled={loading}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 disabled:opacity-50"
-                >
+                <button onClick={run} disabled={loading}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 disabled:opacity-50">
                   {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
                   {data ? "Re-read from Stripe" : "Read from Stripe"}
                 </button>
@@ -148,195 +126,109 @@ export default function FinancePage() {
 
             {!data && !loading && (
               <p className="text-sm text-slate-500 mt-6 max-w-2xl leading-relaxed">
-                This asks Stripe about every payment we have on record, one at a time, so it takes a
-                moment and it is never cached. Nothing here is calculated from what we believed a
-                ticket or a tier was worth.
+                This reads Stripe&rsquo;s charge list, then works out who each payment came from using the
+                identifiers written at checkout. A record marked paid that Stripe never charged is not
+                income and will not appear in the totals.
               </p>
             )}
-            {loading && (
-              <p className="text-sm text-slate-500 mt-6">Reading every payment from Stripe&hellip;</p>
-            )}
+            {loading && <p className="text-sm text-slate-500 mt-6">Reading every charge from Stripe&hellip;</p>}
             {error && (
-              <div className="mt-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">
-                {error}
-              </div>
+              <div className="mt-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">{error}</div>
             )}
 
             {data && (
               <>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-6">
                   <Stat label="Net received" value={money(data.totals.netCents)} strong
-                        note={`${data.totals.payments} Stripe payment${data.totals.payments === 1 ? "" : "s"}`} />
+                        note={`${data.totals.payments} charges Stripe took`} />
                   <Stat label="Charged" value={money(data.totals.grossCents)} />
                   <Stat label="Stripe fees" value={`-${money(data.totals.feeCents)}`} />
                   <Stat label="Refunded" value={`-${money(data.totals.refundedCents)}`} />
                 </div>
 
-                {/* The self-audit. Read straight off Stripe with no reference
-                    to our database, so it can catch a payment no record is
-                    linked to. Without it, this page could only ever confirm
-                    what it already knew about. */}
-                {data.ledger && (
-                  <div className={`mt-4 rounded-xl border px-4 py-3.5 ${
-                    data.ledger.unmatchedCount === 0
-                      ? "border-emerald-200 bg-emerald-50"
-                      : "border-rose-300 bg-rose-50"
-                  }`}>
-                    <div className="text-[13px] leading-relaxed">
-                      {data.ledger.unmatchedCount === 0 ? (
-                        <span className="text-emerald-900">
-                          <strong>Reconciled against Stripe.</strong> Stripe holds{" "}
-                          <strong className="tabular-nums">{data.ledger.charges}</strong> live charges worth{" "}
-                          <strong className="tabular-nums">{money(data.ledger.netCents)}</strong> net, and every one of
-                          them is attached to a record above. Nothing is missing.
-                        </span>
-                      ) : (
-                        <span className="text-rose-900">
-                          <strong>
-                            {data.ledger.unmatchedCount} Stripe payment{data.ledger.unmatchedCount === 1 ? "" : "s"} worth{" "}
-                            {money(data.ledger.unmatchedNetCents)} net {data.ledger.unmatchedCount === 1 ? "is" : "are"} not
-                            attached to any record.
-                          </strong>{" "}
-                          Stripe holds {money(data.ledger.netCents)} net across {data.ledger.charges} charges; this page can
-                          only account for {money(data.totals.netCents)} of it. The difference is real income the rest of the
-                          app cannot see.
-                        </span>
-                      )}
-                      {data.ledger.truncated && (
-                        <span className="block mt-1 text-rose-800">
-                          Stripe had more charges than this run read, so even these figures are a floor.
-                        </span>
-                      )}
-                    </div>
-                    {data.ledger.unmatched.length > 0 && (
-                      <ul className="mt-3 space-y-1">
-                        {data.ledger.unmatched.map((c) => (
-                          <li key={c.id} className="text-[12.5px] text-rose-900">
-                            <span className="tabular-nums font-semibold">{money(c.netCents)}</span>
-                            {c.email && <span> · {c.email}</span>}
-                            {c.description && <span className="text-rose-700"> · {c.description}</span>}
-                            <span className="text-rose-700"> · {new Date(c.created).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
-                            <span className="text-rose-600"> · {c.id}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
+                {data.truncated && (
+                  <p className="mt-3 text-[13px] text-rose-800">
+                    Stripe had more charges than this run could read, so every figure here is a floor.
+                  </p>
                 )}
 
-                <p className="text-[13px] text-slate-500 mt-3 leading-relaxed">
-                  Our own records expected{" "}
-                  <strong className="text-slate-700 tabular-nums">{money(data.expectedCentsForSettled)}</strong>{" "}
-                  from these same payments. The difference is Stripe&rsquo;s cut and any refund, and it is
-                  the reason the Sponsors page total has never been the money you actually have.
-                </p>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-5">
-                  <Split label="Attendees" g={data.attendees} />
-                  <Split label="Sponsors and exhibitors" g={data.sponsors} />
+                <h2 className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500 mt-7 mb-2.5">
+                  Where it came from
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <Source label="Attendees" g={data.attendees} pct={pct(data.attendees)} />
+                  <Source label="Sponsors and exhibitors" g={data.sponsors} pct={pct(data.sponsors)} />
+                  <Source label="Unattributed" g={data.unattributed} pct={pct(data.unattributed)}
+                          warn={data.unattributed.payments > 0} />
                 </div>
 
-                {/* The two screens reconciled in one place. The Sponsors page
-                    counts every row whose status is paid and sums the agreed
-                    tier; this counts what Stripe actually took. Printing them
-                    together turns "these numbers contradict each other" into a
-                    countable list of rows to go and check. */}
-                <div className="mt-5 rounded-xl border border-slate-200 bg-white overflow-x-auto">
-                  <table className="w-full text-sm min-w-[560px]">
-                    <thead>
-                      <tr className="bg-slate-50 border-b border-slate-200 text-[10px] uppercase tracking-[0.14em] text-slate-500">
-                        <th className="text-left px-4 py-2.5 font-bold">Marked paid in our records</th>
-                        <th className="text-right px-4 py-2.5 font-bold">Records</th>
-                        <th className="text-right px-4 py-2.5 font-bold">Claimed</th>
-                        <th className="text-right px-4 py-2.5 font-bold">Backed by Stripe</th>
-                        <th className="text-right px-4 py-2.5 font-bold">No payment found</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(["sponsor", "attendee"] as const).map((k) => {
-                        const c = data.claimed[k];
-                        const paid = k === "sponsor" ? data.sponsors : data.attendees;
-                        const gap = data.offStripeByKind[k];
-                        return (
-                          <tr key={k} className={k === "attendee" ? "border-t border-slate-100" : ""}>
-                            <td className="px-4 py-3 font-semibold text-slate-900">
-                              {k === "sponsor" ? "Sponsors and exhibitors" : "Attendees"}
-                            </td>
-                            <td className="px-4 py-3 text-right tabular-nums text-slate-600">{c.records ?? "—"}</td>
-                            <td className="px-4 py-3 text-right tabular-nums text-slate-600">{money(c.expectedCents)}</td>
-                            <td className="px-4 py-3 text-right tabular-nums text-slate-900 font-semibold">
-                              {paid.payments} · {money(paid.grossCents)}
-                            </td>
-                            <td className={`px-4 py-3 text-right tabular-nums font-bold ${gap.expectedCents ? "text-rose-700" : "text-slate-400"}`}>
-                              {gap.expectedCents ? `${gap.records ?? 0} · ${money(gap.expectedCents)}` : "none"}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                {/* The flag, reported as what it is: a claim, not evidence. */}
+                <div className="mt-5 rounded-xl border border-slate-200 bg-white px-4 py-3.5">
+                  <div className="text-[13px] text-slate-600 leading-relaxed">
+                    <strong className="text-slate-900">Marked paid, but no charge.</strong>{" "}
+                    {data.flaggedWithoutCharge.sponsor > 0 || data.flaggedWithoutCharge.attendee > 0 ? (
+                      <>
+                        {data.flaggedWithoutCharge.sponsor > 0 && (
+                          <><strong className="text-rose-700">{data.flaggedWithoutCharge.sponsor}</strong> of the{" "}
+                            {data.flaggedPaid.sponsor} sponsors marked paid have no Stripe charge behind them. </>
+                        )}
+                        {data.flaggedWithoutCharge.attendee > 0 && (
+                          <><strong className="text-slate-900">{data.flaggedWithoutCharge.attendee}</strong> of the{" "}
+                            {data.flaggedPaid.attendee} attendees marked paid have none either, which is what a comp or a
+                            guest seat looks like. </>
+                        )}
+                        Either the money came in some other way, or the box was ticked and it never arrived. Not counted
+                        as income above.
+                      </>
+                    ) : (
+                      <>Every record marked paid has a Stripe charge behind it.</>
+                    )}
+                  </div>
                 </div>
 
-                {(data.offStripe.length > 0 || data.unresolved.length > 0 || data.errors.length > 0 || data.testModeCount > 0) && (
-                  <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3.5">
+                {data.unflagged.length > 0 && (
+                  <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3.5">
                     <div className="flex items-start gap-2.5">
                       <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
                       <div className="text-[13px] text-amber-900 leading-relaxed">
-                        <strong>Not in the totals above.</strong>
-                        {data.offStripe.length > 0 && (
-                          <> {data.offStripe.length} record{data.offStripe.length === 1 ? " is" : "s are"} marked paid with
-                            no Stripe payment, and {data.offStripe.length === 1 ? "it expects" : "they expect"}{" "}
-                            <strong className="tabular-nums">{money(data.offStripeExpectedCents)}</strong> between them.
-                            Somebody believed money was owed on {data.offStripe.length === 1 ? "this one" : "these"}, so
-                            either it arrived somewhere this page cannot see, or it never arrived. Worth checking one by one.</>
-                        )}
-                        {data.comps.length > 0 && (
-                          <> {data.comps.length} more expect nothing at all, which is what a comp or a guest seat looks
-                            like and is not a problem.</>
-                        )}
-                        {data.testModeCount > 0 && <> {data.testModeCount} test-mode payment{data.testModeCount === 1 ? "" : "s"} excluded.</>}
-                        {data.unresolved.length > 0 && <> {data.unresolved.length} payment{data.unresolved.length === 1 ? "" : "s"} Stripe returned without a charge.</>}
-                        {data.errors.length > 0 && <> {data.errors.length} row{data.errors.length === 1 ? "" : "s"} failed to read.</>}
+                        <strong>{data.unflagged.length} payment{data.unflagged.length === 1 ? "" : "s"} the app thinks
+                        {data.unflagged.length === 1 ? " is" : " are"} unpaid.</strong>{" "}
+                        Stripe took the money, but the record still says otherwise, so these people look unpaid
+                        everywhere else and may be getting chased for it.
                       </div>
                     </div>
-                    {data.offStripe.length > 0 && (
-                      <ul className="mt-3 space-y-1.5 pl-7">
-                        {[...data.offStripe].sort((a, b) =>
-                          (a.kind === b.kind ? (b.expectedCents || 0) - (a.expectedCents || 0) : a.kind === "sponsor" ? -1 : 1)
-                        ).map((o, i) => (
-                          <li key={i} className="text-[12.5px] text-amber-900">
-                            <span className="font-semibold">{o.name}</span>
-                            <span className="text-amber-700"> · {o.detail}</span>
-                            {o.expectedCents ? <span className="text-amber-700 tabular-nums"> · expected {money(o.expectedCents)}</span> : null}
-                            <span className="block text-amber-700">{o.reason}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
+                    <ul className="mt-3 space-y-1 pl-7">
+                      {data.unflagged.map((u) => (
+                        <li key={u.chargeId} className="text-[12.5px] text-amber-900">
+                          <span className="tabular-nums font-semibold">{money(u.netCents)}</span>
+                          {" · "}{u.name}
+                          {u.email && <span className="text-amber-700"> · {u.email}</span>}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 )}
 
-                <div className="flex items-center gap-2 mt-7 mb-3">
-                  {(["all", "attendee", "sponsor"] as const).map((k) => (
-                    <button
-                      key={k}
-                      onClick={() => setKind(k)}
-                      className={`px-2.5 py-1 rounded-full text-[11px] font-bold border ${
-                        kind === k ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
-                      }`}
-                    >
-                      {k === "all" ? "Everyone" : k === "attendee" ? "Attendees" : "Sponsors"}
-                      {" "}
-                      {k === "all" ? data.lines.length : data.lines.filter((l) => l.kind === k).length}
-                    </button>
-                  ))}
+                <div className="flex items-center gap-2 mt-7 mb-3 flex-wrap">
+                  {(["all", "attendee", "sponsor", "unattributed"] as const).map((k) => {
+                    const n = k === "all" ? data.lines.length : data.lines.filter((l) => l.source === k).length;
+                    if (k === "unattributed" && n === 0) return null;
+                    return (
+                      <button key={k} onClick={() => setSrc(k)}
+                        className={`px-2.5 py-1 rounded-full text-[11px] font-bold border ${
+                          src === k ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                        }`}>
+                        {k === "all" ? "All charges" : k === "attendee" ? "Attendees" : k === "sponsor" ? "Sponsors" : "Unattributed"} {n}
+                      </button>
+                    );
+                  })}
                   <span className="ml-auto text-[11px] text-slate-400">
                     Read {new Date(data.generatedAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
                   </span>
                 </div>
 
                 <div className="rounded-xl border border-slate-200 bg-white overflow-x-auto">
-                  <table className="w-full text-sm min-w-[720px]">
+                  <table className="w-full text-sm min-w-[760px]">
                     <thead>
                       <tr className="bg-slate-50 border-b border-slate-200 text-[10px] uppercase tracking-[0.14em] text-slate-500">
                         <th className="text-left px-4 py-3 font-bold">Who</th>
@@ -348,12 +240,30 @@ export default function FinancePage() {
                     </thead>
                     <tbody>
                       {shown.map((l, i) => (
-                        <tr key={i} className={i > 0 ? "border-t border-slate-100" : ""}>
+                        <tr key={l.chargeId} className={i > 0 ? "border-t border-slate-100" : ""}>
                           <td className="px-4 py-3">
-                            <div className="font-semibold text-slate-900">{l.name}</div>
+                            <div className="font-semibold text-slate-900 flex items-center gap-2 flex-wrap">
+                              {l.name}
+                              {l.source === "unattributed" && (
+                                <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-rose-100 text-rose-700">
+                                  no record
+                                </span>
+                              )}
+                              {l.matchedBy === "email" && (
+                                <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">
+                                  matched on email
+                                </span>
+                              )}
+                              {l.flagMissing && (
+                                <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">
+                                  not marked paid
+                                </span>
+                              )}
+                            </div>
                             <div className="text-[12px] text-slate-500">
-                              {l.detail} · {l.email}
-                              {l.paidAt && ` · ${new Date(l.paidAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`}
+                              {[l.detail, l.email].filter(Boolean).join(" · ")}
+                              {" · "}
+                              {new Date(l.paidAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                             </div>
                           </td>
                           <td className="px-4 py-3 text-right tabular-nums text-slate-600">{money(l.grossCents)}</td>
@@ -365,7 +275,7 @@ export default function FinancePage() {
                         </tr>
                       ))}
                       {!shown.length && (
-                        <tr><td colSpan={5} className="px-4 py-8 text-center text-sm text-slate-400">No Stripe payments in this group.</td></tr>
+                        <tr><td colSpan={5} className="px-4 py-8 text-center text-sm text-slate-400">No charges in this group.</td></tr>
                       )}
                     </tbody>
                   </table>
@@ -385,23 +295,23 @@ function Stat({ label, value, note, strong }: { label: string; value: string; no
     <div className={`rounded-xl border px-4 py-3.5 ${strong ? "border-slate-900 bg-slate-900" : "border-slate-200 bg-white"}`}>
       <div className={`text-[10px] font-bold uppercase tracking-[0.16em] ${strong ? "text-slate-400" : "text-slate-500"}`}>{label}</div>
       <div className={`mt-1.5 text-xl font-bold tabular-nums ${strong ? "text-white" : "text-slate-900"}`}>{value}</div>
-      {note && <div className={`text-[11px] mt-0.5 ${strong ? "text-slate-400" : "text-slate-400"}`}>{note}</div>}
+      {note && <div className="text-[11px] mt-0.5 text-slate-400">{note}</div>}
     </div>
   );
 }
 
-function Split({ label, g }: { label: string; g: Group }) {
+function Source({ label, g, pct, warn }: { label: string; g: Group; pct: number; warn?: boolean }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white px-4 py-3.5">
+    <div className={`rounded-xl border px-4 py-3.5 ${warn ? "border-rose-300 bg-rose-50" : "border-slate-200 bg-white"}`}>
       <div className="flex items-baseline justify-between gap-3">
-        <span className="text-sm font-bold text-slate-900">{label}</span>
-        <span className="text-[11px] text-slate-400">{g.payments} payment{g.payments === 1 ? "" : "s"}</span>
+        <span className={`text-sm font-bold ${warn ? "text-rose-900" : "text-slate-900"}`}>{label}</span>
+        <span className={`text-[11px] tabular-nums ${warn ? "text-rose-700" : "text-slate-400"}`}>
+          {g.payments} payment{g.payments === 1 ? "" : "s"}
+        </span>
       </div>
       <div className="mt-2 flex items-baseline gap-2">
-        <span className="text-lg font-bold tabular-nums text-slate-900">{money(g.netCents)}</span>
-        <span className="text-[12px] text-slate-500 tabular-nums">
-          from {money(g.grossCents)} charged
-        </span>
+        <span className={`text-lg font-bold tabular-nums ${warn ? "text-rose-900" : "text-slate-900"}`}>{money(g.netCents)}</span>
+        <span className={`text-[12px] tabular-nums ${warn ? "text-rose-700" : "text-slate-500"}`}>{pct}% of income</span>
       </div>
     </div>
   );

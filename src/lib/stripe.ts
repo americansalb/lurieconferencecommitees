@@ -298,6 +298,13 @@ export type StripeCharge = {
   netCents: number;
   refundedCents: number;
   created: Date;
+  /**
+   * Set at checkout and copied onto the charge: attendeeId / attendeeEmail /
+   * attendanceMode for a ticket, or kind=sponsor / sponsorId / tier for a
+   * sponsorship. This is what makes a charge attributable without trusting any
+   * flag in our own database.
+   */
+  metadata: Record<string, string>;
 };
 
 /**
@@ -312,6 +319,7 @@ export async function listAllCharges(maxPages = 40): Promise<{ charges: StripeCh
     if (page >= maxPages) { truncated = true; break; }
     const qs = new URLSearchParams({ limit: "100" });
     qs.append("expand[]", "data.balance_transaction");
+    qs.append("expand[]", "data.payment_intent");
     if (startingAfter) qs.set("starting_after", startingAfter);
     const list = await stripeGet(`charges?${qs.toString()}`);
     const data = Array.isArray(list.data) ? (list.data as Record<string, unknown>[]) : [];
@@ -323,9 +331,25 @@ export async function listAllCharges(maxPages = 40): Promise<{ charges: StripeCh
       const billing = (c.billing_details && typeof c.billing_details === "object"
         ? c.billing_details
         : null) as Record<string, unknown> | null;
+      const pi = (c.payment_intent && typeof c.payment_intent === "object"
+        ? c.payment_intent
+        : null) as Record<string, unknown> | null;
+      // Checkout writes the same metadata to both, but only one of them is
+      // guaranteed to still carry it, so read the charge first and fall back.
+      const meta: Record<string, string> = {};
+      for (const src of [pi?.metadata, c.metadata]) {
+        if (src && typeof src === "object") {
+          for (const [k, v] of Object.entries(src as Record<string, unknown>)) {
+            if (typeof v === "string" && v) meta[k] = v;
+          }
+        }
+      }
       charges.push({
         id: String(c.id),
-        paymentIntentId: typeof c.payment_intent === "string" ? c.payment_intent : null,
+        paymentIntentId: typeof c.payment_intent === "string"
+          ? c.payment_intent
+          : (pi?.id ? String(pi.id) : null),
+        metadata: meta,
         email: (typeof c.receipt_email === "string" && c.receipt_email)
           || (typeof billing?.email === "string" ? (billing.email as string) : null)
           || null,
