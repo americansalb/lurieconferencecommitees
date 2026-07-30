@@ -277,3 +277,70 @@ export async function retrieveSettlement(paymentIntentId: string): Promise<Settl
     availableOn: typeof bt.available_on === "number" ? new Date(bt.available_on * 1000) : null,
   };
 }
+
+// ─── The other direction: everything Stripe has ────────────────────────────
+//
+// retrieveSettlement answers "what happened to this payment we know about",
+// which can only ever describe money we already have an id for. It cannot see
+// a charge nobody linked to a record, and a report built only from our own
+// rows will look complete while silently missing income.
+//
+// So this walks Stripe's charge list instead, with no reference to our
+// database at all. Subtracting what we matched from what Stripe holds is the
+// only check that can catch a payment we never recorded.
+
+export type StripeCharge = {
+  id: string;
+  paymentIntentId: string | null;
+  email: string | null;
+  description: string | null;
+  grossCents: number;
+  netCents: number;
+  refundedCents: number;
+  created: Date;
+};
+
+/**
+ * Every live-mode succeeded charge on the account, newest first. Pages until
+ * Stripe says there are no more, capped so a runaway cannot hang the request.
+ */
+export async function listAllCharges(maxPages = 40): Promise<{ charges: StripeCharge[]; truncated: boolean }> {
+  const charges: StripeCharge[] = [];
+  let startingAfter: string | null = null;
+  let truncated = false;
+  for (let page = 0; ; page++) {
+    if (page >= maxPages) { truncated = true; break; }
+    const qs = new URLSearchParams({ limit: "100" });
+    qs.append("expand[]", "data.balance_transaction");
+    if (startingAfter) qs.set("starting_after", startingAfter);
+    const list = await stripeGet(`charges?${qs.toString()}`);
+    const data = Array.isArray(list.data) ? (list.data as Record<string, unknown>[]) : [];
+    for (const c of data) {
+      if (!c.livemode || c.status !== "succeeded") continue;
+      const bt = (c.balance_transaction && typeof c.balance_transaction === "object"
+        ? c.balance_transaction
+        : null) as Record<string, unknown> | null;
+      const billing = (c.billing_details && typeof c.billing_details === "object"
+        ? c.billing_details
+        : null) as Record<string, unknown> | null;
+      charges.push({
+        id: String(c.id),
+        paymentIntentId: typeof c.payment_intent === "string" ? c.payment_intent : null,
+        email: (typeof c.receipt_email === "string" && c.receipt_email)
+          || (typeof billing?.email === "string" ? (billing.email as string) : null)
+          || null,
+        description: typeof c.description === "string" ? c.description : null,
+        grossCents: num(c.amount),
+        // bt.net is already gross minus Stripe's fee. Refunds are subtracted by
+        // the caller from refundedCents, since a per-refund balance lookup for
+        // every charge on the account would be a lot of requests for an audit.
+        netCents: bt ? num(bt.net) : num(c.amount),
+        refundedCents: num(c.amount_refunded),
+        created: new Date(num(c.created) * 1000),
+      });
+    }
+    if (!list.has_more || !data.length) break;
+    startingAfter = String(data[data.length - 1].id);
+  }
+  return { charges, truncated };
+}

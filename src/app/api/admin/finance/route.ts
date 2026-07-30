@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { retrieveSettlement, isStripeConfigured, type Settlement } from "@/lib/stripe";
+import { retrieveSettlement, listAllCharges, isStripeConfigured, type Settlement } from "@/lib/stripe";
 
 // Money actually received, per payer, straight from Stripe.
 //
@@ -146,6 +146,20 @@ export async function GET() {
     }
   }
 
+  // The audit that makes the rest of this trustworthy.
+  //
+  // Everything above walks OUR records outwards. That can only ever describe
+  // money we already have an id for, and it will look complete while missing a
+  // payment nobody linked to a row. So now walk Stripe's own charge list
+  // inwards and subtract what we matched. Anything left is income this report
+  // would otherwise have hidden.
+  let ledger: Awaited<ReturnType<typeof listAllCharges>> | null = null;
+  try {
+    ledger = await listAllCharges();
+  } catch (err) {
+    errors.push({ name: "Stripe ledger", message: err instanceof Error ? err.message : "Could not list charges" });
+  }
+
   const settled = lines.filter((l) => l.settlement?.livemode && l.settlement.chargeId);
   const testMode = lines.filter((l) => l.settlement && !l.settlement.livemode);
   const offStripe = lines.filter((l) => !l.settlement && l.offStripeReason);
@@ -174,9 +188,34 @@ export async function GET() {
     };
   };
 
+  const matchedChargeIds = new Set(settled.map((l) => l.settlement!.chargeId!));
+  const unmatched = (ledger?.charges || []).filter((c) => !matchedChargeIds.has(c.id));
+  const ledgerNetCents = (ledger?.charges || []).reduce((t, c) => t + c.netCents - c.refundedCents, 0);
+  const unmatchedNetCents = unmatched.reduce((t, c) => t + c.netCents - c.refundedCents, 0);
+
   return NextResponse.json({
     ok: true,
     generatedAt: new Date().toISOString(),
+    // Read straight off Stripe with no reference to our database. If
+    // `ledger.netCents` exceeds `totals.netCents`, the difference is money we
+    // took that no record in our database is linked to.
+    ledger: ledger
+      ? {
+          charges: ledger.charges.length,
+          netCents: ledgerNetCents,
+          truncated: ledger.truncated,
+          unmatchedCount: unmatched.length,
+          unmatchedNetCents,
+          unmatched: unmatched.slice(0, 200).map((c) => ({
+            id: c.id,
+            email: c.email,
+            description: c.description,
+            grossCents: c.grossCents,
+            netCents: c.netCents - c.refundedCents,
+            created: c.created.toISOString(),
+          })),
+        }
+      : null,
     totals,
     attendees: byKind("attendee"),
     sponsors: byKind("sponsor"),
@@ -184,9 +223,18 @@ export async function GET() {
     // Published beside the Stripe total so the gap is visible rather than
     // argued about: the difference is Stripe's fees plus any refund.
     expectedCentsForSettled: settled.reduce((t, r) => t + (r.expectedCents || 0), 0),
-    offStripe: offStripe.map((l) => ({
+    // Split, because these two are completely different problems wearing the
+    // same label. A row expecting $0 is a comp or a guest seat and is supposed
+    // to have no payment. A row expecting $195 means somebody believed money
+    // was owed, and either it arrived somewhere we cannot see or it never
+    // arrived at all. Only the second kind is a hole.
+    offStripe: offStripe.filter((l) => (l.expectedCents || 0) > 0).map((l) => ({
       kind: l.kind, name: l.name, email: l.email, detail: l.detail,
       expectedCents: l.expectedCents, paidAt: l.paidAt, reason: l.offStripeReason,
+    })),
+    offStripeExpectedCents: offStripe.reduce((t, l) => t + (l.expectedCents || 0), 0),
+    comps: offStripe.filter((l) => !(l.expectedCents || 0)).map((l) => ({
+      kind: l.kind, name: l.name, email: l.email, detail: l.detail, paidAt: l.paidAt,
     })),
     testModeCount: testMode.length,
     unresolved: unresolved.map((l) => ({ kind: l.kind, name: l.name, email: l.email })),

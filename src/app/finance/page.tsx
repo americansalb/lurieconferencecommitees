@@ -36,6 +36,13 @@ type Report = {
   sponsors: Group;
   expectedCentsForSettled: number;
   offStripe: OffStripe[];
+  offStripeExpectedCents: number;
+  comps: { kind: string; name: string; email: string; detail: string; paidAt: string | null }[];
+  ledger: {
+    charges: number; netCents: number; truncated: boolean;
+    unmatchedCount: number; unmatchedNetCents: number;
+    unmatched: { id: string; email: string | null; description: string | null; grossCents: number; netCents: number; created: string }[];
+  } | null;
   testModeCount: number;
   unresolved: { kind: string; name: string; email: string }[];
   errors: { name: string; message: string }[];
@@ -162,6 +169,58 @@ export default function FinancePage() {
                   <Stat label="Refunded" value={`-${money(data.totals.refundedCents)}`} />
                 </div>
 
+                {/* The self-audit. Read straight off Stripe with no reference
+                    to our database, so it can catch a payment no record is
+                    linked to. Without it, this page could only ever confirm
+                    what it already knew about. */}
+                {data.ledger && (
+                  <div className={`mt-4 rounded-xl border px-4 py-3.5 ${
+                    data.ledger.unmatchedCount === 0
+                      ? "border-emerald-200 bg-emerald-50"
+                      : "border-rose-300 bg-rose-50"
+                  }`}>
+                    <div className="text-[13px] leading-relaxed">
+                      {data.ledger.unmatchedCount === 0 ? (
+                        <span className="text-emerald-900">
+                          <strong>Reconciled against Stripe.</strong> Stripe holds{" "}
+                          <strong className="tabular-nums">{data.ledger.charges}</strong> live charges worth{" "}
+                          <strong className="tabular-nums">{money(data.ledger.netCents)}</strong> net, and every one of
+                          them is attached to a record above. Nothing is missing.
+                        </span>
+                      ) : (
+                        <span className="text-rose-900">
+                          <strong>
+                            {data.ledger.unmatchedCount} Stripe payment{data.ledger.unmatchedCount === 1 ? "" : "s"} worth{" "}
+                            {money(data.ledger.unmatchedNetCents)} net {data.ledger.unmatchedCount === 1 ? "is" : "are"} not
+                            attached to any record.
+                          </strong>{" "}
+                          Stripe holds {money(data.ledger.netCents)} net across {data.ledger.charges} charges; this page can
+                          only account for {money(data.totals.netCents)} of it. The difference is real income the rest of the
+                          app cannot see.
+                        </span>
+                      )}
+                      {data.ledger.truncated && (
+                        <span className="block mt-1 text-rose-800">
+                          Stripe had more charges than this run read, so even these figures are a floor.
+                        </span>
+                      )}
+                    </div>
+                    {data.ledger.unmatched.length > 0 && (
+                      <ul className="mt-3 space-y-1">
+                        {data.ledger.unmatched.map((c) => (
+                          <li key={c.id} className="text-[12.5px] text-rose-900">
+                            <span className="tabular-nums font-semibold">{money(c.netCents)}</span>
+                            {c.email && <span> · {c.email}</span>}
+                            {c.description && <span className="text-rose-700"> · {c.description}</span>}
+                            <span className="text-rose-700"> · {new Date(c.created).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+                            <span className="text-rose-600"> · {c.id}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+
                 <p className="text-[13px] text-slate-500 mt-3 leading-relaxed">
                   Our own records expected{" "}
                   <strong className="text-slate-700 tabular-nums">{money(data.expectedCentsForSettled)}</strong>{" "}
@@ -181,10 +240,15 @@ export default function FinancePage() {
                       <div className="text-[13px] text-amber-900 leading-relaxed">
                         <strong>Not in the totals above.</strong>
                         {data.offStripe.length > 0 && (
-                          <> {data.offStripe.length} record{data.offStripe.length === 1 ? " is" : "s are"} marked paid
-                            with no Stripe payment behind {data.offStripe.length === 1 ? "it" : "them"} (cheques, wires,
-                            comps, guest seats, or a row flipped by hand). Real money may well have changed hands, but we
-                            cannot prove the amount or the fee from here.</>
+                          <> {data.offStripe.length} record{data.offStripe.length === 1 ? " is" : "s are"} marked paid with
+                            no Stripe payment, and {data.offStripe.length === 1 ? "it expects" : "they expect"}{" "}
+                            <strong className="tabular-nums">{money(data.offStripeExpectedCents)}</strong> between them.
+                            Somebody believed money was owed on {data.offStripe.length === 1 ? "this one" : "these"}, so
+                            either it arrived somewhere this page cannot see, or it never arrived. Worth checking one by one.</>
+                        )}
+                        {data.comps.length > 0 && (
+                          <> {data.comps.length} more expect nothing at all, which is what a comp or a guest seat looks
+                            like and is not a problem.</>
                         )}
                         {data.testModeCount > 0 && <> {data.testModeCount} test-mode payment{data.testModeCount === 1 ? "" : "s"} excluded.</>}
                         {data.unresolved.length > 0 && <> {data.unresolved.length} payment{data.unresolved.length === 1 ? "" : "s"} Stripe returned without a charge.</>}
