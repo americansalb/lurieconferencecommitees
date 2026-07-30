@@ -188,6 +188,22 @@ export async function GET() {
     };
   };
 
+  // What the rest of the app claims, counted the same way those pages count it,
+  // so the two can be put side by side instead of contradicting each other on
+  // separate screens. The Sponsors page shows "Paid 8 / $3,440" from these same
+  // rows; if Stripe only backs four of them, that is worth saying out loud
+  // rather than leaving someone to notice the numbers disagree.
+  const claimed = {
+    attendee: {
+      records: attendees.length,
+      expectedCents: attendees.reduce((t, a) => t + (a.finalPriceCents || 0), 0),
+    },
+    sponsor: {
+      records: sponsors.length,
+      expectedCents: sponsors.reduce((t, x) => t + (x.amountCents || 0), 0),
+    },
+  };
+
   const matchedChargeIds = new Set(settled.map((l) => l.settlement!.chargeId!));
   const unmatched = (ledger?.charges || []).filter((c) => !matchedChargeIds.has(c.id));
   const ledgerNetCents = (ledger?.charges || []).reduce((t, c) => t + c.netCents - c.refundedCents, 0);
@@ -223,6 +239,21 @@ export async function GET() {
     // Published beside the Stripe total so the gap is visible rather than
     // argued about: the difference is Stripe's fees plus any refund.
     expectedCentsForSettled: settled.reduce((t, r) => t + (r.expectedCents || 0), 0),
+    claimed,
+    // Split by kind as well as by whether money was expected. Four sponsors
+    // with no payment behind them is a different order of problem from forty
+    // attendee comps, and burying the first inside a list of the second is how
+    // it goes unnoticed.
+    offStripeByKind: {
+      attendee: {
+        records: offStripe.filter((l) => l.kind === "attendee" && (l.expectedCents || 0) > 0).length,
+        expectedCents: offStripe.filter((l) => l.kind === "attendee").reduce((t, l) => t + (l.expectedCents || 0), 0),
+      },
+      sponsor: {
+        records: offStripe.filter((l) => l.kind === "sponsor" && (l.expectedCents || 0) > 0).length,
+        expectedCents: offStripe.filter((l) => l.kind === "sponsor").reduce((t, l) => t + (l.expectedCents || 0), 0),
+      },
+    },
     // Split, because these two are completely different problems wearing the
     // same label. A row expecting $0 is a comp or a guest seat and is supposed
     // to have no payment. A row expecting $195 means somebody believed money

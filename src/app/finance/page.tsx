@@ -29,6 +29,7 @@ type OffStripe = {
   kind: string; name: string; email: string; detail: string;
   expectedCents: number | null; paidAt: string | null; reason: string;
 };
+type KindClaim = { records?: number; expectedCents: number };
 type Report = {
   generatedAt: string;
   totals: Group;
@@ -37,6 +38,8 @@ type Report = {
   expectedCentsForSettled: number;
   offStripe: OffStripe[];
   offStripeExpectedCents: number;
+  claimed: { attendee: KindClaim; sponsor: KindClaim };
+  offStripeByKind: { attendee: KindClaim; sponsor: KindClaim };
   comps: { kind: string; name: string; email: string; detail: string; paidAt: string | null }[];
   ledger: {
     charges: number; netCents: number; truncated: boolean;
@@ -233,6 +236,47 @@ export default function FinancePage() {
                   <Split label="Sponsors and exhibitors" g={data.sponsors} />
                 </div>
 
+                {/* The two screens reconciled in one place. The Sponsors page
+                    counts every row whose status is paid and sums the agreed
+                    tier; this counts what Stripe actually took. Printing them
+                    together turns "these numbers contradict each other" into a
+                    countable list of rows to go and check. */}
+                <div className="mt-5 rounded-xl border border-slate-200 bg-white overflow-x-auto">
+                  <table className="w-full text-sm min-w-[560px]">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-200 text-[10px] uppercase tracking-[0.14em] text-slate-500">
+                        <th className="text-left px-4 py-2.5 font-bold">Marked paid in our records</th>
+                        <th className="text-right px-4 py-2.5 font-bold">Records</th>
+                        <th className="text-right px-4 py-2.5 font-bold">Claimed</th>
+                        <th className="text-right px-4 py-2.5 font-bold">Backed by Stripe</th>
+                        <th className="text-right px-4 py-2.5 font-bold">No payment found</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(["sponsor", "attendee"] as const).map((k) => {
+                        const c = data.claimed[k];
+                        const paid = k === "sponsor" ? data.sponsors : data.attendees;
+                        const gap = data.offStripeByKind[k];
+                        return (
+                          <tr key={k} className={k === "attendee" ? "border-t border-slate-100" : ""}>
+                            <td className="px-4 py-3 font-semibold text-slate-900">
+                              {k === "sponsor" ? "Sponsors and exhibitors" : "Attendees"}
+                            </td>
+                            <td className="px-4 py-3 text-right tabular-nums text-slate-600">{c.records ?? "—"}</td>
+                            <td className="px-4 py-3 text-right tabular-nums text-slate-600">{money(c.expectedCents)}</td>
+                            <td className="px-4 py-3 text-right tabular-nums text-slate-900 font-semibold">
+                              {paid.payments} · {money(paid.grossCents)}
+                            </td>
+                            <td className={`px-4 py-3 text-right tabular-nums font-bold ${gap.expectedCents ? "text-rose-700" : "text-slate-400"}`}>
+                              {gap.expectedCents ? `${gap.records ?? 0} · ${money(gap.expectedCents)}` : "none"}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
                 {(data.offStripe.length > 0 || data.unresolved.length > 0 || data.errors.length > 0 || data.testModeCount > 0) && (
                   <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3.5">
                     <div className="flex items-start gap-2.5">
@@ -257,7 +301,9 @@ export default function FinancePage() {
                     </div>
                     {data.offStripe.length > 0 && (
                       <ul className="mt-3 space-y-1.5 pl-7">
-                        {data.offStripe.map((o, i) => (
+                        {[...data.offStripe].sort((a, b) =>
+                          (a.kind === b.kind ? (b.expectedCents || 0) - (a.expectedCents || 0) : a.kind === "sponsor" ? -1 : 1)
+                        ).map((o, i) => (
                           <li key={i} className="text-[12.5px] text-amber-900">
                             <span className="font-semibold">{o.name}</span>
                             <span className="text-amber-700"> · {o.detail}</span>
