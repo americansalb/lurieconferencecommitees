@@ -73,10 +73,10 @@ export const PROGRAM_DAYS: ProgramDay[] = [
     sessions: [
       { time: "8:00 AM", end: "8:30 AM", title: "Optional Hospital Tour (TBC)", who: "RSVP details will be sent to registrants", kind: "session" },
       { time: "8:30 AM", end: "9:00 AM", title: "Coffee & Check-In", kind: "registration" },
-      { time: "9:00 AM", end: "10:00 AM", title: "Advancing Language Access Through Interprofessional Collaboration: The Language Access & Care Committee", who: "Yuri Takabatake, MD · Ann & Robert H. Lurie Children’s Hospital of Chicago", kind: "session", ceuMinutes: 60 },
+      { time: "9:00 AM", end: "10:00 AM", title: "Elevating the Role of Healthcare Interpreters: Contributing to Positive Health Outcomes", who: "Tatiana González-Cestari, PhD, CHI™-Spanish & Sarah Stockler-Rex, MA, CHI™-Spanish", kind: "session", ceuMinutes: 60 },
       { time: "10:05 AM", end: "11:05 AM", title: "The Persistent Gap Between Policy, Practice, and Professional Medical Interpreting", who: "Patricia A. Alonzo, EdD · Equiti Health", kind: "session", ceuMinutes: 60 },
       { time: "11:05 AM", end: "11:55 AM", title: "Lunch", kind: "lunch" },
-      { time: "11:55 AM", end: "12:55 PM", title: "Elevating the Role of Healthcare Interpreters: Contributing to Positive Health Outcomes", who: "Tatiana González-Cestari, PhD, CHI™-Spanish & Sarah Stockler-Rex, MA, CHI™-Spanish", kind: "session", ceuMinutes: 60 },
+      { time: "11:55 AM", end: "12:55 PM", title: "Advancing Language Access Through Interprofessional Collaboration: The Language Access & Care Committee", who: "Yuri Takabatake, MD · Ann & Robert H. Lurie Children’s Hospital of Chicago", kind: "session", ceuMinutes: 60 },
       { time: "1:00 PM", end: "1:50 PM", title: "The Mindful Interpreter: Building Resilience, Deep Listening, and Trauma Stewardship in Medical Interpreting", who: "Daniel Gutiérrez Mena · Rush University Medical Center", kind: "session", ceuMinutes: 50 },
       { time: "1:50 PM", end: "2:05 PM", title: "Break", kind: "break" },
       { time: "2:05 PM", end: "3:15 PM", title: "Revising the National Code of Ethics for Interpreters in Health Care: What’s New?", who: "Jane Crandall Kontrimas, CoreCHI™, MS · National Council on Interpreting in Health Care", kind: "session", ceuMinutes: 70 },
