@@ -64,6 +64,13 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
       replyTo: sponsorLetterReplyTo(),
       cc: sponsor.additionalEmails,
       headers: sponsorUnsubHeaders(sponsor.applicationToken),
+      // The attendee guide, not the exhibitor one. Their tier includes real
+      // tickets, so this is the document that actually applies to them: how to
+      // reach the hospital, where to check in, and what the two days look like.
+      attachments: [{
+        filename: "2026-conference-attendee-guide.pdf",
+        path: `${appUrl()}/guides/attendee-guide.pdf`,
+      }],
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);

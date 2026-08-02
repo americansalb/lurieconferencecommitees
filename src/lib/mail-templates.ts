@@ -1441,6 +1441,10 @@ export function foodPlanEmail({
         ${missing.map((m) => `<li style="margin-bottom:6px;">${m}</li>`).join("")}
       </ul>` : ""}
 
+      ${ticketsIncluded > 0 ? `
+      ${gLabel("If you would like to come")}
+      ${gP(`Your ${ticketsIncluded} complimentary ${ticketsIncluded === 1 ? "ticket is" : "tickets are"} yours whether or not you use them. The attendee guide is attached: how to reach the hospital, where to check in, and what the two days look like. There is nothing for you to set up and no table to staff.`)}` : ""}
+
       ${gButton(portalUrl, "Update your details")}
       ${gP("If anything above is wrong, reply and tell us. Nothing is fixed until you say it is.", 0)}
       ${gSignOff()}`;
