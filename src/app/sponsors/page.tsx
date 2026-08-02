@@ -10,7 +10,7 @@ import {
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
 import MobileNav from "@/components/layout/MobileNav";
-import { SPONSOR_STATUS_LABELS, TIERS } from "@/lib/sponsors";
+import { SPONSOR_STATUS_LABELS, TIERS, sponsorHasTable } from "@/lib/sponsors";
 import { PROSPECT_TARGETS_TSV, FOOD_PROSPECT_TARGETS_TSV, ASL_PROSPECT_TARGETS_TSV } from "@/lib/prospect-targets";
 import InviteSponsorComposer from "./InviteSponsorComposer";
 import QueueSettingsModal from "@/components/email/QueueSettingsModal";
@@ -1090,7 +1090,7 @@ export default function SponsorsAdminPage() {
                               Accept
                             </button>
                           )}
-                          {isAdmin && (s.paid || s.status === "confirmed") && (
+                          {isAdmin && sponsorHasTable(s) && (s.paid || s.status === "confirmed") && (
                             <button
                               onClick={() => sendTeamInvite(s.id)}
                               disabled={sendingTeamId === s.id}

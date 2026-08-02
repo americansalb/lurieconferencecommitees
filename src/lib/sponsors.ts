@@ -329,6 +329,20 @@ export function isAslProspect(s: { tier: string }): boolean {
   return s.tier === "asl";
 }
 
+// Tiers that actually come with a table in the exhibitor hall. Everything the
+// exhibitor guide talks about (load-in, teardown, shipping boxes ahead, when
+// the room is busiest) assumes one, so this is the test for whether that guide
+// means anything to a given partner.
+//
+// Added after the exhibitor guide went to a Food Sponsor, whose whole
+// involvement is donating a meal: the send only checked that they were
+// confirmed, which every in-kind partner also is.
+export const TABLE_TIERS = ["exhibitor", "diamond"] as const;
+
+export function sponsorHasTable(s: { tier: string }): boolean {
+  return (TABLE_TIERS as readonly string[]).includes(s.tier);
+}
+
 // A captioning prospect: an organization donating live captioning in kind.
 export function isCaptioningProspect(s: { tier: string }): boolean {
   return s.tier === "captioning";

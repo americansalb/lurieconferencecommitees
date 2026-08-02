@@ -7,7 +7,7 @@ import { appUrl } from "@/lib/presenters";
 import { exhibitorGuideEmail } from "@/lib/mail-templates";
 import { compAllowance, ensureTeamToken, seatSummary, teamFor, teamUrl } from "@/lib/sponsor-team";
 import {
-  tierById, sponsorFromHeader, sponsorLetterReplyTo, sponsorUnsubHeaders,
+  tierById, sponsorHasTable, sponsorFromHeader, sponsorLetterReplyTo, sponsorUnsubHeaders,
 } from "@/lib/sponsors";
 
 // Send one exhibitor their personalized guide. Immediate, like the acceptance
@@ -28,8 +28,16 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
   if (sponsor.unsubscribedAt) {
     return NextResponse.json({ error: "This organization has unsubscribed." }, { status: 409 });
   }
-  // The guide is about standing at a table. Someone who has not confirmed has
-  // no table, and load-in times would only confuse them.
+  // Being confirmed is not the same as having a table. Food, ASL, captioning
+  // and the cash-only tiers are confirmed partners with nothing to load in, so
+  // the tier is the test, not the status.
+  if (!sponsorHasTable(sponsor)) {
+    const label = sponsor.customTierName || tierById(sponsor.tier)?.name || sponsor.tier;
+    return NextResponse.json(
+      { error: `${label} does not include a table, so the exhibitor guide does not apply to them. It covers load-in, teardown and shipping for the exhibitor hall.` },
+      { status: 400 }
+    );
+  }
   if (!sponsor.paid && sponsor.status !== "confirmed") {
     return NextResponse.json(
       { error: "Only confirmed or paid partners can be sent the exhibitor guide." },
