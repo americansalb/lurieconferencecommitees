@@ -1113,135 +1113,86 @@ export function attendeePortalLinkEmail({
 
 // The guide emails.
 //
-// These go to people who have already paid and are coming, so they are not
-// outreach: no pitch, and no signature from an individual. The guide PDF is
-// attached exactly as designed, and everything personal lives here in the
-// letter rather than on a page bolted to the front of it.
+// These go to people who have already paid and are coming, so the letter has
+// no selling to do. It gets to the point: what is attached, where they stand,
+// and the one thing only they can confirm.
 //
-// Set in the engraved letterhead the confirmed-partner letters use, where the
-// two hosts share one line as equals. The compact banner sets "AALB" in gold
-// against a white "Lurie Children's", which reads as one host being promoted
-// over the other, and it has no business on a letter from both of them.
+// Deliberately no letterhead. The engraved seal and the teal hero block belong
+// on an invitation, where the first job is to impress; here they push the
+// actual information below the fold on a phone. A single quiet header line
+// carries the branding instead.
 
-const ENG = {
-  TEAL: "#0E5566",
-  TEAL_DEEP: "#0C3B4B",
-  INK: "#0B1F25",
-  SOFT: "#5A6E76",
-  GOLD: "#C9A14B",
-  GOLD_SOFT: "#F4E9CD",
-  LINK: "#1E6FA2",
-  PAPER: "#FBF8F1",
+const G = {
+  TEAL: "#0E4A57",
+  INK: "#0F1B22",
+  BODY: "#4C5B62",
+  GOLD: "#C08F35",
+  RULE: "#E5EAEC",
+  SOFT_BG: "#F7FAFB",
+  GOLD_BG: "#FDF8EC",
+  GOLD_RULE: "#EBDCB8",
 };
 
-// The engraved letterhead, card and footer, shared by the guide letters.
-// `eyebrow` names the letter under the hosts; `recipient` and `subtitle` sit
-// above the gold rule where the sponsor letters put the company name.
-function engravedShell(args: {
+function guideShell(args: {
   title: string;
   preheader: string;
-  eyebrow: string;
-  recipient: string;
-  subtitle: string;
+  kicker: string;
   body: string;
   footerNote: string;
   assetBase?: string;
 }): string {
   const base = (args.assetBase || ASSET_BASE).replace(/\/$/, "");
-  const postalAddress = process.env.MAIL_POSTAL_ADDRESS?.trim() || "Americans Against Language Barriers, Chicago, IL";
+  const postal = process.env.MAIL_POSTAL_ADDRESS?.trim() || "Americans Against Language Barriers, Chicago, IL";
   return `<!doctype html>
-<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="x-apple-disable-message-reformatting">
 <meta name="color-scheme" content="light">
 <meta name="supported-color-schemes" content="light">
-<title>${args.title} &middot; 2026 Lurie Children&rsquo;s &amp; AALB Conference</title>
-<!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
+<title>${args.title}</title>
 <style>
   body{margin:0;padding:0;}
-  a{color:${ENG.LINK};}
+  a{color:${G.TEAL};}
   @media only screen and (max-width:600px){
-    .sl-card{width:100%!important;}
-    .sl-body{padding:32px 24px 30px 24px!important;}
-    .sl-head{padding:36px 22px 30px 22px!important;}
-    .sl-foot{padding:24px 22px!important;}
-    .sl-display{font-size:25px!important;line-height:31px!important;}
-    .sl-seal{width:96px!important;height:96px!important;}
-    .sl-cta{display:block!important;width:100%!important;}
+    .g-card{width:100%!important;}
+    .g-pad{padding:26px 22px 28px 22px!important;}
+    .g-head{padding:18px 22px!important;}
+    .g-h1{font-size:21px!important;line-height:28px!important;}
+    .g-cta{display:block!important;width:100%!important;}
   }
 </style>
 </head>
-<body style="margin:0;padding:0;width:100%;background-color:#ECE6D7;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
-<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#ECE6D7;">${args.preheader}</div>
+<body style="margin:0;padding:0;width:100%;background-color:#EEF2F4;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#EEF2F4;">${args.preheader}</div>
 
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#ECE6D7;background-image:linear-gradient(180deg,#F0EBDD 0%,#E6DECB 100%);">
-<tr><td align="center" style="padding:34px 14px 44px 14px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#EEF2F4;">
+<tr><td align="center" style="padding:22px 12px 30px 12px;">
 
-  <table role="presentation" class="sl-card" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background-color:${ENG.PAPER};border:1px solid #E4DAC4;box-shadow:0 18px 48px rgba(12,59,75,0.18);">
+  <table role="presentation" class="g-card" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background-color:#FFFFFF;border:1px solid #E2E8EA;border-radius:12px;overflow:hidden;">
 
-    <tr><td align="center" bgcolor="${ENG.TEAL_DEEP}" class="sl-head" style="background-color:${ENG.TEAL_DEEP};background-image:linear-gradient(160deg,${ENG.TEAL} 0%,${ENG.TEAL_DEEP} 100%);padding:44px 40px 34px 40px;">
-      <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;line-height:18px;letter-spacing:4px;text-transform:uppercase;color:${ENG.GOLD_SOFT};font-weight:bold;">Lurie Children&rsquo;s &middot; AALB</div>
-      <div style="font-family:Helvetica,Arial,sans-serif;font-size:9px;line-height:16px;letter-spacing:3px;text-transform:uppercase;color:#7FA7B1;padding-top:6px;">${args.eyebrow}</div>
-      <div style="font-family:Helvetica,Arial,sans-serif;font-size:8px;line-height:10px;letter-spacing:4px;text-transform:uppercase;color:${ENG.GOLD};font-weight:bold;padding:22px 0 8px 0;">&middot;&nbsp;Second Joint Conference&nbsp;&middot;</div>
-
-      <!--[if !mso]><!-->
-      <div class="sl-seal" style="width:116px;height:116px;border-radius:50%;background-color:${ENG.GOLD};background-image:linear-gradient(135deg,#F4E9CD 0%,#D9B863 28%,#C9A14B 52%,#9C7A2E 78%,#E7D5A4 100%);border:2px solid #F4E9CD;box-shadow:0 6px 16px rgba(0,0,0,0.30),inset 0 1px 2px rgba(255,255,255,0.55);display:inline-block;">
-        <table role="presentation" width="116" height="116" cellpadding="0" cellspacing="0" border="0" style="width:116px;height:116px;"><tr><td align="center" valign="middle" style="text-align:center;">
-          <div style="font-family:Georgia,'Times New Roman',serif;font-size:31px;line-height:30px;color:#3C2E10;font-weight:bold;letter-spacing:1px;">2026</div>
-        </td></tr></table>
-      </div>
-      <!--<![endif]-->
-      <!--[if mso]>
-      <v:oval fill="true" stroke="true" strokecolor="#F4E9CD" strokeweight="2px" style="width:116px;height:116px;">
-        <v:fill type="solid" color="#C9A14B"/>
-        <v:textbox inset="0,0,0,0"><center><div style="font-family:Georgia,serif;font-size:30px;color:#3C2E10;font-weight:bold;">2026</div></center></v:textbox>
-      </v:oval>
-      <![endif]-->
-
-      <div style="font-family:Helvetica,Arial,sans-serif;font-size:9px;line-height:13px;letter-spacing:3px;text-transform:uppercase;color:${ENG.GOLD};padding:10px 0 0 0;">True Language Access</div>
-      <div class="sl-display" style="font-family:Georgia,'Times New Roman',serif;font-size:31px;line-height:38px;color:#FFFFFF;padding:18px 0 0 0;">The Second Joint Conference</div>
-      <div style="font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:15px;line-height:22px;color:#A9C6CD;padding:7px 0 0 0;">on Language Access in American Healthcare</div>
-      <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;line-height:16px;letter-spacing:3px;text-transform:uppercase;color:#7FA7B1;padding:14px 0 0 0;">August 15&ndash;16, 2026 &middot; Chicago, Illinois</div>
+    <!-- One quiet line: hosts on the left, what this is on the right. -->
+    <tr><td class="g-head" style="padding:18px 30px;border-bottom:1px solid ${G.RULE};">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td align="left" valign="middle">
+          <img src="${base}/logos/aalb.png" alt="Americans Against Language Barriers" height="22" style="height:22px;width:auto;display:inline-block;vertical-align:middle;">
+          <img src="${base}/logos/lurie.png" alt="Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago" height="18" style="height:18px;width:auto;display:inline-block;vertical-align:middle;padding-left:12px;">
+        </td>
+        <td align="right" valign="middle" style="font-family:Helvetica,Arial,sans-serif;font-size:9px;font-weight:bold;letter-spacing:2.2px;text-transform:uppercase;color:${G.GOLD};white-space:nowrap;">${args.kicker}</td>
+      </tr></table>
     </td></tr>
 
-    <tr><td style="height:3px;line-height:3px;font-size:0;background-color:${ENG.GOLD};background-image:linear-gradient(90deg,#9C7A2E 0%,#F4E9CD 50%,#9C7A2E 100%);">&nbsp;</td></tr>
-
-    <tr><td class="sl-body" style="padding:40px 52px 36px 52px;background-color:${ENG.PAPER};">
-      <div style="padding:0 0 18px 0;">
-        <div style="font-family:Georgia,'Times New Roman',serif;font-size:17px;line-height:1.4;color:${ENG.INK};font-weight:bold;">${args.recipient}</div>
-        <div style="font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:14px;line-height:1.5;color:${ENG.SOFT};padding-top:2px;">${args.subtitle}</div>
-      </div>
-      <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="width:46px;height:2px;background-color:${ENG.GOLD};font-size:0;line-height:0;">&nbsp;</td></tr></table>
-      <div style="height:22px;line-height:22px;font-size:0;">&nbsp;</div>
-
+    <tr><td class="g-pad" style="padding:32px 30px 34px 30px;">
       ${args.body}
-
-      <div style="font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.85;color:${ENG.INK};padding:26px 0 4px 0;">With warm regards,</div>
-      <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:${ENG.INK};font-weight:bold;padding-top:6px;">The AALB Conference Committee</div>
-      <div style="font-family:Helvetica,Arial,sans-serif;font-size:12px;line-height:1.5;color:${ENG.SOFT};padding-top:2px;">Americans Against Language Barriers &amp; Lurie Children&rsquo;s Hospital of Chicago</div>
-
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:34px 0 0 0;border-top:1px solid #ECE3D0;">
-        <tr><td align="center" style="padding:24px 0 4px 0;">
-          <div style="font-family:Helvetica,Arial,sans-serif;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#9A8B6A;padding-bottom:16px;">Presented Jointly By</div>
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-            <td align="center" style="padding:0 18px;"><img src="${base}/logos/aalb.png" alt="Americans Against Language Barriers" height="40" style="height:40px;width:auto;display:block;"></td>
-            <td style="border-left:1px solid #E0D5BD;width:1px;font-size:0;">&nbsp;</td>
-            <td align="center" style="padding:0 18px;"><img src="${base}/logos/lurie.png" alt="Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago" height="34" style="height:34px;width:auto;display:block;"></td>
-          </tr></table>
-        </td></tr>
-      </table>
     </td></tr>
 
-    <tr><td class="sl-foot" align="center" bgcolor="${ENG.TEAL_DEEP}" style="background-color:${ENG.TEAL_DEEP};background-image:linear-gradient(180deg,${ENG.TEAL_DEEP} 0%,#0A3340 100%);padding:26px 40px 28px 40px;">
-      <div style="font-family:Georgia,'Times New Roman',serif;font-size:13px;letter-spacing:0.5px;color:${ENG.GOLD_SOFT};">2026 Lurie Children&rsquo;s &amp; AALB Conference</div>
-      <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;line-height:18px;color:#9FB6BC;padding-top:8px;">August 15&ndash;16, 2026 &middot; Chicago, Illinois</div>
-      <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;line-height:18px;color:#9FB6BC;">conference.aalb.org &middot; contact@aalb.org</div>
-      <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;line-height:16px;letter-spacing:0.5px;color:#5F7E86;padding-top:8px;">501(c)(3) &middot; EINs 83-3016421 and 36-2170833</div>
-      <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;line-height:16px;color:#5F7E86;padding-top:10px;">${escapeHtml(postalAddress)}</div>
-      <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;line-height:16px;color:#5F7E86;padding-top:4px;">${args.footerNote}</div>
+    <tr><td style="padding:18px 30px 22px 30px;border-top:1px solid ${G.RULE};background-color:${G.SOFT_BG};">
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;line-height:1.6;color:#7C8B92;">${args.footerNote}</div>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;line-height:1.6;color:#9AA7AD;padding-top:6px;">
+        conference.aalb.org &middot; contact@aalb.org<br/>
+        ${escapeHtml(postal)} &middot; 501(c)(3) &middot; EINs 83-3016421 and 36-2170833
+      </div>
     </td></tr>
 
   </table>
@@ -1251,42 +1202,44 @@ function engravedShell(args: {
 </html>`;
 }
 
-// Body primitives on the cream letter paper.
-const engP = (html: string, mb = 18) =>
-  `<p style="margin:0 0 ${mb}px 0;font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.85;color:${ENG.INK};">${html}</p>`;
+const gP = (html: string, mb = 16) =>
+  `<p style="margin:0 0 ${mb}px 0;font-family:Helvetica,Arial,sans-serif;font-size:15px;line-height:1.65;color:${G.BODY};">${html}</p>`;
 
-const engEyebrow = (text: string) =>
-  `<div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:${ENG.GOLD};font-weight:bold;margin:26px 0 12px 0;">${text}</div>`;
+const gH1 = (html: string) =>
+  `<h1 class="g-h1" style="margin:0 0 12px 0;font-family:Helvetica,Arial,sans-serif;font-size:24px;line-height:31px;font-weight:bold;color:${G.INK};letter-spacing:-0.2px;">${html}</h1>`;
 
-// Label/value rows in a ruled panel: the letter's version of the guides'
-// "At a Glance" card. `accent` marks the block we are asking them to check.
-function engFacts(rows: { label: string; value: string }[], accent = false): string {
+const gLabel = (text: string) =>
+  `<div style="font-family:Helvetica,Arial,sans-serif;font-size:9.5px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:${G.GOLD};margin:24px 0 10px 0;">${text}</div>`;
+
+// Facts as hairline-separated rows. No heavy boxes: the information is the
+// point, and a stack of filled panels is what made this look like a brochure.
+function gFacts(rows: { label: string; value: string }[], accent = false): string {
   return `
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:2px 0 6px 0;">
-        <tr><td bgcolor="${accent ? "#FBF4E2" : "#F4F1E8"}" style="background-color:${accent ? "#FBF4E2" : "#F4F1E8"};border:1px solid ${accent ? "#EAD9AE" : "#E7E0CF"};border-radius:10px;padding:6px 20px 16px 20px;">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-            ${rows.map((r) => `
-            <tr><td style="padding:12px 0 0 0;">
-              <div style="font-family:Helvetica,Arial,sans-serif;font-size:9.5px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:#8A6D1F;">${r.label}</div>
-              <div style="font-family:Georgia,'Times New Roman',serif;font-size:14.5px;line-height:1.6;color:${accent ? "#3C2E10" : ENG.INK};padding-top:3px;">${r.value}</div>
-            </td></tr>`).join("")}
-          </table>
-        </td></tr>
-      </table>`;
-}
-
-function engButton(href: string, label: string): string {
-  return `
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:20px 0 6px 0;">
-        <tr><td align="center">
-          <table role="presentation" class="sl-cta" cellpadding="0" cellspacing="0" border="0" style="display:inline-block;"><tr>
-            <td align="center" bgcolor="${ENG.TEAL}" style="background-color:${ENG.TEAL};border-radius:9px;">
-              <a href="${href}" style="display:inline-block;padding:15px 30px;font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:bold;letter-spacing:0.4px;color:#ffffff;text-decoration:none;border-radius:9px;">${label} &nbsp;&rarr;</a>
-            </td>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 6px 0;${accent ? `background-color:${G.GOLD_BG};border:1px solid ${G.GOLD_RULE};border-radius:10px;` : ""}">
+        ${rows.map((r, i) => `
+        <tr><td style="padding:${i === 0 ? (accent ? "14px" : "0") : "12px"} ${accent ? "18px" : "0"} 12px ${accent ? "18px" : "0"};${i > 0 ? `border-top:1px solid ${accent ? G.GOLD_RULE : G.RULE};` : ""}">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+            <td width="150" valign="top" style="width:150px;font-family:Helvetica,Arial,sans-serif;font-size:12.5px;line-height:1.5;font-weight:bold;color:${G.INK};padding-right:14px;">${r.label}</td>
+            <td valign="top" style="font-family:Helvetica,Arial,sans-serif;font-size:14px;line-height:1.55;color:${G.BODY};">${r.value}</td>
           </tr></table>
+        </td></tr>`).join("")}
+      </table>`;
+}
+
+function gButton(href: string, label: string): string {
+  return `
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0 4px 0;">
+        <tr><td align="center" bgcolor="${G.TEAL}" class="g-cta" style="background-color:${G.TEAL};border-radius:8px;">
+          <a href="${href}" style="display:inline-block;padding:13px 26px;font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:8px;">${label}</a>
         </td></tr>
       </table>`;
 }
+
+const gSignOff = () => `
+      <div style="margin-top:26px;padding-top:16px;border-top:1px solid ${G.RULE};font-family:Helvetica,Arial,sans-serif;font-size:13px;line-height:1.6;color:${G.BODY};">
+        <span style="font-weight:bold;color:${G.INK};">AALB Conference Committee</span><br/>
+        Americans Against Language Barriers &amp; Lurie Children&rsquo;s Hospital of Chicago
+      </div>`;
 
 export type AttendeeGuideEmailArgs = {
   firstName: string;
@@ -1316,60 +1269,56 @@ export function attendeeGuideEmail({
 
   const facts = isVirtual
     ? [
-        { label: "When", value: "Saturday, August 15 and Sunday, August 16, 2026" },
+        { label: "When", value: "Saturday, August 15 and Sunday, August 16" },
         { label: "Where", value: "Online. Your joining link arrives before the event." },
-        { label: "CEUs", value: "Earned by attending live. Instructions come at the conference." },
+        { label: "CEUs", value: "Earned by attending live." },
       ]
     : [
-        { label: "When", value: attendDay ? `${escapeHtml(attendDay)} only` : "Saturday, August 15 and Sunday, August 16, 2026" },
-        { label: "Where", value: "Lurie Children&rsquo;s Hospital, 225 East Chicago Avenue, Chicago &middot; 11th floor" },
-        { label: "Check-in", value: "Saturday 9:00 to 9:30 AM, Sunday 8:30 to 9:00 AM. Photo ID required both days." },
-        { label: "Meals", value: "Coffee all day, morning refreshments, and a meat-free lunch both days." },
+        { label: "When", value: attendDay ? `${escapeHtml(attendDay)} only` : "Saturday, August 15 and Sunday, August 16" },
+        { label: "Where", value: "Lurie Children&rsquo;s Hospital, 225 East Chicago Avenue, Chicago. 11th floor." },
+        { label: "Check-in", value: "Saturday 9:00 to 9:30 AM, Sunday 8:30 to 9:00 AM. Photo ID both days." },
+        { label: "Lunch", value: "Meat free, both days." },
         ...(fullName
-          ? [{
-              label: "Your badge will say",
-              value: escapeHtml(fullName) + (sponsorName ? `<br/><span style="color:${ENG.SOFT};font-size:13px;">Guest of ${escapeHtml(sponsorName)}</span>` : ""),
-            }]
+          ? [{ label: "Your badge", value: escapeHtml(fullName) + (sponsorName ? `, guest of ${escapeHtml(sponsorName)}` : "") }]
           : []),
       ];
 
   const onFile = [
-    ...(has(dietary) ? [{ label: "Dietary needs", value: escapeHtml(has(dietary)) }] : []),
-    ...(has(accessibilityNotes) ? [{ label: "Access needs", value: escapeHtml(has(accessibilityNotes)) }] : []),
-    ...(!isVirtual && needsParking ? [{ label: "Parking", value: "You asked about parking. Details are in the guide." }] : []),
+    ...(has(dietary) ? [{ label: "Dietary", value: escapeHtml(has(dietary)) }] : []),
+    ...(has(accessibilityNotes) ? [{ label: "Access", value: escapeHtml(has(accessibilityNotes)) }] : []),
+    ...(!isVirtual && needsParking ? [{ label: "Parking", value: "You asked about parking." }] : []),
     ...(has(primaryLanguages) ? [{ label: "Languages", value: escapeHtml(has(primaryLanguages)) }] : []),
   ];
 
   const body = `
-      ${engP(`Dear ${escapeHtml(first)},`)}
-      ${engP(`Your guide to the conference is attached. ${isVirtual
+      ${gH1(`Your guide is attached, ${escapeHtml(first)}.`)}
+      ${gP(isVirtual
         ? "It covers the schedule, the sessions, and claiming your CEUs."
-        : "It covers getting to Lurie Children&rsquo;s, where to check in, what to bring, meals, and claiming your CEUs."}`)}
+        : "It covers getting to Lurie Children&rsquo;s, checking in, what to bring, meals, and claiming your CEUs.")}
 
-      ${engEyebrow("Where you stand")}
-      ${engFacts(facts)}
+      ${gLabel("The essentials")}
+      ${gFacts(facts)}
 
       ${hasNeeds ? `
-      ${engEyebrow("What we have recorded for you")}
-      ${engFacts(onFile, true)}
-      ${engP("We plan meals and seating from exactly these answers, so please tell us if any of it is wrong.", 6)}`
+      ${gLabel("What we have recorded for you")}
+      ${gFacts(onFile, true)}
+      ${gP("We plan meals and seating from these answers. Tell us if any of it is wrong.", 0)}`
       : `
-      ${engEyebrow("Anything you need from us")}
-      ${engP("We do not have any dietary or access needs recorded for you. If you have any, add them in your portal and we will plan around them.", 6)}`}
+      ${gLabel("Anything you need from us")}
+      ${gP("We have no dietary or access needs recorded for you. If you have any, add them in your portal and we will plan around them.", 0)}`}
 
-      ${engButton(portalUrl, "Open my portal")}
-      ${engP("Anything to change, update it in your portal and we will see it. Questions are welcome by reply.", 0)}`;
+      ${gButton(portalUrl, "Open my portal")}
+      ${gP("Questions are welcome by reply.", 0)}
+      ${gSignOff()}`;
 
-  return engravedShell({
+  return guideShell({
     title: "Your conference guide",
     preheader: isVirtual
-      ? "Your guide to the 2026 conference, plus how to claim your CEUs."
-      : "Your guide to the 2026 conference: getting there, check-in, meals, and CEUs.",
-    eyebrow: "Your Conference Guide",
-    recipient: escapeHtml(fullName || first),
-    subtitle: isVirtual ? "Joining online &middot; August 15 and 16, 2026" : "August 15 and 16, 2026 &middot; Chicago",
+      ? "Joining details, the schedule, and how to claim your CEUs."
+      : "Getting there, check-in times, meals, and how to claim your CEUs.",
+    kicker: "Attendee Guide",
     body,
-    footerNote: "You are receiving this because you are registered for the 2026 conference.",
+    footerNote: "You are receiving this because you are registered for the 2026 Lurie Children&rsquo;s &amp; AALB Conference, August 15 and 16 in Chicago.",
     assetBase,
   });
 }
@@ -1385,54 +1334,53 @@ export type ExhibitorGuideEmailArgs = {
 };
 
 export function exhibitorGuideEmail({
-  contactName, companyName, tierName, teamUrl, seatsRemaining, team, assetBase,
+  contactName, companyName, teamUrl, seatsRemaining, team, assetBase,
 }: ExhibitorGuideEmailArgs) {
   const first = sponsorFirstName(contactName || "", companyName) || "there";
   const roster = team && team.length
-    ? team.map((m) => `${escapeHtml(m.name)}${m.comp ? "" : ` <span style="color:${ENG.SOFT};font-size:13px;">(registered separately)</span>`}`).join("<br/>")
+    ? team.map((m) => `${escapeHtml(m.name)}${m.comp ? "" : " (registered separately)"}`).join("<br/>")
     : "Nobody registered yet.";
 
   const body = `
-      ${engP(`Dear ${escapeHtml(first)},`)}
-      ${engP(`Your exhibitor guide is attached. It covers load-in and teardown, parking and the drop-off door, shipping ahead, and when the room is busiest. The details for <strong>${escapeHtml(companyName)}</strong>:`)}
+      ${gH1(`Your exhibitor guide is attached, ${escapeHtml(first)}.`)}
+      ${gP(`It covers load-in and teardown, parking and the drop-off door, shipping ahead, and when the room is busiest. The details for ${escapeHtml(companyName)}:`)}
 
-      ${engEyebrow("Your table")}
-      ${engFacts([
-        { label: "Load-in", value: "Friday, August 14, 4:30 to 8:00 PM, or Saturday, August 15, 7:00 to 8:00 AM. Fully set up by 8:45 AM Saturday, after which nothing may be moved in or around the space." },
-        { label: "Teardown", value: "Please stay set up until 4:30 PM on Sunday, August 16." },
-        { label: "Before you travel", value: "Text Adriana at 773-573-0678 with your expected arrival time and someone will meet you." },
-        { label: "Busiest times", value: "Coffee breaks and lunch both days." },
+      ${gLabel("Your table")}
+      ${gFacts([
+        { label: "Load-in", value: "Friday, August 14, 4:30 to 8:00 PM, or Saturday 7:00 to 8:00 AM. Set up by 8:45 AM Saturday, after which nothing can be moved in or around the space." },
+        { label: "Teardown", value: "Stay set up until 4:30 PM Sunday, August 16." },
+        { label: "Before you travel", value: "Text Adriana at 773-573-0678 with your arrival time and someone will meet you." },
+        { label: "Busiest", value: "Coffee breaks and lunch, both days." },
       ])}
 
-      ${engEyebrow("Shipping ahead")}
-      ${engFacts([
+      ${gLabel("Shipping ahead")}
+      ${gFacts([
         { label: "Deliver to", value: "Claudia Fairley<br/>225 E Chicago Ave.<br/>Chicago, IL 60611" },
         { label: "Mark the box", value: `Exhibitor materials for ${escapeHtml(companyName)}` },
       ], true)}
-      ${engP(`Once a shipment is on its way, email <a href="mailto:contact@aalb.org" style="color:${ENG.LINK};text-decoration:none;">contact@aalb.org</a> with an inventory of what you sent and the address we should notify when it arrives.`, 6)}
+      ${gP(`Once it is on its way, email <a href="mailto:contact@aalb.org">contact@aalb.org</a> with an inventory and the address we should notify when it arrives.`, 0)}
 
-      ${engEyebrow("Coming from your team")}
-      ${engFacts([
+      ${gLabel("Your team")}
+      ${gFacts([
         { label: "On your list", value: roster },
         {
           label: "Included tickets",
           value: seatsRemaining > 0
             ? `${seatsRemaining} still unclaimed. Whoever you add gets a badge and appears in our headcount.`
-            : "All claimed. Anyone else is welcome to register at the usual rate through the same link.",
+            : "All claimed. Anyone else can register at the usual rate through the same link.",
         },
       ])}
 
-      ${engButton(teamUrl, "Your team page")}
-      ${engP("Anything you need on the day, reply here and we will sort it out.", 0)}`;
+      ${gButton(teamUrl, "Your team page")}
+      ${gP("Anything you need on the day, reply here.", 0)}
+      ${gSignOff()}`;
 
-  return engravedShell({
+  return guideShell({
     title: "Your exhibitor guide",
-    preheader: `Your exhibitor guide for ${companyName}: load-in times, parking, and shipping.`,
-    eyebrow: "Your Exhibitor Guide",
-    recipient: escapeHtml(companyName),
-    subtitle: tierName ? `${escapeHtml(tierName)} &middot; August 15 and 16, 2026` : "August 15 and 16, 2026 &middot; Chicago",
+    preheader: `Load-in times, parking, shipping, and your team list for ${companyName}.`,
+    kicker: "Exhibitor Guide",
     body,
-    footerNote: `You are receiving this because ${escapeHtml(companyName)} is exhibiting at the 2026 conference.`,
+    footerNote: `You are receiving this because ${escapeHtml(companyName)} is exhibiting at the 2026 Lurie Children&rsquo;s &amp; AALB Conference.`,
     assetBase,
   });
 }
