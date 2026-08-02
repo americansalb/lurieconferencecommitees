@@ -6,7 +6,7 @@ import { useEffect, useState, useCallback } from "react";
 import {
   Users, Send, Pause, Play, Loader2, Mail, Check,
   RefreshCw, Zap, FileText, UserPlus, Rocket, Eye, SlidersHorizontal,
-  ChevronDown, ChevronRight, Video, Shuffle, GraduationCap, MapPin,
+  ChevronDown, ChevronRight, Video, Shuffle, GraduationCap, MapPin, FileDown,
 } from "lucide-react";
 import { STUDENT_ROSTER_CSV, STUDENT_ROSTER_COUNT, STUDENT_ROSTER_ALUMNI, STUDENT_ROSTER_STUDENT, STUDENT_ROSTER_FORMER } from "@/lib/student-roster";
 import { NBCMI_ROSTER_CSV, NBCMI_ROSTER_COUNT } from "@/lib/nbcmi-roster";
@@ -74,6 +74,7 @@ export default function AttendeesPage() {
   } | null>(null);
   const [reinvite, setReinvite] = useState<{ sending: boolean; note: string | null }>({ sending: false, note: null });
   const [nudge, setNudge] = useState<{ sending: boolean; note: string | null }>({ sending: false, note: null });
+  const [guides, setGuides] = useState<{ sending: boolean; note: string | null }>({ sending: false, note: null });
   // One-click AALB student roster load (draft only, nothing sent).
   const [rosterLoading, setRosterLoading] = useState(false);
   const [rosterNote, setRosterNote] = useState<string | null>(null);
@@ -687,6 +688,30 @@ export default function AttendeesPage() {
     setTimeout(() => setReinvite((r) => ({ ...r, note: null })), 9000);
   }
 
+  // Email confirmed attendees their personalized guide. "initial" only reaches
+  // people who have never had one, so running it again after a few late
+  // registrations does not mail the whole room twice.
+  async function sendGuides(mode: "initial" | "all", ids?: string[]) {
+    setGuides({ sending: true, note: null });
+    try {
+      const res = await fetch("/api/attendees/send-guide", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode, ...(ids && ids.length ? { ids } : {}) }),
+      });
+      const json = await res.json().catch(() => ({}));
+      setGuides({
+        sending: false,
+        note: res.ok
+          ? `Sent ${json.sent || 0} guide${json.sent === 1 ? "" : "s"}${json.failed ? ` · ${json.failed} failed` : ""}.`
+          : (json.error || "Could not send the guides."),
+      });
+      await load();
+    } catch {
+      setGuides({ sending: false, note: "Network error while sending." });
+    }
+    setTimeout(() => setGuides((g) => ({ ...g, note: null })), 9000);
+  }
+
   // No ids -> every never-reminded person in the started-not-paid bucket,
   // paced through the queue. With ids (the list's bulk bar) -> the selection
   // is sent IMMEDIATELY (up to 100 per click), already-reminded included;
@@ -1091,6 +1116,53 @@ export default function AttendeesPage() {
                       </button>
                     </div>
                     {nudge.note && <div className="mt-2 text-xs font-semibold text-amber-700">{nudge.note}</div>}
+                  </div>
+                )}
+
+                {isAdmin && (
+                  <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm mb-4">
+                    <div className="flex items-start justify-between gap-3 flex-wrap">
+                      <div className="min-w-0">
+                        <div className="text-sm font-bold text-slate-900 inline-flex items-center gap-1.5">
+                          <FileDown className="w-4 h-4 text-teal-700" /> Send the conference guide
+                        </div>
+                        <p className="text-xs text-slate-500 mt-1 max-w-lg">
+                          The guide as a PDF, with a first page built for each person: their registration,
+                          check-in times, and the dietary and access needs we hold for them, so they can
+                          correct us before they travel. Goes to everyone who has paid and has never had one.
+                          Sends immediately, not through the queue.
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={() => setConfirmDialog({
+                            title: "Send guides to everyone who hasn't had one?",
+                            message: "Every paid attendee who has never been sent a guide gets it now, as an attachment, with their own personal first page. Anyone who already received one is skipped, so this is safe to run again after new registrations.",
+                            confirmLabel: "Send guides",
+                            onConfirm: () => { setConfirmDialog(null); void sendGuides("initial"); },
+                          })}
+                          disabled={guides.sending}
+                          className="px-4 py-2 rounded-lg text-sm font-bold text-white shadow-sm inline-flex items-center gap-1.5 disabled:opacity-50"
+                          style={{ background: "#0E5566" }}
+                        >
+                          {guides.sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+                          Send guides
+                        </button>
+                        <button
+                          onClick={() => setConfirmDialog({
+                            title: "Re-send the guide to every paid attendee?",
+                            message: "This mails everyone again, including people who already have it. Use it when the guide itself has changed. Each guide is rebuilt, so the personal page reflects whatever we hold right now.",
+                            confirmLabel: "Re-send to all",
+                            onConfirm: () => { setConfirmDialog(null); void sendGuides("all"); },
+                          })}
+                          disabled={guides.sending}
+                          className="px-3 py-2 rounded-lg text-sm font-bold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                        >
+                          Re-send to all
+                        </button>
+                      </div>
+                    </div>
+                    {guides.note && <div className="mt-2 text-xs font-semibold text-teal-700">{guides.note}</div>}
                   </div>
                 )}
 

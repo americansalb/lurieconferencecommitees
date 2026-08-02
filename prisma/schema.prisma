@@ -498,6 +498,10 @@ model Attendee {
   // sends to this person and is honored before every send.
   unsubscribedAt DateTime?
 
+  // When their personalized conference guide was last emailed, so a second run
+  // catches up late registrants instead of mailing everyone twice.
+  guideSentAt DateTime?
+
   adminNotes String?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime? @updatedAt
@@ -621,6 +625,8 @@ model Sponsor {
   // Count is shown on the row so nobody gets nagged twice by accident.
   paymentRemindedAt  DateTime?
   paymentRemindCount Int       @default(0)
+  // When their personalized exhibitor guide was last emailed.
+  guideSentAt        DateTime?
 
   inviteMessage   String?
   // VIP courtesy: when set (e.g. 20), checkout applies this percentage off the

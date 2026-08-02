@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback, useRef } from "react";
 import {
   Award, Trash2, RefreshCw, Search, Filter, ExternalLink, Mail, Building2, Copy, Plus,
-  Clock, Pause, Play, X, SlidersHorizontal, Loader2, BadgeCheck, Send, FileText, Combine, Eye, Shuffle, Users, Ticket, CreditCard,
+  Clock, Pause, Play, X, SlidersHorizontal, Loader2, BadgeCheck, Send, FileText, Combine, Eye, Shuffle, Users, Ticket, CreditCard, FileDown,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
@@ -42,6 +42,7 @@ type Sponsor = {
   ticketsIncluded: number | null;
   paymentRemindCount?: number;
   paymentRemindedAt?: string | null;
+  guideSentAt?: string | null;
   createdAt: string;
   invitedAt: string | null;
   lastSentAt: string | null;
@@ -102,6 +103,7 @@ export default function SponsorsAdminPage() {
   const [sendingLetterId, setSendingLetterId] = useState<string | null>(null);
   const [sendingTeamId, setSendingTeamId] = useState<string | null>(null);
   const [remindingId, setRemindingId] = useState<string | null>(null);
+  const [guideId, setGuideId] = useState<string | null>(null);
   const [ticketsSavingId, setTicketsSavingId] = useState<string | null>(null);
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
   const [mergeFor, setMergeFor] = useState<Sponsor | null>(null);
@@ -540,6 +542,31 @@ export default function SponsorsAdminPage() {
     } finally {
       setLoadingTargets(false);
       setTimeout(() => setActionNote(null), 9000);
+    }
+  }
+
+  // Email one exhibitor their personalized guide: load-in times, parking,
+  // shipping, their own team list, and a shipping label already addressed to
+  // us with their name on it.
+  async function sendGuide(id: string) {
+    const s = sponsors.find((x) => x.id === id);
+    if (!confirm(`Email the exhibitor guide to ${s?.companyName || "this organization"}? It sends right away.`)) return;
+    setGuideId(id);
+    setActionNote(null);
+    try {
+      const res = await fetch(`/api/sponsors/${id}/send-guide`, { method: "POST" });
+      const j = await res.json().catch(() => ({}));
+      setActionNote(
+        res.ok && j.ok
+          ? `${s?.companyName || "Exhibitor"}: guide sent.`
+          : `Could not send. ${j.error || "Unknown error."}`
+      );
+      await load();
+    } catch {
+      setActionNote("Network error sending the guide.");
+    } finally {
+      setGuideId(null);
+      setTimeout(() => setActionNote(null), 8000);
     }
   }
 
@@ -1113,6 +1140,17 @@ export default function SponsorsAdminPage() {
                             >
                               {remindingId === s.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CreditCard className="w-3 h-3" />}
                               {(s.paymentRemindCount || 0) > 0 ? `Chase again (${s.paymentRemindCount})` : "Remind to pay"}
+                            </button>
+                          )}
+                          {isAdmin && (s.paid || s.status === "confirmed") && (
+                            <button
+                              onClick={() => sendGuide(s.id)}
+                              disabled={guideId === s.id}
+                              className="text-[10px] font-bold px-2 py-1 rounded-full border border-teal-200 bg-teal-50 text-teal-800 hover:bg-teal-100 inline-flex items-center gap-1 shrink-0 disabled:opacity-50"
+                              title="Email their personalized exhibitor guide: load-in times, parking, shipping, their team list, and a pre-addressed shipping label. Sends right away."
+                            >
+                              {guideId === s.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <FileDown className="w-3 h-3" />}
+                              {s.guideSentAt ? "Re-send guide" : "Send guide"}
                             </button>
                           )}
                           {showPayAction && (

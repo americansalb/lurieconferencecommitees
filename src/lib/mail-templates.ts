@@ -1111,6 +1111,78 @@ export function attendeePortalLinkEmail({
   `);
 }
 
+// The guide email. The PDF is attached and the personal page inside it is
+// mostly a mirror of what we hold, so the letter's job is to say what is in
+// there and to ask them to check the one part only they can confirm.
+export function attendeeGuideEmail({
+  firstName, portalUrl, attendanceMode, hasNeeds, assetBase,
+}: {
+  firstName: string;
+  portalUrl: string;
+  attendanceMode: string | null;
+  // True when we already hold a dietary or access note for them, which changes
+  // the ask from "tell us" to "check we got it right".
+  hasNeeds: boolean;
+  assetBase?: string;
+}) {
+  const first = firstName || "there";
+  const isVirtual = attendanceMode === "virtual";
+  return shell(`
+    ${heroBanner()}
+    <h1 style="font-size:23px;font-weight:700;margin:0 0 14px 0;letter-spacing:-0.01em;">Your guide to the conference, ${escapeHtml(first)}.</h1>
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
+      It&rsquo;s attached. ${isVirtual
+        ? "It covers the schedule, the sessions, and how to claim your CEUs."
+        : "It covers getting to Lurie Children&rsquo;s, where to check in, what to bring, meals, and how to claim your CEUs."}
+    </p>
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
+      The first page is only about you. ${hasNeeds
+        ? "It prints back the dietary and access needs you gave us, because we cook and seat from exactly those answers. Please glance at it and make sure we got it right."
+        : "It shows what we have on file for your meals and access needs, which is currently nothing. If you need something from us, now is a good time to say so."}
+    </p>
+    ${button(portalUrl, "Open my portal")}
+    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;">
+      Anything to change, do it in your portal and download the guide again. It rebuilds with your answers.
+    </p>
+    ${signOff()}
+    ${logoLockup(assetBase)}
+  `);
+}
+
+// The exhibitor guide email. Same idea, but the useful part is operational:
+// load-in is the thing exhibitors get wrong, and the label saves them writing
+// an address by hand.
+export function exhibitorGuideEmail({
+  contactName, companyName, teamUrl, seatsRemaining, assetBase,
+}: {
+  contactName: string | null;
+  companyName: string;
+  teamUrl: string;
+  seatsRemaining: number;
+  assetBase?: string;
+}) {
+  const first = sponsorFirstName(contactName || "", companyName) || "there";
+  return shell(`
+    ${heroBanner()}
+    <h1 style="font-size:23px;font-weight:700;margin:0 0 14px 0;letter-spacing:-0.01em;">Your exhibitor guide, ${escapeHtml(first)}.</h1>
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
+      Attached, and made for ${escapeHtml(companyName)}. It covers load-in and teardown times, parking and the drop-off door, shipping ahead, and when the room is busiest.
+    </p>
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
+      Two things worth knowing. Load-in is <strong>Friday, August 14 between 4:30 and 8:00 PM, or Saturday from 7:00 to 8:00 AM</strong>, and everything must be set up by 8:45 AM Saturday, after which nothing can be moved in or around the space. And the last page is a shipping label already addressed to us with your name on it, so you can print it and tape it to a box.
+    </p>
+    ${seatsRemaining > 0 ? `<p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
+      You still have ${seatsRemaining} included ${seatsRemaining === 1 ? "ticket" : "tickets"} unclaimed. Whoever you add gets a badge and shows up in our headcount.
+    </p>` : ""}
+    ${button(teamUrl, "Your team page")}
+    <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;">
+      Anything you need on the day, reply here and we will sort it out.
+    </p>
+    ${signOff()}
+    ${logoLockup(assetBase)}
+  `);
+}
+
 // A general broadcast to attendees. The admin writes the body (plain text); the
 // caller escapes it and converts newlines, then passes it as bodyHtml here.
 export function attendeeBroadcastEmail({

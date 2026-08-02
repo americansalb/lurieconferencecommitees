@@ -17,3 +17,12 @@ ALTER TABLE IF EXISTS "lcc"."lcc_sponsors"
   ADD COLUMN IF NOT EXISTS "teamToken" TEXT;
 CREATE UNIQUE INDEX IF NOT EXISTS "lcc_sponsors_teamToken_key"
   ON "lcc"."lcc_sponsors"("teamToken");
+
+-- Personalized conference guides: when each attendee's and exhibitor's guide
+-- was last emailed. Plain nullable timestamps with no constraint, so `db push`
+-- would add them without complaint; created here anyway to keep every schema
+-- change on the same, reviewable path. Additive and idempotent, scoped to lcc.
+ALTER TABLE IF EXISTS "lcc"."lcc_attendees"
+  ADD COLUMN IF NOT EXISTS "guideSentAt" TIMESTAMP(3);
+ALTER TABLE IF EXISTS "lcc"."lcc_sponsors"
+  ADD COLUMN IF NOT EXISTS "guideSentAt" TIMESTAMP(3);
