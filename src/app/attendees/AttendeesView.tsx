@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Search, Mail, Send, MapPin, Monitor, Check, Eye, ArrowDownWideNarrow, Clock } from "lucide-react";
+import { Search, Mail, Send, MapPin, Monitor, Check, Eye, ArrowDownWideNarrow, Clock, FileDown } from "lucide-react";
 import {
   ATTENDEE_STEP_LABELS, ATTENDEE_SOURCE_LABELS, AttendeeStep,
   attendeeStep, attendeeStepMoment, attendeeSource,
@@ -79,7 +79,7 @@ function shortDate(iso: string | null): string {
 }
 
 export default function AttendeesView({
-  attendees, onOpenDetail, onCompose, onSendPortal, onQueueInvites, onSendInvitesNow, onNudge,
+  attendees, onOpenDetail, onCompose, onSendPortal, onQueueInvites, onSendInvitesNow, onNudge, onSendGuide,
 }: {
   attendees: Attendee[];
   onOpenDetail: (id: string) => void;
@@ -88,6 +88,7 @@ export default function AttendeesView({
   onQueueInvites: (ids: string[]) => void;
   onSendInvitesNow: (ids: string[]) => void;
   onNudge: (ids: string[]) => void;
+  onSendGuide: (ids: string[]) => void;
 }) {
   const [cardFilter, setCardFilter] = useState<string>("all");
   const [sourceFilter, setSourceFilter] = useState<"all" | "invited" | "organic">("all");
@@ -260,6 +261,10 @@ export default function AttendeesView({
   // Selected people in the started-not-paid bucket: the ones a reminder
   // actually reaches (the server skips everyone else and reports it).
   const nudgeableSelected = selectedIds.reduce((n, id) => n + (stepOf.get(id) === "registering" ? 1 : 0), 0);
+  // Selected people who have paid: the only ones the guide goes to, since it
+  // is a document about turning up rather than about signing up.
+  const paidById = new Map(attendees.map((a) => [a.id, a.paid]));
+  const guideableSelected = selectedIds.reduce((n, id) => n + (paidById.get(id) ? 1 : 0), 0);
 
   return (
     <div>
@@ -435,6 +440,11 @@ export default function AttendeesView({
             {nudgeableSelected > 0 && (
               <button onClick={() => onNudge(selectedIds)} className="text-xs font-bold px-3 py-1.5 rounded-lg text-white inline-flex items-center gap-1.5" style={{ background: "#B45309" }} title="Send the finish-registration reminder to the selected started-not-paid people RIGHT NOW (up to 100 per click; others are skipped). Bumps their reminder count.">
                 <Send className="w-3.5 h-3.5" /> Send reminder now ({nudgeableSelected.toLocaleString()})
+              </button>
+            )}
+            {guideableSelected > 0 && (
+              <button onClick={() => onSendGuide(selectedIds)} className="text-xs font-bold px-3 py-1.5 rounded-lg text-white inline-flex items-center gap-1.5" style={{ background: "#0E4A57" }} title="Email the personalized conference guide to the paid people in your selection, right now. Each PDF is built for that person: their registration, check-in times, and the dietary and access needs we hold for them.">
+                <FileDown className="w-3.5 h-3.5" /> Send guide ({guideableSelected.toLocaleString()})
               </button>
             )}
             <button onClick={() => onCompose(selectedIds)} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 inline-flex items-center gap-1.5" title="Write and send a one-off message now (capped at 100 for deliverability)"><Mail className="w-3.5 h-3.5" /> Email them</button>

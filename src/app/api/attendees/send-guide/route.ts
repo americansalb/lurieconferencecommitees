@@ -38,7 +38,11 @@ export async function POST(req: Request) {
       paid: true,
       isTest: false,
       unsubscribedAt: null,
-      ...(ids?.length ? { id: { in: ids } } : {}),
+      // The guide is the in-person document: getting to the hospital, where to
+      // check in, parking, what to bring. A blanket run only reaches in-person
+      // attendees. An explicit selection is honoured as chosen, so a virtual
+      // attendee who asks for it can still be sent one deliberately.
+      ...(ids?.length ? { id: { in: ids } } : { attendanceMode: { not: "virtual" } }),
       ...(mode === "initial" ? { guideSentAt: null } : {}),
     },
     include: { sponsor: { select: { companyName: true } } },

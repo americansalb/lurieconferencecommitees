@@ -1129,15 +1129,17 @@ export default function AttendeesPage() {
                         <p className="text-xs text-slate-500 mt-1 max-w-lg">
                           The guide as a PDF, with a first page built for each person: their registration,
                           check-in times, and the dietary and access needs we hold for them, so they can
-                          correct us before they travel. Goes to everyone who has paid and has never had one.
-                          Sends immediately, not through the queue.
+                          correct us before they travel. Goes to <strong>in-person</strong> attendees who have
+                          paid and never had one. Sends immediately, not through the queue. To send to a
+                          specific set instead, filter the Attendees list, select them, and use
+                          &ldquo;Send guide&rdquo; there.
                         </p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         <button
                           onClick={() => setConfirmDialog({
                             title: "Send guides to everyone who hasn't had one?",
-                            message: "Every paid attendee who has never been sent a guide gets it now, as an attachment, with their own personal first page. Anyone who already received one is skipped, so this is safe to run again after new registrations.",
+                            message: "Every paid in-person attendee who has never been sent a guide gets it now, as an attachment, with their own personal first page. Virtual attendees are left out, and anyone who already received one is skipped, so this is safe to run again after new registrations.",
                             confirmLabel: "Send guides",
                             onConfirm: () => { setConfirmDialog(null); void sendGuides("initial"); },
                           })}
@@ -1151,7 +1153,7 @@ export default function AttendeesPage() {
                         <button
                           onClick={() => setConfirmDialog({
                             title: "Re-send the guide to every paid attendee?",
-                            message: "This mails everyone again, including people who already have it. Use it when the guide itself has changed. Each guide is rebuilt, so the personal page reflects whatever we hold right now.",
+                            message: "This mails every paid in-person attendee again, including people who already have it. Use it when the guide itself has changed. Each guide is rebuilt, so the personal page reflects whatever we hold right now.",
                             confirmLabel: "Re-send to all",
                             onConfirm: () => { setConfirmDialog(null); void sendGuides("all"); },
                           })}
@@ -1446,6 +1448,12 @@ export default function AttendeesPage() {
                   message: "The not-yet-emailed people in your selection get their invitation immediately — no queue, no waiting, up to 100 per click. Anyone already emailed, paid, or unsubscribed is skipped. If any of them are sitting in the paced queue, that pending copy is dropped so nobody gets the letter twice.",
                   confirmLabel: "Send now",
                   onConfirm: () => { setConfirmDialog(null); void sendInvitesNow(ids); },
+                })}
+                onSendGuide={(ids) => setConfirmDialog({
+                  title: `Send the conference guide to ${ids.length} selected ${ids.length === 1 ? "person" : "people"}?`,
+                  message: "Each person gets the guide as a PDF with a first page built for them: their registration, check-in times, and the dietary and access needs we hold, so they can correct us before they travel. Sends immediately. Anyone selected who has not paid is skipped, and re-sending is fine because each guide is rebuilt from what we hold right now.",
+                  confirmLabel: "Send guides",
+                  onConfirm: () => { setConfirmDialog(null); void sendGuides("all", ids); },
                 })}
                 onNudge={(ids) => setConfirmDialog({
                   title: `Send the reminder to this selection right now?`,
