@@ -48,6 +48,7 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
       html: exhibitorGuideEmail({
         contactName: sponsor.contactName,
         companyName: sponsor.companyName,
+        tierName: sponsor.customTierName || tierById(sponsor.tier)?.name || undefined,
         teamUrl: teamUrl(token),
         seatsRemaining: seats.remaining,
         team: team.map((m) => ({ name: `${m.firstName} ${m.lastName}`.trim() || m.email, comp: m.comp })),
