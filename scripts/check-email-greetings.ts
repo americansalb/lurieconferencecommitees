@@ -48,6 +48,9 @@ const TELLS = [
   // A space between the greeting word and the comma means a name was meant to
   // be there. "Hello," and "Hi there," are the intended nameless forms.
   /\b(Dear|Hi|Hello)\s+,/i,
+  // "a Exhibitor Table", "a ASL Interpreter Sponsor": the article has to agree
+  // with an interpolated label, and it never does by luck.
+  /\ba (?=[AEIOU][a-z])/,
 ];
 // NB: a stray " ," in the stripped text is almost always a link immediately
 // followed by a comma, not a real defect, so it is deliberately not a tell.

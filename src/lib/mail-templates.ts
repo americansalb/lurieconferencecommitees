@@ -1270,6 +1270,21 @@ function greetingLine(style: "hi" | "hello" | "dear", name: string | null | unde
 }
 
 // ", Priya." when we have a name, "." when we do not. Never ", there."
+// "a Exhibitor Table" / "a ASL Interpreter Sponsor" is the giveaway that a
+// label was dropped into a sentence written for a different one. Sponsorship
+// tier names are data, so the article has to be computed, not typed.
+// Returns just the article, so the caller keeps control of any markup around
+// the label. Passing "<strong>Exhibitor Table</strong>" to a helper that tests
+// the first character is how you get "a <strong>Exhibitor" back.
+function articleFor(label: string): "a" | "an" {
+  return /^[aeiou]/i.test((label || "").trim()) ? "an" : "a";
+}
+
+function withArticle(label: string): string {
+  const l = (label || "").trim();
+  return l ? `${articleFor(l)} ${l}` : l;
+}
+
 function addressed(sentence: string, name: string | null | undefined): string {
   const n = (name || "").trim();
   return n ? `${sentence}, ${escapeHtml(n)}.` : `${sentence}.`;
@@ -3018,7 +3033,7 @@ export function sponsorPaidEmail({
     ${heroBanner()}
     <h1 style="font-size:24px;font-weight:800;margin:0 0 14px 0;letter-spacing:-0.01em;">${addressed("You&rsquo;re all set", first)}</h1>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 6px 0;">
-      ${escapeHtml(companyName)} is confirmed as ${isExhibitor ? "an <strong>exhibitor</strong>" : `a <strong>${escapeHtml(tierName)}</strong>`} at the 2nd Joint Conference of Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers, August 15 and 16, 2026, in Chicago. ${receiptSentence}
+      ${escapeHtml(companyName)} is confirmed as ${isExhibitor ? "an <strong>exhibitor</strong>" : `${articleFor(tierName)} <strong>${escapeHtml(tierName)}</strong>`} at the 2nd Joint Conference of Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers, August 15 and 16, 2026, in Chicago. ${receiptSentence}
     </p>
 
     ${sectionHeading(isExhibitor ? "Your exhibitor table" : "Your sponsorship")}
@@ -4223,7 +4238,7 @@ export function sponsorPaymentReminderEmail({
 </style>
 </head>
 <body style="margin:0;padding:0;width:100%;background-color:#ECE6D7;">
-<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#ECE6D7;">One step left to confirm ${escapeHtml(companyName)} as a ${escapeHtml(tierName)}: ${escapeHtml(amountLabel)}.</div>
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#ECE6D7;">One step left to confirm ${escapeHtml(companyName)} as ${withArticle(escapeHtml(tierName))}: ${escapeHtml(amountLabel)}.</div>
 
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#ECE6D7;background-image:linear-gradient(180deg,#F0EBDD 0%,#E6DECB 100%);">
 <tr><td align="center" style="padding:34px 14px 44px 14px;">
