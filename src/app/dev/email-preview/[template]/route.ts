@@ -11,6 +11,8 @@ import {
   sponsorTeamInviteEmail,
   sponsorPaymentReminderEmail,
   sponsorAslUrgentLetterEmail,
+  attendeeGuideEmail,
+  exhibitorGuideEmail,
   sponsorAslLetterEmail,
   sponsorFoodLetterEmail,
   plainStandardInviteEmail,
@@ -122,6 +124,18 @@ export async function GET(
         learnMoreUrl: base,
         unsubscribeUrl: `${base}/api/sponsors/unsubscribe/demo-token`,
         assetBase: base,
+      });
+      break;
+    case "attendee-guide":
+      html = attendeeGuideEmail({
+        firstName: "Priya", portalUrl: `${base}/attend/demo-token`,
+        attendanceMode: "in-person", hasNeeds: false, assetBase: base,
+      });
+      break;
+    case "exhibitor-guide":
+      html = exhibitorGuideEmail({
+        contactName: "Jill Nelson", companyName: "Multilingual Connections",
+        teamUrl: `${base}/exhibitor/demo-team-token`, seatsRemaining: 1, assetBase: base,
       });
       break;
     case "asl-urgent":

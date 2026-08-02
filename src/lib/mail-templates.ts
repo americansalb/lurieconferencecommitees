@@ -21,7 +21,7 @@ const CARD_BG = "#ffffff";
 const TEXT = "#0f172a";
 const MUTED = "#475569";
 
-function shell(inner: string, preheader?: string) {
+function shell(inner: string, preheader?: string, footerNote?: string) {
   return `<!doctype html>
 <html lang="en">
   <head>
@@ -44,7 +44,7 @@ function shell(inner: string, preheader?: string) {
             ${inner}
           </td></tr>
           <tr><td style="padding:18px 32px 24px 32px;border-top:1px solid #e2e8f0;color:${MUTED};font-size:12px;line-height:1.6;">
-            You are receiving this because you were invited to participate in the 2026 Lurie Children&rsquo;s and AALB Conference. If this was sent in error, please disregard.
+            ${footerNote || "You are receiving this because you were invited to participate in the 2026 Lurie Children&rsquo;s and AALB Conference. If this was sent in error, please disregard."}
             <div style="margin-top:12px;padding-top:12px;border-top:1px solid #eef1f4;font-size:11px;line-height:1.7;color:#94a3b8;">
               Presented jointly by Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers<br/>
               <span style="white-space:nowrap;">501(c)(3) &middot; EINs 83-3016421 and 36-2170833</span>
@@ -1111,9 +1111,47 @@ export function attendeePortalLinkEmail({
   `);
 }
 
-// The guide email. The PDF is attached and the personal page inside it is
-// mostly a mirror of what we hold, so the letter's job is to say what is in
-// there and to ask them to check the one part only they can confirm.
+// The guide emails.
+//
+// These go to people who have already paid and are coming, so they are not
+// outreach: no pitch, no signature from an individual, and nothing that
+// describes the attachment rather than simply telling them what they need to
+// know. Set in the guide's own visual language (teal band, gold rules, a
+// details card) so the email and the PDF read as one piece of work, and signed
+// by the committee rather than a person.
+
+// A card of label/value pairs, the "At a Glance" pattern from the guides.
+function detailCard(rows: { label: string; value: string }[]): string {
+  return `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 22px 0;border:1px solid #E3EAEC;border-radius:12px;background-color:#F7FAFB;">
+      <tr><td style="padding:6px 20px 14px 20px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+          ${rows.map((r) => `
+          <tr>
+            <td style="padding:12px 0 0 0;border-bottom:0;">
+              <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;font-weight:bold;letter-spacing:1.6px;text-transform:uppercase;color:#C08F35;">${r.label}</div>
+              <div style="font-family:Helvetica,Arial,sans-serif;font-size:14.5px;line-height:1.55;color:#0F1B22;padding-top:3px;">${r.value}</div>
+            </td>
+          </tr>`).join("")}
+        </table>
+      </td></tr>
+    </table>`;
+}
+
+// Sign-off for anything sent to confirmed attendees and partners: the
+// committee, not a person. The individual signatures belong on invitations.
+function committeeSignOff(): string {
+  return `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:26px 0 0 0;border-top:1px solid #E7EDEF;">
+      <tr><td style="padding:18px 0 0 0;">
+        <div style="font-family:Helvetica,Arial,sans-serif;font-size:14.5px;line-height:1.6;color:#0F1B22;font-weight:bold;">AALB Conference Committee</div>
+        <div style="font-family:Helvetica,Arial,sans-serif;font-size:13px;line-height:1.6;color:#5A6E76;padding-top:2px;">
+          Americans Against Language Barriers &amp; Lurie Children&rsquo;s Hospital of Chicago
+        </div>
+      </td></tr>
+    </table>`;
+}
+
 export function attendeeGuideEmail({
   firstName, portalUrl, attendanceMode, hasNeeds, assetBase,
 }: {
@@ -1121,37 +1159,50 @@ export function attendeeGuideEmail({
   portalUrl: string;
   attendanceMode: string | null;
   // True when we already hold a dietary or access note for them, which changes
-  // the ask from "tell us" to "check we got it right".
+  // the ask from "tell us" to "check we have it right".
   hasNeeds: boolean;
   assetBase?: string;
 }) {
   const first = firstName || "there";
   const isVirtual = attendanceMode === "virtual";
+  const rows = isVirtual
+    ? [
+        { label: "When", value: "Saturday, August 15 and Sunday, August 16, 2026" },
+        { label: "Where", value: "Online. Your joining link arrives before the event." },
+        { label: "CEUs", value: "Earned by attending live. Instructions come at the conference." },
+      ]
+    : [
+        { label: "When", value: "Saturday, August 15 and Sunday, August 16, 2026" },
+        { label: "Where", value: "Lurie Children&rsquo;s Hospital, 225 East Chicago Avenue, Chicago &middot; 11th floor" },
+        { label: "Check-in", value: "Saturday 9:00 to 9:30 AM, Sunday 8:30 to 9:00 AM. Photo ID required both days." },
+        { label: "Meals", value: "Coffee all day, morning refreshments, and a meat-free lunch both days." },
+      ];
   return shell(`
     ${heroBanner()}
-    <h1 style="font-size:23px;font-weight:700;margin:0 0 14px 0;letter-spacing:-0.01em;">Your guide to the conference, ${escapeHtml(first)}.</h1>
-    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
-      It&rsquo;s attached. ${isVirtual
-        ? "It covers the schedule, the sessions, and how to claim your CEUs."
-        : "It covers getting to Lurie Children&rsquo;s, where to check in, what to bring, meals, and how to claim your CEUs."}
+    <h1 style="font-size:24px;font-weight:700;margin:0 0 14px 0;letter-spacing:-0.01em;">Your conference guide, ${escapeHtml(first)}.</h1>
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 20px 0;">
+      It is attached. ${isVirtual
+        ? "It covers the schedule, the sessions, and claiming your CEUs."
+        : "It covers getting to Lurie Children&rsquo;s, where to check in, what to bring, meals, and claiming your CEUs."}
     </p>
-    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
-      The first page is only about you. ${hasNeeds
-        ? "It prints back the dietary and access needs you gave us, because we cook and seat from exactly those answers. Please glance at it and make sure we got it right."
-        : "It shows what we have on file for your meals and access needs, which is currently nothing. If you need something from us, now is a good time to say so."}
+    ${detailCard(rows)}
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 18px 0;">
+      ${hasNeeds
+        ? "Your dietary and access needs are printed on the first page. Please check them. We plan meals and seating from exactly those answers, so it matters that they are right."
+        : "We do not have any dietary or access needs recorded for you. If you have any, add them in your portal and we will plan around them."}
     </p>
     ${button(portalUrl, "Open my portal")}
     <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;">
-      Anything to change, do it in your portal and download the guide again. It rebuilds with your answers.
+      Change anything in your portal and download the guide again; it rebuilds with your answers. Questions are welcome by reply.
     </p>
-    ${signOff()}
+    ${committeeSignOff()}
     ${logoLockup(assetBase)}
-  `);
+  `, isVirtual
+    ? "Your guide to the 2026 conference, plus how to claim your CEUs."
+    : "Your guide to the 2026 conference: getting there, check-in, meals, and CEUs.",
+    "You are receiving this because you are registered for the 2026 Lurie Children&rsquo;s and AALB Conference.");
 }
 
-// The exhibitor guide email. Same idea, but the useful part is operational:
-// load-in is the thing exhibitors get wrong, and the label saves them writing
-// an address by hand.
 export function exhibitorGuideEmail({
   contactName, companyName, teamUrl, seatsRemaining, assetBase,
 }: {
@@ -1164,23 +1215,27 @@ export function exhibitorGuideEmail({
   const first = sponsorFirstName(contactName || "", companyName) || "there";
   return shell(`
     ${heroBanner()}
-    <h1 style="font-size:23px;font-weight:700;margin:0 0 14px 0;letter-spacing:-0.01em;">Your exhibitor guide, ${escapeHtml(first)}.</h1>
-    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
-      Attached, and made for ${escapeHtml(companyName)}. It covers load-in and teardown times, parking and the drop-off door, shipping ahead, and when the room is busiest.
+    <h1 style="font-size:24px;font-weight:700;margin:0 0 14px 0;letter-spacing:-0.01em;">Your exhibitor guide, ${escapeHtml(first)}.</h1>
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 20px 0;">
+      Attached, and made for ${escapeHtml(companyName)}. It covers load-in and teardown, parking and the drop-off door, shipping ahead, and when the room is busiest.
     </p>
-    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
-      Two things worth knowing. Load-in is <strong>Friday, August 14 between 4:30 and 8:00 PM, or Saturday from 7:00 to 8:00 AM</strong>, and everything must be set up by 8:45 AM Saturday, after which nothing can be moved in or around the space. And the last page is a shipping label already addressed to us with your name on it, so you can print it and tape it to a box.
-    </p>
-    ${seatsRemaining > 0 ? `<p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
-      You still have ${seatsRemaining} included ${seatsRemaining === 1 ? "ticket" : "tickets"} unclaimed. Whoever you add gets a badge and shows up in our headcount.
+    ${detailCard([
+      { label: "Load-in", value: "Friday, August 14, 4:30 to 8:00 PM, or Saturday, August 15, 7:00 to 8:00 AM. Fully set up by 8:45 AM Saturday." },
+      { label: "Teardown", value: "Please stay set up until 4:30 PM on Sunday, August 16." },
+      { label: "Before you travel", value: "Text Adriana at 773-573-0678 with your expected arrival time and someone will meet you." },
+      { label: "Shipping", value: "The last page is a label already addressed to us with your name on it. Print it and tape it to the box." },
+    ])}
+    ${seatsRemaining > 0 ? `<p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 18px 0;">
+      You have ${seatsRemaining} included ${seatsRemaining === 1 ? "ticket" : "tickets"} still unclaimed. Whoever you add gets a badge and appears in our headcount.
     </p>` : ""}
     ${button(teamUrl, "Your team page")}
     <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;">
       Anything you need on the day, reply here and we will sort it out.
     </p>
-    ${signOff()}
+    ${committeeSignOff()}
     ${logoLockup(assetBase)}
-  `);
+  `, `Your exhibitor guide for ${companyName}: load-in times, parking, and shipping.`,
+    `You are receiving this because ${escapeHtml(companyName)} is exhibiting at the 2026 Lurie Children&rsquo;s and AALB Conference.`);
 }
 
 // A general broadcast to attendees. The admin writes the body (plain text); the

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
 import { appUrl } from "@/lib/presenters";
 import { attendeeGuideEmail } from "@/lib/mail-templates";
+import { attendeeFromHeader, attendeeReplyTo } from "@/lib/attendees";
 import { buildAttendeeGuide, guideFilename } from "@/lib/guide-pdf";
 
 // Send each confirmed attendee their own guide, with their personal page built
@@ -72,6 +73,10 @@ export async function POST(req: Request) {
 
       await sendMail({
         to: a.email,
+        // From "AALB Nonprofit", the same sender every other attendee email
+        // uses, so this lands in an existing thread of recognizable mail.
+        from: attendeeFromHeader(),
+        replyTo: attendeeReplyTo(),
         subject: "Your guide to the conference",
         html: attendeeGuideEmail({
           firstName: a.firstName,

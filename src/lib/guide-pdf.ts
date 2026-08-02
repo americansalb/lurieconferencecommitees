@@ -335,8 +335,8 @@ export async function buildAttendeeGuide(a: AttendeeGuideArgs): Promise<Uint8Arr
   drawTitle(ctx, fullName, (a.affiliation || "").trim() || null, 30);
 
   ctx.y = put(ctx.page, virtual
-    ? "Your place is confirmed. You are joining us online, so the pages that follow cover the schedule, the sessions, and claiming your CEUs. The travel and check-in pages are there if your plans change."
-    : "Your place is confirmed. Everything you need is in the pages that follow. This first page is the part that is only about you, including what we already have on file for your meals and access needs.",
+    ? "Your place is confirmed. You are joining us online on August 15 and 16."
+    : "Your place is confirmed for August 15 and 16 at Lurie Children's Hospital in Chicago. Please check the details below before you travel.",
     ctx.y, { font: ctx.f.reg, size: 10.5 });
   ctx.y -= 16;
 
@@ -356,7 +356,7 @@ export async function buildAttendeeGuide(a: AttendeeGuideArgs): Promise<Uint8Arr
 
   const has = (v?: string | null) => (v || "").trim();
   const rows: Row[] = [
-    { label: "Dietary needs", value: has(a.dietary) || "None told to us. Lunch is vegan both days." },
+    { label: "Dietary needs", value: has(a.dietary) || "None told to us. Lunch is meat free both days." },
     { label: "Access needs", value: has(a.accessibilityNotes) || "None told to us." },
   ];
   if (!virtual) {
@@ -416,7 +416,7 @@ export async function buildExhibitorGuide(s: ExhibitorGuideArgs): Promise<Uint8A
   drawTitle(ctx, s.companyName, s.tierName, 26);
 
   ctx.y = put(ctx.page,
-    "Thank you for exhibiting with us. The pages that follow cover load-in, shipping, parking, and when the room is busiest. This first page is yours: your table, your team, and a label you can put straight onto a box.",
+    "Your table is confirmed for both days, August 15 and 16, at Lurie Children's Hospital in Chicago. Thank you for exhibiting with us.",
     ctx.y, { font: ctx.f.reg, size: 10.5 });
   ctx.y -= 16;
 
