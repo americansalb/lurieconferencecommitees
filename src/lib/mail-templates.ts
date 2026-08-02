@@ -167,7 +167,7 @@ const GLANCE_ROWS = [
 ];
 
 export function presenterInviteEmail({ name, url, customMessage, role, sessionFormat }: InviteArgs) {
-  const first = (name || "").split(" ")[0] || "there";
+  const first = (name || "").split(" ")[0] || "";
   const which = sessionFormat || role;
   const roleSentence = which
     ? `<p style="font-size:15px;line-height:1.65;color:${TEXT};margin:0 0 14px 0;">We have you in mind as ${roleArticle(which)} <strong>${escapeHtml(which.toLowerCase())}</strong>. Your presenter portal has the proposed details for your session, our policy, and the consents we ask presenters to grant. From there you can accept, suggest adjustments, or let us know if you cannot attend.</p>`
@@ -176,7 +176,7 @@ export function presenterInviteEmail({ name, url, customMessage, role, sessionFo
     ? `<p style="font-size:15px;line-height:1.65;color:${TEXT};margin:14px 0;background:#f8fafc;border-left:3px solid ${BLUE};padding:14px 16px;border-radius:6px;">${escapeHtml(customMessage)}</p>`
     : "";
   return shell(`
-    <h1 style="font-size:22px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">Hello ${escapeHtml(first)},</h1>
+    <h1 style="font-size:22px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">${greetingLine("hello", first)}</h1>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
       We would love to have you with us at the 2026 Lurie Children&rsquo;s and AALB Conference, August 15 and 16, 2026, at Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago.
     </p>
@@ -194,9 +194,9 @@ export function presenterInviteEmail({ name, url, customMessage, role, sessionFo
 }
 
 export function presenterConfirmedEmail({ name, url }: { name: string; url: string }) {
-  const first = (name || "").split(" ")[0] || "there";
+  const first = (name || "").split(" ")[0] || "";
   return shell(`
-    <h1 style="font-size:22px;font-weight:700;margin:0 0 12px 0;letter-spacing:-0.01em;">Thank you, ${escapeHtml(first)}.</h1>
+    <h1 style="font-size:22px;font-weight:700;margin:0 0 12px 0;letter-spacing:-0.01em;">${addressed("Thank you", first)}</h1>
     <p style="font-size:15px;line-height:1.65;color:${TEXT};margin:0 0 14px 0;">
       Your participation in the 2026 Lurie Children&rsquo;s and AALB Conference is confirmed. Our program team will be in touch with next steps.
     </p>
@@ -213,9 +213,9 @@ export function presenterConfirmedEmail({ name, url }: { name: string; url: stri
 // week before the conference so formatting can be checked on the venue
 // systems with time to fix things together.
 export function presenterSlidesRequestEmail({ name, url, reminder }: { name: string; url: string; reminder?: boolean }) {
-  const first = (name || "").split(" ")[0] || "there";
+  const first = (name || "").split(" ")[0] || "";
   return shell(`
-    <h1 style="font-size:22px;font-weight:700;margin:0 0 12px 0;letter-spacing:-0.01em;">${reminder ? `A gentle reminder, ${escapeHtml(first)}.` : `One more thing, ${escapeHtml(first)}.`}</h1>
+    <h1 style="font-size:22px;font-weight:700;margin:0 0 12px 0;letter-spacing:-0.01em;">${reminder ? `${addressed("A gentle reminder", first)}` : `${addressed("One more thing", first)}`}</h1>
     <p style="font-size:15px;line-height:1.65;color:${TEXT};margin:0 0 14px 0;">
       ${reminder
         ? `We&rsquo;re still missing your presentation for the 2026 Lurie Children&rsquo;s and AALB Conference. Could you send it over by <strong>Saturday, August 8</strong>?`
@@ -239,9 +239,9 @@ export function presenterSlidesRequestEmail({ name, url, reminder }: { name: str
 }
 
 export function presenterTentativeEmail({ name, url }: { name: string; url: string }) {
-  const first = (name || "").split(" ")[0] || "there";
+  const first = (name || "").split(" ")[0] || "";
   return shell(`
-    <h1 style="font-size:22px;font-weight:700;margin:0 0 12px 0;letter-spacing:-0.01em;">Tentative confirmation received, ${escapeHtml(first)}.</h1>
+    <h1 style="font-size:22px;font-weight:700;margin:0 0 12px 0;letter-spacing:-0.01em;">${addressed("Tentative confirmation received", first)}</h1>
     <p style="font-size:15px;line-height:1.65;color:${TEXT};margin:0 0 14px 0;">
       We have noted your tentative confirmation and the questions you raised. Our program team will follow up directly to discuss before final confirmation.
     </p>
@@ -250,9 +250,9 @@ export function presenterTentativeEmail({ name, url }: { name: string; url: stri
 }
 
 export function presenterChangesRequestedEmail({ name }: { name: string }) {
-  const first = (name || "").split(" ")[0] || "there";
+  const first = (name || "").split(" ")[0] || "";
   return shell(`
-    <h1 style="font-size:22px;font-weight:700;margin:0 0 12px 0;letter-spacing:-0.01em;">Got it, ${escapeHtml(first)}.</h1>
+    <h1 style="font-size:22px;font-weight:700;margin:0 0 12px 0;letter-spacing:-0.01em;">${addressed("Got it", first)}</h1>
     <p style="font-size:15px;line-height:1.65;color:${TEXT};margin:0 0 14px 0;">
       Your request has been sent to the program team. We will be in touch directly to discuss adjustments to your invitation.
     </p>
@@ -260,9 +260,9 @@ export function presenterChangesRequestedEmail({ name }: { name: string }) {
 }
 
 export function presenterDeclinedEmail({ name }: { name: string }) {
-  const first = (name || "").split(" ")[0] || "there";
+  const first = (name || "").split(" ")[0] || "";
   return shell(`
-    <h1 style="font-size:22px;font-weight:700;margin:0 0 12px 0;letter-spacing:-0.01em;">Thanks for letting us know, ${escapeHtml(first)}.</h1>
+    <h1 style="font-size:22px;font-weight:700;margin:0 0 12px 0;letter-spacing:-0.01em;">${addressed("Thanks for letting us know", first)}</h1>
     <p style="font-size:15px;line-height:1.65;color:${TEXT};margin:0 0 14px 0;">
       We have recorded that you are unable to participate in the 2026 Lurie Children&rsquo;s and AALB Conference. We hope to work with you on a future event.
     </p>
@@ -299,12 +299,12 @@ export function passwordResetEmail({
   url: string;
   initiatedByAdmin?: boolean;
 }) {
-  const first = (name || "").split(" ")[0] || "there";
+  const first = (name || "").split(" ")[0] || "";
   const intro = initiatedByAdmin
     ? `An administrator has started a password reset for your Conference Committee Hub account. Use the button below to choose a new password.`
     : `We received a request to reset the password for your Conference Committee Hub account. Use the button below to choose a new password.`;
   return shell(`
-    <h1 style="font-size:22px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">Hello ${escapeHtml(first)},</h1>
+    <h1 style="font-size:22px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">${greetingLine("hello", first)}</h1>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
       ${intro}
     </p>
@@ -485,13 +485,13 @@ export function attendeeInviteEmail({
   mainSiteUrl,
   unsubscribeUrl,
 }: AttendeeInviteArgs) {
-  const first = firstName || "there";
+  const first = firstName || "";
   const extra = inviteMessage
     ? `<p style="font-size:15px;line-height:1.65;color:${TEXT};margin:14px 0;background:#f8fafc;border-left:3px solid ${BLUE};padding:14px 16px;border-radius:6px;">${escapeHtml(inviteMessage)}</p>`
     : "";
   return shell(`
     ${heroBanner()}
-    <h1 style="font-size:24px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">Hi ${escapeHtml(first)},</h1>
+    <h1 style="font-size:24px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">${greetingLine("hi", first)}</h1>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
       I hope this finds you well. I&rsquo;m writing to invite you to the <strong>2026 Lurie Children&rsquo;s &amp; AALB Conference</strong>, August 15 and 16, 2026, held in person at Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago, with full virtual attendance also available.
     </p>
@@ -565,7 +565,7 @@ export function attendeeAlumniInviteEmail({
   const TEAL_DEEP = "#0C3B4B", INK = "#0B1F25", SOFT = "#5A6E76", GOLD_SOFT = "#F4E9CD", LINK = "#1E6FA2";
   const base = (assetBase || ASSET_BASE).replace(/\/$/, "");
   const site = learnMoreUrl || base;
-  const first = (firstName || "there").trim();
+  const first = (firstName || "").trim();
   const today = dateLabel || new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   const hasDiscount = discountPercent > 0;
 
@@ -711,7 +711,7 @@ export function attendeeAlumniInviteEmail({
       <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2.5px;text-transform:uppercase;color:${SOFT};">${escapeHtml(today)}</div>
       <div style="height:18px;line-height:18px;font-size:0;">&nbsp;</div>
 
-      ${p(`Dear ${escapeHtml(first)},`)}
+      ${p(greetingLine("dear", first))}
 
       <p style="margin:0 0 18px 0;font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.85;color:${INK};">
         <span class="sl-dropcap" style="float:left;font-family:Georgia,'Times New Roman',serif;font-size:54px;line-height:42px;color:${TEAL};padding:6px 11px 0 0;">${opening.charAt(0)}</span>${opening.slice(1)}
@@ -840,7 +840,7 @@ export function attendeeReturningInviteEmail({
   const TEAL_DEEP = "#0C3B4B", INK = "#0B1F25", SOFT = "#5A6E76", GOLD_SOFT = "#F4E9CD", LINK = "#1E6FA2";
   const base = (assetBase || ASSET_BASE).replace(/\/$/, "");
   const site = learnMoreUrl || base;
-  const first = (firstName || "there").trim();
+  const first = (firstName || "").trim();
   const today = dateLabel || new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   const hasDiscount = discountPercent > 0;
   const paid = returning2024 === "paid";
@@ -957,7 +957,7 @@ export function attendeeReturningInviteEmail({
       <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:2.5px;text-transform:uppercase;color:${SOFT};">${escapeHtml(today)}</div>
       <div style="height:18px;line-height:18px;font-size:0;">&nbsp;</div>
 
-      ${p(`Dear ${escapeHtml(first)},`)}
+      ${p(greetingLine("dear", first))}
 
       <p style="margin:0 0 18px 0;font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.85;color:${INK};">
         <span class="sl-dropcap" style="float:left;font-family:Georgia,'Times New Roman',serif;font-size:54px;line-height:42px;color:${TEAL};padding:6px 11px 0 0;">${escapeHtml(dropCap)}</span>${openingRest}
@@ -1058,7 +1058,7 @@ export function attendeeConfirmedEmail({
   attendanceMode: string;
   finalPriceCents: number | null;
 }) {
-  const first = firstName || "there";
+  const first = firstName || "";
   const modeLabel = attendanceMode === "in-person" ? "In-person attendance" : "Virtual attendance";
   const amountLine = finalPriceCents == null
     ? null
@@ -1066,7 +1066,7 @@ export function attendeeConfirmedEmail({
     ? "Complimentary"
     : `$${(finalPriceCents / 100).toFixed(2)} paid`;
   return shell(`
-    <h1 style="font-size:24px;font-weight:700;margin:0 0 12px 0;letter-spacing:-0.01em;">You&rsquo;re in, ${escapeHtml(first)}.</h1>
+    <h1 style="font-size:24px;font-weight:700;margin:0 0 12px 0;letter-spacing:-0.01em;">${addressed("You&rsquo;re in", first)}</h1>
     <p style="font-size:15px;line-height:1.65;color:${TEXT};margin:0 0 14px 0;">
       Thank you for confirming. Your spot at the 2026 Lurie Children&rsquo;s and AALB Conference is reserved.
     </p>
@@ -1094,11 +1094,11 @@ export function attendeePortalLinkEmail({
   attendanceMode: string | null;
   assetBase?: string;
 }) {
-  const first = firstName || "there";
+  const first = firstName || "";
   const isVirtual = attendanceMode === "virtual";
   return shell(`
     ${heroBanner()}
-    <h1 style="font-size:23px;font-weight:700;margin:0 0 14px 0;letter-spacing:-0.01em;">Your conference portal, ${escapeHtml(first)}.</h1>
+    <h1 style="font-size:23px;font-weight:700;margin:0 0 14px 0;letter-spacing:-0.01em;">${addressed("Your conference portal", first)}</h1>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
       Here&rsquo;s your personal link for the 2026 Lurie Children&rsquo;s &amp; AALB Conference. Bookmark it: it&rsquo;s where you&rsquo;ll find your registration, add the dates to your calendar${isVirtual ? ", and get your live join link closer to the event" : ", and see arrival details"}.
     </p>
@@ -1257,6 +1257,18 @@ export type AttendeeGuideEmailArgs = {
   assetBase?: string;
 };
 
+// Salutations. With a name: "Hi Priya," / "Dear Priya,". Without one, fall
+// back to the form that is idiomatic for that register rather than pasting a
+// placeholder where a name should be.
+function greetingLine(style: "hi" | "hello" | "dear", name: string | null | undefined, punct = ","): string {
+  const n = (name || "").trim();
+  if (n) {
+    const word = style === "dear" ? "Dear" : style === "hello" ? "Hello" : "Hi";
+    return `${word} ${escapeHtml(n)}${punct}`;
+  }
+  return style === "hi" ? `Hi there${punct}` : `Hello${punct}`;
+}
+
 // ", Priya." when we have a name, "." when we do not. Never ", there."
 function addressed(sentence: string, name: string | null | undefined): string {
   const n = (name || "").trim();
@@ -1404,10 +1416,10 @@ export function attendeeBroadcastEmail({
   ctaLabel?: string | null;
   assetBase?: string;
 }) {
-  const first = firstName || "there";
+  const first = firstName || "";
   return shell(`
     ${heroBanner()}
-    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">Hi ${escapeHtml(first)},</p>
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">${greetingLine("hi", first)}</p>
     <div style="font-size:15px;line-height:1.7;color:${TEXT};">${bodyHtml}</div>
     ${ctaUrl ? button(ctaUrl, ctaLabel || "Open") : ""}
     ${signOff()}
@@ -1436,7 +1448,7 @@ export function sponsorInviteEmail({
   contactFirstName, companyName, suggestedTier, inviteMessage, landingUrl, assetBase, compExhibitor = false, isPartner = false, arranged = false, unsubscribeUrl,
 }: SponsorInviteArgs) {
   const postalAddress = process.env.MAIL_POSTAL_ADDRESS?.trim() || "Americans Against Language Barriers, Chicago, IL";
-  const first = contactFirstName || "there";
+  const first = contactFirstName || "";
   const site = assetBase || "https://conference.aalb.org";
   const ctaLabel = compExhibitor ? "Claim your table" : arranged ? "Confirm &amp; complete payment" : "See sponsorship levels";
   const ticketsClause = (n: number) => (n > 0 ? `, ${n} ticket${n === 1 ? "" : "s"} included` : "");
@@ -1471,7 +1483,7 @@ export function sponsorInviteEmail({
     : `An invitation for ${escapeHtml(companyName)} to sponsor the 2026 Lurie Children's & AALB Conference, August 15 and 16 in Chicago.`;
   return shell(`
     ${heroBanner()}
-    <h1 style="font-size:22px;font-weight:700;margin:0 0 14px 0;letter-spacing:-0.01em;">Hi ${escapeHtml(first)},</h1>
+    <h1 style="font-size:22px;font-weight:700;margin:0 0 14px 0;letter-spacing:-0.01em;">${greetingLine("hi", first)}</h1>
     ${isPartner ? `<div style="display:inline-block;font-size:11px;letter-spacing:0.12em;font-weight:700;color:${TEAL};background:#e6eef0;border:1px solid #cfe0e4;border-radius:999px;padding:5px 13px;margin:0 0 14px 0;text-transform:uppercase;">Official AALB Partner</div><br>` : ""}
     ${inviteMessage
       ? `<p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">${escapeHtml(inviteMessage).replace(/\n/g, "<br>")}</p>`
@@ -1567,7 +1579,7 @@ export function sponsorLetterEmail({
   };
   const greeting = (salutation || "").trim()
     || (isPerson ? firstNameOf(cn) : companyName.replace(/\s*\([^)]*\)\s*$/, "").trim())
-    || "there";
+    || "";
   // Drop a note's trailing "We'd love to have you…" sentence so the personal
   // paragraph doesn't duplicate the letter's own closing invitation.
   const trimClose = (t: string) =>
@@ -1664,7 +1676,7 @@ export function sponsorLetterEmail({
       <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="width:46px;height:2px;background-color:${GOLD};font-size:0;line-height:0;">&nbsp;</td></tr></table>
       <div style="height:22px;line-height:22px;font-size:0;">&nbsp;</div>
 
-      ${p(`Dear ${escapeHtml(greeting)}:`)}
+      ${p(greetingLine("dear", greeting, ":"))}
 
       <p style="margin:0 0 18px 0;font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.85;color:${INK};">
         <span class="sl-dropcap" style="float:left;font-family:Georgia,'Times New Roman',serif;font-size:54px;line-height:42px;color:${TEAL};padding:6px 11px 0 0;">O</span>n behalf of Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers, it is our privilege to invite <strong>${escapeHtml(companyName)}</strong> to stand with us as a sponsor of our Second Joint Conference on language access in American healthcare, August 15 and 16, 2026, in Chicago.
@@ -1791,7 +1803,7 @@ function engravedInKindInvite(kind: "food" | "asl", {
   const isPerson = !!cn && cn.toLowerCase() !== companyName.trim().toLowerCase();
   const honorific = /^(dr|mr|mrs|ms|prof|rev|hon|sr|fr|chef)\.?$/i;
   const firstNameOf = (n: string) => { const t = n.replace(/,.*$/, "").trim().split(/\s+/); return honorific.test(t[0]) ? (t[1] || t[0]) : t[0]; };
-  const greeting = (isPerson ? firstNameOf(cn) : companyName.replace(/\s*\([^)]*\)\s*$/, "").trim()) || "there";
+  const greeting = (isPerson ? firstNameOf(cn) : companyName.replace(/\s*\([^)]*\)\s*$/, "").trim()) || "";
 
   // Kind-specific copy.
   const inviteTail = isAsl
@@ -1952,7 +1964,7 @@ function engravedInKindInvite(kind: "food" | "asl", {
       <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="width:46px;height:2px;background-color:${GOLD};font-size:0;line-height:0;">&nbsp;</td></tr></table>
       <div style="height:22px;line-height:22px;font-size:0;">&nbsp;</div>
 
-      ${p(`Dear ${escapeHtml(greeting)},`)}
+      ${p(greetingLine("dear", greeting))}
 
       <p style="margin:0 0 18px 0;font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.85;color:${INK};">
         <span class="sl-dropcap" style="float:left;font-family:Georgia,'Times New Roman',serif;font-size:54px;line-height:42px;color:${TEAL};padding:6px 11px 0 0;">O</span>n behalf of Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers, ${openingBody}
@@ -2097,7 +2109,7 @@ export function ambassadorInviteEmail({
   // not the full "Org — Program" row label.
   const greeting = (isPerson
     ? firstNameOf(cn)
-    : orgName.split("—")[0].replace(/\s*\([^)]*\)\s*$/, "").trim()) || "there";
+    : orgName.split("—")[0].replace(/\s*\([^)]*\)\s*$/, "").trim()) || "";
 
   const p = (html: string, mb = 18) =>
     `<p style="margin:0 0 ${mb}px 0;font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.85;color:${INK};">${html}</p>`;
@@ -2201,7 +2213,7 @@ export function ambassadorInviteEmail({
       <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="width:46px;height:2px;background-color:${GOLD};font-size:0;line-height:0;">&nbsp;</td></tr></table>
       <div style="height:22px;line-height:22px;font-size:0;">&nbsp;</div>
 
-      ${p(`Dear ${escapeHtml(greeting)},`)}
+      ${p(greetingLine("dear", greeting))}
 
       <p style="margin:0 0 18px 0;font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.85;color:${INK};">
         <span class="sl-dropcap" style="float:left;font-family:Georgia,'Times New Roman',serif;font-size:54px;line-height:42px;color:${TEAL};padding:6px 11px 0 0;">${escapeHtml(openingFirst)}</span>${openingRest}
@@ -2336,7 +2348,7 @@ export function partnerOfferEmail({
   const isPerson = !!cn && cn.toLowerCase() !== orgName.trim().toLowerCase();
   const honorific = /^(dr|mr|mrs|ms|prof|rev|hon|sr|fr)\.?$/i;
   const firstNameOf = (n: string) => { const t = n.replace(/,.*$/, "").trim().split(/\s+/); return honorific.test(t[0]) ? (t[1] || t[0]) : t[0]; };
-  const greeting = (isPerson ? firstNameOf(cn) : orgName.replace(/\s*\([^)]*\)\s*$/, "").trim()) || "there";
+  const greeting = (isPerson ? firstNameOf(cn) : orgName.replace(/\s*\([^)]*\)\s*$/, "").trim()) || "";
 
   const p = (html: string, mb = 18) =>
     `<p style="margin:0 0 ${mb}px 0;font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.85;color:${INK};">${html}</p>`;
@@ -2441,7 +2453,7 @@ export function partnerOfferEmail({
       <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="width:46px;height:2px;background-color:${GOLD};font-size:0;line-height:0;">&nbsp;</td></tr></table>
       <div style="height:22px;line-height:22px;font-size:0;">&nbsp;</div>
 
-      ${p(`Dear ${escapeHtml(greeting)},`)}
+      ${p(greetingLine("dear", greeting))}
 
       <p style="margin:0 0 18px 0;font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.85;color:${INK};">
         <span class="sl-dropcap" style="float:left;font-family:Georgia,'Times New Roman',serif;font-size:54px;line-height:42px;color:${TEAL};padding:6px 11px 0 0;">${escapeHtml(firstPara.charAt(0))}</span>${escapeHtml(firstPara.slice(1))}
@@ -2617,7 +2629,7 @@ export function sponsorInKindAcceptanceEmail({
   const isPerson = !!cn && cn.toLowerCase() !== companyName.trim().toLowerCase();
   const honorific = /^(dr|mr|mrs|ms|prof|rev|hon|sr|fr|chef)\.?$/i;
   const firstNameOf = (n: string) => { const t = n.replace(/,.*$/, "").trim().split(/\s+/); return honorific.test(t[0]) ? (t[1] || t[0]) : t[0]; };
-  const greeting = (isPerson ? firstNameOf(cn) : companyName.replace(/\s*\([^)]*\)\s*$/, "").trim()) || "there";
+  const greeting = (isPerson ? firstNameOf(cn) : companyName.replace(/\s*\([^)]*\)\s*$/, "").trim()) || "";
 
   const mission = isAsl
     ? "helping us keep every session of the conference accessible in American Sign Language, so that Deaf and hard-of-hearing attendees are full participants and never an afterthought"
@@ -2754,7 +2766,7 @@ export function sponsorInKindAcceptanceEmail({
       <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="width:46px;height:2px;background-color:${GOLD};font-size:0;line-height:0;">&nbsp;</td></tr></table>
       <div style="height:22px;line-height:22px;font-size:0;">&nbsp;</div>
 
-      ${p(`Dear ${escapeHtml(greeting)},`)}
+      ${p(greetingLine("dear", greeting))}
 
       <p style="margin:0 0 18px 0;font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.85;color:${INK};">
         <span class="sl-dropcap" style="float:left;font-family:Georgia,'Times New Roman',serif;font-size:54px;line-height:42px;color:${TEAL};padding:6px 11px 0 0;">I</span>t is official, and it is our joy to tell you so. On behalf of Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers, we are delighted to welcome <strong>${escapeHtml(companyName)}</strong> as a confirmed <strong>${escapeHtml(sponsorLabel)}</strong> of our Second Joint Conference on language access in American healthcare.
@@ -2858,12 +2870,12 @@ type SponsorApplicationArgs = {
 export function sponsorApplicationReceivedEmail({
   firstName, companyName, tier, statusUrl, donatesFoodInstead,
 }: SponsorApplicationArgs) {
-  const first = firstName || "there";
+  const first = firstName || "";
   const amountLine = donatesFoodInstead
     ? "You indicated you would like to donate food in kind rather than make a cash sponsorship. We will be in touch shortly to coordinate menu, quantities, and logistics."
     : `Your selected level is the <strong>${escapeHtml(tier.name)}</strong> at ${escapeHtml(tier.amountLabel)}, which includes ${tier.ticketsIncluded > 0 ? `${tier.ticketsIncluded} conference ticket${tier.ticketsIncluded === 1 ? "" : "s"}` : "logo recognition at the conference"}.`;
   return shell(`
-    <h1 style="font-size:22px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">Thank you, ${escapeHtml(first)}.</h1>
+    <h1 style="font-size:22px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">${addressed("Thank you", first)}</h1>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
       We have received ${escapeHtml(companyName)}&rsquo;s application to sponsor the 2026 Lurie Children&rsquo;s and AALB Conference, August 15 and 16, 2026, at Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago.
     </p>
@@ -2898,7 +2910,7 @@ type SponsorAcceptedArgs = {
 export function sponsorAcceptedEmail({
   firstName, companyName, tier, statusUrl, donatesFoodInstead, isExhibitor, benefits, assetBase,
 }: SponsorAcceptedArgs) {
-  const first = firstName || "there";
+  const first = firstName || "";
   const ticketLine = tier.ticketsIncluded
     ? `${tier.ticketsIncluded} conference ${tier.ticketsIncluded === 1 ? "ticket" : "tickets"}`
     : "Recognition at the conference";
@@ -2916,7 +2928,7 @@ export function sponsorAcceptedEmail({
       </td></tr></table>`;
   return shell(`
     ${heroBanner()}
-    <h1 style="font-size:24px;font-weight:800;margin:0 0 14px 0;letter-spacing:-0.01em;">Congratulations, ${escapeHtml(first)}. You&rsquo;re confirmed.</h1>
+    <h1 style="font-size:24px;font-weight:800;margin:0 0 14px 0;letter-spacing:-0.01em;">${addressed("Congratulations", first)} You&rsquo;re confirmed.</h1>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 6px 0;">
       ${roleLine}
     </p>
@@ -2974,7 +2986,7 @@ export function sponsorPaidEmail({
   isExhibitor = false, ticketsIncluded = 0, wantsLogo = false, hasLogo = false,
   registreeName = null, benefits, assetBase,
 }: SponsorPaidArgs) {
-  const first = firstName || "there";
+  const first = firstName || "";
   const isComplimentary = amountCents === 0;
   const amount = isComplimentary
     ? "Complimentary"
@@ -3004,7 +3016,7 @@ export function sponsorPaidEmail({
 
   return shell(`
     ${heroBanner()}
-    <h1 style="font-size:24px;font-weight:800;margin:0 0 14px 0;letter-spacing:-0.01em;">You&rsquo;re all set, ${escapeHtml(first)}.</h1>
+    <h1 style="font-size:24px;font-weight:800;margin:0 0 14px 0;letter-spacing:-0.01em;">${addressed("You&rsquo;re all set", first)}</h1>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 6px 0;">
       ${escapeHtml(companyName)} is confirmed as ${isExhibitor ? "an <strong>exhibitor</strong>" : `a <strong>${escapeHtml(tierName)}</strong>`} at the 2nd Joint Conference of Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago and Americans Against Language Barriers, August 15 and 16, 2026, in Chicago. ${receiptSentence}
     </p>
@@ -3059,12 +3071,12 @@ type SponsorLogoRequestArgs = {
 export function sponsorLogoRequestEmail({
   firstName, companyName, statusUrl, hasLogoOnFile = true, assetBase,
 }: SponsorLogoRequestArgs) {
-  const first = firstName || "there";
+  const first = firstName || "";
   const situation = hasLogoOnFile
     ? `The logo we have on file is a little low-resolution for print and large-screen use, so we&rsquo;d love a higher-quality version.`
     : `We don&rsquo;t yet have a logo on file for you, and we&rsquo;d love one so your organization is represented properly.`;
   return shell(`
-    <h1 style="font-size:22px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">A quick logo request, ${escapeHtml(first)}.</h1>
+    <h1 style="font-size:22px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">${addressed("A quick logo request", first)}</h1>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
       We&rsquo;re putting together the conference materials and want to feature ${escapeHtml(companyName)} at its best. ${situation}
     </p>
@@ -3236,9 +3248,9 @@ export function bookingInviteEmail({
   durationMin: number;
   bookUrl: string;
 }) {
-  const first = (inviteeName || "there").split(" ")[0];
+  const first = (inviteeName || "").split(" ")[0];
   return shell(`
-    <h1 style="font-size:22px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">Hi ${escapeHtml(first)},</h1>
+    <h1 style="font-size:22px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">${greetingLine("hi", first)}</h1>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
       Thank you for your proposal for the 2026 Lurie Children&rsquo;s and AALB Conference. We&rsquo;d love to set up a short conversation to learn more about your session before we finalize the program.
     </p>
@@ -3266,9 +3278,9 @@ export function bookingConfirmedInviteeEmail({
   joinUrl: string | null;
   title: string | null;
 }) {
-  const first = (inviteeName || "there").split(" ")[0];
+  const first = (inviteeName || "").split(" ")[0];
   return shell(`
-    <h1 style="font-size:22px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">You&rsquo;re booked, ${escapeHtml(first)}.</h1>
+    <h1 style="font-size:22px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">${addressed("You&rsquo;re booked", first)}</h1>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
       Your ${durationMin}-minute conversation${title ? ` (${escapeHtml(title)})` : ""} with <strong>${escapeHtml(hostName)}</strong> is confirmed.
     </p>
@@ -3301,9 +3313,9 @@ export function bookingConfirmedHostEmail({
   startUrl: string | null;
   title: string | null;
 }) {
-  const first = (hostName || "there").split(" ")[0];
+  const first = (hostName || "").split(" ")[0];
   return shell(`
-    <h1 style="font-size:22px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">New meeting booked, ${escapeHtml(first)}.</h1>
+    <h1 style="font-size:22px;font-weight:700;margin:0 0 16px 0;letter-spacing:-0.01em;">${addressed("New meeting booked", first)}</h1>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
       <strong>${escapeHtml(inviteeName)}</strong> (<a href="mailto:${escapeHtml(inviteeEmail)}" style="color:${BLUE};">${escapeHtml(inviteeEmail)}</a>) booked a ${durationMin}-minute conversation${title ? ` (${escapeHtml(title)})` : ""} with you.
     </p>
@@ -3377,7 +3389,7 @@ function plainNoteEmail({
 }) {
   const postalAddress = process.env.MAIL_POSTAL_ADDRESS?.trim() || "Americans Against Language Barriers, Chicago, IL";
   const site = (siteUrl || "https://conference.aalb.org").replace(/\/$/, "");
-  const first = escapeHtml((firstName || "there").trim());
+  const first = escapeHtml((firstName || "").trim());
   // The From line shows the organization (ATTENDEE_FROM_NAME, default
   // "AALB Nonprofit"); the note is still signed by a person — the org
   // mailbox with a human signing, like any nonprofit's shared inbox. The
@@ -3403,7 +3415,7 @@ function plainNoteEmail({
 </head>
 <body style="margin:0;padding:0;background-color:#ffffff;">
 <div style="font-family:Arial,Helvetica,sans-serif;font-size:13.5px;line-height:1.5;color:#222222;padding:16px 14px;">
-  <div>Hi ${first},</div>
+  <div>${greetingLine("hi", first)}</div>
   <div><br></div>
 ${paras.map((x) => `  <div>${x}</div>\n  <div><br></div>`).join("\n")}
 ${replyLine ? `  <div>${replyLine}</div>\n  <div><br></div>\n` : ""}  <div>${signerFirst}</div>
@@ -3776,7 +3788,7 @@ export function sponsorTeamInviteEmail({
   const isPerson = !!cn && cn.toLowerCase() !== companyName.trim().toLowerCase();
   const honorific = /^(dr|mr|mrs|ms|prof|rev|hon|sr|fr|chef)\.?$/i;
   const firstNameOf = (n: string) => { const t = n.replace(/,.*$/, "").trim().split(/\s+/); return honorific.test(t[0]) ? (t[1] || t[0]) : t[0]; };
-  const greeting = (isPerson ? firstNameOf(cn) : companyName.replace(/\s*\([^)]*\)\s*$/, "").trim()) || "there";
+  const greeting = (isPerson ? firstNameOf(cn) : companyName.replace(/\s*\([^)]*\)\s*$/, "").trim()) || "";
 
   const hasTickets = ticketsIncluded > 0;
   const ticketWord = ticketsIncluded === 1 ? "ticket" : "tickets";
@@ -3880,7 +3892,7 @@ export function sponsorTeamInviteEmail({
       <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="width:46px;height:2px;background-color:${GOLD};font-size:0;line-height:0;">&nbsp;</td></tr></table>
       <div style="height:22px;line-height:22px;font-size:0;">&nbsp;</div>
 
-      ${p(`Dear ${escapeHtml(greeting)},`)}
+      ${p(greetingLine("dear", greeting))}
 
       <p style="margin:0 0 18px 0;font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.85;color:${INK};">
         <span class="sl-dropcap" style="float:left;font-family:Georgia,'Times New Roman',serif;font-size:54px;line-height:42px;color:${TEAL};padding:6px 11px 0 0;">A</span>ugust is close now, and the room is coming together. As we finalize badges, seating and catering, there is one thing we need from you: the names of the people joining us from <strong>${escapeHtml(companyName)}</strong>.
@@ -3980,7 +3992,7 @@ export function presenterAttendeeConfirmEmail({
   const today = dateLabel || new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   const honorific = /^(dr|mr|mrs|ms|prof|rev|hon|sr|fr)\.?$/i;
   const t = (name || "").trim().split(/\s+/);
-  const first = (honorific.test(t[0]) ? (t[1] || t[0]) : t[0]) || "there";
+  const first = (honorific.test(t[0]) ? (t[1] || t[0]) : t[0]) || "";
 
   const p = (html: string, mb = 18) =>
     `<p style="margin:0 0 ${mb}px 0;font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.85;color:${INK};">${html}</p>`;
@@ -4062,7 +4074,7 @@ export function presenterAttendeeConfirmEmail({
       <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="width:46px;height:2px;background-color:${GOLD};font-size:0;line-height:0;">&nbsp;</td></tr></table>
       <div style="height:22px;line-height:22px;font-size:0;">&nbsp;</div>
 
-      ${p(`Dear ${escapeHtml(first)},`)}
+      ${p(greetingLine("dear", first))}
 
       <p style="margin:0 0 18px 0;font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.85;color:${INK};">
         <span class="sl-dropcap" style="float:left;font-family:Georgia,'Times New Roman',serif;font-size:54px;line-height:42px;color:${TEAL};padding:6px 11px 0 0;">Y</span>ou are speaking with us in August, which means you are also our guest for both days. There is nothing to buy and nothing to register for: your seat is already reserved, and we have set up an attendee page in your name.
@@ -4174,7 +4186,7 @@ export function sponsorPaymentReminderEmail({
   const isPerson = !!cn && cn.toLowerCase() !== companyName.trim().toLowerCase();
   const honorific = /^(dr|mr|mrs|ms|prof|rev|hon|sr|fr)\.?$/i;
   const firstNameOf = (n: string) => { const t = n.replace(/,.*$/, "").trim().split(/\s+/); return honorific.test(t[0]) ? (t[1] || t[0]) : t[0]; };
-  const greeting = (isPerson ? firstNameOf(cn) : companyName.replace(/\s*\([^)]*\)\s*$/, "").trim()) || "there";
+  const greeting = (isPerson ? firstNameOf(cn) : companyName.replace(/\s*\([^)]*\)\s*$/, "").trim()) || "";
   const later = reminderNumber > 1;
 
   const p = (html: string, mb = 18) =>
@@ -4255,7 +4267,7 @@ export function sponsorPaymentReminderEmail({
       <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="width:46px;height:2px;background-color:${GOLD};font-size:0;line-height:0;">&nbsp;</td></tr></table>
       <div style="height:22px;line-height:22px;font-size:0;">&nbsp;</div>
 
-      ${p(`Dear ${escapeHtml(greeting)},`)}
+      ${p(greetingLine("dear", greeting))}
 
       <p style="margin:0 0 18px 0;font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.85;color:${INK};">
         <span class="sl-dropcap" style="float:left;font-family:Georgia,'Times New Roman',serif;font-size:54px;line-height:42px;color:${TEAL};padding:6px 11px 0 0;">${later ? "W" : "T"}</span>${later
