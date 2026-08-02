@@ -1,5 +1,6 @@
 import { runEmailQueue, TICK_MS } from "./email-queue";
 import { dispatchDueReminders } from "./reminders";
+import { dispatchDueGuides } from "./guide-dispatch";
 
 // The in-app scheduler: the web service ticks its own queues instead of
 // depending on an external cron reaching an HTTP endpoint. Discovered the
@@ -31,6 +32,14 @@ export function startScheduler() {
       console.error("[scheduler] email queue tick failed", e);
     }
     try {
+      const guides = await dispatchDueGuides();
+      if (guides.sent || guides.failed) {
+        console.log(`[scheduler] guides tick: sent=${guides.sent} failed=${guides.failed}`);
+      }
+    } catch (e) {
+      console.error("[scheduler] guide tick failed", e);
+    }
+    try {
       const reminders = await dispatchDueReminders();
       if (reminders.delivered || reminders.failed) {
         console.log(`[scheduler] reminders tick: delivered=${reminders.delivered} failed=${reminders.failed}`);
@@ -47,5 +56,5 @@ export function startScheduler() {
   // minute of latency to an already-due queue.
   setTimeout(() => void tick(), 10_000).unref?.();
 
-  console.log("[scheduler] in-app scheduler started (email queue + reminders, every 60s)");
+  console.log("[scheduler] in-app scheduler started (email queue + guides + reminders, every 60s)");
 }

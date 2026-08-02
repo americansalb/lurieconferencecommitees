@@ -1151,6 +1151,10 @@ export default function AttendeesPage() {
                             {guideEligible - guideSent > 0 ? `, ${guideEligible - guideSent} still to go` : ""}.
                           </strong>{" "}
                           Every send is stamped on the person&rsquo;s row and in their timeline.
+                          <br />
+                          New in-person registrations get theirs automatically, five minutes after
+                          they pay, so this button is for the people who registered before that and
+                          for anything the automatic run missed.
                         </p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
