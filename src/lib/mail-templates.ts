@@ -1361,6 +1361,10 @@ export type FoodPlanEmailArgs = {
   companyName: string;
   // The in-kind logistics map exactly as the sponsor filled it in.
   logistics: Record<string, string> | null;
+  // The phone already on their record. We ask for a number only when we do not
+  // have one; asking again for something they already gave us is how a
+  // confirmation starts to read like a form.
+  contactPhone?: string | null;
   portalUrl: string;
   ticketsIncluded: number;
   assetBase?: string;
@@ -1377,7 +1381,7 @@ export type FoodPlanEmailArgs = {
 // table, and sending them the exhibitor guide is exactly the mistake this
 // replaces.
 export function foodPlanEmail({
-  contactName, companyName, logistics, portalUrl, ticketsIncluded, assetBase,
+  contactName, companyName, logistics, contactPhone, portalUrl, ticketsIncluded, assetBase,
 }: FoodPlanEmailArgs) {
   const first = sponsorFirstName(contactName || "", companyName);
   const L = logistics || {};
@@ -1399,6 +1403,7 @@ export function foodPlanEmail({
   if (v("meal")) providing.push({ label: "Meal", value: escapeHtml(v("meal")) });
   if (v("allergens")) providing.push({ label: "Allergens", value: escapeHtml(v("allergens")) });
 
+  const knownPhoneEarly = (contactPhone || "").trim();
   const handover: { label: string; value: string }[] = [
     {
       label: weCollect ? "We collect it" : "You deliver it",
@@ -1408,20 +1413,26 @@ export function foodPlanEmail({
     },
   ];
   if (v("window")) handover.push({ label: "Window", value: escapeHtml(v("window")) });
-  if (v("dayOfContact")) handover.push({ label: "Day-of contact", value: escapeHtml(v("dayOfContact")) });
+  if (v("dayOfContact") || knownPhoneEarly) {
+    handover.push({
+      label: "Day-of contact",
+      value: [escapeHtml(v("dayOfContact")), knownPhoneEarly ? escapeHtml(knownPhoneEarly) : ""].filter(Boolean).join(" &middot; "),
+    });
+  }
   if (v("setup")) handover.push({ label: "Setup", value: escapeHtml(v("setup")) });
 
   // Only ask for what is genuinely missing. A form that asks again for what
   // someone already sent is why people stop replying.
+  const knownPhone = knownPhoneEarly;
+  const contactHasNumber = /\d{3}/.test(v("dayOfContact")) || !!knownPhone;
   const missing: string[] = [];
-  if (v("dayOfContact") && !/\d{3}/.test(v("dayOfContact"))) {
-    missing.push(`a mobile number for ${escapeHtml(v("dayOfContact"))}, so the driver can reach them on the day`);
-  } else if (!v("dayOfContact")) {
-    missing.push("a name and mobile number for whoever we should ask for on the day");
+  if (!v("dayOfContact") && !knownPhone) {
+    missing.push("a name and number for whoever we should ask for on the day");
+  } else if (!contactHasNumber) {
+    missing.push(`a number for ${escapeHtml(v("dayOfContact"))} on the day`);
   }
-  if (weCollect) missing.push("the address we are collecting from, if it is not your main kitchen");
   if (ticketsIncluded > 0 && !/^(yes|no)\b/i.test(v("attending") || "")) {
-    missing.push(`who your ${ticketsIncluded} complimentary ${ticketsIncluded === 1 ? "ticket is" : "tickets are"} for, or a note that you would rather not use them`);
+    missing.push(`whether you want to use your ${ticketsIncluded} ${ticketsIncluded === 1 ? "ticket" : "tickets"}, and who for`);
   }
 
   const body = `

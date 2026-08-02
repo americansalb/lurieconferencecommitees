@@ -50,6 +50,7 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
     contactName: sponsor.contactName,
     companyName: sponsor.companyName,
     logistics,
+    contactPhone: sponsor.contactPhone,
     portalUrl: sponsorStatusUrl(sponsor.applicationToken),
     ticketsIncluded: sponsor.ticketsIncluded ?? tier?.ticketsIncluded ?? 0,
     assetBase: appUrl(),

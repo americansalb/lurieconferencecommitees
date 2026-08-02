@@ -131,6 +131,7 @@ export async function GET(
       html = foodPlanEmail({
         contactName: "Michael Hornick",
         companyName: "The Chicago Diner",
+        contactPhone: "(773) 935-6696",
         logistics: {
           day: "Saturday, August 15", meal: "Lunch",
           setup: "Warming container for half pans. We will provide tongs, and spoons.",
