@@ -176,10 +176,8 @@ export default function AttendeePortal({
             </Link>
           </div>
 
-          {/* Built when they click, so it always carries whatever they have
-              just corrected below rather than what we held at send time. */}
           <a
-            href={`/attend/${token}/guide.pdf`}
+            href="/guides/attendee-guide.pdf"
             className="mt-2.5 flex items-center gap-3 rounded-xl px-4 py-3.5 transition-colors hover:brightness-[0.98]"
             style={{ background: E.cream, border: "1.5px solid " + E.gold }}
           >
@@ -187,7 +185,7 @@ export default function AttendeePortal({
             <div>
               <div className="text-[13.5px] font-bold" style={{ color: E.ink }}>Your conference guide</div>
               <div className="text-[11px]" style={{ color: E.soft }}>
-                PDF, personalized for you. Getting here, check-in, meals, and what we have on file.
+                PDF. Getting here, check-in, what to bring, meals, and claiming your CEUs.
               </div>
             </div>
           </a>

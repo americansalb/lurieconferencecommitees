@@ -128,14 +128,20 @@ export async function GET(
       break;
     case "attendee-guide":
       html = attendeeGuideEmail({
-        firstName: "Priya", portalUrl: `${base}/attend/demo-token`,
-        attendanceMode: "in-person", hasNeeds: false, assetBase: base,
+        firstName: "Priya", lastName: "Raman",
+        portalUrl: `${base}/attend/demo-token`, attendanceMode: "in-person",
+        dietary: "Vegetarian, no nuts please",
+        accessibilityNotes: "CART captioning if available, and a quiet space between sessions.",
+        primaryLanguages: "Spanish, Hindi", needsParking: true,
+        assetBase: base,
       });
       break;
     case "exhibitor-guide":
       html = exhibitorGuideEmail({
         contactName: "Jill Nelson", companyName: "Multilingual Connections",
-        teamUrl: `${base}/exhibitor/demo-team-token`, seatsRemaining: 1, assetBase: base,
+        teamUrl: `${base}/exhibitor/demo-team-token`, seatsRemaining: 1,
+        team: [{ name: "Jill Nelson", comp: true }, { name: "Dana Ortiz", comp: false }],
+        assetBase: base,
       });
       break;
     case "asl-urgent":

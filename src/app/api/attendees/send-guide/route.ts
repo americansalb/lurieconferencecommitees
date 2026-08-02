@@ -6,7 +6,6 @@ import { sendMail } from "@/lib/mail";
 import { appUrl } from "@/lib/presenters";
 import { attendeeGuideEmail } from "@/lib/mail-templates";
 import { attendeeFromHeader, attendeeReplyTo } from "@/lib/attendees";
-import { buildAttendeeGuide, guideFilename } from "@/lib/guide-pdf";
 
 // Send each confirmed attendee their own guide, with their personal page built
 // from what we currently hold.
@@ -55,22 +54,7 @@ export async function POST(req: Request) {
   const failures: { email: string; error: string }[] = [];
 
   for (const a of targets) {
-    const name = `${a.firstName} ${a.lastName}`.trim();
     try {
-      const pdf = await buildAttendeeGuide({
-        firstName: a.firstName,
-        lastName: a.lastName,
-        affiliation: a.affiliation,
-        attendanceMode: a.attendanceMode,
-        attendDay: a.attendDay,
-        portalUrl: `${appUrl()}/attend/${a.inviteToken}`,
-        dietary: a.dietary,
-        accessibilityNotes: a.accessibilityNotes,
-        primaryLanguages: a.primaryLanguages,
-        needsParking: a.needsParking,
-        sponsorName: a.sponsor?.companyName ?? null,
-      });
-
       await sendMail({
         to: a.email,
         // From "AALB Nonprofit", the same sender every other attendee email
@@ -80,14 +64,22 @@ export async function POST(req: Request) {
         subject: "Your guide to the conference",
         html: attendeeGuideEmail({
           firstName: a.firstName,
+          lastName: a.lastName,
           portalUrl: `${appUrl()}/attend/${a.inviteToken}`,
           attendanceMode: a.attendanceMode,
-          hasNeeds: !!((a.dietary || "").trim() || (a.accessibilityNotes || "").trim()),
+          attendDay: a.attendDay,
+          dietary: a.dietary,
+          accessibilityNotes: a.accessibilityNotes,
+          primaryLanguages: a.primaryLanguages,
+          needsParking: a.needsParking,
+          sponsorName: a.sponsor?.companyName ?? null,
           assetBase: appUrl(),
         }),
+        // The guide exactly as designed. Everyone gets the same file, so it
+        // goes by URL for Resend to fetch rather than as a per-person payload.
         attachments: [{
-          filename: guideFilename("attendee", name),
-          content: Buffer.from(pdf).toString("base64"),
+          filename: "2026-conference-attendee-guide.pdf",
+          path: `${appUrl()}/guides/attendee-guide.pdf`,
         }],
       });
 

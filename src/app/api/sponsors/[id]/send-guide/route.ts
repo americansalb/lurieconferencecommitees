@@ -5,7 +5,6 @@ import { prisma } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
 import { appUrl } from "@/lib/presenters";
 import { exhibitorGuideEmail } from "@/lib/mail-templates";
-import { buildExhibitorGuide, guideFilename } from "@/lib/guide-pdf";
 import { compAllowance, ensureTeamToken, seatSummary, teamFor, teamUrl } from "@/lib/sponsor-team";
 import {
   tierById, sponsorFromHeader, sponsorLetterReplyTo, sponsorUnsubHeaders,
@@ -42,16 +41,6 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
   const team = await teamFor(sponsor.id);
   const seats = seatSummary(team, compAllowance(sponsor));
 
-  const pdf = await buildExhibitorGuide({
-    companyName: sponsor.companyName,
-    contactName: sponsor.contactName,
-    tierName: sponsor.customTierName || tierById(sponsor.tier)?.name || "Exhibitor",
-    teamUrl: teamUrl(token),
-    seatsIncluded: seats.allowance,
-    seatsRemaining: seats.remaining,
-    team: team.map((m) => ({ name: `${m.firstName} ${m.lastName}`.trim() || m.email, comp: m.comp })),
-  });
-
   try {
     await sendMail({
       to: sponsor.contactEmail,
@@ -61,15 +50,18 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
         companyName: sponsor.companyName,
         teamUrl: teamUrl(token),
         seatsRemaining: seats.remaining,
+        team: team.map((m) => ({ name: `${m.firstName} ${m.lastName}`.trim() || m.email, comp: m.comp })),
         assetBase: appUrl(),
       }),
       from: sponsorFromHeader(),
       replyTo: sponsorLetterReplyTo(),
       cc: sponsor.additionalEmails,
       headers: sponsorUnsubHeaders(sponsor.applicationToken),
+      // The guide exactly as designed, fetched by Resend rather than rebuilt
+      // per organization.
       attachments: [{
-        filename: guideFilename("exhibitor", sponsor.companyName),
-        content: Buffer.from(pdf).toString("base64"),
+        filename: "2026-conference-exhibitor-guide.pdf",
+        path: `${appUrl()}/guides/exhibitor-guide.pdf`,
       }],
     });
   } catch (e) {

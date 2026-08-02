@@ -33,10 +33,8 @@ export default async function ExhibitorTeamPage({ params }: { params: { token: s
 
         <TeamManager token={params.token} shareUrl={teamUrl(params.token)} />
 
-        {/* Generated on click, so the team list printed inside it matches the
-            one they have just finished editing above. */}
         <a
-          href={`/exhibitor/${params.token}/guide.pdf`}
+          href="/guides/exhibitor-guide.pdf"
           className="mt-4 flex items-center gap-3 rounded-xl px-4 py-3.5 bg-white border-[1.5px] transition-colors hover:brightness-[0.98]"
           style={{ borderColor: "#E0C67A" }}
         >
@@ -44,8 +42,7 @@ export default async function ExhibitorTeamPage({ params }: { params: { token: s
           <div>
             <div className="text-[13.5px] font-bold text-slate-900">Your exhibitor guide</div>
             <div className="text-[11.5px] text-slate-500">
-              PDF for {sponsor.companyName}: load-in times, parking, shipping, and a pre-addressed
-              label to tape to your boxes.
+              PDF. Load-in and teardown times, parking, shipping ahead, and when the room is busiest.
             </div>
           </div>
         </a>

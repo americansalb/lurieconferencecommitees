@@ -1114,21 +1114,23 @@ export function attendeePortalLinkEmail({
 // The guide emails.
 //
 // These go to people who have already paid and are coming, so they are not
-// outreach: no pitch, no signature from an individual, and nothing that
-// describes the attachment rather than simply telling them what they need to
-// know. Set in the guide's own visual language (teal band, gold rules, a
-// details card) so the email and the PDF read as one piece of work, and signed
-// by the committee rather than a person.
+// outreach: no pitch, and no signature from an individual. The guide PDF is
+// attached exactly as designed, and everything personal lives here in the
+// letter rather than on a page bolted to the front of it.
+//
+// The point of the personal part is not decoration. We cook and seat from the
+// dietary and access answers we hold, so they are printed back where they
+// cannot be missed and someone can correct us before they travel.
 
 // A card of label/value pairs, the "At a Glance" pattern from the guides.
-function detailCard(rows: { label: string; value: string }[]): string {
+function detailCard(rows: { label: string; value: string }[], accent = false): string {
   return `
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 22px 0;border:1px solid #E3EAEC;border-radius:12px;background-color:#F7FAFB;">
-      <tr><td style="padding:6px 20px 14px 20px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 22px 0;border:1px solid ${accent ? "#E5D4A8" : "#E3EAEC"};border-radius:12px;background-color:${accent ? "#FDF9EF" : "#F7FAFB"};">
+      <tr><td style="padding:6px 20px 16px 20px;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
           ${rows.map((r) => `
           <tr>
-            <td style="padding:12px 0 0 0;border-bottom:0;">
+            <td style="padding:12px 0 0 0;">
               <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;font-weight:bold;letter-spacing:1.6px;text-transform:uppercase;color:#C08F35;">${r.label}</div>
               <div style="font-family:Helvetica,Arial,sans-serif;font-size:14.5px;line-height:1.55;color:#0F1B22;padding-top:3px;">${r.value}</div>
             </td>
@@ -1139,7 +1141,7 @@ function detailCard(rows: { label: string; value: string }[]): string {
 }
 
 // Sign-off for anything sent to confirmed attendees and partners: the
-// committee, not a person. The individual signatures belong on invitations.
+// committee, not a person. Individual signatures belong on invitations.
 function committeeSignOff(): string {
   return `
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:26px 0 0 0;border-top:1px solid #E7EDEF;">
@@ -1152,31 +1154,64 @@ function committeeSignOff(): string {
     </table>`;
 }
 
-export function attendeeGuideEmail({
-  firstName, portalUrl, attendanceMode, hasNeeds, assetBase,
-}: {
+export type AttendeeGuideEmailArgs = {
   firstName: string;
+  lastName?: string | null;
   portalUrl: string;
   attendanceMode: string | null;
-  // True when we already hold a dietary or access note for them, which changes
-  // the ask from "tell us" to "check we have it right".
-  hasNeeds: boolean;
+  attendDay?: string | null;
+  // What we hold for them, shown so they can correct it before travelling.
+  dietary?: string | null;
+  accessibilityNotes?: string | null;
+  primaryLanguages?: string | null;
+  needsParking?: boolean | null;
+  // Set when their seat came with a sponsor's table.
+  sponsorName?: string | null;
   assetBase?: string;
-}) {
+};
+
+export function attendeeGuideEmail({
+  firstName, lastName, portalUrl, attendanceMode, attendDay,
+  dietary, accessibilityNotes, primaryLanguages, needsParking, sponsorName, assetBase,
+}: AttendeeGuideEmailArgs) {
   const first = firstName || "there";
+  const fullName = [firstName, lastName].filter(Boolean).join(" ").trim();
   const isVirtual = attendanceMode === "virtual";
-  const rows = isVirtual
+  const has = (v?: string | null) => (v || "").trim();
+  const hasNeeds = !!(has(dietary) || has(accessibilityNotes));
+
+  const details = isVirtual
     ? [
         { label: "When", value: "Saturday, August 15 and Sunday, August 16, 2026" },
         { label: "Where", value: "Online. Your joining link arrives before the event." },
         { label: "CEUs", value: "Earned by attending live. Instructions come at the conference." },
       ]
     : [
-        { label: "When", value: "Saturday, August 15 and Sunday, August 16, 2026" },
+        {
+          label: "When",
+          value: attendDay
+            ? `${escapeHtml(attendDay)} only`
+            : "Saturday, August 15 and Sunday, August 16, 2026",
+        },
         { label: "Where", value: "Lurie Children&rsquo;s Hospital, 225 East Chicago Avenue, Chicago &middot; 11th floor" },
         { label: "Check-in", value: "Saturday 9:00 to 9:30 AM, Sunday 8:30 to 9:00 AM. Photo ID required both days." },
         { label: "Meals", value: "Coffee all day, morning refreshments, and a meat-free lunch both days." },
+        ...(fullName
+          ? [{
+              label: "Your badge will say",
+              value: escapeHtml(fullName) + (sponsorName ? `<br/><span style="color:#5A6E76;font-size:13px;">Guest of ${escapeHtml(sponsorName)}</span>` : ""),
+            }]
+          : []),
       ];
+
+  // Only shown when there is something to check or correct.
+  const onFile = [
+    ...(has(dietary) ? [{ label: "Dietary needs", value: escapeHtml(has(dietary)) }] : []),
+    ...(has(accessibilityNotes) ? [{ label: "Access needs", value: escapeHtml(has(accessibilityNotes)) }] : []),
+    ...(!isVirtual && needsParking ? [{ label: "Parking", value: "You asked about parking. Details are in the guide." }] : []),
+    ...(has(primaryLanguages) ? [{ label: "Languages", value: escapeHtml(has(primaryLanguages)) }] : []),
+  ];
+
   return shell(`
     ${heroBanner()}
     <h1 style="font-size:24px;font-weight:700;margin:0 0 14px 0;letter-spacing:-0.01em;">Your conference guide, ${escapeHtml(first)}.</h1>
@@ -1184,57 +1219,86 @@ export function attendeeGuideEmail({
       It is attached. ${isVirtual
         ? "It covers the schedule, the sessions, and claiming your CEUs."
         : "It covers getting to Lurie Children&rsquo;s, where to check in, what to bring, meals, and claiming your CEUs."}
+      Here is where you stand:
     </p>
-    ${detailCard(rows)}
+    ${detailCard(details)}
+    ${hasNeeds ? `
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 4px 0;">
+      This is what we have recorded for you. We plan meals and seating from exactly these answers, so please tell us if any of it is wrong.
+    </p>
+    ${detailCard(onFile, true)}` : `
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 18px 0;">
-      ${hasNeeds
-        ? "Your dietary and access needs are printed on the first page. Please check them. We plan meals and seating from exactly those answers, so it matters that they are right."
-        : "We do not have any dietary or access needs recorded for you. If you have any, add them in your portal and we will plan around them."}
-    </p>
+      We do not have any dietary or access needs recorded for you. If you have any, add them in your portal and we will plan around them.
+    </p>`}
     ${button(portalUrl, "Open my portal")}
     <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;">
-      Change anything in your portal and download the guide again; it rebuilds with your answers. Questions are welcome by reply.
+      Anything to change, update it in your portal and we will see it. Questions are welcome by reply.
     </p>
     ${committeeSignOff()}
     ${logoLockup(assetBase)}
-  `, isVirtual
-    ? "Your guide to the 2026 conference, plus how to claim your CEUs."
-    : "Your guide to the 2026 conference: getting there, check-in, meals, and CEUs.",
+  `,
+    isVirtual
+      ? "Your guide to the 2026 conference, plus how to claim your CEUs."
+      : "Your guide to the 2026 conference: getting there, check-in, meals, and CEUs.",
     "You are receiving this because you are registered for the 2026 Lurie Children&rsquo;s and AALB Conference.");
 }
 
-export function exhibitorGuideEmail({
-  contactName, companyName, teamUrl, seatsRemaining, assetBase,
-}: {
+export type ExhibitorGuideEmailArgs = {
   contactName: string | null;
   companyName: string;
   teamUrl: string;
   seatsRemaining: number;
+  team?: { name: string; comp: boolean }[];
   assetBase?: string;
-}) {
+};
+
+export function exhibitorGuideEmail({
+  contactName, companyName, teamUrl, seatsRemaining, team, assetBase,
+}: ExhibitorGuideEmailArgs) {
   const first = sponsorFirstName(contactName || "", companyName) || "there";
+  const roster = team && team.length
+    ? team.map((m) => `${escapeHtml(m.name)}${m.comp ? "" : ` <span style="color:#5A6E76;font-size:13px;">(registered separately)</span>`}`).join("<br/>")
+    : "Nobody registered yet.";
+
   return shell(`
     ${heroBanner()}
     <h1 style="font-size:24px;font-weight:700;margin:0 0 14px 0;letter-spacing:-0.01em;">Your exhibitor guide, ${escapeHtml(first)}.</h1>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 20px 0;">
-      Attached, and made for ${escapeHtml(companyName)}. It covers load-in and teardown, parking and the drop-off door, shipping ahead, and when the room is busiest.
+      It is attached. It covers load-in and teardown, parking and the drop-off door, shipping ahead, and when the room is busiest. The details for ${escapeHtml(companyName)}:
     </p>
     ${detailCard([
-      { label: "Load-in", value: "Friday, August 14, 4:30 to 8:00 PM, or Saturday, August 15, 7:00 to 8:00 AM. Fully set up by 8:45 AM Saturday." },
+      { label: "Load-in", value: "Friday, August 14, 4:30 to 8:00 PM, or Saturday, August 15, 7:00 to 8:00 AM. Fully set up by 8:45 AM Saturday, after which nothing may be moved in or around the space." },
       { label: "Teardown", value: "Please stay set up until 4:30 PM on Sunday, August 16." },
       { label: "Before you travel", value: "Text Adriana at 773-573-0678 with your expected arrival time and someone will meet you." },
-      { label: "Shipping", value: "The last page is a label already addressed to us with your name on it. Print it and tape it to the box." },
+      { label: "Busiest times", value: "Coffee breaks and lunch both days." },
     ])}
-    ${seatsRemaining > 0 ? `<p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 18px 0;">
-      You have ${seatsRemaining} included ${seatsRemaining === 1 ? "ticket" : "tickets"} still unclaimed. Whoever you add gets a badge and appears in our headcount.
-    </p>` : ""}
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 4px 0;">
+      Shipping ahead? Address boxes to us and email <a href="mailto:contact@aalb.org" style="color:${TEAL};">contact@aalb.org</a> with an inventory once a shipment is on its way.
+    </p>
+    ${detailCard([
+      { label: "Deliver to", value: "Claudia Fairley<br/>225 E Chicago Ave.<br/>Chicago, IL 60611" },
+      { label: "Mark the box", value: `Exhibitor materials for ${escapeHtml(companyName)}` },
+    ], true)}
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 4px 0;">
+      Coming from your team:
+    </p>
+    ${detailCard([
+      { label: "On your list", value: roster },
+      {
+        label: "Included tickets",
+        value: seatsRemaining > 0
+          ? `${seatsRemaining} still unclaimed. Whoever you add gets a badge and appears in our headcount.`
+          : "All claimed. Anyone else is welcome to register at the usual rate through the same link.",
+      },
+    ])}
     ${button(teamUrl, "Your team page")}
     <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:18px 0 0 0;">
       Anything you need on the day, reply here and we will sort it out.
     </p>
     ${committeeSignOff()}
     ${logoLockup(assetBase)}
-  `, `Your exhibitor guide for ${companyName}: load-in times, parking, and shipping.`,
+  `,
+    `Your exhibitor guide for ${companyName}: load-in times, parking, and shipping.`,
     `You are receiving this because ${escapeHtml(companyName)} is exhibiting at the 2026 Lurie Children&rsquo;s and AALB Conference.`);
 }
 
