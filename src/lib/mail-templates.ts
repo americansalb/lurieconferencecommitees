@@ -1356,6 +1356,107 @@ export function attendeeGuideEmail({
   });
 }
 
+export type FoodPlanEmailArgs = {
+  contactName: string | null;
+  companyName: string;
+  // The in-kind logistics map exactly as the sponsor filled it in.
+  logistics: Record<string, string> | null;
+  portalUrl: string;
+  ticketsIncluded: number;
+  assetBase?: string;
+};
+
+// The food partner's arrangement, confirmed back to them.
+//
+// Not a second welcome: the acceptance letter already did that and asked for
+// these details, and they have now sent them. This closes that loop. It says
+// what we have, who is moving the food and when, and asks only for the pieces
+// still missing, rather than repeating the whole ask.
+//
+// Nothing here mentions tables, load-in or shipping. A food partner has no
+// table, and sending them the exhibitor guide is exactly the mistake this
+// replaces.
+export function foodPlanEmail({
+  contactName, companyName, logistics, portalUrl, ticketsIncluded, assetBase,
+}: FoodPlanEmailArgs) {
+  const first = sponsorFirstName(contactName || "", companyName);
+  const L = logistics || {};
+  const v = (k: string) => (L[k] || "").trim();
+
+  // "Please arrange pickup" means we go to them. Getting this backwards would
+  // leave a hundred servings sitting on a counter, so it is read from their
+  // own answer rather than assumed.
+  const weCollect = /pickup|collect/i.test(v("fulfillment"));
+  const day = v("day");
+  const isSaturday = /saturday/i.test(day);
+  const isSunday = /sunday/i.test(day);
+  // Straight from the published programme, so they know it is not sitting out.
+  const servedAt = isSaturday ? "1:25 PM on Saturday" : isSunday ? "11:05 AM on Sunday" : null;
+
+  const providing: { label: string; value: string }[] = [];
+  if (v("provide")) providing.push({ label: "What you are sending", value: escapeHtml(v("provide")) });
+  if (day) providing.push({ label: "Day", value: escapeHtml(day) });
+  if (v("meal")) providing.push({ label: "Meal", value: escapeHtml(v("meal")) });
+  if (v("allergens")) providing.push({ label: "Allergens", value: escapeHtml(v("allergens")) });
+
+  const handover: { label: string; value: string }[] = [
+    {
+      label: weCollect ? "We collect it" : "You deliver it",
+      value: weCollect
+        ? "Our team comes to you. You do not need to bring anything to the hospital."
+        : "Lurie Children&rsquo;s Hospital, 225 E Chicago Ave. Pull into the drop-off and pick-up drive, under the canopy, and text when you are close.",
+    },
+  ];
+  if (v("window")) handover.push({ label: "Window", value: escapeHtml(v("window")) });
+  if (v("dayOfContact")) handover.push({ label: "Day-of contact", value: escapeHtml(v("dayOfContact")) });
+  if (v("setup")) handover.push({ label: "Setup", value: escapeHtml(v("setup")) });
+
+  // Only ask for what is genuinely missing. A form that asks again for what
+  // someone already sent is why people stop replying.
+  const missing: string[] = [];
+  if (v("dayOfContact") && !/\d{3}/.test(v("dayOfContact"))) {
+    missing.push(`a mobile number for ${escapeHtml(v("dayOfContact"))}, so the driver can reach them on the day`);
+  } else if (!v("dayOfContact")) {
+    missing.push("a name and mobile number for whoever we should ask for on the day");
+  }
+  if (weCollect) missing.push("the address we are collecting from, if it is not your main kitchen");
+  if (ticketsIncluded > 0 && !/^(yes|no)\b/i.test(v("attending") || "")) {
+    missing.push(`who your ${ticketsIncluded} complimentary ${ticketsIncluded === 1 ? "ticket is" : "tickets are"} for, or a note that you would rather not use them`);
+  }
+
+  const body = `
+      ${gH1(addressed("We have your food details", first))}
+      ${gP(`Thank you. Here is what we have written down for ${escapeHtml(companyName)}, so you can check it well before the day.`)}
+
+      ${gLabel("What you are providing")}
+      ${providing.length ? gFacts(providing) : gP("Nothing recorded yet. Add it on your sponsor page and we will pick it up from there.")}
+
+      ${gLabel(weCollect ? "How we collect it" : "How it reaches us")}
+      ${gFacts(handover, true)}
+      ${servedAt ? gP(`It is served at ${servedAt}, so there is room either side of your window.`, 0) : ""}
+
+      ${missing.length ? `
+      ${gLabel("What we still need")}
+      <ul style="margin:0 0 6px 0;padding-left:20px;font-family:Helvetica,Arial,sans-serif;font-size:15px;line-height:1.7;color:${G.BODY};">
+        ${missing.map((m) => `<li style="margin-bottom:6px;">${m}</li>`).join("")}
+      </ul>` : ""}
+
+      ${gButton(portalUrl, "Update your details")}
+      ${gP("If anything above is wrong, reply and tell us. Nothing is fixed until you say it is.", 0)}
+      ${gSignOff()}`;
+
+  return guideShell({
+    title: "Your food details, confirmed",
+    preheader: weCollect
+      ? `We are collecting from ${companyName}${v("window") ? ` between ${v("window")}` : ""}. Here is everything we have written down.`
+      : `Everything we have written down for ${companyName}'s food, so you can check it before the day.`,
+    kicker: "Food Sponsor",
+    body,
+    footerNote: `You are receiving this because ${escapeHtml(companyName)} is a Food Sponsor of the 2026 Lurie Children&rsquo;s &amp; AALB Conference.`,
+    assetBase,
+  });
+}
+
 export type ExhibitorGuideEmailArgs = {
   contactName: string | null;
   companyName: string;

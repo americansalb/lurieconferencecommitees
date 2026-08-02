@@ -13,6 +13,7 @@ import {
   sponsorAslUrgentLetterEmail,
   attendeeGuideEmail,
   exhibitorGuideEmail,
+  foodPlanEmail,
   sponsorAslLetterEmail,
   sponsorFoodLetterEmail,
   plainStandardInviteEmail,
@@ -124,6 +125,22 @@ export async function GET(
         learnMoreUrl: base,
         unsubscribeUrl: `${base}/api/sponsors/unsubscribe/demo-token`,
         assetBase: base,
+      });
+      break;
+    case "food-plan":
+      html = foodPlanEmail({
+        contactName: "Michael Hornick",
+        companyName: "The Chicago Diner",
+        logistics: {
+          day: "Saturday, August 15", meal: "Lunch",
+          setup: "Warming container for half pans. We will provide tongs, and spoons.",
+          attending: "Not sure yet", window: "11am - 12:00pm",
+          provide: "Our famous Reuben in a crispy handheld appetizer, 120 pieces to feed 70-80 people",
+          allergens: "Contains: Gluten, Soy",
+          fulfillment: "Please arrange pickup", dayOfContact: "Michael Hornick",
+        },
+        portalUrl: `${base}/sponsor/status/demo-token`,
+        ticketsIncluded: 2, assetBase: base,
       });
       break;
     case "attendee-guide":

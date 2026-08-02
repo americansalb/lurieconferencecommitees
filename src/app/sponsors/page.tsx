@@ -570,6 +570,30 @@ export default function SponsorsAdminPage() {
     }
   }
 
+  // Confirm a food partner's arrangement: what they are sending, who moves it
+  // and when. What a Food Sponsor gets instead of the exhibitor guide.
+  async function sendFoodPlan(id: string) {
+    const s = sponsors.find((x) => x.id === id);
+    if (!confirm(`Send ${s?.companyName || "this partner"} their food details to check? It sends right away.`)) return;
+    setGuideId(id);
+    setActionNote(null);
+    try {
+      const res = await fetch(`/api/sponsors/${id}/send-food-plan`, { method: "POST" });
+      const j = await res.json().catch(() => ({}));
+      setActionNote(
+        res.ok && j.ok
+          ? `${s?.companyName || "Partner"}: food details sent.`
+          : `Could not send. ${j.error || "Unknown error."}`
+      );
+      await load();
+    } catch {
+      setActionNote("Network error sending the food details.");
+    } finally {
+      setGuideId(null);
+      setTimeout(() => setActionNote(null), 9000);
+    }
+  }
+
   // Consolidate two co-applicant profiles into one (merge emails to CC, combine
   // the company name, hide the folded-in record).
   function openMerge(s: Sponsor) {
@@ -1088,6 +1112,17 @@ export default function SponsorsAdminPage() {
                             >
                               {acceptingId === s.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <BadgeCheck className="w-3 h-3" />}
                               Accept
+                            </button>
+                          )}
+                          {isAdmin && s.tier === "food" && (s.paid || s.status === "confirmed" || s.donateFoodInstead) && (
+                            <button
+                              onClick={() => sendFoodPlan(s.id)}
+                              disabled={guideId === s.id}
+                              className="text-[10px] font-bold px-2 py-1 rounded-full border border-orange-200 bg-orange-50 text-orange-800 hover:bg-orange-100 inline-flex items-center gap-1 shrink-0 disabled:opacity-50"
+                              title="Send their food arrangement back to them to check: what they are sending, whether we collect or they deliver, the window, and anything still missing. No table or load-in talk."
+                            >
+                              {guideId === s.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <FileDown className="w-3 h-3" />}
+                              {s.guideSentAt ? "Re-send food details" : "Send food details"}
                             </button>
                           )}
                           {isAdmin && sponsorHasTable(s) && (s.paid || s.status === "confirmed") && (
