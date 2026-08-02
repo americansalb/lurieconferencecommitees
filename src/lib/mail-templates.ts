@@ -1257,11 +1257,17 @@ export type AttendeeGuideEmailArgs = {
   assetBase?: string;
 };
 
+// ", Priya." when we have a name, "." when we do not. Never ", there."
+function addressed(sentence: string, name: string | null | undefined): string {
+  const n = (name || "").trim();
+  return n ? `${sentence}, ${escapeHtml(n)}.` : `${sentence}.`;
+}
+
 export function attendeeGuideEmail({
   firstName, lastName, portalUrl, attendanceMode, attendDay,
   dietary, accessibilityNotes, primaryLanguages, needsParking, sponsorName, assetBase,
 }: AttendeeGuideEmailArgs) {
-  const first = firstName || "there";
+  const first = (firstName || "").trim();
   const fullName = [firstName, lastName].filter(Boolean).join(" ").trim();
   const isVirtual = attendanceMode === "virtual";
   const has = (v?: string | null) => (v || "").trim();
@@ -1291,7 +1297,7 @@ export function attendeeGuideEmail({
   ];
 
   const body = `
-      ${gH1(`Your guide is attached, ${escapeHtml(first)}.`)}
+      ${gH1(addressed("Your guide is attached", first))}
       ${gP(isVirtual
         ? "It covers the schedule, the sessions, and claiming your CEUs."
         : "It covers getting to Lurie Children&rsquo;s, checking in, what to bring, meals, and claiming your CEUs.")}
@@ -1336,13 +1342,15 @@ export type ExhibitorGuideEmailArgs = {
 export function exhibitorGuideEmail({
   contactName, companyName, teamUrl, seatsRemaining, team, assetBase,
 }: ExhibitorGuideEmailArgs) {
-  const first = sponsorFirstName(contactName || "", companyName) || "there";
+  // Empty whenever the contact is missing or is just the organization's own
+  // name, which is normal on exhibitor rows.
+  const first = sponsorFirstName(contactName || "", companyName);
   const roster = team && team.length
     ? team.map((m) => `${escapeHtml(m.name)}${m.comp ? "" : " (registered separately)"}`).join("<br/>")
     : "Nobody registered yet.";
 
   const body = `
-      ${gH1(`Your exhibitor guide is attached, ${escapeHtml(first)}.`)}
+      ${gH1(addressed("Your exhibitor guide is attached", first))}
       ${gP(`It covers load-in and teardown, parking and the drop-off door, shipping ahead, and when the room is busiest. The details for ${escapeHtml(companyName)}:`)}
 
       ${gLabel("Your table")}
@@ -2521,7 +2529,7 @@ type SponsorInKindPledgeArgs = {
 // in kind through the funnel. Warm, short, and makes clear they are now a
 // tracked sponsor; the team will reach out to coordinate logistics.
 export function sponsorInKindPledgeEmail({ kind, contactName, companyName, provide, arrangementLabel, assetBase }: SponsorInKindPledgeArgs) {
-  const first = sponsorFirstName(contactName, companyName) || "there";
+  const first = sponsorFirstName(contactName, companyName);
   const isAsl = kind === "asl";
   const sponsorLabel = isAsl ? "ASL Interpreter Sponsor" : "Food Sponsor";
   const mission = isAsl
@@ -2535,7 +2543,7 @@ export function sponsorInKindPledgeEmail({ kind, contactName, companyName, provi
     ? "Out-of-pocket costs connected to your donation may be tax-deductible (donated services themselves generally are not)"
     : "Your in-kind food donation may be tax-deductible";
   return shell(`
-    <h1 style="font-size:23px;font-weight:800;margin:0 0 12px 0;letter-spacing:-0.01em;">Thank you, ${escapeHtml(first)}.</h1>
+    <h1 style="font-size:23px;font-weight:800;margin:0 0 12px 0;letter-spacing:-0.01em;">${addressed("Thank you", first)}</h1>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
       We are genuinely grateful. With your help, <strong>${escapeHtml(companyName)}</strong> is now an official <strong>${sponsorLabel}</strong> of the 2026 Lurie Children&rsquo;s and AALB Conference, ${mission}.
     </p>
