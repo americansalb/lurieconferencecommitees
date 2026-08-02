@@ -18,6 +18,11 @@ export type Attendee = {
   attendanceMode: string | null;
   status: string;
   paid: boolean;
+  guideSentAt?: string | null;
+  // Present on every row from the API; declared so the page can mirror the
+  // server's send filter exactly when it counts guide coverage.
+  isTest?: boolean;
+  unsubscribedAt?: string | null;
   finalPriceCents: number | null;
   discountPercent: number;
   invitedById?: string | null;
@@ -97,6 +102,9 @@ export default function AttendeesView({
   const [cohortFilter, setCohortFilter] = useState<string>("all");
   const [sortNewestSession, setSortNewestSession] = useState(false);
   const [clickedOnly, setClickedOnly] = useState(false);
+  // "Has the guide" / "still needs it", so a send can be checked afterwards
+  // instead of taken on trust.
+  const [guideFilter, setGuideFilter] = useState<"all" | "sent" | "unsent">("all");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
@@ -220,6 +228,8 @@ export default function AttendeesView({
       if (modeFilter !== "all" && a.attendanceMode !== modeFilter) return false;
       if (relFilter !== "all" && a.inviteTemplate !== relFilter) return false;
       if (cohortFilter !== "all" && a.cohort !== cohortFilter) return false;
+      if (guideFilter === "sent" && !a.guideSentAt) return false;
+      if (guideFilter === "unsent" && a.guideSentAt) return false;
       if (search) {
         const s = search.toLowerCase();
         if (![a.firstName, a.lastName, a.email, a.affiliation].some((v) => v?.toLowerCase().includes(s))) return false;
@@ -239,7 +249,7 @@ export default function AttendeesView({
       });
     }
     return list;
-  }, [attendees, activeCard, sourceFilter, modeFilter, relFilter, cohortFilter, clickedOnly, sortNewestSession, search, stepOf]);
+  }, [attendees, activeCard, sourceFilter, modeFilter, relFilter, cohortFilter, guideFilter, clickedOnly, sortNewestSession, search, stepOf]);
 
   const allShownSelected = filtered.length > 0 && filtered.every((a) => selected.has(a.id));
   function toggleAll() {
@@ -329,6 +339,14 @@ export default function AttendeesView({
           >
             <Eye className="w-3.5 h-3.5" /> Clicked
           </button>
+          <button
+            onClick={() => setGuideFilter((v) => (v === "all" ? "sent" : v === "sent" ? "unsent" : "all"))}
+            title="Cycle: everyone, only those who have been sent the conference guide, only those who have not"
+            className={`inline-flex items-center gap-1.5 text-xs font-semibold border rounded-lg px-3 py-2 transition-colors ${guideFilter !== "all" ? "border-teal-300 bg-teal-50 text-teal-700" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+          >
+            <FileDown className="w-3.5 h-3.5" />
+            {guideFilter === "sent" ? "Guide sent" : guideFilter === "unsent" ? "No guide yet" : "Guide"}
+          </button>
         </div>
 
         {/* Engagement report: delivered vs clicked, shown when Clicked is on */}
@@ -408,18 +426,19 @@ export default function AttendeesView({
         )}
 
         {/* Active-filter hint so it's obvious what the list is showing */}
-        {(activeCard || sourceFilter !== "all" || modeFilter !== "all" || relFilter !== "all" || cohortFilter !== "all" || sortNewestSession || clickedOnly || search) && (
+        {(activeCard || sourceFilter !== "all" || modeFilter !== "all" || relFilter !== "all" || cohortFilter !== "all" || guideFilter !== "all" || sortNewestSession || clickedOnly || search) && (
           <div className="px-4 py-2 bg-slate-50 border-b border-slate-100 text-[11px] text-slate-500 flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-slate-600">Showing:</span>
             {activeCard && <Pill>{activeCard.label} · {activeCard.sub}</Pill>}
             {sourceFilter !== "all" && <Pill>{sourceFilter === "invited" ? "Added by us" : "Signed up themselves"}</Pill>}
+            {guideFilter !== "all" && <Pill>{guideFilter === "sent" ? "Guide sent" : "No guide yet"}</Pill>}
             {modeFilter !== "all" && <Pill>{modeFilter === "virtual" ? "Virtual" : "In-person"}</Pill>}
             {relFilter !== "all" && <Pill>{RELATIONSHIP_BADGE[relFilter]?.label || relFilter}</Pill>}
             {cohortFilter !== "all" && <Pill>Session {cohortFilter}</Pill>}
             {sortNewestSession && <Pill>Newest session first</Pill>}
             {clickedOnly && <Pill>Clicked their link</Pill>}
             {search && <Pill>“{search}”</Pill>}
-            <button onClick={() => { setCardFilter("all"); setSourceFilter("all"); setModeFilter("all"); setRelFilter("all"); setCohortFilter("all"); setSortNewestSession(false); setClickedOnly(false); setSearch(""); }} className="ml-auto font-semibold text-slate-500 hover:text-slate-800">Clear all</button>
+            <button onClick={() => { setCardFilter("all"); setSourceFilter("all"); setModeFilter("all"); setRelFilter("all"); setCohortFilter("all"); setGuideFilter("all"); setSortNewestSession(false); setClickedOnly(false); setSearch(""); }} className="ml-auto font-semibold text-slate-500 hover:text-slate-800">Clear all</button>
           </div>
         )}
 
@@ -525,6 +544,14 @@ export default function AttendeesView({
                     {(a.nudgeCount || 0) > 0 && (
                       <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-amber-50 text-amber-700 border-amber-200 truncate max-w-full" title={`Finish-registration reminder${(a.nudgeCount || 0) > 1 ? "s" : ""} sent`}>
                         {reminderLabel(a.nudgeCount || 0)}{a.lastNudgedAt ? ` ${shortDate(a.lastNudgedAt)}` : ""}
+                      </span>
+                    )}
+                    {a.guideSentAt && (
+                      <span
+                        className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-teal-50 text-teal-700 border-teal-200 truncate max-w-full"
+                        title={`Conference guide emailed ${new Date(a.guideSentAt).toLocaleString()}`}
+                      >
+                        Guide {shortDate(a.guideSentAt)}
                       </span>
                     )}
                   </div>

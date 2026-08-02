@@ -52,6 +52,7 @@ export async function POST(req: Request) {
 
   let sent = 0;
   const failures: { email: string; error: string }[] = [];
+  const recipients: string[] = [];
 
   for (const a of targets) {
     try {
@@ -90,13 +91,26 @@ export async function POST(req: Request) {
       await prisma.attendeeEvent
         .create({ data: { attendeeId: a.id, type: "guide_sent", meta: actorEmail } })
         .catch(() => {});
+      recipients.push(a.email);
       sent++;
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       console.error("[send-guide] failed", a.email, msg);
+      // A failure is the thing worth being able to find later. Write it to
+      // their timeline too, not just the console and this one response.
+      await prisma.attendeeEvent
+        .create({ data: { attendeeId: a.id, type: "guide_send_failed", meta: msg.slice(0, 300) } })
+        .catch(() => {});
       failures.push({ email: a.email, error: msg.slice(0, 200) });
     }
   }
 
-  return NextResponse.json({ sent, failed: failures.length, failures: failures.slice(0, 10) });
+  return NextResponse.json({
+    sent,
+    failed: failures.length,
+    failures: failures.slice(0, 10),
+    // Who it actually went to, so the confirmation can name them rather than
+    // leaving a count to be taken on trust.
+    recipients: recipients.slice(0, 200),
+  });
 }

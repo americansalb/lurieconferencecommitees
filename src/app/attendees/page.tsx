@@ -702,7 +702,9 @@ export default function AttendeesPage() {
       setGuides({
         sending: false,
         note: res.ok
-          ? `Sent ${json.sent || 0} guide${json.sent === 1 ? "" : "s"}${json.failed ? ` · ${json.failed} failed` : ""}.`
+          ? (json.sent || 0) === 0
+            ? "Nobody to send to: everyone in that group already has their guide."
+            : `Sent ${json.sent} guide${json.sent === 1 ? "" : "s"}${json.failed ? ` · ${json.failed} failed: ${(json.failures || []).map((f: { email: string }) => f.email).join(", ")}` : ""}. Filter by "Guide sent" in the list to see exactly who.`
           : (json.error || "Could not send the guides."),
       });
       await load();
@@ -774,6 +776,16 @@ export default function AttendeesPage() {
     (a) => !a.paid && (a.status === "registered" || a.status === "rsvp_pending" || a.status === "confirmed")
       && (a.nudgeCount || 0) === 0
   ).length;
+
+  // Guide coverage: the same population the blanket send targets (paid,
+  // in-person, not a test row, not unsubscribed), and how many of them hold a
+  // guide already. Mirrors the server's filter so the panel cannot claim a
+  // different number from the one the button acts on.
+  const guideEligibleRows = attendees.filter(
+    (a) => a.paid && !a.isTest && !a.unsubscribedAt && a.attendanceMode !== "virtual"
+  );
+  const guideEligible = guideEligibleRows.length;
+  const guideSent = guideEligibleRows.filter((a) => a.guideSentAt).length;
 
   // Chicago people who are loaded but have neither been queued nor written to
   // — the ones the "Queue Chicago letters" button would actually act on.
@@ -1133,6 +1145,12 @@ export default function AttendeesPage() {
                           paid and never had one. Sends immediately, not through the queue. To send to a
                           specific set instead, filter the Attendees list, select them, and use
                           &ldquo;Send guide&rdquo; there.
+                          <br />
+                          <strong className="text-slate-700">
+                            {guideSent} of {guideEligible} in-person attendee{guideEligible === 1 ? "" : "s"} {guideSent === 1 ? "has" : "have"} their guide
+                            {guideEligible - guideSent > 0 ? `, ${guideEligible - guideSent} still to go` : ""}.
+                          </strong>{" "}
+                          Every send is stamped on the person&rsquo;s row and in their timeline.
                         </p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">

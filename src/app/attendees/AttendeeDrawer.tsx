@@ -50,6 +50,11 @@ const EVENT_LABELS: Record<string, string> = {
   paid: "Paid",
   portal_link_sent: "Portal link emailed",
   broadcast_sent: "Received a broadcast email",
+  guide_sent: "Conference guide emailed",
+  guide_send_failed: "Conference guide failed to send",
+  sponsor_comp_seat: "Given an included ticket by a sponsor",
+  sponsor_team_added: "Added to a sponsor's team",
+  sponsor_team_linked: "Linked to a sponsor's team",
 };
 
 export default function AttendeeDrawer({
