@@ -78,7 +78,7 @@ export default function AttendeePortal({
             </div>
           </div>
           <p className="mt-2 text-[13px] leading-relaxed" style={{ color: E.soft }}>
-            This page is your ticket home for the conference — bookmark it. Everything below
+            This page is your ticket home for the conference, so bookmark it. Everything below
             stays current as the event approaches.
           </p>
 
@@ -111,7 +111,7 @@ export default function AttendeePortal({
               {joinUrl ? (
                 <div className="mt-3">
                   <p className="text-[13px]" style={{ color: E.soft }}>
-                    One link for both days — it goes live shortly before the opening session.
+                    One link for both days. It goes live shortly before the opening session.
                   </p>
                   <a
                     href={joinUrl}
@@ -124,10 +124,22 @@ export default function AttendeePortal({
                   </a>
                 </div>
               ) : (
-                <p className="mt-2 text-[13px] leading-relaxed" style={{ color: E.soft }}>
-                  Your live join link will appear right here — and be emailed to{" "}
-                  <strong style={{ color: E.ink }}>{email}</strong> — a few days before the event.
-                </p>
+                <div
+                  className="mt-3 rounded-xl px-4 py-3.5"
+                  style={{ background: E.cream, border: "1.5px solid " + E.gold }}
+                >
+                  <div className="flex items-center gap-2">
+                    <Video className="w-4 h-4 shrink-0" style={{ color: E.goldDark }} />
+                    <span className="text-[13.5px] font-bold" style={{ color: E.ink }}>
+                      Join link coming soon
+                    </span>
+                  </div>
+                  <p className="mt-1.5 text-[12.5px] leading-relaxed" style={{ color: E.soft }}>
+                    We send it a few days before the conference, to{" "}
+                    <strong style={{ color: E.ink }}>{email}</strong>. It will also appear right here,
+                    so you can always come back to this page for it. One link covers both days.
+                  </p>
+                </div>
               )}
             </section>
           ) : (
@@ -176,19 +188,24 @@ export default function AttendeePortal({
             </Link>
           </div>
 
-          <a
-            href="/guides/attendee-guide.pdf"
-            className="mt-2.5 flex items-center gap-3 rounded-xl px-4 py-3.5 transition-colors hover:brightness-[0.98]"
-            style={{ background: E.cream, border: "1.5px solid " + E.gold }}
-          >
-            <FileDown className="w-5 h-5 shrink-0" style={{ color: E.goldDark }} />
-            <div>
-              <div className="text-[13.5px] font-bold" style={{ color: E.ink }}>Your conference guide</div>
-              <div className="text-[11px]" style={{ color: E.soft }}>
-                PDF. Getting here, check-in, what to bring, meals, and claiming your CEUs.
+          {/* In-person only. The guide is about getting to the hospital and
+              checking in, so it is neither useful nor published for people
+              joining online. */}
+          {!isVirtual && (
+            <a
+              href="/guides/attendee-guide.pdf"
+              className="mt-2.5 flex items-center gap-3 rounded-xl px-4 py-3.5 transition-colors hover:brightness-[0.98]"
+              style={{ background: E.cream, border: "1.5px solid " + E.gold }}
+            >
+              <FileDown className="w-5 h-5 shrink-0" style={{ color: E.goldDark }} />
+              <div>
+                <div className="text-[13.5px] font-bold" style={{ color: E.ink }}>Your conference guide</div>
+                <div className="text-[11px]" style={{ color: E.soft }}>
+                  PDF. Getting here, check-in, what to bring, meals, and claiming your CEUs.
+                </div>
               </div>
-            </div>
-          </a>
+            </a>
+          )}
 
           {details && (
             <PortalDetailsForm token={token} attendanceMode={attendanceMode} initial={details} />
