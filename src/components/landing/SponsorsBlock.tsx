@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Award, Briefcase, ArrowRight, Users, Eye, HeartHandshake } from "lucide-react";
 import { TOKENS, CONFERENCE } from "./tokens";
 
@@ -9,9 +9,10 @@ import { TOKENS, CONFERENCE } from "./tokens";
 // Drop each logo file in /public/partners/. If a logo file is missing, the
 // card falls back to the partner's name so nothing renders broken.
 const PARTNERS: { name: string; logo: string; role?: string; url?: string }[] = [
-  // Order matters: the strip wraps 3-across. Exhibitors and the Food Sponsor
-  // lead; partner-level recognitions (Health Education Partner) sit last, so
-  // they land in the row below the exhibitors.
+  // Order matters: the strip wraps 3-across. Sponsorship levels lead (Silver,
+  // then exhibitors and the Food Sponsor); partner-level recognitions and
+  // Supporters sit last, so they land in the rows below.
+  { name: "Propio", logo: "/partners/propio.png", role: "Silver Sponsor", url: "https://propio.com" },
   { name: "CommunityHealth", logo: "/partners/communityhealth.webp", role: "Exhibitor", url: "https://www.communityhealth.org" },
   { name: "Certification Commission for Healthcare Interpreters", logo: "/partners/cchi.webp", role: "Exhibitor", url: "https://cchicertification.org" },
   { name: "The Chicago Diner", logo: "/partners/chicago-diner.png", role: "Food Sponsor", url: "https://www.veggiediner.com" },
@@ -20,6 +21,7 @@ const PARTNERS: { name: string; logo: string; role?: string; url?: string }[] = 
   { name: "Martti, an Equiti Solution", logo: "/partners/martti.png", role: "Exhibitor", url: "https://equitihealth.com" },
   { name: "Language Lizard", logo: "/partners/language-lizard.png", role: "Health Education Partner", url: "https://www.languagelizard.com" },
   { name: "Cross-Cultural Communications", logo: "/partners/cross-cultural-communications.png", role: "Supporter", url: "https://cultureandlanguage.net" },
+  { name: "En-Vision America", logo: "/partners/en-vision-america.png", role: "Supporter", url: "https://www.envisionamerica.com" },
 ];
 
 const BENEFITS = [
@@ -133,6 +135,14 @@ function PartnerLogo({ partner }: { partner: { name: string; logo: string; role?
   // a broken image, so a confirmed exhibitor can be listed before their art
   // lands.
   const [logoFailed, setLogoFailed] = useState(false);
+  // onError alone is not enough. The browser starts fetching the image while
+  // parsing the server-rendered HTML, so a missing file can fail before React
+  // hydrates and attaches the handler, and the card is left showing a broken
+  // image icon forever. Re-check the element once on mount: a finished load
+  // with zero width is a failed one.
+  const checkLoaded = useCallback((img: HTMLImageElement | null) => {
+    if (img && img.complete && img.naturalWidth === 0) setLogoFailed(true);
+  }, []);
   // Every card is the SAME fixed size (yielding to the viewport on narrow
   // phones), and each logo scales to fit an identical box via object-contain,
   // so no logo's shape can change its card. Content-sized cards made the
@@ -152,7 +162,13 @@ function PartnerLogo({ partner }: { partner: { name: string; logo: string; role?
           </div>
         ) : (
           /* eslint-disable-next-line @next/next/no-img-element */
-          <img src={partner.logo} alt={partner.name} onError={() => setLogoFailed(true)} className="h-16 sm:h-[72px] w-full object-contain" />
+          <img
+            ref={checkLoaded}
+            src={partner.logo}
+            alt={partner.name}
+            onError={() => setLogoFailed(true)}
+            className="h-16 sm:h-[72px] w-full object-contain"
+          />
         )}
         {partner.role && (
           <>
