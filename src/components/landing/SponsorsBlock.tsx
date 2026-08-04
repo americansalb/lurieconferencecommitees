@@ -8,11 +8,13 @@ import { TOKENS, CONFERENCE } from "./tokens";
 // as they come in; the "joined by" strip scales gracefully from one upward.
 // Drop each logo file in /public/partners/. If a logo file is missing, the
 // card falls back to the partner's name so nothing renders broken.
-const PARTNERS: { name: string; logo: string; role?: string; url?: string }[] = [
+type Partner = { name: string; logo: string; role?: string; url?: string };
+
+const PARTNERS: Partner[] = [
   // Order matters: the strip wraps 3-across. Sponsorship levels lead (Silver,
   // then exhibitors and the Food Sponsor); partner-level recognitions and
   // Supporters sit last, so they land in the rows below.
-  { name: "Propio", logo: "/partners/propio.png", role: "Silver Sponsor", url: "https://propio.com" },
+  { name: "Propio", logo: "/partners/propio.svg", role: "Silver Sponsor", url: "https://propio.com" },
   { name: "CommunityHealth", logo: "/partners/communityhealth.webp", role: "Exhibitor", url: "https://www.communityhealth.org" },
   { name: "Certification Commission for Healthcare Interpreters", logo: "/partners/cchi.webp", role: "Exhibitor", url: "https://cchicertification.org" },
   { name: "The Chicago Diner", logo: "/partners/chicago-diner.png", role: "Food Sponsor", url: "https://www.veggiediner.com" },
@@ -22,7 +24,18 @@ const PARTNERS: { name: string; logo: string; role?: string; url?: string }[] = 
   { name: "Language Lizard", logo: "/partners/language-lizard.png", role: "Health Education Partner", url: "https://www.languagelizard.com" },
   { name: "National Captioning Institute", logo: "/partners/national-captioning-institute.svg", role: "Captioning Sponsor", url: "https://www.ncicap.org" },
   { name: "Cross-Cultural Communications", logo: "/partners/cross-cultural-communications.png", role: "Supporter", url: "https://cultureandlanguage.net" },
-  { name: "En-Vision America", logo: "/partners/en-vision-america.png", role: "Supporter", url: "https://www.envisionamerica.com" },
+  { name: "En-Vision America", logo: "/partners/en-vision-america.svg", role: "Supporter", url: "https://www.envisionamerica.com" },
+];
+
+// Each sponsorship level gets its own band. `featured` gives the paid
+// sponsorship levels a larger card, so the hierarchy is visible rather than
+// only stated in the caption underneath.
+const GROUPS: { heading: string; roles: string[]; featured?: boolean }[] = [
+  { heading: "Silver Sponsor", roles: ["Silver Sponsor"], featured: true },
+  { heading: "Food Sponsor", roles: ["Food Sponsor"], featured: true },
+  { heading: "Captioning Sponsor", roles: ["Captioning Sponsor"], featured: true },
+  { heading: "Exhibitors", roles: ["Exhibitor"] },
+  { heading: "Partners & Supporters", roles: ["Health Education Partner", "Supporter"] },
 ];
 
 const BENEFITS = [
@@ -73,17 +86,32 @@ export default function SponsorsBlock() {
           ))}
         </div>
 
-        {/* Joined by */}
+        {/* Joined by, grouped so each level reads as its own standing. */}
         {PARTNERS.length > 0 && (
           <div className="mb-16">
-            <p className="text-center text-[11px] font-bold tracking-[0.28em] uppercase mb-7" style={{ color: TOKENS.mutedSoft }}>
+            <p className="text-center text-[11px] font-bold tracking-[0.28em] uppercase mb-9" style={{ color: TOKENS.mutedSoft }}>
               Proud to be joined by
             </p>
-            <div className="flex flex-wrap items-center justify-center gap-4">
-              {PARTNERS.map((p) => (
-                <PartnerLogo key={p.name} partner={p} />
-              ))}
-            </div>
+            {GROUPS.map((g) => {
+              const members = PARTNERS.filter((p) => g.roles.includes(p.role || ""));
+              if (!members.length) return null;
+              return (
+                <div key={g.heading} className="mb-11 last:mb-0">
+                  <div className="flex items-center justify-center gap-3 mb-6">
+                    <span className="block h-px w-8 sm:w-12 rounded-full" style={{ background: TOKENS.gold, opacity: 0.5 }} />
+                    <span className="text-[11px] font-bold tracking-[0.26em] uppercase whitespace-nowrap" style={{ color: TOKENS.gold }}>
+                      {g.heading}
+                    </span>
+                    <span className="block h-px w-8 sm:w-12 rounded-full" style={{ background: TOKENS.gold, opacity: 0.5 }} />
+                  </div>
+                  <div className="flex flex-wrap items-center justify-center gap-4">
+                    {members.map((p) => (
+                      <PartnerLogo key={p.name} partner={p} featured={g.featured} showRole={g.roles.length > 1} />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
 
@@ -131,7 +159,7 @@ export default function SponsorsBlock() {
   );
 }
 
-function PartnerLogo({ partner }: { partner: { name: string; logo: string; role?: string; url?: string } }) {
+function PartnerLogo({ partner, featured = false, showRole = true }: { partner: Partner; featured?: boolean; showRole?: boolean }) {
   // If the logo file hasn't been added yet, show the partner's name instead of
   // a broken image, so a confirmed exhibitor can be listed before their art
   // lands.
@@ -150,7 +178,7 @@ function PartnerLogo({ partner }: { partner: { name: string; logo: string; role?
   // strip read as a jumble of mismatched tiles.
   const inner = (
     <div
-      className="rounded-[22px] p-[1.5px] w-[320px] max-w-full"
+      className={`rounded-[22px] p-[1.5px] max-w-full ${featured ? "w-[420px]" : "w-[320px]"}`}
       style={{
         background: `linear-gradient(135deg, ${TOKENS.gold} 0%, ${TOKENS.goldSoft} 48%, ${TOKENS.gold} 100%)`,
         boxShadow: "0 22px 48px -24px rgba(201,161,75,0.42), 0 4px 14px -8px rgba(11,31,37,0.14)",
@@ -158,7 +186,7 @@ function PartnerLogo({ partner }: { partner: { name: string; logo: string; role?
     >
       <div className="bg-white rounded-[20px] flex flex-col items-center justify-center px-8 py-8 sm:py-9 w-full">
         {logoFailed ? (
-          <div className="h-16 sm:h-[72px] flex items-center text-xl sm:text-2xl font-extrabold tracking-tight text-center" style={{ color: TOKENS.ink }}>
+          <div className={`flex items-center font-extrabold tracking-tight text-center ${featured ? "h-20 sm:h-[92px] text-2xl sm:text-3xl" : "h-16 sm:h-[72px] text-xl sm:text-2xl"}`} style={{ color: TOKENS.ink }}>
             {partner.name}
           </div>
         ) : (
@@ -168,10 +196,10 @@ function PartnerLogo({ partner }: { partner: { name: string; logo: string; role?
             src={partner.logo}
             alt={partner.name}
             onError={() => setLogoFailed(true)}
-            className="h-16 sm:h-[72px] w-full object-contain"
+            className={`w-full object-contain ${featured ? "h-20 sm:h-[92px]" : "h-16 sm:h-[72px]"}`}
           />
         )}
-        {partner.role && (
+        {partner.role && showRole && (
           <>
             <span className="mt-5 mb-3.5 block h-px w-10 rounded-full" style={{ background: TOKENS.gold, opacity: 0.55 }} />
             <div className="text-[10px] font-bold tracking-[0.3em] uppercase" style={{ color: TOKENS.gold }}>

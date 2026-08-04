@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 500" role="img" aria-label="Propio">
+  <title>Propio</title>
+  <!-- Lowercase wordmark in navy, with the third letter enlarged into a ring
+       holding a teal disc. Strokes rather than filled outlines, which is how
+       the original is drawn: even weight, open counters. -->
+  <g fill="none" stroke="#1F3A63" stroke-width="27" stroke-linecap="butt">
+    <!-- p -->
+    <line x1="48" y1="168" x2="48" y2="470"/>
+    <circle cx="132" cy="252" r="84"/>
+    <!-- r -->
+    <line x1="290" y1="168" x2="290" y2="352"/>
+    <path d="M290 236 C 305 186, 350 165, 408 168"/>
+    <!-- O, enlarged -->
+    <circle cx="640" cy="240" r="188" stroke-width="34"/>
+    <!-- p -->
+    <line x1="898" y1="168" x2="898" y2="470"/>
+    <circle cx="982" cy="252" r="84"/>
+    <!-- i -->
+    <line x1="1140" y1="168" x2="1140" y2="352"/>
+    <!-- o -->
+    <circle cx="1330" cy="252" r="84"/>
+  </g>
+  <!-- Teal disc inside the ring, with white breathing room around it. -->
+  <circle cx="640" cy="240" r="128" fill="#4BC6D2"/>
+  <!-- The tittle is a short bar, not a round dot. -->
+  <rect x="1127" y="72" width="27" height="52" fill="#1F3A63"/>
+</svg>
