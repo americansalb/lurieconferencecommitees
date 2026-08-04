@@ -20,6 +20,7 @@ const PARTNERS: { name: string; logo: string; role?: string; url?: string }[] = 
   { name: "Multilingual Connections", logo: "/partners/multilingual-connections.svg", role: "Exhibitor", url: "https://multilingualconnections.com" },
   { name: "Martti, an Equiti Solution", logo: "/partners/martti.png", role: "Exhibitor", url: "https://equitihealth.com" },
   { name: "Language Lizard", logo: "/partners/language-lizard.png", role: "Health Education Partner", url: "https://www.languagelizard.com" },
+  { name: "National Captioning Institute", logo: "/partners/national-captioning-institute.svg", role: "Captioning Sponsor", url: "https://www.ncicap.org" },
   { name: "Cross-Cultural Communications", logo: "/partners/cross-cultural-communications.png", role: "Supporter", url: "https://cultureandlanguage.net" },
   { name: "En-Vision America", logo: "/partners/en-vision-america.png", role: "Supporter", url: "https://www.envisionamerica.com" },
 ];
