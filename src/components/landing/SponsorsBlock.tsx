@@ -14,7 +14,7 @@ const PARTNERS: Partner[] = [
   // Order matters: the strip wraps 3-across. Sponsorship levels lead (Silver,
   // then exhibitors and the Food Sponsor); partner-level recognitions and
   // Supporters sit last, so they land in the rows below.
-  { name: "Propio", logo: "/partners/propio.svg", role: "Silver Sponsor", url: "https://propio.com" },
+  { name: "Propio", logo: "", role: "Silver Sponsor", url: "https://propio.com" },
   { name: "CommunityHealth", logo: "/partners/communityhealth.webp", role: "Exhibitor", url: "https://www.communityhealth.org" },
   { name: "Certification Commission for Healthcare Interpreters", logo: "/partners/cchi.webp", role: "Exhibitor", url: "https://cchicertification.org" },
   { name: "The Chicago Diner", logo: "/partners/chicago-diner.png", role: "Food Sponsor", url: "https://www.veggiediner.com" },
@@ -22,9 +22,9 @@ const PARTNERS: Partner[] = [
   { name: "Multilingual Connections", logo: "/partners/multilingual-connections.svg", role: "Exhibitor", url: "https://multilingualconnections.com" },
   { name: "Martti, an Equiti Solution", logo: "/partners/martti.png", role: "Exhibitor", url: "https://equitihealth.com" },
   { name: "Language Lizard", logo: "/partners/language-lizard.png", role: "Health Education Partner", url: "https://www.languagelizard.com" },
-  { name: "National Captioning Institute", logo: "/partners/national-captioning-institute.svg", role: "Captioning Sponsor", url: "https://www.ncicap.org" },
+  { name: "National Captioning Institute", logo: "", role: "Captioning Sponsor", url: "https://www.ncicap.org" },
   { name: "Cross-Cultural Communications", logo: "/partners/cross-cultural-communications.png", role: "Supporter", url: "https://cultureandlanguage.net" },
-  { name: "En-Vision America", logo: "/partners/en-vision-america.svg", role: "Supporter", url: "https://www.envisionamerica.com" },
+  { name: "En-Vision America", logo: "", role: "Supporter", url: "https://www.envisionamerica.com" },
 ];
 
 // Each sponsorship level gets its own band. `featured` gives the paid
@@ -44,7 +44,12 @@ const BENEFITS = [
   { icon: HeartHandshake, title: "A shared mission", body: "Stand with two trusted institutions advancing language access in healthcare." },
 ];
 
-export default function SponsorsBlock() {
+// Logos a sponsor uploaded through their own portal, keyed by the name used in
+// PARTNERS. Passed in from the server page, which reads them from the
+// database, so a partner's real artwork appears the moment they send it and
+// nobody has to commit a file. A local file in /public/partners stays the
+// fallback for the ones who predate that.
+export default function SponsorsBlock({ uploadedLogos = {} }: { uploadedLogos?: Record<string, string> }) {
   return (
     <section
       id="sponsors"
@@ -106,7 +111,7 @@ export default function SponsorsBlock() {
                   </div>
                   <div className="flex flex-wrap items-center justify-center gap-4">
                     {members.map((p) => (
-                      <PartnerLogo key={p.name} partner={p} featured={g.featured} showRole={g.roles.length > 1} />
+                      <PartnerLogo key={p.name} partner={{ ...p, logo: uploadedLogos[p.name] || p.logo }} featured={g.featured} showRole={g.roles.length > 1} />
                     ))}
                   </div>
                 </div>
@@ -172,6 +177,7 @@ function PartnerLogo({ partner, featured = false, showRole = true }: { partner: 
   const checkLoaded = useCallback((img: HTMLImageElement | null) => {
     if (img && img.complete && img.naturalWidth === 0) setLogoFailed(true);
   }, []);
+  const hasArtwork = !!partner.logo;
   // Every card is the SAME fixed size (yielding to the viewport on narrow
   // phones), and each logo scales to fit an identical box via object-contain,
   // so no logo's shape can change its card. Content-sized cards made the
@@ -185,7 +191,7 @@ function PartnerLogo({ partner, featured = false, showRole = true }: { partner: 
       }}
     >
       <div className="bg-white rounded-[20px] flex flex-col items-center justify-center px-8 py-8 sm:py-9 w-full">
-        {logoFailed ? (
+        {logoFailed || !hasArtwork ? (
           <div className={`flex items-center font-extrabold tracking-tight text-center ${featured ? "h-20 sm:h-[92px] text-2xl sm:text-3xl" : "h-16 sm:h-[72px] text-xl sm:text-2xl"}`} style={{ color: TOKENS.ink }}>
             {partner.name}
           </div>

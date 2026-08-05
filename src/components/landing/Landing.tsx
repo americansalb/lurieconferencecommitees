@@ -80,7 +80,7 @@ const buildEventLd = () => {
   };
 };
 
-export default function Landing() {
+export default function Landing({ uploadedLogos }: { uploadedLogos?: Record<string, string> }) {
   return (
     <div className="min-h-screen bg-white text-slate-900">
       <script
@@ -96,7 +96,7 @@ export default function Landing() {
         <Theme />
         <Venue />
         <Pricing />
-        <SponsorsBlock />
+        <SponsorsBlock uploadedLogos={uploadedLogos} />
         <FAQ />
         <Hosts />
       </main>
