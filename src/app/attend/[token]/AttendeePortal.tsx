@@ -214,8 +214,8 @@ export default function AttendeePortal({
           <div className="mt-6 pt-5 text-[11px]" style={{ borderTop: "1px solid #ECE3D0", color: E.soft }}>
             <Mail className="w-3 h-3 inline mr-1 -mt-0.5" />
             Need to change anything? Email{" "}
-            <a className="font-semibold" style={{ color: E.teal }} href="mailto:contact@aalb.org">contact@aalb.org</a>.
-            {" "}Refundable through July 15.
+            <a className="font-semibold" style={{ color: E.teal }} href="mailto:contact@aalb.org">contact@aalb.org</a>.{" "}
+            <a className="font-semibold" style={{ color: E.teal }} href="/refund-policy">Refund policy</a>.
           </div>
         </div>
 

@@ -478,7 +478,14 @@ export default function AttendeeFunnel({
                     )}
                   </button>
                   <p className="text-[11px] text-slate-400 text-center mt-3">
-                    Payment processed by Stripe. We never see or store your card details. Refundable through July 15.
+                    Payment processed by Stripe. We never see or store your card details.
+                  </p>
+                  {/* Read before paying, not discovered afterwards. */}
+                  <p className="text-[11.5px] text-slate-500 text-center mt-2">
+                    Registrations are non-refundable. In-person can be switched to virtual at no extra cost.{" "}
+                    <a href="/refund-policy" target="_blank" rel="noopener noreferrer" className="font-semibold underline text-teal-800">
+                      Refund policy
+                    </a>
                   </p>
                   <div className="mt-4 text-center">
                     <button onClick={() => setStep(0)} className="text-xs font-semibold text-slate-500 hover:text-slate-700 inline-flex items-center gap-1">

@@ -328,7 +328,7 @@ export default function RegisterFunnel({
       {/* STEP 4: review & pay */}
       {step === 4 && (
         <StepFrame stepKey={4}>
-          <Question title={<>Look good?</>} sub="One tap to secure checkout. Refundable through July 15." />
+          <Question title={<>Look good?</>} sub="One tap to secure checkout." />
 
           <div className="rounded-2xl overflow-hidden bg-white" style={{ border: `1.5px solid ${C.hairline}`, boxShadow: "0 18px 44px -28px rgba(11,31,37,0.3)" }}>
             {/* attendance + price banner */}
@@ -431,6 +431,14 @@ export default function RegisterFunnel({
 
           <div className="mt-6">
             <PrimaryButton onClick={submit} loading={submitting} icon={CreditCard}>Continue to secure checkout</PrimaryButton>
+            {/* Before paying, not after: registrations are non-refundable, and
+                that is a thing to read on the way in. */}
+            <p className="mt-3 text-center text-[11.5px]" style={{ color: C.muted }}>
+              Registrations are non-refundable. In-person can be switched to virtual at no extra cost.{" "}
+              <a href="/refund-policy" target="_blank" rel="noopener noreferrer" className="font-semibold underline" style={{ color: C.teal }}>
+                Refund policy
+              </a>
+            </p>
           </div>
           <Hint>
             Payment handled by Stripe. Your seat is reserved the moment payment clears.<br />

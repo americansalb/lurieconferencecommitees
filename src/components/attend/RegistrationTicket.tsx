@@ -81,8 +81,9 @@ export default function RegistrationTicket({
 
           <div className="mt-6 pt-5 text-center text-[11px]" style={{ borderTop: "1px solid #ECE3D0", color: E.soft }}>
             <Mail className="w-3 h-3 inline mr-1 -mt-0.5" />
-            Refundable through July 15. Need a change? Email{" "}
-            <a className="font-semibold" style={{ color: E.teal }} href="mailto:contact@aalb.org">contact@aalb.org</a>.
+            Need a change? Email{" "}
+            <a className="font-semibold" style={{ color: E.teal }} href="mailto:contact@aalb.org">contact@aalb.org</a>.{" "}
+            <a className="font-semibold" style={{ color: E.teal }} href="/refund-policy">Refund policy</a>.
           </div>
         </div>
 
