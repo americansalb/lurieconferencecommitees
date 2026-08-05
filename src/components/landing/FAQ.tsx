@@ -24,7 +24,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "How is registration priced?",
-    a: "The Standard rate is available now through July 15, then Late pricing applies through August 15. Virtual is $105 standard ($115 late); In-Person is $210 standard ($225 late). The Pricing section on this page shows the live schedule and which rate is active right now, so registering by July 15 locks in the lower rate.",
+    a: "Late pricing is in effect: Virtual is $115 and In-Person is $225. Registration stays open through the conference itself. The Pricing section on this page shows the live schedule and the rate that is active right now, and registrations are non-refundable, so it is worth reading the refund policy before you pay.",
   },
   {
     q: "Where is the in-person venue?",

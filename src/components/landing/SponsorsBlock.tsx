@@ -44,11 +44,30 @@ const BENEFITS = [
   { icon: HeartHandshake, title: "A shared mission", body: "Stand with two trusted institutions advancing language access in healthcare." },
 ];
 
-// Logos a sponsor uploaded through their own portal, keyed by the name used in
-// PARTNERS. Passed in from the server page, which reads them from the
-// database, so a partner's real artwork appears the moment they send it and
-// nobody has to commit a file. A local file in /public/partners stays the
-// fallback for the ones who predate that.
+// Sponsor records are keyed by whatever the organization typed into their own
+// application ("Propio Language Services"), while this list uses the short name
+// the logo actually shows ("Propio"). Exact-match lookup silently dropped real
+// artwork on the floor and left a paid sponsor rendered as plain text, so match
+// on the squashed name and allow one to be a prefix of the other.
+const norm = (s: string) => s.toLowerCase().replace(/^the\s+/, "").replace(/[^a-z0-9]+/g, "");
+
+function resolveLogo(name: string, uploaded: Record<string, string>): string | null {
+  if (uploaded[name]) return uploaded[name];
+  const n = norm(name);
+  if (!n) return null;
+  for (const [key, url] of Object.entries(uploaded)) {
+    const k = norm(key);
+    // 4 characters keeps an acronym like "CCHI" from matching everything.
+    if (k === n || (k.length >= 4 && n.startsWith(k)) || (n.length >= 4 && k.startsWith(n))) return url;
+  }
+  return null;
+}
+
+// Logos a sponsor uploaded through their own portal, or that the team put on
+// file for them. Passed in from the server page, which reads them from the
+// database, so a partner's real artwork appears the moment it lands and nobody
+// has to commit a file. A local file in /public/partners stays the fallback for
+// the ones who predate that.
 export default function SponsorsBlock({ uploadedLogos = {} }: { uploadedLogos?: Record<string, string> }) {
   return (
     <section
@@ -111,7 +130,7 @@ export default function SponsorsBlock({ uploadedLogos = {} }: { uploadedLogos?: 
                   </div>
                   <div className="flex flex-wrap items-center justify-center gap-4">
                     {members.map((p) => (
-                      <PartnerLogo key={p.name} partner={{ ...p, logo: uploadedLogos[p.name] || p.logo }} featured={g.featured} showRole={g.roles.length > 1} />
+                      <PartnerLogo key={p.name} partner={{ ...p, logo: resolveLogo(p.name, uploadedLogos) || p.logo }} featured={g.featured} showRole={g.roles.length > 1} />
                     ))}
                   </div>
                 </div>
@@ -182,17 +201,21 @@ function PartnerLogo({ partner, featured = false, showRole = true }: { partner: 
   // phones), and each logo scales to fit an identical box via object-contain,
   // so no logo's shape can change its card. Content-sized cards made the
   // strip read as a jumble of mismatched tiles.
+  // A name-only card should not reserve a logo's worth of empty space. Without
+  // this, a sponsor whose artwork hasn't landed yet gets a large blank card with
+  // one word floating in it, which reads as a broken image rather than a name.
+  const nameOnly = logoFailed || !hasArtwork;
   const inner = (
     <div
-      className={`rounded-[22px] p-[1.5px] max-w-full ${featured ? "w-[420px]" : "w-[320px]"}`}
+      className={`rounded-[22px] p-[1.5px] max-w-full ${featured && !nameOnly ? "w-[420px]" : "w-[320px]"}`}
       style={{
         background: `linear-gradient(135deg, ${TOKENS.gold} 0%, ${TOKENS.goldSoft} 48%, ${TOKENS.gold} 100%)`,
         boxShadow: "0 22px 48px -24px rgba(201,161,75,0.42), 0 4px 14px -8px rgba(11,31,37,0.14)",
       }}
     >
-      <div className="bg-white rounded-[20px] flex flex-col items-center justify-center px-8 py-8 sm:py-9 w-full">
-        {logoFailed || !hasArtwork ? (
-          <div className={`flex items-center font-extrabold tracking-tight text-center ${featured ? "h-20 sm:h-[92px] text-2xl sm:text-3xl" : "h-16 sm:h-[72px] text-xl sm:text-2xl"}`} style={{ color: TOKENS.ink }}>
+      <div className={`bg-white rounded-[20px] flex flex-col items-center justify-center px-8 w-full ${nameOnly ? "py-6" : "py-8 sm:py-9"}`}>
+        {nameOnly ? (
+          <div className="flex items-center font-extrabold tracking-tight text-center text-xl sm:text-2xl leading-tight" style={{ color: TOKENS.ink }}>
             {partner.name}
           </div>
         ) : (

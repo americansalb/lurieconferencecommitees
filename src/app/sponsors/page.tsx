@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback, useRef } from "react";
 import {
   Award, Trash2, RefreshCw, Search, Filter, ExternalLink, Mail, Building2, Copy, Plus,
-  Clock, Pause, Play, X, SlidersHorizontal, Loader2, BadgeCheck, Send, FileText, Combine, Eye, Shuffle, Users, Ticket, CreditCard, FileDown,
+  Clock, Pause, Play, X, SlidersHorizontal, Loader2, BadgeCheck, Send, FileText, Combine, Eye, Shuffle, Users, Ticket, CreditCard, FileDown, Upload,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
@@ -99,6 +99,7 @@ export default function SponsorsAdminPage() {
   } | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [requestingLogoId, setRequestingLogoId] = useState<string | null>(null);
+  const [uploadingLogoId, setUploadingLogoId] = useState<string | null>(null);
   const [sendingInviteId, setSendingInviteId] = useState<string | null>(null);
   const [sendingLetterId, setSendingLetterId] = useState<string | null>(null);
   const [sendingTeamId, setSendingTeamId] = useState<string | null>(null);
@@ -334,6 +335,46 @@ export default function SponsorsAdminPage() {
       );
     } finally {
       setRequestingLogoId(null);
+      setTimeout(() => setActionNote(null), 8000);
+    }
+  }
+
+  // Put a logo on file ourselves. Sponsors email their artwork to us far more
+  // often than they use the upload link, so the file usually arrives long
+  // before the website shows it.
+  async function uploadLogo(id: string, file: File) {
+    const s = sponsors.find((x) => x.id === id);
+    const who = s?.companyName || "Sponsor";
+    if (file.size > 25 * 1024 * 1024) {
+      setActionNote(`${who}: that file is over 25MB. Export it smaller and try again.`);
+      setTimeout(() => setActionNote(null), 8000);
+      return;
+    }
+    setUploadingLogoId(id);
+    setActionNote(null);
+    try {
+      const dataUrl: string = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.onerror = () => reject(new Error("Could not read that file."));
+        reader.readAsDataURL(file);
+      });
+      const res = await fetch(`/api/sponsors/${id}/logo`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dataUrl, fileName: file.name }),
+      });
+      const j = await res.json().catch(() => ({}));
+      setActionNote(
+        res.ok && j.ok
+          ? `${who}: logo saved. It is on the website now, in their sponsorship level's section.`
+          : `${who}: could not save that logo. ${j.error || ""}`
+      );
+      await load();
+    } catch (e) {
+      setActionNote(`${who}: ${e instanceof Error ? e.message : "Could not read that file."}`);
+    } finally {
+      setUploadingLogoId(null);
       setTimeout(() => setActionNote(null), 8000);
     }
   }
@@ -1266,15 +1307,38 @@ export default function SponsorsAdminPage() {
                               </span>
                             )}
                             {isAdmin && (
-                              <button
-                                onClick={() => requestLogo(s.id)}
-                                disabled={requestingLogoId === s.id}
-                                className="text-[11px] font-bold px-2.5 py-1 rounded-lg border border-[#0066B3]/20 bg-white text-[#0066B3] hover:bg-[#0066B3]/[0.06] inline-flex items-center gap-1 disabled:opacity-50"
-                                title="Email them asking for their logo, with a one-click upload link to their portal"
-                              >
-                                {requestingLogoId === s.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3" />}
-                                {s.logo ? "Request better logo" : "Request logo by email"}
-                              </button>
+                              <>
+                                {/* If the artwork is already in hand, put it on
+                                    file here rather than emailing the sponsor to
+                                    ask for something we were sent. */}
+                                <label
+                                  className="text-[11px] font-bold px-2.5 py-1 rounded-lg border border-emerald-600/25 bg-white text-emerald-700 hover:bg-emerald-50 inline-flex items-center gap-1 cursor-pointer"
+                                  title="Choose the logo file from this computer. It goes live on the website immediately."
+                                >
+                                  {uploadingLogoId === s.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
+                                  {s.logo ? "Replace logo" : "Upload logo"}
+                                  <input
+                                    type="file"
+                                    accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif"
+                                    className="hidden"
+                                    disabled={uploadingLogoId === s.id}
+                                    onChange={(e) => {
+                                      const f = e.target.files?.[0];
+                                      e.target.value = "";
+                                      if (f) uploadLogo(s.id, f);
+                                    }}
+                                  />
+                                </label>
+                                <button
+                                  onClick={() => requestLogo(s.id)}
+                                  disabled={requestingLogoId === s.id}
+                                  className="text-[11px] font-bold px-2.5 py-1 rounded-lg border border-[#0066B3]/20 bg-white text-[#0066B3] hover:bg-[#0066B3]/[0.06] inline-flex items-center gap-1 disabled:opacity-50"
+                                  title="Email them asking for their logo, with a one-click upload link to their portal"
+                                >
+                                  {requestingLogoId === s.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3" />}
+                                  {s.logo ? "Request better logo" : "Request logo by email"}
+                                </button>
+                              </>
                             )}
                           </div>
                         )}
