@@ -45,15 +45,17 @@ type Frame = "silver" | "gold" | "plain";
 
 const GROUPS: {
   heading: string;
+  /** Used when the band holds more than one organization. */
+  headingPlural?: string;
   roles: string[];
   size: Size;
   frame: Frame;
   icon?: LucideIcon;
   note?: string;
 }[] = [
-  { heading: "Silver Sponsor", roles: ["Silver Sponsor"], size: "hero", frame: "silver", icon: Award },
-  { heading: "Food Sponsor", roles: ["Food Sponsor"], size: "feature", frame: "gold", icon: UtensilsCrossed },
-  { heading: "Captioning Sponsor", roles: ["Captioning Sponsor"], size: "feature", frame: "gold", icon: Captions },
+  { heading: "Silver Sponsor", headingPlural: "Silver Sponsors", roles: ["Silver Sponsor"], size: "hero", frame: "silver", icon: Award },
+  { heading: "Food Sponsor", headingPlural: "Food Sponsors", roles: ["Food Sponsor"], size: "feature", frame: "gold", icon: UtensilsCrossed },
+  { heading: "Captioning Sponsor", headingPlural: "Captioning Sponsors", roles: ["Captioning Sponsor"], size: "feature", frame: "gold", icon: Captions },
   { heading: "Exhibitors", roles: ["Exhibitor"], size: "standard", frame: "plain", icon: Store },
   { heading: "Partners & Supporters", roles: ["Health Education Partner", "Supporter"], size: "compact", frame: "plain" },
 ];
@@ -75,14 +77,20 @@ const FRAMES: Record<Frame, { background: string; boxShadow: string }> = {
   },
 };
 
-// Card width, logo height and padding per rank. The logo box stays a fixed
-// height within a band so no partner's aspect ratio can make their card taller
-// than the one beside it.
-const SIZES: Record<Size, { card: string; logo: string; pad: string; radius: string }> = {
-  hero:     { card: "w-[440px]", logo: "h-[92px] sm:h-28", pad: "px-9 py-9 sm:py-10", radius: "rounded-[24px]" },
-  feature:  { card: "w-[360px]", logo: "h-[76px] sm:h-[88px]", pad: "px-8 py-8", radius: "rounded-[22px]" },
-  standard: { card: "w-[292px]", logo: "h-16 sm:h-[68px]", pad: "px-7 py-7", radius: "rounded-[18px]" },
-  compact:  { card: "w-[236px]", logo: "h-12 sm:h-14", pad: "px-6 py-5", radius: "rounded-[16px]" },
+// Logo box height and padding per rank. The logo box stays a fixed height
+// within a band so no partner's aspect ratio can make their card taller than
+// the one beside it.
+//
+// Width is a flex basis rather than a fixed size, so a level's sponsors share
+// one row and grow to fill it. Fixed widths meant a third Silver Sponsor wrapped
+// onto a line of its own, which reads as a lesser tier when it is the same one.
+// `basis` is small enough for three across the container; `max` stops a lone
+// sponsor from stretching into a billboard.
+const SIZES: Record<Size, { basis: number; max: number; logo: string; pad: string; radius: string }> = {
+  hero:     { basis: 300, max: 440, logo: "h-[92px] sm:h-28", pad: "px-9 py-9 sm:py-10", radius: "rounded-[24px]" },
+  feature:  { basis: 280, max: 380, logo: "h-[76px] sm:h-[88px]", pad: "px-8 py-8", radius: "rounded-[22px]" },
+  standard: { basis: 240, max: 292, logo: "h-16 sm:h-[68px]", pad: "px-7 py-7", radius: "rounded-[18px]" },
+  compact:  { basis: 200, max: 236, logo: "h-12 sm:h-14", pad: "px-6 py-5", radius: "rounded-[16px]" },
 };
 
 const BENEFITS = [
@@ -169,8 +177,15 @@ export default function SponsorsBlock({ uploadedLogos = {} }: { uploadedLogos?: 
               const top = g.size === "hero" || g.size === "feature";
               return (
                 <div key={g.heading} className={g.size === "hero" ? "mb-14" : "mb-12 last:mb-0"}>
-                  <BandHeading heading={g.heading} note={g.note} icon={g.icon} size={g.size} />
-                  <div className={`flex flex-wrap items-start justify-center ${top ? "gap-5" : "gap-4"}`}>
+                  <BandHeading
+                    heading={members.length > 1 && g.headingPlural ? g.headingPlural : g.heading}
+                    note={g.note}
+                    icon={g.icon}
+                    size={g.size}
+                  />
+                  {/* items-stretch so cards on the same row share a height even
+                      when one partner's name wraps to two lines. */}
+                  <div className={`flex flex-wrap items-stretch justify-center ${top ? "gap-5" : "gap-4"}`}>
                     {members.map((p) => (
                       <PartnerLogo
                         key={p.name}
@@ -296,10 +311,9 @@ function PartnerLogo({ partner, size = "standard", frame = "plain", showRole = t
     if (img && img.complete && img.naturalWidth === 0) setLogoFailed(true);
   }, []);
   const hasArtwork = !!partner.logo;
-  // Within a band every card is the SAME fixed size (yielding to the viewport
-  // on narrow phones), and each logo scales to fit an identical box via
-  // object-contain, so no partner's aspect ratio can change their card. Size
-  // varies between bands, never inside one.
+  // Within a band every card shares one row and one height, and each logo scales
+  // to fit an identical box via object-contain, so no partner's aspect ratio can
+  // change their card. Size varies between bands, never inside one.
   //
   // A name-only card is the exception: it should not reserve a logo's worth of
   // empty space, or a sponsor whose artwork hasn't landed yet gets a large
@@ -311,10 +325,10 @@ function PartnerLogo({ partner, size = "standard", frame = "plain", showRole = t
     size === "hero" ? "rounded-[22.5px]" : size === "feature" ? "rounded-[20.5px]" : size === "standard" ? "rounded-[16.5px]" : "rounded-[14.5px]";
   const inner = (
     <div
-      className={`${s.radius} p-[1.5px] max-w-full ${nameOnly && size === "hero" ? SIZES.feature.card : s.card}`}
+      className={`${s.radius} p-[1.5px] w-full h-full`}
       style={f}
     >
-      <div className={`bg-white ${innerRadius} flex flex-col items-center justify-center w-full ${nameOnly ? "px-7 py-6" : s.pad}`}>
+      <div className={`bg-white ${innerRadius} flex flex-col items-center justify-center w-full h-full ${nameOnly ? "px-7 py-6" : s.pad}`}>
         {nameOnly ? (
           <div
             className={`flex items-center font-extrabold tracking-tight text-center leading-tight ${size === "compact" ? "text-[17px]" : "text-xl sm:text-2xl"}`}
@@ -349,9 +363,24 @@ function PartnerLogo({ partner, size = "standard", frame = "plain", showRole = t
       </div>
     </div>
   );
-  return partner.url
-    ? <a href={partner.url} target="_blank" rel="noopener noreferrer" className="block max-w-full transition-transform hover:-translate-y-0.5">{inner}</a>
-    : inner;
+  // The flex sizing lives on the outermost node so the whole card, link or not,
+  // takes its share of the row. A name-only card in the top band borrows the
+  // next size down, since it has no artwork to fill the extra room.
+  const box = nameOnly && size === "hero" ? SIZES.feature : s;
+  const style: React.CSSProperties = { flex: `1 1 ${box.basis}px`, maxWidth: box.max, minWidth: 0 };
+  return partner.url ? (
+    <a
+      href={partner.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="block transition-transform hover:-translate-y-0.5"
+      style={style}
+    >
+      {inner}
+    </a>
+  ) : (
+    <div style={style}>{inner}</div>
+  );
 }
 
 function Eyebrow({ children }: { children: React.ReactNode }) {
