@@ -7,7 +7,7 @@ import Link from "next/link";
 import {
   Mic, Search, UserCheck, Download, Send, Check,
   Clock, XCircle, RefreshCw, AlertCircle, CircleHelp, Trash2, Megaphone, Inbox,
-  Presentation, ExternalLink, StickyNote, Ticket } from "lucide-react";
+  Presentation, ExternalLink, StickyNote, Ticket, BookOpen } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
 import MobileNav from "@/components/layout/MobileNav";
@@ -239,6 +239,17 @@ export default function PresentersPage() {
                 </p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
+                <Link
+                  href="/presenters/program-book"
+                  title="Build the printable speaker book: every presenter with their slot, session title, description, learning objectives and bio. Edit it all before it prints."
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-left text-[#0E5566] bg-white border border-slate-200 hover:bg-slate-50 shadow-sm"
+                >
+                  <BookOpen className="w-4 h-4 shrink-0" />
+                  <span className="leading-tight">
+                    <span className="block text-sm font-semibold">Speaker Book</span>
+                    <span className="block text-[11px] font-medium text-slate-500">Configure, then export a PDF</span>
+                  </span>
+                </Link>
                 <button
                   type="button"
                   onClick={() => setShowProposalCall(true)}
