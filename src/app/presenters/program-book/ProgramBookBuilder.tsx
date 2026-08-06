@@ -22,6 +22,8 @@ const STORAGE_KEY = "lcc.program-book.v1";
 
 type ApiEntry = {
   id: string;
+  presenterId: string;
+  sessionCount: number;
   name: string;
   status: string;
   jobTitle: string;
@@ -62,6 +64,8 @@ type Entry = {
   status: string;
   submittedTitle: string;
   order: number;
+  /** How many sessions this person is on. Above one, the copy needs splitting. */
+  sessionCount: number;
 };
 
 type Doc = {
@@ -109,6 +113,7 @@ function toEntry(e: ApiEntry): Entry {
     status: e.status,
     submittedTitle: e.submittedTitle,
     order: e.order,
+    sessionCount: e.sessionCount,
   };
 }
 
@@ -148,7 +153,7 @@ export default function ProgramBookBuilder() {
         const byId = new Map(stored.entries.map((s) => [s.id, s]));
         setEntries(base.map((b) => {
           const s = byId.get(b.id);
-          return s ? { ...b, ...s, hasHeadshot: b.hasHeadshot, status: b.status, submittedTitle: b.submittedTitle } : b;
+          return s ? { ...b, ...s, hasHeadshot: b.hasHeadshot, status: b.status, submittedTitle: b.submittedTitle, sessionCount: b.sessionCount } : b;
         }));
       } else {
         setEntries(base);
@@ -211,16 +216,18 @@ export default function ProgramBookBuilder() {
   // in the printout.
   const gaps = useMemo(() => {
     let noTime = 0, noDescription = 0, noBio = 0, thinObjectives = 0;
+    const twice = new Set<string>();
     for (const e of included) {
       if (!e.time.trim()) noTime += 1;
       if (!e.description.trim()) noDescription += 1;
       if (!e.bio.trim()) noBio += 1;
       if (e.objectives.filter((o) => o.trim()).length < 3) thinObjectives += 1;
+      if (e.sessionCount > 1) twice.add(e.name);
     }
-    return { noTime, noDescription, noBio, thinObjectives };
+    return { noTime, noDescription, noBio, thinObjectives, twice: [...twice] };
   }, [included]);
 
-  const gapCount = gaps.noTime + gaps.noDescription + gaps.noBio + gaps.thinObjectives;
+  const gapCount = gaps.noTime + gaps.noDescription + gaps.noBio + gaps.thinObjectives + gaps.twice.length;
 
   if (loading) {
     return (
@@ -288,6 +295,14 @@ export default function ProgramBookBuilder() {
               {gaps.thinObjectives > 0 && <li>{gaps.thinObjectives} with fewer than three learning objectives.</li>}
               {gaps.noDescription > 0 && <li>{gaps.noDescription} without a session description.</li>}
               {gaps.noBio > 0 && <li>{gaps.noBio} without a bio.</li>}
+              {gaps.twice.length > 0 && (
+                <li>
+                  {gaps.twice.join(", ")} {gaps.twice.length === 1 ? "is" : "are"} on the program more than
+                  once, so {gaps.twice.length === 1 ? "they have" : "they each have"} a page per session. Both
+                  start from the same submitted description and objectives, so edit each one to its own
+                  session or the book repeats itself.
+                </li>
+              )}
             </ul>
           </div>
         )}
@@ -347,7 +362,14 @@ export default function ProgramBookBuilder() {
                         {e.include ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                       </button>
                       <button type="button" onClick={() => setOpenId(open ? null : e.id)} className="flex-1 min-w-0 text-left">
-                        <div className="text-[13.5px] font-bold text-slate-900 truncate">{e.name}</div>
+                        <div className="text-[13.5px] font-bold text-slate-900 truncate">
+                          {e.name}
+                          {e.sessionCount > 1 && (
+                            <span className="ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-sky-50 text-sky-700 align-middle">
+                              {e.sessionCount} sessions
+                            </span>
+                          )}
+                        </div>
                         <div className="text-[11.5px] text-slate-500 truncate">
                           {e.time || <span className="text-amber-600 font-semibold">No time set</span>}
                           {e.title ? ` · ${e.title}` : ""}

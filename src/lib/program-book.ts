@@ -58,20 +58,33 @@ export function bookSlots(): BookSlot[] {
  * cannot collide with a word in a session's affiliation line.
  */
 export function matchSlot(name: string, slots: BookSlot[], whoByOrder: Record<number, string>): BookSlot | null {
+  return matchSlots(name, slots, whoByOrder)[0] || null;
+}
+
+/**
+ * Every slot a presenter is on, not just the first.
+ *
+ * Someone who speaks twice used to get one page and lose a session: the first
+ * match won, and the second sitting never appeared in the book at all. The
+ * whole-name pass runs across all slots before the last-name fallback is
+ * considered, so a confident match is never diluted by a loose one.
+ */
+export function matchSlots(name: string, slots: BookSlot[], whoByOrder: Record<number, string>): BookSlot[] {
   const full = flatten(name);
-  if (!full) return null;
-  for (const slot of slots) {
-    if (flatten(whoByOrder[slot.order] || "").includes(full)) return slot;
-  }
+  if (!full) return [];
+
+  const byFullName = slots.filter((slot) => flatten(whoByOrder[slot.order] || "").includes(full));
+  if (byFullName.length) return byFullName;
+
   const parts = full.split(" ");
   const last = parts[parts.length - 1];
   if (last && last.length >= 4) {
-    for (const slot of slots) {
+    return slots.filter((slot) => {
       const who = ` ${flatten(whoByOrder[slot.order] || "")} `;
-      if (who.includes(` ${last} `) || who.includes(` ${last}`)) return slot;
-    }
+      return who.includes(` ${last} `) || who.includes(` ${last}`);
+    });
   }
-  return null;
+  return [];
 }
 
 /** The `who` line for each slot, keyed by order, for matching. */
@@ -85,6 +98,35 @@ export function whoLines(): Record<number, string> {
     }
   }
   return map;
+}
+
+/**
+ * Take the list markers off the front of one objective.
+ *
+ * People paste these out of Word, so a single line often carries more than one
+ * marker: a bullet and then a number ("- 1.Share…"), or a number the writer
+ * typed inside their own numbered list ("1. 1.Share…"). Stripping once left the
+ * second marker in place, and the printed page then read "1. 1.Share…", so keep
+ * peeling until nothing more comes off. Parenthesised and bracketed numbering
+ * counts too: "(1) How DOJ…" printed as "1. (1) How DOJ…".
+ *
+ * The loop is bounded, because a line that is nothing but markers must still
+ * terminate.
+ */
+function stripMarkers(line: string): string {
+  let out = line.trim();
+  for (let i = 0; i < 6; i += 1) {
+    const before = out;
+    out = out
+      .replace(/^[-–—•·●▪‣º*]+\s*/, "")
+      .replace(/^\(\s*\d+\s*\)\s*/, "")
+      .replace(/^\[\s*\d+\s*\]\s*/, "")
+      .replace(/^(?:objective|goal)\s*#?\s*\d*\s*[.):\-]?\s*/i, "")
+      .replace(/^\d+\s*[.):\-]\s*/, "")
+      .trim();
+    if (out === before) break;
+  }
+  return out;
 }
 
 /**
@@ -113,12 +155,7 @@ export function splitObjectives(raw: string | null | undefined, count = 3): stri
     }
   }
 
-  const cleaned = parts.map((l) =>
-    l
-      .replace(/^\s*(?:objective\s*)?\d+\s*[.):-]?\s*/i, "")
-      .replace(/^[-\u2013\u2014\u2022\u00b7\u25cf*]\s*/, "")
-      .trim()
-  ).filter(Boolean);
+  const cleaned = parts.map(stripMarkers).filter(Boolean);
 
   const out = cleaned.slice(0, count);
   while (out.length < count) out.push("");
