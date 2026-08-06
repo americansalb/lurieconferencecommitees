@@ -52,10 +52,12 @@ const GROUPS: {
   frame: Frame;
   icon?: LucideIcon;
   note?: string;
+  /** Levels sharing a row key sit side by side instead of stacking. */
+  row?: string;
 }[] = [
   { heading: "Silver Sponsor", headingPlural: "Silver Sponsors", roles: ["Silver Sponsor"], size: "hero", frame: "silver", icon: Award },
-  { heading: "Food Sponsor", headingPlural: "Food Sponsors", roles: ["Food Sponsor"], size: "feature", frame: "gold", icon: UtensilsCrossed },
-  { heading: "Captioning Sponsor", headingPlural: "Captioning Sponsors", roles: ["Captioning Sponsor"], size: "feature", frame: "gold", icon: Captions },
+  { heading: "Food Sponsor", headingPlural: "Food Sponsors", roles: ["Food Sponsor"], size: "feature", frame: "gold", icon: UtensilsCrossed, row: "in-kind" },
+  { heading: "Captioning Sponsor", headingPlural: "Captioning Sponsors", roles: ["Captioning Sponsor"], size: "feature", frame: "gold", icon: Captions, row: "in-kind" },
   { heading: "Exhibitors", roles: ["Exhibitor"], size: "standard", frame: "plain", icon: Store },
   { heading: "Partners & Supporters", roles: ["Health Education Partner", "Supporter"], size: "compact", frame: "plain" },
 ];
@@ -171,34 +173,24 @@ export default function SponsorsBlock({ uploadedLogos = {} }: { uploadedLogos?: 
             <p className="text-center text-[11px] font-bold tracking-[0.28em] uppercase mb-9" style={{ color: TOKENS.mutedSoft }}>
               Proud to be joined by
             </p>
-            {GROUPS.map((g) => {
-              const members = PARTNERS.filter((p) => g.roles.includes(p.role || ""));
-              if (!members.length) return null;
-              const top = g.size === "hero" || g.size === "feature";
-              return (
-                <div key={g.heading} className={g.size === "hero" ? "mb-14" : "mb-12 last:mb-0"}>
-                  <BandHeading
-                    heading={members.length > 1 && g.headingPlural ? g.headingPlural : g.heading}
-                    note={g.note}
-                    icon={g.icon}
-                    size={g.size}
-                  />
-                  {/* items-stretch so cards on the same row share a height even
-                      when one partner's name wraps to two lines. */}
-                  <div className={`flex flex-wrap items-stretch justify-center ${top ? "gap-5" : "gap-4"}`}>
-                    {members.map((p) => (
-                      <PartnerLogo
-                        key={p.name}
-                        partner={{ ...p, logo: resolveLogo(p.name, uploadedLogos) || p.logo }}
-                        size={g.size}
-                        frame={g.frame}
-                        showRole={g.roles.length > 1}
-                      />
-                    ))}
-                  </div>
+            {rows().map((row) =>
+              row.bands.length > 1 ? (
+                // Two levels with a single sponsor each sit beside one another
+                // rather than eating a full band of height apiece. Each keeps
+                // its own chip, so they are still read as separate levels.
+                <div key={row.key} className="mb-12 last:mb-0 flex flex-col sm:flex-row gap-10 sm:gap-8 justify-center">
+                  {row.bands.map((b) => (
+                    <div key={b.group.heading} className="flex-1 min-w-0 flex flex-col">
+                      <Band band={b} uploadedLogos={uploadedLogos} fill />
+                    </div>
+                  ))}
                 </div>
-              );
-            })}
+              ) : (
+                <div key={row.key} className={row.bands[0].group.size === "hero" ? "mb-14" : "mb-12 last:mb-0"}>
+                  <Band band={row.bands[0]} uploadedLogos={uploadedLogos} />
+                </div>
+              )
+            )}
           </div>
         )}
 
@@ -253,6 +245,60 @@ export default function SponsorsBlock({ uploadedLogos = {} }: { uploadedLogos?: 
 // is a filled chip with the level's icon and a line saying what the money
 // actually pays for; further down it thins out to a plain lettered label, so
 // the eye ranks the bands before it reads a word.
+type Group = (typeof GROUPS)[number];
+type BandData = { group: Group; members: Partner[] };
+
+/**
+ * The bands that actually have someone in them, arranged into rows. Levels
+ * tagged with the same `row` share a line when each of them has members; if
+ * only one does, it takes the full width on its own rather than sitting in a
+ * lopsided half.
+ */
+function rows(): { key: string; bands: BandData[] }[] {
+  const out: { key: string; bands: BandData[] }[] = [];
+  for (const group of GROUPS) {
+    const members = PARTNERS.filter((p) => group.roles.includes(p.role || ""));
+    if (!members.length) continue;
+    const last = out[out.length - 1];
+    if (group.row && last && last.key === group.row) last.bands.push({ group, members });
+    else out.push({ key: group.row || group.heading, bands: [{ group, members }] });
+  }
+  return out;
+}
+
+function Band({ band, uploadedLogos, fill = false }: {
+  band: BandData;
+  uploadedLogos: Record<string, string>;
+  /** Fill the column's height, so two levels sitting side by side line up. */
+  fill?: boolean;
+}) {
+  const { group: g, members } = band;
+  const top = g.size === "hero" || g.size === "feature";
+  return (
+    <>
+      <BandHeading
+        heading={members.length > 1 && g.headingPlural ? g.headingPlural : g.heading}
+        note={g.note}
+        icon={g.icon}
+        size={g.size}
+      />
+      {/* items-stretch so cards on the same row share a height even when one
+          partner's name wraps to two lines. */}
+      <div className={`flex flex-wrap items-stretch justify-center ${top ? "gap-5" : "gap-4"} ${fill ? "flex-1" : ""}`}>
+        {members.map((p) => (
+          <PartnerLogo
+            key={p.name}
+            partner={{ ...p, logo: resolveLogo(p.name, uploadedLogos) || p.logo }}
+            size={g.size}
+            frame={g.frame}
+            showRole={g.roles.length > 1}
+          />
+        ))}
+      </div>
+    </>
+  );
+}
+
 function BandHeading({ heading, note, icon: Icon, size }: { heading: string; note?: string; icon?: LucideIcon; size: Size }) {
   const hero = size === "hero";
   const feature = size === "feature";
