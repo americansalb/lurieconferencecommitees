@@ -91,7 +91,9 @@ const FRAMES: Record<Frame, { background: string; boxShadow: string }> = {
 const SIZES: Record<Size, { basis: number; max: number; logo: string; pad: string; radius: string }> = {
   hero:     { basis: 300, max: 440, logo: "h-[92px] sm:h-28", pad: "px-9 py-9 sm:py-10", radius: "rounded-[24px]" },
   feature:  { basis: 280, max: 380, logo: "h-[76px] sm:h-[88px]", pad: "px-8 py-8", radius: "rounded-[22px]" },
-  standard: { basis: 240, max: 292, logo: "h-16 sm:h-[68px]", pad: "px-7 py-7", radius: "rounded-[18px]" },
+  // 280 rather than 240 so exhibitors break three to a row: five across four
+  // and one stranded underneath read as a mistake.
+  standard: { basis: 280, max: 344, logo: "h-16 sm:h-[68px]", pad: "px-7 py-7", radius: "rounded-[18px]" },
   compact:  { basis: 200, max: 236, logo: "h-12 sm:h-14", pad: "px-6 py-5", radius: "rounded-[16px]" },
 };
 
