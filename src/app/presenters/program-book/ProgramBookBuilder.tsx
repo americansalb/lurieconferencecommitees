@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft, BookOpen, Check, ChevronDown, ChevronRight, Loader2, Printer,
-  RotateCcw, Search, AlertTriangle, GripVertical, Eye, EyeOff,
+  RotateCcw, Search, AlertTriangle, GripVertical, Eye, EyeOff, Users, Combine, Split,
 } from "lucide-react";
 import { CONFERENCE } from "@/components/landing/tokens";
 
@@ -66,7 +66,30 @@ type Entry = {
   order: number;
   /** How many sessions this person is on. Above one, the copy needs splitting. */
   sessionCount: number;
+  /**
+   * The id of the entry this one shares a page with. Co-presenters submit the
+   * same session twice, once each, and printing that twice reads as a mistake:
+   * the same title, the same description, the same objectives, on consecutive
+   * pages. Combined, they get one page with both headshots, one set of session
+   * copy, and a bio each.
+   */
+  combinedWith: string | null;
+  /** Kept so a combine can only be offered between people in the same slot. */
+  presenterId: string;
 };
+
+/** A page: one presenter, or several who share a session. */
+type Group = { lead: Entry; others: Entry[] };
+
+function groupEntries(list: Entry[]): Group[] {
+  const ids = new Set(list.map((e) => e.id));
+  // A partner whose lead was switched off falls back to its own page rather
+  // than vanishing from the book.
+  const isFolded = (e: Entry) => !!e.combinedWith && ids.has(e.combinedWith);
+  return list
+    .filter((e) => !isFolded(e))
+    .map((lead) => ({ lead, others: list.filter((o) => o.combinedWith === lead.id) }));
+}
 
 type Doc = {
   title: string;
@@ -114,6 +137,8 @@ function toEntry(e: ApiEntry): Entry {
     submittedTitle: e.submittedTitle,
     order: e.order,
     sessionCount: e.sessionCount,
+    combinedWith: null,
+    presenterId: e.presenterId,
   };
 }
 
@@ -205,7 +230,66 @@ export default function ProgramBookBuilder() {
     });
   }, []);
 
+  // Fold one entry into another's page, or pull it back out.
+  const combine = useCallback((id: string, leadId: string | null) => {
+    setEntries((prev) => prev.map((e) => {
+      if (e.id === id) return { ...e, combinedWith: leadId };
+      // Nothing may hang off an entry that has just become a partner itself.
+      if (leadId && e.combinedWith === id) return { ...e, combinedWith: leadId };
+      return e;
+    }));
+  }, []);
+
+  /**
+   * Who else is on this exact slot and could share the page. Same scheduled
+   * session, different person, and neither already folded into someone else.
+   */
+  const partnerFor = useCallback((e: Entry): Entry | null => {
+    if (e.combinedWith || e.order >= 9999) return null;
+    return entries.find((o) =>
+      o.id !== e.id && o.include && o.order === e.order &&
+      o.presenterId !== e.presenterId && !o.combinedWith &&
+      !entries.some((x) => x.combinedWith === o.id)
+    ) || null;
+  }, [entries]);
+
+  const pendingPairs = useMemo(() => {
+    const seen = new Set<string>();
+    const pairs: [Entry, Entry][] = [];
+    for (const e of entries) {
+      if (!e.include || seen.has(e.id)) continue;
+      const p = partnerFor(e);
+      if (p && !seen.has(p.id)) {
+        pairs.push([e, p]);
+        seen.add(e.id);
+        seen.add(p.id);
+      }
+    }
+    return pairs;
+  }, [entries, partnerFor]);
+
+  const combineAll = useCallback(() => {
+    setEntries((prev) => {
+      const next = [...prev];
+      const taken = new Set<string>();
+      for (const e of next) {
+        if (!e.include || e.combinedWith || taken.has(e.id) || e.order >= 9999) continue;
+        const p = next.find((o) =>
+          o.id !== e.id && o.include && o.order === e.order &&
+          o.presenterId !== e.presenterId && !o.combinedWith && !taken.has(o.id)
+        );
+        if (!p) continue;
+        taken.add(e.id);
+        taken.add(p.id);
+        const i = next.indexOf(p);
+        next[i] = { ...p, combinedWith: e.id };
+      }
+      return next;
+    });
+  }, []);
+
   const included = useMemo(() => entries.filter((e) => e.include), [entries]);
+  const groups = useMemo(() => groupEntries(included), [included]);
   const visible = useMemo(() => {
     const needle = q.trim().toLowerCase();
     if (!needle) return entries;
@@ -224,7 +308,7 @@ export default function ProgramBookBuilder() {
       if (e.objectives.filter((o) => o.trim()).length < 3) thinObjectives += 1;
       if (e.sessionCount > 1) twice.add(e.name);
     }
-    return { noTime, noDescription, noBio, thinObjectives, twice: [...twice] };
+    return { noTime, noDescription, noBio, thinObjectives, twice: Array.from(twice) };
   }, [included]);
 
   const gapCount = gaps.noTime + gaps.noDescription + gaps.noBio + gaps.thinObjectives + gaps.twice.length;
@@ -307,6 +391,29 @@ export default function ProgramBookBuilder() {
           </div>
         )}
 
+        {pendingPairs.length > 0 && (
+          <div className="mb-4 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 flex items-start justify-between gap-3 flex-wrap">
+            <div className="min-w-0">
+              <div className="text-[13px] font-bold text-sky-900 inline-flex items-center gap-1.5">
+                <Users className="w-4 h-4" /> Co-presenters on the same session
+              </div>
+              <p className="text-[12.5px] text-sky-800 mt-1">
+                {pendingPairs.map(([a, b]) => `${a.name} and ${b.name}`).join("; ")}.{" "}
+                {pendingPairs.length === 1 ? "They share" : "Each pair shares"} one session, so right now the
+                book prints the same title, description and objectives twice. Put {pendingPairs.length === 1 ? "them" : "each pair"} on one
+                page with both headshots and a bio each.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={combineAll}
+              className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-[13px] font-semibold text-white bg-sky-700 hover:bg-sky-800"
+            >
+              <Combine className="w-3.5 h-3.5" /> Combine {pendingPairs.length > 1 ? `all ${pendingPairs.length}` : ""}
+            </button>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-6">
           {/* Editor */}
           <div>
@@ -349,9 +456,19 @@ export default function ProgramBookBuilder() {
             <div className="space-y-2">
               {visible.map((e) => {
                 const open = openId === e.id;
-                const missing = !e.time.trim() || !e.description.trim() || !e.bio.trim() || e.objectives.filter((o) => o.trim()).length < 3;
+                const lead = e.combinedWith ? entries.find((x) => x.id === e.combinedWith) : null;
+                const partners = entries.filter((x) => x.combinedWith === e.id);
+                const candidate = partnerFor(e);
+                // A folded partner only contributes their name, role, bio and
+                // headshot, so the shared-copy warnings do not apply to them.
+                const missing = lead
+                  ? !e.bio.trim()
+                  : !e.time.trim() || !e.description.trim() || !e.bio.trim() || e.objectives.filter((o) => o.trim()).length < 3;
                 return (
-                  <div key={e.id} className={`bg-white rounded-2xl border shadow-sm ${e.include ? "border-slate-200" : "border-slate-100 opacity-60"}`}>
+                  <div
+                    key={e.id}
+                    className={`bg-white rounded-2xl border shadow-sm ${e.include ? "border-slate-200" : "border-slate-100 opacity-60"} ${lead ? "ml-6 border-l-4 border-l-sky-300" : ""}`}
+                  >
                     <div className="flex items-center gap-2 px-3 py-2.5">
                       <button
                         type="button"
@@ -371,10 +488,41 @@ export default function ProgramBookBuilder() {
                           )}
                         </div>
                         <div className="text-[11.5px] text-slate-500 truncate">
-                          {e.time || <span className="text-amber-600 font-semibold">No time set</span>}
-                          {e.title ? ` · ${e.title}` : ""}
+                          {lead ? (
+                            <span className="text-sky-700 font-semibold">Sharing {lead.name}&rsquo;s page</span>
+                          ) : (
+                            <>
+                              {e.time || <span className="text-amber-600 font-semibold">No time set</span>}
+                              {e.title ? ` · ${e.title}` : ""}
+                              {partners.length > 0 && (
+                                <span className="text-sky-700 font-semibold">
+                                  {" "}&middot; with {partners.map((x) => x.name).join(", ")}
+                                </span>
+                              )}
+                            </>
+                          )}
                         </div>
                       </button>
+                      {candidate && (
+                        <button
+                          type="button"
+                          onClick={() => combine(candidate.id, e.id)}
+                          title={`Put ${candidate.name} on this page: both headshots, one title, description and set of objectives, and a bio each.`}
+                          className="shrink-0 text-[10.5px] font-bold px-2 py-1 rounded-lg bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100 inline-flex items-center gap-1"
+                        >
+                          <Combine className="w-3 h-3" /> Combine
+                        </button>
+                      )}
+                      {lead && (
+                        <button
+                          type="button"
+                          onClick={() => combine(e.id, null)}
+                          title="Give them their own page again"
+                          className="shrink-0 text-[10.5px] font-bold px-2 py-1 rounded-lg bg-white text-slate-500 border border-slate-200 hover:bg-slate-50 inline-flex items-center gap-1"
+                        >
+                          <Split className="w-3 h-3" /> Separate
+                        </button>
+                      )}
                       {missing && e.include && <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
                       <div className="flex flex-col shrink-0">
                         <button type="button" onClick={() => move(e.id, -1)} className="text-slate-300 hover:text-slate-600 leading-none" title="Move up">
@@ -398,17 +546,30 @@ export default function ProgramBookBuilder() {
                           <Field label="Role and organization">
                             <input value={e.role} onChange={(ev) => patch(e.id, { role: ev.target.value })} className={inputClass} />
                           </Field>
-                          <Field label="Day">
-                            <input value={e.day} onChange={(ev) => patch(e.id, { day: ev.target.value })} placeholder="Day 1 · Saturday, August 15" className={inputClass} />
-                          </Field>
-                          <Field label="Speaking time">
-                            <input value={e.time} onChange={(ev) => patch(e.id, { time: ev.target.value })} placeholder="10:50 AM – 12:00 PM" className={inputClass} />
-                          </Field>
+                          {!lead && (
+                            <>
+                              <Field label="Day">
+                                <input value={e.day} onChange={(ev) => patch(e.id, { day: ev.target.value })} placeholder="Day 1 · Saturday, August 15" className={inputClass} />
+                              </Field>
+                              <Field label="Speaking time">
+                                <input value={e.time} onChange={(ev) => patch(e.id, { time: ev.target.value })} placeholder="10:50 AM – 12:00 PM" className={inputClass} />
+                              </Field>
+                            </>
+                          )}
                         </div>
+                        {lead && (
+                          <p className="text-[11.5px] text-sky-700 bg-sky-50 border border-sky-100 rounded-lg px-3 py-2">
+                            The time, title, description and objectives for this page come from{" "}
+                            <strong>{lead.name}</strong>. Edit them there. What this person adds here is their
+                            name, role, headshot and bio.
+                          </p>
+                        )}
+                        {!lead && (
                         <Field label="Presentation title">
                           <input value={e.title} onChange={(ev) => patch(e.id, { title: ev.target.value })} className={inputClass} />
                         </Field>
-                        {e.submittedTitle && e.submittedTitle !== e.title && (
+                        )}
+                        {!lead && e.submittedTitle && e.submittedTitle !== e.title && (
                           <p className="text-[11px] text-slate-500 -mt-1.5">
                             They submitted it as &ldquo;{e.submittedTitle}&rdquo;.{" "}
                             <button type="button" onClick={() => patch(e.id, { title: e.submittedTitle })} className="font-semibold text-[#0066B3]">
@@ -416,9 +577,12 @@ export default function ProgramBookBuilder() {
                             </button>
                           </p>
                         )}
+                        {!lead && (
                         <Field label="Description">
                           <textarea value={e.description} onChange={(ev) => patch(e.id, { description: ev.target.value })} rows={5} className={inputClass} />
                         </Field>
+                        )}
+                        {!lead && (
                         <div>
                           <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Learning objectives</div>
                           {[0, 1, 2].map((i) => (
@@ -434,6 +598,7 @@ export default function ProgramBookBuilder() {
                             </div>
                           ))}
                         </div>
+                        )}
                         <Field label="Bio">
                           <textarea value={e.bio} onChange={(ev) => patch(e.id, { bio: ev.target.value })} rows={6} className={inputClass} />
                         </Field>
@@ -460,7 +625,7 @@ export default function ProgramBookBuilder() {
               {/* Shown as actual letter sheets at reduced zoom, so page breaks
                   are visible here rather than discovered in the printout. */}
               <div style={{ zoom: 0.62 }}>
-                <BookDocument doc={doc} entries={included} sheet />
+                <BookDocument doc={doc} groups={groups} sheet />
               </div>
             </div>
           </div>
@@ -469,7 +634,7 @@ export default function ProgramBookBuilder() {
 
       {/* The real thing. Hidden on screen, and the only thing on paper. */}
       <div className="print-only">
-        <BookDocument doc={doc} entries={included} />
+        <BookDocument doc={doc} groups={groups} />
       </div>
     </>
   );
@@ -500,14 +665,22 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: 
 // The document
 // ---------------------------------------------------------------------------
 
+// The two host brands carry the document: AALB's dark teal for structure,
+// Lurie Children's light blue for the accents that sit on top of it. Gold is
+// kept back to a single hairline, so the page reads as the conference's rather
+// than as a certificate.
 const P = {
   ink: "#0B1F25",
-  soft: "#3A5560",
+  soft: "#33505B",
   muted: "#6B7F87",
-  gold: "#C9A14B",
-  goldSoft: "#EBDCB6",
   teal: "#0E5566",
-  rule: "#E3DAC6",
+  tealDark: "#0E4456",
+  tealSoft: "#E6EEF0",
+  blue: "#2A8FCC",
+  blueDeep: "#1E6FA2",
+  blueSoft: "#E6F2FB",
+  gold: "#C9A14B",
+  rule: "#DCE5E8",
   serif: "Georgia, 'Times New Roman', serif",
 };
 
@@ -515,23 +688,28 @@ const P = {
  * `sheet` draws each page as a letter-sized white sheet on a grey desk, for the
  * on-screen preview. Printing uses the same component with it off, so the paper
  * and the preview can never drift apart.
+ *//**
+ * `sheet` draws each page as a letter-sized white sheet on a grey desk, for the
+ * on-screen preview. Printing uses the same component with it off, so the paper
+ * and the preview can never drift apart.
  */
-function BookDocument({ doc, entries, sheet = false }: { doc: Doc; entries: Entry[]; sheet?: boolean }) {
-  // A day heading prints once, above the first speaker of that day.
+function BookDocument({ doc, groups, sheet = false }: { doc: Doc; groups: Group[]; sheet?: boolean }) {
+  // A day heading prints once, above the first page of that day.
   let lastDay = "";
   const sheetStyle: React.CSSProperties = sheet
     ? { width: 816, minHeight: 1056, margin: "0 auto 18px", background: "#fff", boxShadow: "0 2px 12px rgba(11,31,37,0.16)" }
     : {};
+  const people = groups.reduce((n, g) => n + 1 + g.others.length, 0);
   return (
     <div className="book" style={{ fontFamily: P.serif, color: P.ink, background: sheet ? "transparent" : "#fff" }}>
-      {doc.cover && <Cover doc={doc} count={entries.length} sheetStyle={sheetStyle} />}
-      {entries.map((e, i) => {
-        const dayLabel = doc.dayHeadings && e.day && e.day !== lastDay ? e.day : "";
-        if (e.day) lastDay = e.day;
+      {doc.cover && <Cover doc={doc} count={people} sheetStyle={sheetStyle} />}
+      {groups.map((g, i) => {
+        const dayLabel = doc.dayHeadings && g.lead.day && g.lead.day !== lastDay ? g.lead.day : "";
+        if (g.lead.day) lastDay = g.lead.day;
         return (
           <SpeakerPage
-            key={e.id}
-            entry={e}
+            key={g.lead.id}
+            group={g}
             doc={doc}
             dayLabel={dayLabel}
             breakBefore={doc.onePerPage && (i > 0 || doc.cover)}
@@ -539,7 +717,7 @@ function BookDocument({ doc, entries, sheet = false }: { doc: Doc; entries: Entr
           />
         );
       })}
-      {!entries.length && (
+      {!groups.length && (
         <div className="page" style={{ padding: "0.9in", textAlign: "center", color: P.muted, ...sheetStyle }}>
           Nobody is included yet. Turn a speaker on with the eye button.
         </div>
@@ -548,31 +726,48 @@ function BookDocument({ doc, entries, sheet = false }: { doc: Doc; entries: Entr
   );
 }
 
+/** The teal-to-blue band that carries both hosts' colours across the page. */
+function BrandRule({ style }: { style?: React.CSSProperties }) {
+  return (
+    <div
+      style={{
+        height: 4,
+        background: `linear-gradient(90deg, ${P.tealDark} 0%, ${P.teal} 38%, ${P.blue} 78%, ${P.blueSoft} 100%)`,
+        ...style,
+      }}
+    />
+  );
+}
+
 function Cover({ doc, count, sheetStyle }: { doc: Doc; count: number; sheetStyle: React.CSSProperties }) {
   return (
     <section className="page cover" style={{ breakAfter: "page", padding: "1.1in 0.9in", textAlign: "center", ...sheetStyle }}>
-      <div style={{ height: 3, background: `linear-gradient(90deg, ${P.gold}, ${P.goldSoft}, ${P.gold})`, marginBottom: 48 }} />
-      <div style={{ fontSize: 11, letterSpacing: "0.3em", textTransform: "uppercase", color: P.gold, fontWeight: 700 }}>
+      <BrandRule style={{ marginBottom: 46 }} />
+      <div style={{ fontSize: 10.5, letterSpacing: "0.3em", textTransform: "uppercase", color: P.blueDeep, fontWeight: 700 }}>
         {doc.subtitle}
       </div>
-      <h1 style={{ fontSize: 44, lineHeight: 1.1, margin: "22px 0 0", fontWeight: 400 }}>{doc.title}</h1>
-      <div style={{ margin: "26px auto 0", width: 70, height: 1, background: P.gold }} />
+      <h1 style={{ fontSize: 44, lineHeight: 1.1, margin: "22px 0 0", fontWeight: 400, color: P.tealDark }}>{doc.title}</h1>
+      <div style={{ margin: "26px auto 0", width: 76, height: 2, background: P.blue }} />
       <div style={{ marginTop: 26, fontSize: 15, color: P.soft }}>
         August 15 &amp; 16, 2026 &middot; Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago
       </div>
       <div style={{ marginTop: 8, fontSize: 13, color: P.muted }}>
         {count} {count === 1 ? "presenter" : "presenters"}
       </div>
-      <div style={{ height: 3, background: `linear-gradient(90deg, ${P.gold}, ${P.goldSoft}, ${P.gold})`, marginTop: 48 }} />
+      <BrandRule style={{ marginTop: 46 }} />
+      <div style={{ marginTop: 10, height: 1, background: P.gold, opacity: 0.5 }} />
     </section>
   );
 }
 
-function SpeakerPage({ entry, doc, dayLabel, breakBefore, sheetStyle }: {
-  entry: Entry; doc: Doc; dayLabel: string; breakBefore: boolean; sheetStyle: React.CSSProperties;
+function SpeakerPage({ group, doc, dayLabel, breakBefore, sheetStyle }: {
+  group: Group; doc: Doc; dayLabel: string; breakBefore: boolean; sheetStyle: React.CSSProperties;
 }) {
-  const objectives = entry.objectives.map((o) => o.trim()).filter(Boolean);
-  const showShot = doc.headshots && entry.showHeadshot && entry.hasHeadshot;
+  const { lead, others } = group;
+  const people = [lead, ...others];
+  const objectives = lead.objectives.map((o) => o.trim()).filter(Boolean);
+  const withShots = people.filter((p) => doc.headshots && p.showHeadshot && p.hasHeadshot);
+  const shared = people.length > 1;
 
   return (
     <section
@@ -580,52 +775,86 @@ function SpeakerPage({ entry, doc, dayLabel, breakBefore, sheetStyle }: {
       style={{
         breakBefore: breakBefore ? "page" : "auto",
         breakInside: doc.onePerPage ? "auto" : "avoid",
-        padding: doc.onePerPage ? "0.85in 0.9in" : "0.45in 0.9in",
+        padding: doc.onePerPage ? "0.8in 0.9in" : "0.45in 0.9in",
         borderTop: doc.onePerPage ? "none" : `1px solid ${P.rule}`,
         ...sheetStyle,
       }}
     >
       {dayLabel && (
-        <div style={{ fontSize: 10, letterSpacing: "0.28em", textTransform: "uppercase", color: P.gold, fontWeight: 700, marginBottom: 18 }}>
-          {dayLabel}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ fontSize: 9.5, letterSpacing: "0.28em", textTransform: "uppercase", color: P.blueDeep, fontWeight: 700 }}>
+            {dayLabel}
+          </div>
+          <BrandRule style={{ height: 2, marginTop: 7 }} />
         </div>
       )}
 
-      <div style={{ display: "flex", gap: 22, alignItems: "flex-start" }}>
-        {showShot && (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img
-            src={`/api/presenters/headshot/${entry.id}`}
-            alt=""
-            style={{
-              width: 112, height: 112, objectFit: "cover", borderRadius: 6,
-              border: `1px solid ${P.rule}`, flexShrink: 0,
-            }}
-          />
-        )}
-        <div style={{ minWidth: 0, flex: 1 }}>
-          {entry.time && (
-            <div style={{ fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: P.teal, fontWeight: 700 }}>
-              {entry.time}
-            </div>
-          )}
-          <h2 style={{ fontSize: 25, lineHeight: 1.2, margin: "6px 0 0", fontWeight: 700 }}>{entry.name}</h2>
-          {entry.role && (
-            <div style={{ fontSize: 13, color: P.muted, marginTop: 3, fontStyle: "italic" }}>{entry.role}</div>
-          )}
-          {entry.title && (
-            <div style={{ fontSize: 17, lineHeight: 1.35, color: P.ink, marginTop: 12, fontWeight: 700 }}>
-              {entry.title}
-            </div>
-          )}
+      {lead.time && (
+        <div
+          style={{
+            display: "inline-block", background: P.tealSoft, color: P.tealDark,
+            fontSize: 10.5, letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 700,
+            padding: "5px 11px", borderRadius: 3,
+          }}
+        >
+          {lead.time}
         </div>
+      )}
+
+      {/* Co-presenters sit side by side, each under their own headshot, so the
+          page reads as one session with two people rather than two pages that
+          happen to repeat each other. */}
+      <div
+        style={{
+          display: "flex",
+          gap: shared ? 28 : 22,
+          alignItems: "flex-start",
+          marginTop: 14,
+        }}
+      >
+        {people.map((p, i) => {
+          const shot = doc.headshots && p.showHeadshot && p.hasHeadshot;
+          return (
+            <div key={p.id} style={{ display: "flex", gap: 16, alignItems: "flex-start", flex: shared ? 1 : "0 1 auto", minWidth: 0 }}>
+              {shot && (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={`/api/presenters/headshot/${p.presenterId}`}
+                  alt=""
+                  style={{
+                    width: shared ? 92 : 112, height: shared ? 92 : 112, objectFit: "cover",
+                    borderRadius: 4, border: `2px solid ${i === 0 ? P.teal : P.blue}`, flexShrink: 0,
+                  }}
+                />
+              )}
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: shared ? 20 : 25, lineHeight: 1.2, fontWeight: 700, color: P.tealDark }}>
+                  {p.name}
+                </div>
+                {p.role && (
+                  <div style={{ fontSize: shared ? 11.5 : 13, color: P.muted, marginTop: 4, fontStyle: "italic", lineHeight: 1.4 }}>
+                    {p.role}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+        {/* Without a single headshot the row would hug the left edge oddly. */}
+        {!withShots.length && !shared && <div style={{ flex: 1 }} />}
       </div>
 
-      <div style={{ height: 1, background: P.gold, opacity: 0.55, margin: "20px 0 0" }} />
+      {lead.title && (
+        <div style={{ fontSize: 17.5, lineHeight: 1.35, color: P.ink, marginTop: 18, fontWeight: 700 }}>
+          {lead.title}
+        </div>
+      )}
 
-      {doc.descriptions && entry.description && (
+      <div style={{ height: 2, background: `linear-gradient(90deg, ${P.teal} 0%, ${P.blue} 100%)`, margin: "16px 0 0", opacity: 0.9 }} />
+
+      {doc.descriptions && lead.description && (
         <Block label="About the session">
-          <Paragraphs text={entry.description} />
+          <Paragraphs text={lead.description} />
         </Block>
       )}
 
@@ -633,8 +862,16 @@ function SpeakerPage({ entry, doc, dayLabel, breakBefore, sheetStyle }: {
         <Block label="Learning objectives">
           <ol style={{ margin: 0, paddingLeft: 0, listStyle: "none" }}>
             {objectives.map((o, i) => (
-              <li key={i} style={{ display: "flex", gap: 11, marginBottom: 7, fontSize: 13.5, lineHeight: 1.55, color: P.soft }}>
-                <span style={{ color: P.gold, fontWeight: 700, flexShrink: 0 }}>{i + 1}.</span>
+              <li key={i} style={{ display: "flex", gap: 11, marginBottom: 8, fontSize: 13.5, lineHeight: 1.55, color: P.soft }}>
+                <span
+                  style={{
+                    flexShrink: 0, width: 19, height: 19, borderRadius: 10, background: P.blueSoft,
+                    color: P.blueDeep, fontSize: 10.5, fontWeight: 700, textAlign: "center",
+                    lineHeight: "19px", marginTop: 1,
+                  }}
+                >
+                  {i + 1}
+                </span>
                 <span>{o}</span>
               </li>
             ))}
@@ -642,9 +879,16 @@ function SpeakerPage({ entry, doc, dayLabel, breakBefore, sheetStyle }: {
         </Block>
       )}
 
-      {doc.bios && entry.bio && (
-        <Block label="About the presenter">
-          <Paragraphs text={entry.bio} />
+      {doc.bios && people.some((p) => p.bio.trim()) && (
+        <Block label={shared ? "About the presenters" : "About the presenter"}>
+          {people.filter((p) => p.bio.trim()).map((p, i) => (
+            <div key={p.id} style={{ marginTop: i ? 14 : 0, breakInside: "avoid" }}>
+              {shared && (
+                <div style={{ fontSize: 12.5, fontWeight: 700, color: P.teal, marginBottom: 4 }}>{p.name}</div>
+              )}
+              <Paragraphs text={p.bio} />
+            </div>
+          ))}
         </Block>
       )}
     </section>
@@ -654,7 +898,7 @@ function SpeakerPage({ entry, doc, dayLabel, breakBefore, sheetStyle }: {
 function Block({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div style={{ marginTop: 20, breakInside: "avoid" }}>
-      <div style={{ fontSize: 9.5, letterSpacing: "0.26em", textTransform: "uppercase", color: P.gold, fontWeight: 700, marginBottom: 8 }}>
+      <div style={{ fontSize: 9.5, letterSpacing: "0.24em", textTransform: "uppercase", color: P.blueDeep, fontWeight: 700, marginBottom: 8 }}>
         {label}
       </div>
       {children}
