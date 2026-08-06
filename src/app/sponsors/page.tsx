@@ -100,6 +100,13 @@ export default function SponsorsAdminPage() {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [requestingLogoId, setRequestingLogoId] = useState<string | null>(null);
   const [uploadingLogoId, setUploadingLogoId] = useState<string | null>(null);
+  // What Stripe actually took, per sponsor. `amountCents` on a row is the price
+  // we configured for the tier, which is what we hoped to be paid, not what
+  // arrived: a sponsor can be marked paid by hand, pay a different amount, or
+  // pay nothing at all. Loaded in the background from the same endpoint the
+  // Finance page uses, so the two screens cannot report different revenue.
+  const [collected, setCollected] = useState<Record<string, { grossCents: number; netCents: number }> | null>(null);
+  const [collectedError, setCollectedError] = useState<string | null>(null);
   const [sendingInviteId, setSendingInviteId] = useState<string | null>(null);
   const [sendingLetterId, setSendingLetterId] = useState<string | null>(null);
   const [sendingTeamId, setSendingTeamId] = useState<string | null>(null);
@@ -184,6 +191,29 @@ export default function SponsorsAdminPage() {
   useEffect(() => {
     if (status === "authenticated") load();
   }, [status, load]);
+
+  // Reconcile against Stripe in the background. It reads the whole charge list,
+  // so it is slower than the sponsor list and must not hold it up; the Collected
+  // card waits rather than showing a figure it cannot stand behind.
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/finance");
+        const j = await res.json().catch(() => ({}));
+        if (cancelled) return;
+        if (!res.ok || !j.collected) {
+          setCollectedError(j.error || "Could not read payments from Stripe.");
+          return;
+        }
+        setCollected(j.collected);
+      } catch {
+        if (!cancelled) setCollectedError("Could not reach Stripe.");
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [status]);
 
   // Whether this partner's deal includes conference tickets.
   //
@@ -817,6 +847,16 @@ export default function SponsorsAdminPage() {
     .filter((ms) => Number.isFinite(ms) && ms >= 0);
   const clickRate = everSent.length ? Math.round((clickedSponsors.length / everSent.length) * 100) : 0;
 
+  // Real money in, from Stripe, summed over the sponsors on this page. Falls
+  // back to null (not zero) until it loads, so the card can say it is waiting
+  // rather than claim nothing was collected.
+  const collectedDollars = collected
+    ? countable.reduce((sum, s) => sum + (collected[s.id]?.grossCents || 0), 0) / 100
+    : null;
+  const collectedCount = collected
+    ? countable.filter((s) => (collected[s.id]?.grossCents || 0) > 0).length
+    : null;
+
   // The "Paid" card mirrors the "Paid" tab exactly (paid sponsors; accepted
   // in-kind sponsors are counted under "Confirmed" instead).
   const paidCount = countable.filter((s) => bucketOf(s) === "paid").length;
@@ -878,11 +918,58 @@ export default function SponsorsAdminPage() {
               <Stat label="Prospects" value={countable.length.toLocaleString("en-US")} />
               <Stat label="Engaged" value={engagedCount.toString()} accent="#0284c7" />
               <Stat label="Paid" value={paidCount.toString()} accent="#059669" />
-              <Stat label="Paid $" value={`$${totalDollars.toLocaleString("en-US")}`} accent="#0E5566" />
-              <Stat label="Pipeline $" value={`$${pipelineDollars.toLocaleString("en-US")}`} accent="#0066B3" />
+              <Stat
+                label="Collected $"
+                value={collectedDollars === null ? (collectedError ? "—" : "…") : `$${Math.round(collectedDollars).toLocaleString("en-US")}`}
+                accent="#0E5566"
+              />
+              <Stat
+                label="Expected $"
+                value={`$${totalDollars.toLocaleString("en-US")}`}
+                accent="#0066B3"
+              />
               <button onClick={() => setClickedOnly(true)} className="text-left" title="See every org that clicked, with delivered-vs-clicked timing">
                 <Stat label="Clicked" value={clickedSponsors.length.toString()} accent="#7C3AED" />
               </button>
+            </div>
+
+            {/* Collected is what Stripe took. Expected is the list price of the
+                levels we have marked closed. They differ for real reasons, so
+                say which is which and by how much instead of printing one
+                number and calling it revenue. */}
+            <div className="mb-5 rounded-xl border border-slate-200 bg-white px-4 py-3 text-[12.5px] text-slate-600 leading-relaxed">
+              {collectedError ? (
+                <>
+                  <strong className="text-slate-900">Collected could not be read from Stripe.</strong>{" "}
+                  {collectedError} Expected ${totalDollars.toLocaleString("en-US")} is the list price of the levels
+                  marked closed, which is not the same as money received.
+                </>
+              ) : collectedDollars === null ? (
+                <>Reading payments from Stripe to work out what was actually collected&hellip;</>
+              ) : (
+                <>
+                  <strong className="text-slate-900">
+                    ${Math.round(collectedDollars).toLocaleString("en-US")} collected
+                  </strong>{" "}
+                  from {collectedCount} organization{collectedCount === 1 ? "" : "s"}, straight from Stripe.
+                  Expected ${totalDollars.toLocaleString("en-US")} is the list price of every level marked closed,
+                  and ${Math.round(pipelineDollars).toLocaleString("en-US")} more is in live deals.
+                  {Math.abs(collectedDollars - totalDollars) >= 1 && (
+                    <>
+                      {" "}
+                      <span className="font-semibold text-amber-700">
+                        The two differ by ${Math.round(Math.abs(collectedDollars - totalDollars)).toLocaleString("en-US")}.
+                      </span>{" "}
+                      A discount, an in-kind level, a payment taken outside Stripe or a row ticked paid by hand will all
+                      do that.{" "}
+                      <a href="/finance" className="font-semibold text-[#0066B3] hover:underline">
+                        See every charge
+                      </a>
+                      .
+                    </>
+                  )}
+                </>
+              )}
             </div>
 
             {confirmationPending > 0 && (

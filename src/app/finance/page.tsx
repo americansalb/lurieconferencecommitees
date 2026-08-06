@@ -29,6 +29,8 @@ type Line = {
 type Report = {
   generatedAt: string;
   truncated: boolean;
+  accountTotals: Group;
+  collected: Record<string, { grossCents: number; netCents: number; refundedCents: number; payments: number }>;
   totals: Group;
   attendees: Group;
   sponsors: Group;
@@ -140,11 +142,35 @@ export default function FinancePage() {
               <>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-6">
                   <Stat label="Net received" value={money(data.totals.netCents)} strong
-                        note={`${data.totals.payments} charges Stripe took`} />
+                        note={`${data.totals.payments} conference charges`} />
                   <Stat label="Charged" value={money(data.totals.grossCents)} />
                   <Stat label="Stripe fees" value={`-${money(data.totals.feeCents)}`} />
                   <Stat label="Refunded" value={`-${money(data.totals.refundedCents)}`} />
                 </div>
+
+                {/* This Stripe account is not only the conference. Anything we
+                    cannot tie to an attendee or a sponsor is held out of the
+                    figures above and shown here, so the total means conference
+                    income while still reconciling to the Stripe dashboard. */}
+                {data.unattributed.payments > 0 && (
+                  <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3.5">
+                    <div className="flex items-start gap-2.5">
+                      <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+                      <div className="text-[13px] text-amber-900 leading-relaxed">
+                        <strong>
+                          {money(data.unattributed.netCents)} across {data.unattributed.payments} charge
+                          {data.unattributed.payments === 1 ? "" : "s"} is not counted above.
+                        </strong>{" "}
+                        Stripe took it, but nothing ties it to an attendee or a sponsor. This account also takes
+                        money for other things, so it may not be conference income at all. Everything Stripe has
+                        taken, conference or not, comes to{" "}
+                        <strong className="tabular-nums">{money(data.accountTotals.netCents)}</strong> net across{" "}
+                        {data.accountTotals.payments} charges, which is the figure the Stripe dashboard shows.
+                        Use the Unattributed tab below to look at them.
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {data.truncated && (
                   <p className="mt-3 text-[13px] text-rose-800">
