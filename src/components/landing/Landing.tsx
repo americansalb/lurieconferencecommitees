@@ -80,7 +80,7 @@ const buildEventLd = () => {
   };
 };
 
-export default function Landing({ uploadedLogos }: { uploadedLogos?: Record<string, string> }) {
+export default function Landing({ uploadedLogos, sponsorshipClosed = false }: { uploadedLogos?: Record<string, string>; sponsorshipClosed?: boolean }) {
   return (
     <div className="min-h-screen bg-white text-slate-900">
       <script
@@ -96,7 +96,7 @@ export default function Landing({ uploadedLogos }: { uploadedLogos?: Record<stri
         <Theme />
         <Venue />
         <Pricing />
-        <SponsorsBlock uploadedLogos={uploadedLogos} />
+        <SponsorsBlock uploadedLogos={uploadedLogos} sponsorshipClosed={sponsorshipClosed} />
         <FAQ />
         <Hosts />
       </main>

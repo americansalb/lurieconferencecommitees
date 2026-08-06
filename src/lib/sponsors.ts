@@ -58,6 +58,13 @@ export type SponsorTier = {
   closed?: { label: string; reason: string };
 };
 
+// Sponsorship for 2026 closed once the program, signage and printed materials
+// were locked. Every public level carries this; the two Welcome Kit levels are
+// invite-only and never appear on a public page, so they are left open for a
+// deal agreed by email.
+const CLOSED_2026 =
+  "Sponsorship for the 2026 conference is closed. Email contact@aalb.org if you would like to talk about future conferences.";
+
 // Pricing and benefits straight from the 2026 Sponsorship & Exhibitor Prospectus.
 export const TIERS: SponsorTier[] = [
   {
@@ -89,6 +96,10 @@ export const TIERS: SponsorTier[] = [
     variant: "silver",
     accent: "#6B7280",
     accentSoft: "#F3F4F6",
+    closed: {
+      label: "Closed",
+      reason: CLOSED_2026,
+    },
     benefits: [
       "Company info and logo on the conference website",
       "Honorable mention during opening remarks",
@@ -107,6 +118,10 @@ export const TIERS: SponsorTier[] = [
     accent: "#B8860B",
     accentSoft: "#FEF3C7",
     inheritsFrom: "silver",
+    closed: {
+      label: "Closed",
+      reason: CLOSED_2026,
+    },
     benefits: [
       "Social media thank you posts before and after the event",
       "One flyer or material distributed to all attendees",
@@ -126,6 +141,10 @@ export const TIERS: SponsorTier[] = [
     accent: "#0E5566",
     accentSoft: "#E0F2F1",
     inheritsFrom: "gold",
+    closed: {
+      label: "Closed",
+      reason: CLOSED_2026,
+    },
     benefits: [
       "Logo displayed during all conference breaks",
       "Mention in pre- and post-conference emails",
@@ -151,6 +170,10 @@ export const TIERS: SponsorTier[] = [
       requirement: "Vegetarian or vegan, no meat is served. Even part of a meal goes a long way.",
       payAlternative: "Prefer to fund it instead? You can pay the $1,750 and we will arrange the catering.",
     },
+    closed: {
+      label: "Closed",
+      reason: CLOSED_2026,
+    },
     benefits: [
       "Company info and logo on the conference website",
       "Honorable mention at opening and at lunch service",
@@ -167,6 +190,10 @@ export const TIERS: SponsorTier[] = [
     variant: "asl",
     accent: "#6D28D9",
     accentSoft: "#EDE9FE",
+    closed: {
+      label: "Closed",
+      reason: CLOSED_2026,
+    },
     benefits: [
       "Company info and logo on the conference website",
       "Honorable mention during opening remarks",
@@ -188,6 +215,10 @@ export const TIERS: SponsorTier[] = [
     variant: "asl",
     accent: "#0E7490",
     accentSoft: "#CFFAFE",
+    closed: {
+      label: "Closed",
+      reason: CLOSED_2026,
+    },
     benefits: [
       "Company info and logo on the conference website",
       "Honorable mention during opening remarks",
@@ -253,6 +284,16 @@ export const TIERS: SponsorTier[] = [
 
 export function tierById(id: string): SponsorTier | undefined {
   return TIERS.find((t) => t.id === id);
+}
+
+/**
+ * True once nothing on the public pages can be applied for. The sponsor page
+ * then says so at the top instead of leaving a visitor to work it out from a
+ * screen of grey cards.
+ */
+export function allPublicTiersClosed(): boolean {
+  const open = TIERS.filter((t) => !t.inviteOnly && !t.closed);
+  return open.length === 0;
 }
 
 // Returns the full benefit list for a tier, walking the inheritance chain so

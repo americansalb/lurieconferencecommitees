@@ -1,5 +1,6 @@
 import Landing from "@/components/landing/Landing";
 import { prisma } from "@/lib/db";
+import { allPublicTiersClosed } from "@/lib/sponsors";
 
 // Re-render at most hourly: pricing (Standard -> Late on July 15) is computed
 // at render time, so a fully static page would keep advertising the old rate
@@ -29,5 +30,5 @@ async function uploadedSponsorLogos(): Promise<Record<string, string>> {
 }
 
 export default async function Home() {
-  return <Landing uploadedLogos={await uploadedSponsorLogos()} />;
+  return <Landing uploadedLogos={await uploadedSponsorLogos()} sponsorshipClosed={allPublicTiersClosed()} />;
 }

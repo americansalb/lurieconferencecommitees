@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { Award, Briefcase, ArrowRight, Users, Eye, HeartHandshake, UtensilsCrossed, Captions, Store } from "lucide-react";
+import { Award, Briefcase, Users, Eye, HeartHandshake, UtensilsCrossed, Captions, Store } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { TOKENS, CONFERENCE } from "./tokens";
 
@@ -127,7 +127,12 @@ function resolveLogo(name: string, uploaded: Record<string, string>): string | n
 // database, so a partner's real artwork appears the moment it lands and nobody
 // has to commit a file. A local file in /public/partners stays the fallback for
 // the ones who predate that.
-export default function SponsorsBlock({ uploadedLogos = {} }: { uploadedLogos?: Record<string, string> }) {
+export default function SponsorsBlock({
+  uploadedLogos = {},
+  // Computed on the server from the tier list, so this section and the sponsor
+  // page cannot disagree about whether anything is still open.
+  sponsorshipClosed = false,
+}: { uploadedLogos?: Record<string, string>; sponsorshipClosed?: boolean }) {
   return (
     <section
       id="sponsors"
@@ -148,12 +153,15 @@ export default function SponsorsBlock({ uploadedLogos = {} }: { uploadedLogos?: 
             <span className="italic font-medium" style={{ color: TOKENS.teal }}>with us.</span>
           </h2>
           <p className="mt-6 text-base sm:text-lg leading-relaxed" style={{ color: TOKENS.muted }}>
-            Sponsorship supports the conference and reaches a national audience of interpreters, clinicians, healthcare administrators, language service providers, and policy leaders.
+            {sponsorshipClosed
+              ? "These organizations paid for the rooms, the meals, the captioning and the interpretation that make two days of language access possible. The conference exists because they backed it."
+              : "Sponsorship supports the conference and reaches a national audience of interpreters, clinicians, healthcare administrators, language service providers, and policy leaders."}
           </p>
         </div>
 
-        {/* Why partner */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 mb-16 max-w-5xl mx-auto">
+        {/* Why partner. Nothing is for sale once every level is closed, so the
+            pitch comes down and the section becomes recognition only. */}
+        <div className={`grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 mb-16 max-w-5xl mx-auto ${sponsorshipClosed ? "hidden" : ""}`}>
           {BENEFITS.map((b) => (
             <div
               key={b.title}
@@ -196,40 +204,32 @@ export default function SponsorsBlock({ uploadedLogos = {} }: { uploadedLogos?: 
           </div>
         )}
 
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-          <a
-            href="/sponsor"
-            className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full font-bold text-white transition-all"
-            style={{ background: `linear-gradient(135deg, ${TOKENS.tealDark} 0%, ${TOKENS.teal} 100%)`, boxShadow: "0 12px 28px -12px rgba(14,68,86,0.45)" }}
-          >
-            <Award className="w-4 h-4" /> Become a Sponsor
-            <ArrowRight className="w-4 h-4" />
-          </a>
-          {/* Exhibitor tables are gone for 2026. Left in place and greyed rather
-              than removed, so anyone holding the prospectus can see it is sold
-              out instead of hunting for a link that no longer exists. */}
-          <span
-            className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full font-bold cursor-not-allowed"
-            style={{ border: `1.5px solid ${TOKENS.hairline}`, color: TOKENS.mutedSoft, background: "#F7F9FA" }}
-            aria-disabled="true"
-            title="Every exhibitor table for 2026 is taken."
-          >
-            <Briefcase className="w-4 h-4" /> Exhibitor tables sold out
-          </span>
-        </div>
-
-        {/* Entry-level acknowledgment option, now closed for the year. */}
-        <div className="mt-10 max-w-2xl mx-auto text-center">
+        {/* Sponsorship is closed for the year. The levels are not hidden, and
+            neither is this: a visitor should be told plainly rather than left
+            clicking through to a page of grey cards to work it out. */}
+        <div className="max-w-2xl mx-auto text-center">
           <div
-            className="inline-flex flex-wrap items-center justify-center gap-x-2 gap-y-1 rounded-2xl px-5 py-4"
-            style={{ border: `1px dashed ${TOKENS.hairline}`, background: "#F7F9FA" }}
+            className="rounded-2xl px-6 py-5"
+            style={{ background: "white", border: `1px solid ${TOKENS.hairline}`, boxShadow: "0 8px 22px -16px rgba(11,31,37,0.18)" }}
           >
-            <span className="text-[13px] font-semibold" style={{ color: TOKENS.mutedSoft }}>
-              The $450 Supporter level is closed for 2026.
-            </span>
-            <span className="text-[13px]" style={{ color: TOKENS.mutedSoft }}>
-              Sponsorship levels above it are still open.
-            </span>
+            <div className="text-[15px] font-bold" style={{ color: TOKENS.ink }}>
+              Sponsorship for 2026 is closed
+            </div>
+            <p className="mt-2 text-[13.5px] leading-relaxed" style={{ color: TOKENS.muted }}>
+              Every sponsorship level is full or closed and exhibitor tables are sold out. To talk about a
+              future conference, email{" "}
+              <a href="mailto:contact@aalb.org" className="font-semibold" style={{ color: TOKENS.teal }}>
+                contact@aalb.org
+              </a>
+              .
+            </p>
+            <a
+              href="/sponsor"
+              className="mt-4 inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full font-bold text-[13.5px] bg-white transition-colors"
+              style={{ border: `1.5px solid ${TOKENS.hairline}`, color: TOKENS.inkSoft }}
+            >
+              <Briefcase className="w-4 h-4" /> See the 2026 levels
+            </a>
           </div>
           <p className="mt-5 text-[12.5px] leading-relaxed" style={{ color: TOKENS.mutedSoft }}>
             The conference is presented jointly by Lurie Children&rsquo;s and Americans Against Language

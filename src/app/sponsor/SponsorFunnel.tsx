@@ -10,7 +10,7 @@ import {
   C, WizardShell, StepFrame, Question, TextInput, TextArea, ToggleRow,
   PrimaryButton, InlineError, Hint, useEnterKey,
 } from "@/components/funnel/Wizard";
-import { TIERS, fullBenefits, SponsorTier } from "@/lib/sponsors";
+import { TIERS, fullBenefits, SponsorTier, allPublicTiersClosed } from "@/lib/sponsors";
 import ExhibitorDetailsForm, { TableNotice, EMPTY_EXHIBITOR, type ExhibitorDetails } from "@/components/sponsor/ExhibitorDetailsForm";
 import { ExhibitorTermsAgree } from "@/components/sponsor/ExhibitorTerms";
 import type { LogoValue } from "@/components/sponsor/LogoUpload";
@@ -412,6 +412,26 @@ function Browse({ onPick }: { onPick: (t: SponsorTier) => void }) {
           <span className="inline-flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5" />Lurie Children&rsquo;s, Chicago</span>
           <span className="inline-flex items-center gap-1.5"><Award className="w-3.5 h-3.5" />501(c)(3) &middot; may be tax-deductible</span>
         </div>
+        {allPublicTiersClosed() && (
+          <div
+            className="mt-7 mx-auto max-w-xl rounded-2xl px-5 py-4 text-center"
+            style={{ background: "#F4F7F8", border: `1px solid ${C.hairline}` }}
+          >
+            <div className="text-[14px] font-bold" style={{ color: C.ink }}>
+              Sponsorship for 2026 is closed.
+            </div>
+            <p className="mt-1.5 text-[13px] leading-relaxed" style={{ color: C.muted }}>
+              Every level below is full or closed, and the levels are left here so you can see what was
+              offered. If you would like to talk about a future conference, or you were already in
+              conversation with us about this one, email{" "}
+              <a href="mailto:contact@aalb.org" className="font-semibold" style={{ color: C.teal }}>
+                contact@aalb.org
+              </a>
+              .
+            </p>
+          </div>
+        )}
+
         <div className="mt-6">
           <a href="/2026-sponsorship-prospectus.pdf" target="_blank" rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 text-[13px] font-semibold px-4 py-2.5 rounded-full bg-white shadow-sm transition-all hover:-translate-y-0.5"
@@ -424,7 +444,7 @@ function Browse({ onPick }: { onPick: (t: SponsorTier) => void }) {
 
       <TierGroup
         title="Sponsorship levels"
-        sub="Silver, Gold and Diamond include tickets, so deductibility depends on the benefits received. Consult your tax advisor. The $450 Supporter level is closed for 2026."
+        sub="Closed for 2026. Levels that include tickets may be deductible in part; consult your tax advisor."
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {mainTiers.map((tier, i) => (
@@ -435,7 +455,7 @@ function Browse({ onPick }: { onPick: (t: SponsorTier) => void }) {
 
       <TierGroup
         title="Underwrite a piece of the conference"
-        sub="Donate a meal in kind, or support ASL interpretation, with recognition on signage and program."
+        sub="Closed for 2026. Both were filled by partners who covered these costs in kind."
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {specialty.map((tier) => (
@@ -451,8 +471,12 @@ function Browse({ onPick }: { onPick: (t: SponsorTier) => void }) {
         <TierCard tier={exhibitor} onPick={onPick} compact />
       </TierGroup>
 
-      {/* Why partner */}
-      <div className="mt-12 bg-white rounded-2xl p-6 sm:p-8" style={{ border: `1px solid ${C.hairline}`, boxShadow: "0 6px 18px -14px rgba(11,31,37,0.25)" }}>
+      {/* Why partner. Selling the benefits of a level nobody can buy reads as a
+          page that has not been updated, so it comes down with the levels. */}
+      <div
+        className={`mt-12 bg-white rounded-2xl p-6 sm:p-8 ${allPublicTiersClosed() ? "hidden" : ""}`}
+        style={{ border: `1px solid ${C.hairline}`, boxShadow: "0 6px 18px -14px rgba(11,31,37,0.25)" }}
+      >
         <h2 className="text-[22px] font-bold mb-5" style={{ color: C.ink }}>Why partner with us?</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <Reason icon={Heart} title="Meaningful impact" body="Support initiatives that directly improve patient outcomes in healthcare settings where language barriers create real risk." />
