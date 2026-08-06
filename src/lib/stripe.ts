@@ -311,13 +311,26 @@ export type StripeCharge = {
  * Every live-mode succeeded charge on the account, newest first. Pages until
  * Stripe says there are no more, capped so a runaway cannot hang the request.
  */
-export async function listAllCharges(maxPages = 40): Promise<{ charges: StripeCharge[]; truncated: boolean }> {
+/**
+ * Every live succeeded charge, newest first.
+ *
+ * `since` bounds the read to a window. Without it, an account that also runs
+ * another business is paged through in full: the conference's few hundred
+ * charges arrive first and then thousands of unrelated ones follow, until the
+ * page cap trips and every figure has to be reported as a floor. Passing the
+ * date the conference started selling stops the walk where the conference does.
+ */
+export async function listAllCharges(
+  opts: { since?: Date; maxPages?: number } = {},
+): Promise<{ charges: StripeCharge[]; truncated: boolean }> {
+  const { since, maxPages = 40 } = opts;
   const charges: StripeCharge[] = [];
   let startingAfter: string | null = null;
   let truncated = false;
   for (let page = 0; ; page++) {
     if (page >= maxPages) { truncated = true; break; }
     const qs = new URLSearchParams({ limit: "100" });
+    if (since) qs.set("created[gte]", String(Math.floor(since.getTime() / 1000)));
     qs.append("expand[]", "data.balance_transaction");
     qs.append("expand[]", "data.payment_intent");
     if (startingAfter) qs.set("starting_after", startingAfter);

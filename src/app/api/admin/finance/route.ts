@@ -20,9 +20,23 @@ import { listAllCharges, retrieveSettlement, isStripeConfigured } from "@/lib/st
 //
 //   1. metadata.attendeeId / metadata.sponsorId, written at checkout. Exact.
 //   2. The payment intent, matched against a stored id. Exact.
-//   3. The payer's email against an attendee or sponsor address. Good enough
-//      to name, and labelled as a weaker match so nobody treats it as proof.
-//   4. Nothing. Real money we cannot attribute, which is worth seeing.
+//   3. Nothing. Real money we cannot attribute, which is worth seeing.
+//
+// Those two are the only things that count as income here, and the reason is
+// the Attendee table. It holds far more than the people who registered: every
+// imported training student, every 2024 lead, every prospect who was mailed and
+// never came. This Stripe account also runs the interpreter training, whose
+// students are in that table under the same addresses they enrolled with.
+//
+// So this route used to fall back to matching a charge on the payer's EMAIL,
+// and that quietly turned the whole training business into conference income:
+// 2,218 "attendee payments" worth $528,402 against roughly 200 real
+// registrations, most of them identical $190.02 course charges. A conference
+// ticket has never cost $190.02.
+//
+// Email is now a naming hint only. It can label an unattributed charge so the
+// row is not a mystery, but it cannot move money into the total. If our own
+// checkout did not create the charge, it is not counted.
 //
 // `paid` is not read anywhere in this file. Records are looked up regardless of
 // it, so a charge still gets attributed to someone whose row was never updated.
@@ -49,6 +63,12 @@ type IncomeLine = {
   paidAt: string;
   /** True when our own row does not say this person paid. */
   flagMissing: boolean;
+  /**
+   * The name came from an address that happens to match somebody in our
+   * database, not from the payment. Shown so an unattributed row that carries a
+   * familiar name is not mistaken for a matched one.
+   */
+  nameFromEmail: boolean;
 };
 
 function isAdmin(role?: string) {
@@ -66,10 +86,32 @@ export async function GET() {
 
   const errors: { name: string; message: string }[] = [];
 
-  // The population: every live charge Stripe has taken.
+  // Where the conference starts on this account. Taken from the oldest record
+  // our own checkout ever created a Stripe session for, less a week's margin,
+  // rather than a date typed in by hand that would silently go stale. Anything
+  // older than that belongs to whatever else this account sells.
+  const firstSale = await Promise.all([
+    prisma.attendee.findFirst({
+      where: { stripeSessionId: { not: null } },
+      orderBy: { createdAt: "asc" },
+      select: { createdAt: true },
+    }),
+    prisma.sponsor.findFirst({
+      where: { stripeSessionId: { not: null } },
+      orderBy: { createdAt: "asc" },
+      select: { createdAt: true },
+    }),
+  ]);
+  const earliest = firstSale
+    .map((r) => r?.createdAt)
+    .filter((d): d is Date => !!d)
+    .sort((a, b) => a.getTime() - b.getTime())[0];
+  const since = earliest ? new Date(earliest.getTime() - 7 * 24 * 60 * 60 * 1000) : undefined;
+
+  // The population: every live charge Stripe has taken since then.
   let ledger: Awaited<ReturnType<typeof listAllCharges>>;
   try {
-    ledger = await listAllCharges();
+    ledger = await listAllCharges({ since });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Could not read charges from Stripe." },
@@ -143,10 +185,10 @@ export async function GET() {
     } else if (c.paymentIntentId && byIntent.has(c.paymentIntentId.toLowerCase())) {
       rec = byIntent.get(c.paymentIntentId.toLowerCase());
       matchedBy = "payment intent";
-    } else if (c.email && byEmail.has(c.email.toLowerCase())) {
-      rec = byEmail.get(c.email.toLowerCase());
-      matchedBy = "email";
     }
+    // Naming only. Never promotes the charge to income: see the note at the
+    // top of this file for what that cost.
+    const nameHint = c.email ? byEmail.get(c.email.toLowerCase()) : undefined;
 
     // Only charges with a refund need the extra lookup, and there are few of
     // them, so the exact refunded net is worth the request rather than trusting
@@ -166,7 +208,9 @@ export async function GET() {
     }
 
     // Metadata still names the source even when the record is gone, so a
-    // deleted or renamed row does not turn a ticket sale into a mystery.
+    // deleted or renamed row does not turn a ticket sale into a mystery. A
+    // charge with neither an exact match nor our metadata is unattributed,
+    // whoever the payer's email happens to belong to.
     const source: Source = rec?.source
       || (meta.sponsorId || meta.kind === "sponsor" ? "sponsor" : meta.attendeeId ? "attendee" : "unattributed");
 
@@ -175,7 +219,7 @@ export async function GET() {
       source,
       matchedBy,
       recordId: rec?.id || metaId || null,
-      name: rec?.name || meta.sponsorEmail || meta.attendeeEmail || c.email || "Unknown payer",
+      name: rec?.name || nameHint?.name || meta.sponsorEmail || meta.attendeeEmail || c.email || "Unknown payer",
       email: rec?.email || c.email || meta.attendeeEmail || meta.sponsorEmail || null,
       detail: rec?.detail || meta.tier || meta.attendanceMode || c.description || "",
       grossCents: c.grossCents,
@@ -184,6 +228,7 @@ export async function GET() {
       netCents,
       paidAt: c.created.toISOString(),
       flagMissing: Boolean(rec && !rec.paid),
+      nameFromEmail: Boolean(!rec && nameHint),
     });
   }
 
@@ -229,6 +274,7 @@ export async function GET() {
     ok: true,
     generatedAt: new Date().toISOString(),
     truncated: ledger.truncated,
+    since: since ? since.toISOString() : null,
     // Conference income only. This Stripe account takes money for other things
     // too, and every live charge on it used to be added into one headline
     // figure, so a course sale or a donation read as conference revenue. A

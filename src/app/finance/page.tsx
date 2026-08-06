@@ -21,6 +21,7 @@ type Line = {
   chargeId: string;
   source: "attendee" | "sponsor" | "unattributed";
   matchedBy: string;
+  nameFromEmail: boolean;
   name: string; email: string | null; detail: string;
   grossCents: number; feeCents: number; refundedCents: number; netCents: number;
   paidAt: string;
@@ -30,6 +31,7 @@ type Report = {
   generatedAt: string;
   truncated: boolean;
   accountTotals: Group;
+  since: string | null;
   collected: Record<string, { grossCents: number; netCents: number; refundedCents: number; payments: number }>;
   totals: Group;
   attendees: Group;
@@ -128,9 +130,11 @@ export default function FinancePage() {
 
             {!data && !loading && (
               <p className="text-sm text-slate-500 mt-6 max-w-2xl leading-relaxed">
-                This reads Stripe&rsquo;s charge list, then works out who each payment came from using the
-                identifiers written at checkout. A record marked paid that Stripe never charged is not
-                income and will not appear in the totals.
+                This reads Stripe&rsquo;s charge list and counts a payment as conference income only when our
+                own checkout created it, matched on the id written into the payment. Sharing a name or an
+                email address with somebody in the database is not enough, because that table also holds
+                training students and old leads. A record marked paid that Stripe never charged is not income
+                either, and will not appear in the totals.
               </p>
             )}
             {loading && <p className="text-sm text-slate-500 mt-6">Reading every charge from Stripe&hellip;</p>}
@@ -161,12 +165,12 @@ export default function FinancePage() {
                           {money(data.unattributed.netCents)} across {data.unattributed.payments} charge
                           {data.unattributed.payments === 1 ? "" : "s"} is not counted above.
                         </strong>{" "}
-                        Stripe took it, but nothing ties it to an attendee or a sponsor. This account also takes
-                        money for other things, so it may not be conference income at all. Everything Stripe has
-                        taken, conference or not, comes to{" "}
+                        This Stripe account sells more than the conference, so a charge only counts as income
+                        once our own checkout created it, identified by the id written into the payment.
+                        Everything Stripe took in this window, conference or not, comes to{" "}
                         <strong className="tabular-nums">{money(data.accountTotals.netCents)}</strong> net across{" "}
-                        {data.accountTotals.payments} charges, which is the figure the Stripe dashboard shows.
-                        Use the Unattributed tab below to look at them.
+                        {data.accountTotals.payments} charges. Some of these may still be conference money that
+                        arrived another way, so they are worth reading: use the Unattributed tab below.
                       </div>
                     </div>
                   </div>
@@ -275,9 +279,10 @@ export default function FinancePage() {
                                   no record
                                 </span>
                               )}
-                              {l.matchedBy === "email" && (
-                                <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">
-                                  matched on email
+                              {l.nameFromEmail && (
+                                <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-slate-100 text-slate-500"
+                                      title="Somebody in our database uses this address. That is a guess at who paid, not a link to the payment, so it is not counted as income.">
+                                  name guessed from email
                                 </span>
                               )}
                               {l.flagMissing && (
