@@ -424,7 +424,7 @@ function Browse({ onPick }: { onPick: (t: SponsorTier) => void }) {
 
       <TierGroup
         title="Sponsorship levels"
-        sub="The $450 Supporter level (logo only) is generally fully tax-deductible; higher levels include tickets, so deductibility depends on the benefits received. Consult your tax advisor."
+        sub="Silver, Gold and Diamond include tickets, so deductibility depends on the benefits received. Consult your tax advisor. The $450 Supporter level is closed for 2026."
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {mainTiers.map((tier, i) => (
@@ -446,7 +446,7 @@ function Browse({ onPick }: { onPick: (t: SponsorTier) => void }) {
 
       <TierGroup
         title="Exhibit at the conference"
-        sub="For language service providers, nonprofits, regulatory bodies, and technology companies."
+        sub="Sold out for 2026. Email contact@aalb.org to be told first if a table frees up."
       >
         <TierCard tier={exhibitor} onPick={onPick} compact />
       </TierGroup>
@@ -458,7 +458,7 @@ function Browse({ onPick }: { onPick: (t: SponsorTier) => void }) {
           <Reason icon={Heart} title="Meaningful impact" body="Support initiatives that directly improve patient outcomes in healthcare settings where language barriers create real risk." />
           <Reason icon={Users} title="Professional audience" body="Connect with interpreters, translators, healthcare administrators, language service providers, regulators, and policy leaders." />
           <Reason icon={Building2} title="Brand visibility" body="Recognition on the conference website, social media, on-site signage, the program, and pre and post conference emails." />
-          <Reason icon={Award} title="Tax-deductible" body="We're a 501(c)(3) (EINs 83-3016421 and 36-2170833). The $450 logo-only Supporter level is generally fully deductible; for levels that include tickets or a table, your payment may be deductible as a business expense, or as a charitable contribution beyond the value of those benefits. Consult your tax advisor." />
+          <Reason icon={Award} title="Tax-deductible" body="We're a 501(c)(3) (EINs 83-3016421 and 36-2170833). For levels that include tickets or a table, your payment may be deductible as a business expense, or as a charitable contribution beyond the value of those benefits. Consult your tax advisor." />
         </div>
       </div>
 
@@ -488,14 +488,20 @@ function TierCard({
   compact?: boolean;
 }) {
   const benefits = fullBenefits(tier.id).slice(0, compact ? 3 : 5);
+  // A closed level stays on the page in grey rather than disappearing. Someone
+  // reading the prospectus we sent them should find it and learn it is gone,
+  // not wonder whether they misread it.
+  const closed = tier.closed;
   return (
     <div
-      className="rounded-2xl bg-white overflow-hidden flex flex-col transition-all hover:-translate-y-0.5"
+      className={`rounded-2xl bg-white overflow-hidden flex flex-col ${closed ? "" : "transition-all hover:-translate-y-0.5"}`}
       style={{
-        border: featured ? `2px solid ${tier.accent}` : `1.5px solid ${C.hairline}`,
-        boxShadow: featured
+        border: featured && !closed ? `2px solid ${tier.accent}` : `1.5px solid ${C.hairline}`,
+        boxShadow: featured && !closed
           ? `0 18px 40px -20px ${tier.accent}77`
           : "0 6px 18px -14px rgba(11,31,37,0.25)",
+        filter: closed ? "grayscale(1)" : undefined,
+        opacity: closed ? 0.72 : 1,
       }}
     >
       <div className="h-1.5" style={{ background: tier.accent }} />
@@ -518,12 +524,17 @@ function TierCard({
               </div>
             )}
           </div>
-          {tier.ticketsIncluded > 0 && (
+          {closed ? (
+            <span className="text-[10px] font-bold px-2 py-1 rounded-full whitespace-nowrap uppercase tracking-wider"
+              style={{ background: "#EEF1F3", color: "#5A6E76", border: "1px solid #DCE3E7" }}>
+              {closed.label}
+            </span>
+          ) : tier.ticketsIncluded > 0 ? (
             <span className="text-[10px] font-bold px-2 py-1 rounded-full whitespace-nowrap"
               style={{ background: tier.accentSoft, color: tier.accent }}>
               {tier.ticketsIncluded} ticket{tier.ticketsIncluded === 1 ? "" : "s"}
             </span>
-          )}
+          ) : null}
         </div>
 
         <p className="text-[13px] mb-4" style={{ color: C.muted }}>{tier.tagline}</p>
@@ -542,14 +553,29 @@ function TierCard({
           ))}
         </ul>
 
-        <button
-          onClick={() => onPick(tier)}
-          className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-3 rounded-full font-bold text-[14px] text-white transition-all hover:shadow-lg"
-          style={{ background: tier.accent, boxShadow: `0 12px 26px -14px ${tier.accent}` }}
-        >
-          Choose {tier.name.replace(" Sponsor", "")}
-          <ArrowRight className="w-4 h-4" />
-        </button>
+        {closed ? (
+          <>
+            <div
+              className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-3 rounded-full font-bold text-[14px] cursor-not-allowed"
+              style={{ background: "#EEF1F3", color: "#8898A0" }}
+              aria-disabled="true"
+            >
+              {closed.label}
+            </div>
+            <p className="mt-2.5 text-[11.5px] leading-relaxed text-center" style={{ color: C.mutedSoft }}>
+              {closed.reason}
+            </p>
+          </>
+        ) : (
+          <button
+            onClick={() => onPick(tier)}
+            className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-3 rounded-full font-bold text-[14px] text-white transition-all hover:shadow-lg"
+            style={{ background: tier.accent, boxShadow: `0 12px 26px -14px ${tier.accent}` }}
+          >
+            Choose {tier.name.replace(" Sponsor", "")}
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        )}
       </div>
     </div>
   );

@@ -16,6 +16,8 @@ const PARTNERS: Partner[] = [
   // then exhibitors and the Food Sponsor); partner-level recognitions and
   // Supporters sit last, so they land in the rows below.
   { name: "Propio", logo: "", role: "Silver Sponsor", url: "https://propio.com" },
+  { name: "Liberty Language Services", logo: "", role: "Silver Sponsor", url: "https://libertylanguageservices.com" },
+  { name: "Academy of Interpretation", logo: "", role: "Silver Sponsor", url: "https://academyofinterpretation.com" },
   { name: "CommunityHealth", logo: "/partners/communityhealth.webp", role: "Exhibitor", url: "https://www.communityhealth.org" },
   { name: "Certification Commission for Healthcare Interpreters", logo: "/partners/cchi.webp", role: "Exhibitor", url: "https://cchicertification.org" },
   { name: "The Chicago Diner", logo: "/partners/chicago-diner.png", role: "Food Sponsor", url: "https://www.veggiediner.com" },
@@ -134,7 +136,7 @@ export default function SponsorsBlock({ uploadedLogos = {} }: { uploadedLogos?: 
             <span className="italic font-medium" style={{ color: TOKENS.teal }}>with us.</span>
           </h2>
           <p className="mt-6 text-base sm:text-lg leading-relaxed" style={{ color: TOKENS.muted }}>
-            Sponsorship and exhibitor opportunities support the conference and reach a national audience of interpreters, clinicians, healthcare administrators, language service providers, and policy leaders.
+            Sponsorship supports the conference and reaches a national audience of interpreters, clinicians, healthcare administrators, language service providers, and policy leaders.
           </p>
         </div>
 
@@ -194,34 +196,37 @@ export default function SponsorsBlock({ uploadedLogos = {} }: { uploadedLogos?: 
             <Award className="w-4 h-4" /> Become a Sponsor
             <ArrowRight className="w-4 h-4" />
           </a>
-          <a
-            href="/sponsor"
-            className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full font-bold bg-white transition-colors"
-            style={{ border: `1.5px solid ${TOKENS.teal}`, color: TOKENS.teal }}
+          {/* Exhibitor tables are gone for 2026. Left in place and greyed rather
+              than removed, so anyone holding the prospectus can see it is sold
+              out instead of hunting for a link that no longer exists. */}
+          <span
+            className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full font-bold cursor-not-allowed"
+            style={{ border: `1.5px solid ${TOKENS.hairline}`, color: TOKENS.mutedSoft, background: "#F7F9FA" }}
+            aria-disabled="true"
+            title="Every exhibitor table for 2026 is taken."
           >
-            <Briefcase className="w-4 h-4" /> Become an Exhibitor
-          </a>
+            <Briefcase className="w-4 h-4" /> Exhibitor tables sold out
+          </span>
         </div>
 
-        {/* Entry-level acknowledgment option. */}
+        {/* Entry-level acknowledgment option, now closed for the year. */}
         <div className="mt-10 max-w-2xl mx-auto text-center">
           <div
-            className="inline-flex flex-wrap items-center justify-center gap-x-2 gap-y-1 rounded-2xl px-5 py-4 bg-white"
-            style={{ border: `1px solid ${TOKENS.hairline}`, boxShadow: "0 8px 22px -16px rgba(11,31,37,0.18)" }}
+            className="inline-flex flex-wrap items-center justify-center gap-x-2 gap-y-1 rounded-2xl px-5 py-4"
+            style={{ border: `1px dashed ${TOKENS.hairline}`, background: "#F7F9FA" }}
           >
-            <span className="text-[13px]" style={{ color: TOKENS.muted }}>Just want your logo seen?</span>
-            <a href="/sponsor" className="text-[13px] font-bold" style={{ color: TOKENS.teal }}>
-              Become a Supporter for $450 &rarr;
-            </a>
-            <span className="text-[13px]" style={{ color: TOKENS.muted }}>your logo on the website and on-site.</span>
+            <span className="text-[13px] font-semibold" style={{ color: TOKENS.mutedSoft }}>
+              The $450 Supporter level is closed for 2026.
+            </span>
+            <span className="text-[13px]" style={{ color: TOKENS.mutedSoft }}>
+              Sponsorship levels above it are still open.
+            </span>
           </div>
           <p className="mt-5 text-[12.5px] leading-relaxed" style={{ color: TOKENS.mutedSoft }}>
             The conference is presented jointly by Lurie Children&rsquo;s and Americans Against Language
-            Barriers, both 501(c)(3) nonprofits (EINs {CONFERENCE.eins}). The $450 Supporter level is logo
-            recognition only, with no tickets or other benefits, so it is generally fully tax-deductible. For
-            sponsorship and exhibitor levels that include tickets or a table, your payment may be deductible as
-            a business expense, or as a charitable contribution to the extent it exceeds the value of those
-            benefits. Please consult your tax advisor.
+            Barriers, both 501(c)(3) nonprofits (EINs {CONFERENCE.eins}). For sponsorship levels that include
+            tickets, your payment may be deductible as a business expense, or as a charitable contribution to
+            the extent it exceeds the value of those benefits. Please consult your tax advisor.
           </p>
         </div>
       </div>

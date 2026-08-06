@@ -58,6 +58,13 @@ export async function POST(req: Request) {
 
   const t = tierById(tier);
   if (!t) return NextResponse.json({ error: "Unknown tier." }, { status: 400 });
+  // A page left open before the level closed must not still be able to submit.
+  // The greyed-out card is the courtesy; this is the actual gate. Sponsors
+  // already invited at this level are unaffected: they arrive with a token and
+  // pay through the checkout route, which does not come through here.
+  if (t.closed) {
+    return NextResponse.json({ error: t.closed.reason }, { status: 409 });
+  }
 
   const isExhibitor = t.id === "exhibitor";
   if (isExhibitor) {

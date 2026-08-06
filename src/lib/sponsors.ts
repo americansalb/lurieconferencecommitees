@@ -48,6 +48,14 @@ export type SponsorTier = {
   // that can't attend in person). The admin invites them with the tier preset,
   // and the invitation email frames it as "as discussed", not a pitch.
   inviteOnly?: boolean;
+  // Closed to new applications. The level still exists, because organizations
+  // already signed on at it keep their benefits, their portal and their place
+  // on the site; it simply cannot be chosen any more. Shown greyed out with the
+  // reason rather than deleted, so a prospect who was sent the prospectus and
+  // asks about it gets an answer instead of a page that pretends it never
+  // existed. Admins can still invite at a closed level for a deal agreed by
+  // email, and anyone already invited can still pay.
+  closed?: { label: string; reason: string };
 };
 
 // Pricing and benefits straight from the 2026 Sponsorship & Exhibitor Prospectus.
@@ -62,6 +70,10 @@ export const TIERS: SponsorTier[] = [
     variant: "supporter",
     accent: "#A56A43",
     accentSoft: "#F5E9DF",
+    closed: {
+      label: "Closed",
+      reason: "The Supporter level is closed for 2026. Printed materials are with the printer, so a logo added now would not make them.",
+    },
     benefits: [
       "Logo on the conference website",
       "Logo on printed conference materials",
@@ -193,6 +205,10 @@ export const TIERS: SponsorTier[] = [
     variant: "exhibitor",
     accent: "#0066B3",
     accentSoft: "#DBEAFE",
+    closed: {
+      label: "Sold out",
+      reason: "Every exhibitor table for 2026 is taken. Email contact@aalb.org to be told first if one frees up.",
+    },
     benefits: [
       "Exhibitor table in the conference hall",
       "One conference ticket included",

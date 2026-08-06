@@ -40,7 +40,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "How do I become a sponsor?",
-    a: "Visit our Sponsorship page to review the Silver, Gold, and Diamond tiers, as well as Food Sponsor, ASL Interpreter Sponsor, and Exhibitor Table options. There is also a $450 Supporter option for organizations that simply want their logo on the conference website and on-site; because it includes no tickets or other benefits, the Supporter level is generally fully tax-deductible. The conference is presented jointly by Lurie Children's and Americans Against Language Barriers, both 501(c)(3) nonprofits, and sponsorship or exhibitor levels that include tickets or a table may be deductible as a business expense, or as a charitable contribution to the extent the payment exceeds the value of those benefits. Please consult your tax advisor.",
+    a: "Visit our Sponsorship page to review the Silver, Gold, and Diamond tiers, along with the Food Sponsor and ASL Interpreter Sponsor options. Exhibitor tables are sold out for 2026 and the $450 Supporter level is closed, so both appear on the page greyed out. Email contact@aalb.org if you would like to be told first should an exhibitor table free up. The conference is presented jointly by Lurie Children's and Americans Against Language Barriers, both 501(c)(3) nonprofits, and sponsorship levels that include tickets may be deductible as a business expense, or as a charitable contribution to the extent the payment exceeds the value of those benefits. Please consult your tax advisor.",
   },
   {
     q: "Can I request accessibility accommodations?",
