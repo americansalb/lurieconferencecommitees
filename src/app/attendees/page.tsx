@@ -721,12 +721,12 @@ export default function AttendeesPage() {
   // The second letter: the hospital, the city, and the sign-up form for the
   // tour and the Saturday social. Its own sent-stamp, so running this never
   // affects who is due the attendee guide.
-  async function sendChicagoGuides(mode: "initial" | "all") {
+  async function sendChicagoGuides(mode: "initial" | "all", ids?: string[]) {
     setChicago({ sending: true, note: null });
     try {
       const res = await fetch("/api/attendees/send-chicago-guide", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode }),
+        body: JSON.stringify({ mode, ...(ids && ids.length ? { ids } : {}) }),
       });
       const json = await res.json().catch(() => ({}));
       setChicago({
@@ -1555,6 +1555,13 @@ export default function AttendeesPage() {
                   confirmLabel: "Send guides",
                   onConfirm: () => { setConfirmDialog(null); void sendGuides("all", ids); },
                 })}
+                onSendChicago={(ids) => setConfirmDialog({
+                  title: `Send Welcome to Chicago to ${ids.length} selected ${ids.length === 1 ? "person" : "people"}?`,
+                  message: "The second letter: the hospital, the city guide as an attachment, and the sign-up form for the optional tour and the Saturday evening social. Sends immediately. Virtual attendees and anyone who has not paid are skipped, and re-sending is fine.",
+                  confirmLabel: "Send Welcome to Chicago",
+                  onConfirm: () => { setConfirmDialog(null); void sendChicagoGuides("all", ids); },
+                })}
+                onOpenSheet={() => setShowSheet(true)}
                 onNudge={(ids) => setConfirmDialog({
                   title: `Send the reminder to this selection right now?`,
                   message: "The selected started-not-paid people get the finish-your-registration note immediately — no queue, up to 100 per click. Their reminder count goes up and shows on the row. Anyone selected who is paid, declined, or unsubscribed is skipped.",

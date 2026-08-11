@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Search, Mail, Send, MapPin, Monitor, Check, Eye, ArrowDownWideNarrow, Clock, FileDown } from "lucide-react";
+import { Search, Mail, Send, MapPin, Monitor, Check, Eye, ArrowDownWideNarrow, Clock, FileDown, Table2 } from "lucide-react";
 import {
   ATTENDEE_STEP_LABELS, ATTENDEE_SOURCE_LABELS, AttendeeStep,
   attendeeStep, attendeeStepMoment, attendeeSource,
@@ -84,7 +84,7 @@ function shortDate(iso: string | null): string {
 }
 
 export default function AttendeesView({
-  attendees, onOpenDetail, onCompose, onSendPortal, onQueueInvites, onSendInvitesNow, onNudge, onSendGuide,
+  attendees, onOpenDetail, onCompose, onSendPortal, onQueueInvites, onSendInvitesNow, onNudge, onSendGuide, onSendChicago, onOpenSheet,
 }: {
   attendees: Attendee[];
   onOpenDetail: (id: string) => void;
@@ -94,6 +94,8 @@ export default function AttendeesView({
   onSendInvitesNow: (ids: string[]) => void;
   onNudge: (ids: string[]) => void;
   onSendGuide: (ids: string[]) => void;
+  onSendChicago: (ids: string[]) => void;
+  onOpenSheet: () => void;
 }) {
   const [cardFilter, setCardFilter] = useState<string>("all");
   const [sourceFilter, setSourceFilter] = useState<"all" | "invited" | "organic">("all");
@@ -275,6 +277,13 @@ export default function AttendeesView({
   // is a document about turning up rather than about signing up.
   const paidById = new Map(attendees.map((a) => [a.id, a.paid]));
   const guideableSelected = selectedIds.reduce((n, id) => n + (paidById.get(id) ? 1 : 0), 0);
+  // The Welcome to Chicago letter is about the building and the city, so only
+  // the paid in-person people in the selection can receive it.
+  const inPersonById = new Map(attendees.map((a) => [a.id, a.attendanceMode !== "virtual"]));
+  const chicagoSelected = selectedIds.reduce(
+    (n, id) => n + (paidById.get(id) && inPersonById.get(id) ? 1 : 0),
+    0,
+  );
 
   return (
     <div>
@@ -346,6 +355,15 @@ export default function AttendeesView({
           >
             <FileDown className="w-3.5 h-3.5" />
             {guideFilter === "sent" ? "Guide sent" : guideFilter === "unsent" ? "No guide yet" : "Guide"}
+          </button>
+          {/* Sits with the filters because this is where people are when they
+              want the list somewhere else. */}
+          <button
+            onClick={onOpenSheet}
+            title="Put this list in a Google Sheet: one tab in person, one tab virtual, kept current on its own"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold border border-emerald-200 bg-emerald-50 text-emerald-700 rounded-lg px-3 py-2 transition-colors hover:bg-emerald-100"
+          >
+            <Table2 className="w-3.5 h-3.5" /> Google Sheet
           </button>
         </div>
 
@@ -464,6 +482,11 @@ export default function AttendeesView({
             {guideableSelected > 0 && (
               <button onClick={() => onSendGuide(selectedIds)} className="text-xs font-bold px-3 py-1.5 rounded-lg text-white inline-flex items-center gap-1.5" style={{ background: "#0E4A57" }} title="Email the personalized conference guide to the paid people in your selection, right now. Each PDF is built for that person: their registration, check-in times, and the dietary and access needs we hold for them.">
                 <FileDown className="w-3.5 h-3.5" /> Send guide ({guideableSelected.toLocaleString()})
+              </button>
+            )}
+            {chicagoSelected > 0 && (
+              <button onClick={() => onSendChicago(selectedIds)} className="text-xs font-bold px-3 py-1.5 rounded-lg text-white inline-flex items-center gap-1.5" style={{ background: "#0066B3" }} title="Email the Welcome to Chicago letter to the paid in-person people in your selection, right now: the hospital, the city guide as an attachment, and the sign-up form for the tour and the Saturday social. Virtual attendees in the selection are skipped.">
+                <MapPin className="w-3.5 h-3.5" /> Send Chicago ({chicagoSelected.toLocaleString()})
               </button>
             )}
             <button onClick={() => onCompose(selectedIds)} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 inline-flex items-center gap-1.5" title="Write and send a one-off message now (capped at 100 for deliverability)"><Mail className="w-3.5 h-3.5" /> Email them</button>
