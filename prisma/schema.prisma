@@ -502,6 +502,11 @@ model Attendee {
   // catches up late registrants instead of mailing everyone twice.
   guideSentAt DateTime?
 
+  // The second, in-person-only letter: the hospital, the city, and the sign-up
+  // form for the tour and the Saturday social. Tracked separately from
+  // guideSentAt so sending one never suppresses the other.
+  chicagoGuideSentAt DateTime?
+
   adminNotes String?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime? @updatedAt

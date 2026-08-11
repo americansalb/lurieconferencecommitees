@@ -20,6 +20,7 @@ const BLANK: Record<string, unknown> = {
   shareUrl: "https://x/y", landingUrl: "https://x/y", learnMoreUrl: "https://x/y",
   pledgeUrl: "https://x/y", payUrl: "https://x/y", materialsUrl: "https://x/y",
   ctaUrl: "https://x/y", submitUrl: "https://x/y", joinUrl: "https://x/y",
+  signupUrl: "https://x/y", screenReaderUrl: "https://x/y",
   unsubscribeUrl: "https://x/y", assetBase: "https://x", siteUrl: "https://x",
   durationMin: 30, durationMinutes: 30, minutes: 30, bookUrl: "https://x/y", when: "Monday at 10:00 AM", inviteeEmail: "a@b.c",
   code: "CODE20", dateLabel: "August 1, 2026", tierName: "Exhibitor Table",

@@ -1247,7 +1247,7 @@ export type AttendeeGuideEmailArgs = {
   portalUrl: string;
   attendanceMode: string | null;
   attendDay?: string | null;
-  // What we hold for them, shown so they can correct it before travelling.
+  // What we hold for them, shown so they can correct it before traveling.
   dietary?: string | null;
   accessibilityNotes?: string | null;
   primaryLanguages?: string | null;
@@ -1352,6 +1352,61 @@ export function attendeeGuideEmail({
     kicker: "Attendee Guide",
     body,
     footerNote: "You are receiving this because you are registered for the 2026 Lurie Children&rsquo;s &amp; AALB Conference, August 15 and 16 in Chicago.",
+    assetBase,
+  });
+}
+
+export type ChicagoGuideEmailArgs = {
+  firstName: string;
+  /** Google Form covering the hospital tour and the Saturday evening social. */
+  signupUrl: string;
+  /** Where the screen-reader-friendly version of the guide can be downloaded. */
+  screenReaderUrl: string;
+  assetBase?: string;
+};
+
+/**
+ * The second guide for in-person attendees: the hospital, the city, and the two
+ * optional things they can put their name down for.
+ *
+ * Separate from the attendee guide on purpose. That one is operational, and it
+ * has already been sent; this one is the welcome, and burying an RSVP form
+ * inside a re-send of a document people have read is how a sign-up gets missed.
+ */
+export function chicagoGuideEmail({
+  firstName, signupUrl, screenReaderUrl, assetBase,
+}: ChicagoGuideEmailArgs) {
+  const first = (firstName || "").trim();
+
+  const body = `
+      ${gH1(greetingLine("hi", first, ","))}
+      ${gP("We are excited to welcome you to the 2026 Lurie Children&rsquo;s &amp; AALB Conference, and to one of the most remarkable pediatric hospitals in the country. Whether you are coming from Chicago or traveling in, we hope you get to see a little of what makes this venue and this city worth the trip.")}
+
+      ${gLabel("The venue")}
+      ${gP("Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago is one of the nation&rsquo;s top-ranked pediatric hospitals, in the Streeterville neighborhood of downtown Chicago, steps from Michigan Avenue and the Lake Michigan shoreline.")}
+      ${gP("Between sessions, the building is worth a walk:")}
+      ${gFacts([
+        { label: "The Welcome Whales", value: "Lobby. Life-sized models of a mother humpback whale and her calf, donated by Shedd Aquarium, hanging in the two-story entrance." },
+        { label: "Crown Sky Garden", value: "11th floor. An indoor healing garden behind two-story windows over the skyline. Visible from outside; entry is not permitted." },
+        { label: "Coral Garden &amp; Aquarium", value: "2nd floor. An interactive sea-life display." },
+      ])}
+
+      ${gLabel("Join us beyond the sessions")}
+      ${gP("We would love a little more time with you than the sessions allow. There is a guided hospital tour, and a relaxed Saturday evening social to decompress and meet the people you have been sitting beside all day. Both are optional, and you can sign up for one or both. The form has a separate section for each.")}
+      ${gButton(signupUrl, "Sign up for the tour or the social")}
+
+      ${gLabel("Exploring Chicago")}
+      ${gP(`The guide attached has what you need to make the stay easier and see something of the city while you are here. There is a <a href="${screenReaderUrl}" style="color:${G.TEAL};font-weight:bold;">screen-reader-friendly version</a> if that works better for you.`)}
+
+      ${gP("See you in Chicago.", 0)}
+      ${gSignOff()}`;
+
+  return guideShell({
+    title: "Welcome to Chicago",
+    preheader: "The hospital, the city, and two optional things to put your name down for.",
+    kicker: "Welcome to Chicago",
+    body,
+    footerNote: "You are receiving this because you are registered to attend the 2026 Lurie Children&rsquo;s &amp; AALB Conference in person, August 15 and 16 in Chicago.",
     assetBase,
   });
 }

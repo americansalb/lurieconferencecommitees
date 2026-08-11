@@ -12,6 +12,7 @@ import {
   sponsorPaymentReminderEmail,
   sponsorAslUrgentLetterEmail,
   attendeeGuideEmail,
+  chicagoGuideEmail,
   exhibitorGuideEmail,
   foodPlanEmail,
   sponsorAslLetterEmail,
@@ -151,6 +152,14 @@ export async function GET(
         dietary: "Vegetarian, no nuts please",
         accessibilityNotes: "CART captioning if available, and a quiet space between sessions.",
         primaryLanguages: "Spanish, Hindi", needsParking: true,
+        assetBase: base,
+      });
+      break;
+    case "chicago-guide":
+      html = chicagoGuideEmail({
+        firstName: "Priya",
+        signupUrl: "https://docs.google.com/forms/d/e/1FAIpQLSer1Ry7AEBrk9yLpcG3bEgpivA9xAgsQOk_Zl__PT39mpF35g/viewform",
+        screenReaderUrl: `${base}/guides/welcome-to-chicago-screen-reader.pdf`,
         assetBase: base,
       });
       break;

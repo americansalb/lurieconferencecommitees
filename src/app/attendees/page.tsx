@@ -77,6 +77,7 @@ export default function AttendeesPage() {
   const [reinvite, setReinvite] = useState<{ sending: boolean; note: string | null }>({ sending: false, note: null });
   const [nudge, setNudge] = useState<{ sending: boolean; note: string | null }>({ sending: false, note: null });
   const [guides, setGuides] = useState<{ sending: boolean; note: string | null }>({ sending: false, note: null });
+  const [chicago, setChicago] = useState<{ sending: boolean; note: string | null }>({ sending: false, note: null });
   // One-click AALB student roster load (draft only, nothing sent).
   const [rosterLoading, setRosterLoading] = useState(false);
   const [rosterNote, setRosterNote] = useState<string | null>(null);
@@ -717,6 +718,32 @@ export default function AttendeesPage() {
     setTimeout(() => setGuides((g) => ({ ...g, note: null })), 9000);
   }
 
+  // The second letter: the hospital, the city, and the sign-up form for the
+  // tour and the Saturday social. Its own sent-stamp, so running this never
+  // affects who is due the attendee guide.
+  async function sendChicagoGuides(mode: "initial" | "all") {
+    setChicago({ sending: true, note: null });
+    try {
+      const res = await fetch("/api/attendees/send-chicago-guide", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode }),
+      });
+      const json = await res.json().catch(() => ({}));
+      setChicago({
+        sending: false,
+        note: res.ok
+          ? (json.sent || 0) === 0
+            ? "Nobody to send to: every in-person attendee already has it."
+            : `Sent ${json.sent} welcome letter${json.sent === 1 ? "" : "s"}${json.failed ? ` · ${json.failed} failed: ${(json.failures || []).map((f: { email: string }) => f.email).join(", ")}` : ""}.`
+          : (json.error || "Could not send the welcome letters."),
+      });
+      await load();
+    } catch {
+      setChicago({ sending: false, note: "Network error while sending." });
+    }
+    setTimeout(() => setChicago((c) => ({ ...c, note: null })), 9000);
+  }
+
   // No ids -> every never-reminded person in the started-not-paid bucket,
   // paced through the queue. With ids (the list's bulk bar) -> the selection
   // is sent IMMEDIATELY (up to 100 per click), already-reminded included;
@@ -1195,6 +1222,49 @@ export default function AttendeesPage() {
                       </div>
                     </div>
                     {guides.note && <div className="mt-2 text-xs font-semibold text-teal-700">{guides.note}</div>}
+
+                    {/* The second letter. Kept beneath the guide because it goes
+                        out after it, and to the same people. */}
+                    <div className="mt-4 pt-4 border-t border-slate-200 flex items-start justify-between gap-3 flex-wrap">
+                      <div className="min-w-0">
+                        <div className="text-sm font-bold text-slate-900">Welcome to Chicago</div>
+                        <p className="text-xs text-slate-500 mt-1 max-w-xl leading-relaxed">
+                          The second letter for in-person attendees: the hospital&rsquo;s whales, the Crown Sky
+                          Garden, the city guide as an attachment, and the sign-up form for the optional tour and
+                          the Saturday evening social. Virtual attendees are left out, since none of it applies to
+                          them. Tracked separately from the guide above, so sending one never affects the other.
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={() => setConfirmDialog({
+                            title: "Send the Welcome to Chicago letter?",
+                            message: "Every paid in-person attendee who has never been sent it gets it now, with the city guide attached and a link to the screen-reader version. Virtual attendees are left out. Safe to run again after new registrations: anyone who already has it is skipped.",
+                            confirmLabel: "Send welcome letters",
+                            onConfirm: () => { setConfirmDialog(null); void sendChicagoGuides("initial"); },
+                          })}
+                          disabled={chicago.sending}
+                          className="px-4 py-2 rounded-lg text-sm font-bold text-white shadow-sm inline-flex items-center gap-1.5 disabled:opacity-50"
+                          style={{ background: "#0066B3" }}
+                        >
+                          {chicago.sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
+                          Send Welcome to Chicago
+                        </button>
+                        <button
+                          onClick={() => setConfirmDialog({
+                            title: "Re-send the welcome letter to everyone?",
+                            message: "This mails every paid in-person attendee again, including people who already have it. Use it if the letter or the guide has changed.",
+                            confirmLabel: "Re-send to all",
+                            onConfirm: () => { setConfirmDialog(null); void sendChicagoGuides("all"); },
+                          })}
+                          disabled={chicago.sending}
+                          className="px-3 py-2 rounded-lg text-sm font-bold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                        >
+                          Re-send to all
+                        </button>
+                      </div>
+                    </div>
+                    {chicago.note && <div className="mt-2 text-xs font-semibold text-[#0066B3]">{chicago.note}</div>}
                   </div>
                 )}
 

@@ -26,3 +26,8 @@ ALTER TABLE IF EXISTS "lcc"."lcc_attendees"
   ADD COLUMN IF NOT EXISTS "guideSentAt" TIMESTAMP(3);
 ALTER TABLE IF EXISTS "lcc"."lcc_sponsors"
   ADD COLUMN IF NOT EXISTS "guideSentAt" TIMESTAMP(3);
+
+-- The Welcome to Chicago letter, sent to in-person attendees after the
+-- attendee guide. Its own column so sending one never suppresses the other.
+ALTER TABLE IF EXISTS "lcc"."lcc_attendees"
+  ADD COLUMN IF NOT EXISTS "chicagoGuideSentAt" TIMESTAMP(3);
