@@ -1,6 +1,7 @@
 import { runEmailQueue, TICK_MS } from "./email-queue";
 import { dispatchDueReminders } from "./reminders";
 import { dispatchDueGuides } from "./guide-dispatch";
+import { syncAttendeeSheet } from "./sheet-sync";
 
 // The in-app scheduler: the web service ticks its own queues instead of
 // depending on an external cron reaching an HTTP endpoint. Discovered the
@@ -38,6 +39,17 @@ export function startScheduler() {
       }
     } catch (e) {
       console.error("[scheduler] guide tick failed", e);
+    }
+    try {
+      // Cheap when nothing changed: a fingerprint check, then nothing.
+      const sheet = await syncAttendeeSheet();
+      if (sheet.error) {
+        console.error("[scheduler] attendee sheet sync failed", sheet.error);
+      } else if (!sheet.skipped) {
+        console.log(`[scheduler] attendee sheet: in-person=${sheet.inPerson} virtual=${sheet.virtual}`);
+      }
+    } catch (e) {
+      console.error("[scheduler] attendee sheet tick failed", e);
     }
     try {
       const reminders = await dispatchDueReminders();

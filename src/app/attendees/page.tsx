@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import {
+  Table2,
   Users, Send, Pause, Play, Loader2, Mail, Check,
   RefreshCw, Zap, FileText, UserPlus, Rocket, Eye, SlidersHorizontal,
   ChevronDown, ChevronRight, Video, Shuffle, GraduationCap, MapPin, FileDown,
@@ -21,6 +22,7 @@ import LogisticsView from "./LogisticsView";
 import AttendeeDrawer from "./AttendeeDrawer";
 import BroadcastComposer from "./BroadcastComposer";
 import EventSettingsModal from "./EventSettingsModal";
+import GoogleSheetPanel from "./GoogleSheetPanel";
 
 type PreviewState = { title: string; meta?: string; html: string | null };
 
@@ -101,6 +103,7 @@ export default function AttendeesPage() {
 
   // Bulk invite
   const [csv, setCsv] = useState("");
+  const [showSheet, setShowSheet] = useState(false);
   const [bulkMode, setBulkMode] = useState<"csv" | "emails">("csv");
   const [bulkSending, setBulkSending] = useState(false);
   const [bulkResult, setBulkResult] = useState<{ created: number; skipped: { email: string; reason: string }[]; parseErrors: string[] } | null>(null);
@@ -809,6 +812,11 @@ export default function AttendeesPage() {
                 <p className="text-xs text-slate-500">Invite people and track them through to paid attendees</p>
               </div>
               {isAdmin && (
+                <button onClick={() => setShowSheet(true)} className="px-3 py-1.5 rounded-lg text-xs font-bold text-white inline-flex items-center gap-1.5 shadow-sm" style={{ background: "#047857" }} title="Put the attendee list in a Google Sheet, one tab in person and one virtual, kept current on its own">
+                  <Table2 className="w-3.5 h-3.5" /> Google Sheet
+                </button>
+              )}
+              {isAdmin && (
                 <>
                   <button onClick={confirmLoadNbcmi} disabled={rosterLoading} className="px-3 py-1.5 rounded-lg text-xs font-bold text-white inline-flex items-center gap-1.5 disabled:opacity-50 shadow-sm" style={{ background: "#0E5566" }} title={`Add all ${NBCMI_ROSTER_COUNT.toLocaleString()} NBCMI-certified interpreters to the list as queued (nothing emailed)`}>
                     {rosterLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <GraduationCap className="w-3.5 h-3.5" />}
@@ -1499,6 +1507,8 @@ export default function AttendeesPage() {
           onClose={() => setPreview(null)}
         />
       )}
+
+      {showSheet && <GoogleSheetPanel onClose={() => setShowSheet(false)} />}
 
       {showQueue && <QueueSettingsModal onClose={() => setShowQueue(false)} onChanged={load} />}
       {showEventSettings && <EventSettingsModal onClose={() => setShowEventSettings(false)} />}
