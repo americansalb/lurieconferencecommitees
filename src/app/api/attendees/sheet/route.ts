@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { exportToken, rotateExportToken, importFormula } from "@/lib/attendee-export";
-import { credentialsConfigured, serviceAccountEmail } from "@/lib/google-sheets";
+import { credentialsConfigured, serviceAccountEmail, credentialSource } from "@/lib/google-sheets";
 import { syncAttendeeSheet, lastSyncedAt, createAttendeeSheet, resolveSheetId, IN_PERSON_TAB, VIRTUAL_TAB } from "@/lib/sheet-sync";
 
 // Everything the Attendees page needs to set up and watch the Google Sheet:
@@ -38,6 +38,7 @@ async function liveState() {
     sheetId: id,
     sheetUrl: id ? `https://docs.google.com/spreadsheets/d/${id}/edit` : null,
     serviceAccount: serviceAccountEmail(),
+    credentialSource: credentialSource(),
     lastSyncedAt: await lastSyncedAt(),
   };
 }

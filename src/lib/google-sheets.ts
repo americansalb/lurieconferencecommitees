@@ -12,7 +12,7 @@ import { createSign } from "crypto";
 // if you would rather point it at a spreadsheet you already have; share that one
 // with the service account's client_email as an Editor first.
 
-type ServiceAccount = { client_email: string; private_key: string };
+type ServiceAccount = { client_email: string; private_key: string; source: "sheets" | "push" };
 
 /**
  * Credentials are the only thing that cannot be automated away: Google will not
@@ -24,17 +24,47 @@ export function credentialsConfigured(): boolean {
   return !!serviceAccount();
 }
 
+/**
+ * The service account to sign as.
+ *
+ * A key in GOOGLE_SERVICE_ACCOUNT_JSON wins, for pointing at an account of its
+ * own. Failing that it falls back to the one already configured for push
+ * notifications (FCM_CLIENT_EMAIL / FCM_PRIVATE_KEY): a Firebase project is a
+ * Google Cloud project, its service account signs the same way, and the only
+ * difference is the scope asked for. Reusing it means no new key, no new
+ * environment variable, and nothing to paste. The Sheets and Drive APIs do have
+ * to be enabled on that project, which is a switch in the console rather than a
+ * credential.
+ */
 function serviceAccount(): ServiceAccount | null {
   const raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON?.trim();
-  if (!raw) return null;
-  try {
-    const parsed = JSON.parse(raw) as Partial<ServiceAccount>;
-    if (!parsed.client_email || !parsed.private_key) return null;
-    // Render and most dashboards store the key with literal \n sequences.
-    return { client_email: parsed.client_email, private_key: parsed.private_key.replace(/\\n/g, "\n") };
-  } catch {
-    return null;
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw) as Partial<ServiceAccount>;
+      if (parsed.client_email && parsed.private_key) {
+        // Render and most dashboards store the key with literal \n sequences.
+        return {
+          client_email: parsed.client_email,
+          private_key: parsed.private_key.replace(/\\n/g, "\n"),
+          source: "sheets",
+        };
+      }
+    } catch {
+      // Fall through to the push credentials rather than failing outright.
+    }
   }
+
+  const clientEmail = process.env.FCM_CLIENT_EMAIL?.trim();
+  const privateKey = process.env.FCM_PRIVATE_KEY?.replace(/\\n/g, "\n").trim();
+  if (clientEmail && privateKey) {
+    return { client_email: clientEmail, private_key: privateKey, source: "push" };
+  }
+  return null;
+}
+
+/** Which credentials are in use, so the setup notes can say something true. */
+export function credentialSource(): "sheets" | "push" | null {
+  return serviceAccount()?.source || null;
 }
 
 export function serviceAccountEmail(): string | null {

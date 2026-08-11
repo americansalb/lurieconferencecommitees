@@ -12,6 +12,7 @@ type SheetInfo = {
     sheetId: string | null;
     sheetUrl: string | null;
     serviceAccount: string | null;
+    credentialSource: "sheets" | "push" | null;
     lastSyncedAt: string | null;
   };
 };
@@ -137,10 +138,21 @@ export default function GoogleSheetPanel({ onClose }: { onClose: () => void }) {
                 ) : info.live.credentials ? (
                   <>
                     <p className="text-[12.5px] text-slate-600 leading-relaxed">
-                      Credentials are in place. One button and the app makes the spreadsheet, names both tabs,
-                      shares it with you as an editor and fills it in. After that it rewrites itself within a
-                      minute of any registration changing.
+                      Credentials are in place
+                      {info.live.credentialSource === "push" && (
+                        <> (the same service account this app already uses for push notifications)</>
+                      )}
+                      . One button and the app makes the spreadsheet, names both tabs, shares it with you as an
+                      editor and fills it in. After that it rewrites itself within a minute of any registration
+                      changing.
                     </p>
+                    {info.live.credentialSource === "push" && (
+                      <p className="mt-2 text-[11.5px] text-slate-500 leading-relaxed">
+                        If the button comes back saying an API is disabled, enable the Google Sheets API and the
+                        Google Drive API on that same project in the Google Cloud console. That is a switch, not
+                        a new credential.
+                      </p>
+                    )}
                     <button onClick={() => post("create")} disabled={busy}
                             className="mt-3 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-[13px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50">
                       {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Table2 className="w-4 h-4" />} Create the sheet
@@ -154,10 +166,13 @@ export default function GoogleSheetPanel({ onClose }: { onClose: () => void }) {
                 ) : (
                   <>
                     <p className="text-[12.5px] text-slate-600 leading-relaxed">
-                      One thing is missing, and it is the only manual step there is: Google will not let a server
-                      write to a private spreadsheet without credentials. In the Google Cloud console make a
-                      service account, enable the Sheets and Drive APIs, create a JSON key, and paste the whole
-                      file into <code className="text-[11.5px] bg-slate-100 px-1 py-0.5 rounded">GOOGLE_SERVICE_ACCOUNT_JSON</code> on Render.
+                      No Google credentials are reachable on this deployment. The app normally borrows the
+                      service account already set up for push notifications
+                      (<code className="text-[11.5px] bg-slate-100 px-1 py-0.5 rounded">FCM_CLIENT_EMAIL</code> and{" "}
+                      <code className="text-[11.5px] bg-slate-100 px-1 py-0.5 rounded">FCM_PRIVATE_KEY</code>), so if
+                      those are set on Render this section should not be showing. Otherwise, paste any service
+                      account&rsquo;s JSON key into{" "}
+                      <code className="text-[11.5px] bg-slate-100 px-1 py-0.5 rounded">GOOGLE_SERVICE_ACCOUNT_JSON</code>.
                     </p>
                     <p className="mt-2 text-[12.5px] text-slate-600 leading-relaxed">
                       Come back here after it redeploys and one button does the rest: the spreadsheet, both tabs,
