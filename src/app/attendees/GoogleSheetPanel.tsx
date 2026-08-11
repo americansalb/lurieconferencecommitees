@@ -7,6 +7,7 @@ type SheetInfo = {
   formulas: { inPerson: string; virtual: string };
   tabs: { inPerson: string; virtual: string };
   live: {
+    credentials: boolean;
     configured: boolean;
     sheetId: string | null;
     sheetUrl: string | null;
@@ -15,16 +16,17 @@ type SheetInfo = {
   };
 };
 
-// Two ways to get the attendee list into a Google Sheet, because they suit
-// different amounts of patience:
+// The attendee list in a Google Sheet.
 //
-//   Paste a formula. Nothing to configure, works in a minute, and Google
-//   refreshes it on its own roughly hourly.
+// The real answer is the live push: the app makes the spreadsheet, shares it
+// back, and rewrites both tabs within a minute of a registration. That needs
+// credentials, because Google will not let a server write to a private
+// spreadsheet without them, and that one paste is the whole setup.
 //
-//   Live push. We write both tabs ourselves within a minute of a registration,
-//   but it needs a service account set up first.
-//
-// The panel shows both, and says plainly which one is actually running.
+// The IMPORTDATA formulas are kept underneath as the fallback for when nobody
+// wants to touch a Google Cloud console. They work, but somebody has to paste
+// them, and Google only re-reads them about hourly. That is why they are second
+// now, not first.
 export default function GoogleSheetPanel({ onClose }: { onClose: () => void }) {
   const [info, setInfo] = useState<SheetInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -67,7 +69,10 @@ export default function GoogleSheetPanel({ onClose }: { onClose: () => void }) {
       });
       const j = await res.json();
       if (!res.ok || !j.ok) throw new Error(j.error || "That did not work.");
-      if (action === "rotate") {
+      if (action === "create") {
+        setNote("Sheet created and shared with you. Both tabs are filled in.");
+        await load();
+      } else if (action === "rotate") {
         setNote("New link issued. Paste the new formulas into the sheet; the old ones have stopped working.");
         await load();
       } else {
@@ -105,33 +110,7 @@ export default function GoogleSheetPanel({ onClose }: { onClose: () => void }) {
             <>
               <section>
                 <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
-                  The quick way, no setup
-                </div>
-                <p className="text-[12.5px] text-slate-600 leading-relaxed mb-3">
-                  Make a spreadsheet with two tabs. Put the first formula in cell <strong>A1</strong> of the
-                  in-person tab and the second in <strong>A1</strong> of the virtual tab. Google fills in the
-                  rest and re-reads it about once an hour, so the sheet keeps itself current without anyone
-                  exporting anything.
-                </p>
-                <Formula label="In-person tab" value={info.formulas.inPerson} copied={copied === "in"} onCopy={() => copy(info.formulas.inPerson, "in")} />
-                <Formula label="Virtual tab" value={info.formulas.virtual} copied={copied === "virt"} onCopy={() => copy(info.formulas.virtual, "virt")} />
-                <p className="mt-2.5 text-[11.5px] text-slate-500 leading-relaxed">
-                  These links carry a key instead of a login, since Google fetches them from its own servers.
-                  Anyone with the link can read the attendee list, so keep the sheet inside the team.{" "}
-                  <button
-                    onClick={() => post("rotate")}
-                    disabled={busy}
-                    className="font-semibold text-[#0066B3] hover:underline disabled:opacity-50"
-                  >
-                    Issue a new link
-                  </button>{" "}
-                  if it gets out, then paste the new formulas in.
-                </p>
-              </section>
-
-              <section className="pt-4 border-t border-slate-100">
-                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
-                  Live push, within a minute
+                  The sheet
                 </div>
                 {info.live.configured ? (
                   <>
@@ -155,24 +134,64 @@ export default function GoogleSheetPanel({ onClose }: { onClose: () => void }) {
                       </button>
                     </div>
                   </>
+                ) : info.live.credentials ? (
+                  <>
+                    <p className="text-[12.5px] text-slate-600 leading-relaxed">
+                      Credentials are in place. One button and the app makes the spreadsheet, names both tabs,
+                      shares it with you as an editor and fills it in. After that it rewrites itself within a
+                      minute of any registration changing.
+                    </p>
+                    <button onClick={() => post("create")} disabled={busy}
+                            className="mt-3 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-[13px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50">
+                      {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Table2 className="w-4 h-4" />} Create the sheet
+                    </button>
+                    <p className="mt-2 text-[11.5px] text-slate-500">
+                      Already have a spreadsheet you want used instead? Share it with{" "}
+                      <code className="text-[11px] bg-slate-100 px-1 py-0.5 rounded">{info.live.serviceAccount}</code>{" "}
+                      as an Editor and put its id in <code className="text-[11px] bg-slate-100 px-1 py-0.5 rounded">ATTENDEE_SHEET_ID</code>.
+                    </p>
+                  </>
                 ) : (
                   <>
                     <p className="text-[12.5px] text-slate-600 leading-relaxed">
-                      Not set up, so nothing is being pushed. The formulas above work without any of this. To have
-                      the app write the sheet itself instead:
+                      One thing is missing, and it is the only manual step there is: Google will not let a server
+                      write to a private spreadsheet without credentials. In the Google Cloud console make a
+                      service account, enable the Sheets and Drive APIs, create a JSON key, and paste the whole
+                      file into <code className="text-[11.5px] bg-slate-100 px-1 py-0.5 rounded">GOOGLE_SERVICE_ACCOUNT_JSON</code> on Render.
                     </p>
-                    <ol className="mt-2 space-y-1.5 text-[12.5px] text-slate-600 list-decimal pl-5">
-                      <li>In the Google Cloud console, create a service account and enable the Sheets API.</li>
-                      <li>Create a JSON key for it, and paste the whole file into the <code className="text-[11.5px] bg-slate-100 px-1 py-0.5 rounded">GOOGLE_SERVICE_ACCOUNT_JSON</code> environment variable on Render.</li>
-                      <li>Share the spreadsheet with the service account&rsquo;s email address, as an Editor.</li>
-                      <li>Put the spreadsheet id, the long part of its URL, into <code className="text-[11.5px] bg-slate-100 px-1 py-0.5 rounded">ATTENDEE_SHEET_ID</code>.</li>
-                    </ol>
-                    <p className="mt-2 text-[11.5px] text-slate-500">
-                      The tabs are created automatically if they do not exist.
+                    <p className="mt-2 text-[12.5px] text-slate-600 leading-relaxed">
+                      Come back here after it redeploys and one button does the rest: the spreadsheet, both tabs,
+                      sharing it with you, and keeping it current. No formulas, no ids to hunt for.
                     </p>
                   </>
                 )}
               </section>
+              <section className="pt-4 border-t border-slate-100">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                  Or, without any credentials
+                </div>
+                <p className="text-[12.5px] text-slate-600 leading-relaxed mb-3">
+                  If you would rather not set up a service account at all: make a spreadsheet with two tabs, put
+                  the first formula in cell <strong>A1</strong> of the in-person tab and the second in
+                  <strong> A1</strong> of the virtual tab. Google fills in the rest and re-reads it about once an
+                  hour. It works, but it is slower than the push above and somebody has to paste them.
+                </p>
+                <Formula label="In-person tab" value={info.formulas.inPerson} copied={copied === "in"} onCopy={() => copy(info.formulas.inPerson, "in")} />
+                <Formula label="Virtual tab" value={info.formulas.virtual} copied={copied === "virt"} onCopy={() => copy(info.formulas.virtual, "virt")} />
+                <p className="mt-2.5 text-[11.5px] text-slate-500 leading-relaxed">
+                  These links carry a key instead of a login, since Google fetches them from its own servers.
+                  Anyone with the link can read the attendee list, so keep the sheet inside the team.{" "}
+                  <button
+                    onClick={() => post("rotate")}
+                    disabled={busy}
+                    className="font-semibold text-[#0066B3] hover:underline disabled:opacity-50"
+                  >
+                    Issue a new link
+                  </button>{" "}
+                  if it gets out, then paste the new formulas in.
+                </p>
+              </section>
+
             </>
           )}
         </div>
