@@ -41,7 +41,7 @@ export const PROGRAM_NOTE = "All times CDT · Lurie Children’s, Chicago + Virt
 // or runs short without turning the promise into an overstatement.
 export const CEU_TOTAL_LABEL = "12.5 hours";
 export const CEU_PENDING_NOTE =
-  "CEU hours shown are per session and are pending accreditation by NBCMI and CCHI. CEUs are earned by attending live.";
+  "CEU hours shown are per session and are pending accreditation by NBCMI, CCHI and RID. CEUs are earned by attending live.";
 
 export const PROGRAM_DAYS: ProgramDay[] = [
   {

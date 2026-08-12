@@ -16,7 +16,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "Is the conference CEU accredited?",
-    a: "Yes. The conference will be accredited for 10+ hours of NBCMI and CCHI CEUs. CEUs are earned by attending live. See the next answer for what that requires. Additional discipline-specific accreditation details will be announced as the program is finalized.",
+    a: "Yes. The conference will be accredited for 10+ hours of NBCMI, CCHI and RID CEUs, so medical interpreters and ASL interpreters can both claim their hours. CEUs are earned by attending live. See the next answer for what that requires. Additional discipline-specific accreditation details will be announced as the program is finalized.",
   },
   {
     q: "Can I earn CEUs by watching the recordings on my own time?",

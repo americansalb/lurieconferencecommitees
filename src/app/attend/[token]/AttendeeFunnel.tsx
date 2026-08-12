@@ -254,7 +254,7 @@ export default function AttendeeFunnel({
               </h2>
               <p className="text-sm text-slate-600 leading-relaxed">
                 Two days on language access in healthcare at Lurie Children&rsquo;s in Chicago, streamed
-                live everywhere, with 10+ CEU hours (will be accredited by NBCMI and CCHI).
+                live everywhere, with 10+ CEU hours (will be accredited by NBCMI, CCHI and RID).
                 {data.discountPercent > 0 && (
                   <> Your personal <strong style={{ color: TEAL }}>{data.discountPercent}% discount</strong> is already applied to every price below.</>
                 )}
