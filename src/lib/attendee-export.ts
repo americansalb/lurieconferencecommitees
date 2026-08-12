@@ -67,25 +67,55 @@ function date(d: Date | null | undefined): string {
   }).format(d);
 }
 
+/** How many rows are pulled from the database at a time. */
+const PAGE = 400;
+
+function whereFor(mode: ExportMode, scope: ExportScope) {
+  return {
+    isTest: false,
+    ...(scope === "paid" ? { paid: true } : {}),
+    ...(mode === "virtual"
+      ? { attendanceMode: "virtual" }
+      : mode === "in-person"
+      ? { attendanceMode: { not: "virtual" } }
+      : {}),
+  };
+}
+
 /**
- * Registered attendees for one mode, in the order they signed up.
+ * Attendees a page at a time, oldest first.
  *
- * Paid only, and test rows are excluded: a sheet the team works from during the
- * two days should be the people who are actually coming, not the pipeline.
+ * Paged rather than loaded whole, and this is not a micro-optimization: the
+ * table holds every imported training student and every registry we have ever
+ * loaded, so "everyone" is tens of thousands of rows. Reading them all, mapping
+ * them to arrays and joining one enormous string held several copies of the
+ * whole table in memory at once and took the 512MB instance down.
+ *
+ * Keyed on id after the sort so paging cannot skip or repeat a row when two
+ * records share a timestamp.
  */
-export async function exportRows(mode: ExportMode, scope: ExportScope = "paid"): Promise<string[][]> {
-  const attendees = await prisma.attendee.findMany({
-    where: {
-      isTest: false,
-      ...(scope === "paid" ? { paid: true } : {}),
-      ...(mode === "virtual"
-        ? { attendanceMode: "virtual" }
-        : mode === "in-person"
-        ? { attendanceMode: { not: "virtual" } }
-        : {}),
-    },
-    orderBy: [{ paidAt: "asc" }, { createdAt: "asc" }],
+export async function* exportRowPages(
+  mode: ExportMode,
+  scope: ExportScope = "paid",
+): AsyncGenerator<string[][]> {
+  let cursor: string | null = null;
+  for (;;) {
+    const attendees: Awaited<ReturnType<typeof fetchPage>> = await fetchPage(mode, scope, cursor);
+    if (!attendees.length) return;
+    yield attendees.map(toRow);
+    if (attendees.length < PAGE) return;
+    cursor = attendees[attendees.length - 1].id;
+  }
+}
+
+async function fetchPage(mode: ExportMode, scope: ExportScope, cursor: string | null) {
+  return prisma.attendee.findMany({
+    where: whereFor(mode, scope),
+    orderBy: [{ paidAt: "asc" }, { createdAt: "asc" }, { id: "asc" }],
+    take: PAGE,
+    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     select: {
+      id: true,
       firstName: true, lastName: true, email: true, phone: true,
       affiliation: true, primaryLanguages: true, attendanceMode: true,
       attendDay: true, paid: true, finalPriceCents: true, paidAt: true,
@@ -96,8 +126,12 @@ export async function exportRows(mode: ExportMode, scope: ExportScope = "paid"):
       unsubscribedAt: true, invitedById: true, chicagoGuideSentAt: true,
     },
   });
+}
 
-  return attendees.map((a) => [
+type Row = Awaited<ReturnType<typeof fetchPage>>[number];
+
+function toRow(a: Row): string[] {
+  return [
     a.firstName || "",
     a.lastName || "",
     a.email,
@@ -131,13 +165,22 @@ export async function exportRows(mode: ExportMode, scope: ExportScope = "paid"):
     a.unsubscribedAt ? date(a.unsubscribedAt) : "",
     date(a.createdAt),
     `${appUrl()}/attend/${a.inviteToken}`,
-  ]);
+  ];
+}
+
+/**
+ * Every row at once. Only safe for the paid list, which is the room rather than
+ * the database, and is what the Google Sheet writes.
+ */
+export async function exportRows(mode: ExportMode, scope: ExportScope = "paid"): Promise<string[][]> {
+  const out: string[][] = [];
+  for await (const page of exportRowPages(mode, scope)) out.push(...page);
+  return out;
 }
 
 /** RFC 4180: quote every field, double any quote inside it. */
-export function toCsv(rows: string[][]): string {
-  const esc = (v: string) => `"${(v || "").replace(/"/g, '""')}"`;
-  return rows.map((r) => r.map(esc).join(",")).join("\r\n");
+export function csvLine(row: string[]): string {
+  return row.map((v) => `"${(v || "").replace(/"/g, '""')}"`).join(",");
 }
 
 // The CSV endpoint is read by Google's servers, which cannot log in, so it
