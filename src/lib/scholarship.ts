@@ -1,13 +1,21 @@
 import { STUDENT_ROSTER_CSV } from "./student-roster";
+import { CURRENT_STUDENTS_CSV, CURRENT_STUDENTS_UPDATED } from "./current-students";
 
 // The ten free in-person seats held for AALB alumni and current students.
 //
-// Eligibility is checked against the training roster we already keep, so
-// somebody who trained with us types their email and is recognized rather than
-// being asked to prove it. Nobody uploads a certificate.
+// Eligibility is checked against the rosters we already keep, so somebody who
+// trained with us types their email and is recognized rather than being asked to
+// prove it. Nobody uploads a certificate.
+//
+// Two lists, and the order matters. current-students.ts is the short, dated list
+// the training team maintains, and it wins: the historical export in
+// student-roster.ts was reconciled once, so its idea of who is "currently
+// training" is as old as the file. Somebody enrolled today would otherwise be
+// read off a snapshot from months ago and told they were a former student.
 
 export const AWARD_COUNT = 10;
 export const SCHOLARSHIP_CLOSES = "Sunday, August 10";
+export const CURRENT_ROSTER_UPDATED = CURRENT_STUDENTS_UPDATED;
 
 export type Standing = "alumni" | "student" | "former" | "unknown";
 
@@ -30,6 +38,8 @@ let index: Map<string, RosterMatch> | null = null;
 function rosterIndex(): Map<string, RosterMatch> {
   if (index) return index;
   const map = new Map<string, RosterMatch>();
+
+  // Historical export first, so the current list can overwrite anyone in it.
   const lines = STUDENT_ROSTER_CSV.split("\n");
   // Row 0 is the header.
   for (let i = 1; i < lines.length; i += 1) {
@@ -53,6 +63,22 @@ function rosterIndex(): Map<string, RosterMatch> {
       });
     }
   }
+  // The current enrolments, which override whatever the historical file says.
+  // studentId,firstName,lastName,email,cohort
+  const current = CURRENT_STUDENTS_CSV.split("\n");
+  for (let i = 1; i < current.length; i += 1) {
+    const cols = splitCsvLine(current[i]);
+    if (cols.length < 4) continue;
+    const email = (cols[3] || "").trim().toLowerCase();
+    if (!email) continue;
+    map.set(email, {
+      standing: "student",
+      firstName: (cols[1] || "").trim(),
+      lastName: (cols[2] || "").trim(),
+      cohort: (cols[4] || "").trim() || null,
+    });
+  }
+
   index = map;
   return map;
 }

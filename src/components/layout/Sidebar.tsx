@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { useEffect, useState } from "react";
-import { LayoutDashboard, CalendarDays, MessageSquare, UserCircle, LogOut, Shield, Mic, Bell, AtSign, Search, Ticket, Award, Tag, CalendarClock, Upload, CalendarRange, Mail, BarChart3, Megaphone, Gift, Banknote } from "lucide-react";
+import { LayoutDashboard, CalendarDays, MessageSquare, UserCircle, LogOut, Shield, Mic, Bell, AtSign, Search, Ticket, Award, Tag, CalendarClock, Upload, CalendarRange, Mail, BarChart3, Megaphone, Gift, Banknote, GraduationCap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -16,6 +16,7 @@ const navItems = [
   { href: "/schedule", label: "Schedule", icon: CalendarRange, iconBg: "bg-orange-500/20", iconColor: "text-orange-400" },
   { href: "/meetings", label: "Meetings", icon: CalendarClock, iconBg: "bg-violet-500/20", iconColor: "text-violet-400" },
   { href: "/attendees", label: "Attendees", icon: Ticket, iconBg: "bg-teal-500/20", iconColor: "text-teal-400" },
+  { href: "/scholarships", label: "Scholarships", icon: GraduationCap, iconBg: "bg-cyan-500/20", iconColor: "text-cyan-400", adminOnly: true },
   { href: "/sponsors", label: "Sponsors", icon: Award, iconBg: "bg-amber-500/20", iconColor: "text-amber-400" },
   { href: "/ambassadors", label: "Ambassadors", icon: Megaphone, iconBg: "bg-yellow-500/20", iconColor: "text-yellow-400" },
   { href: "/partners", label: "Partners", icon: Gift, iconBg: "bg-emerald-500/20", iconColor: "text-emerald-400", adminOnly: true },
