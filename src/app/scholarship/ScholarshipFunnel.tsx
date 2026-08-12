@@ -510,17 +510,18 @@ function Done({ firstName }: { firstName: string }) {
           <div className="flex items-start gap-3">
             <Users className="w-4 h-4 mt-0.5 shrink-0" style={{ color: C.gold }} />
             <p className="text-[13.5px] leading-relaxed" style={{ color: C.muted }}>
-              If you would rather not wait on the outcome, you can register at the standard rate
-              now and we will refund you in full if you are awarded a seat.
+              You do not have to wait on the outcome to register. Registrations are non-refundable,
+              so if you are set on coming either way, write to us before you pay and we will tell you
+              where your application stands.
             </p>
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
             <a
-              href="/register"
+              href="mailto:contact@aalb.org?subject=Scholarship%20application"
               className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-[13px] font-bold text-white"
               style={{ background: C.teal }}
             >
-              Register anyway
+              <Mail className="w-3.5 h-3.5" /> Email us first
             </a>
             <a
               href="/"
