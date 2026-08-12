@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Search, Mail, Send, MapPin, Monitor, Check, Eye, ArrowDownWideNarrow, Clock, FileDown, Table2 } from "lucide-react";
+import { Search, Mail, Send, MapPin, Monitor, Check, Eye, ArrowDownWideNarrow, Clock, FileDown, Table2, Download } from "lucide-react";
 import {
   ATTENDEE_STEP_LABELS, ATTENDEE_SOURCE_LABELS, AttendeeStep,
   attendeeStep, attendeeStepMoment, attendeeSource,
@@ -357,7 +357,16 @@ export default function AttendeesView({
             {guideFilter === "sent" ? "Guide sent" : guideFilter === "unsent" ? "No guide yet" : "Guide"}
           </button>
           {/* Sits with the filters because this is where people are when they
-              want the list somewhere else. */}
+              want the list somewhere else. Download first: it works now, with
+              nothing to set up, which is what somebody standing here usually
+              wants. */}
+          <a
+            href="/api/attendees/export?mode=all&scope=all&download=1"
+            title="Download every attendee as a CSV, right now: all the detail we hold, in-person and virtual together. Opens in Excel, Numbers or Google Sheets."
+            className="inline-flex items-center gap-1.5 text-xs font-semibold border border-slate-900 bg-slate-900 text-white rounded-lg px-3 py-2 transition-colors hover:bg-slate-800"
+          >
+            <Download className="w-3.5 h-3.5" /> Download CSV
+          </a>
           <button
             onClick={onOpenSheet}
             title="Put this list in a Google Sheet: one tab in person, one tab virtual, kept current on its own"

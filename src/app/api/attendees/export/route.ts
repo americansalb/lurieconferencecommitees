@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { EXPORT_COLUMNS, exportRows, toCsv, tokenIsValid, type ExportMode } from "@/lib/attendee-export";
+import { EXPORT_COLUMNS, exportRows, toCsv, tokenIsValid, type ExportMode, type ExportScope } from "@/lib/attendee-export";
 
 // The attendee list as CSV, for a Google Sheet to pull with IMPORTDATA.
 //
@@ -12,7 +12,13 @@ export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
-  const mode: ExportMode = url.searchParams.get("mode") === "virtual" ? "virtual" : "in-person";
+  const rawMode = url.searchParams.get("mode");
+  const mode: ExportMode = rawMode === "virtual" ? "virtual" : rawMode === "all" ? "all" : "in-person";
+  // Default stays "paid", so the Google Sheet tabs keep showing the room rather
+  // than the pipeline. A download can ask for everyone.
+  const scope: ExportScope = url.searchParams.get("scope") === "all" ? "all" : "paid";
+  // Google needs this inline; a browser download needs it as an attachment.
+  const download = url.searchParams.get("download") === "1";
 
   const token = url.searchParams.get("token");
   let allowed = await tokenIsValid(token);
@@ -25,7 +31,7 @@ export async function GET(req: Request) {
     return new NextResponse("Not authorized. Check the token on the Attendees page.", { status: 401 });
   }
 
-  const rows = await exportRows(mode);
+  const rows = await exportRows(mode, scope);
   const csv = toCsv([[...EXPORT_COLUMNS], ...rows]);
 
   return new NextResponse(csv, {
@@ -35,7 +41,7 @@ export async function GET(req: Request) {
       // Google caches IMPORTDATA for about an hour on its own; asking for no
       // caching at least means a manual refresh gets the current list.
       "Cache-Control": "no-store, max-age=0",
-      "Content-Disposition": `inline; filename="attendees-${mode}.csv"`,
+      "Content-Disposition": `${download ? "attachment" : "inline"}; filename="attendees-${scope === "all" ? "everyone" : mode}.csv"`,
     },
   });
 }
