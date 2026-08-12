@@ -562,6 +562,51 @@ model EmailQueue {
   @@schema("lcc")
 }
 
+/// Applications for the ten free in-person seats set aside for AALB alumni and
+/// current students. Kept apart from Attendee: an application is not a
+/// registration, and most of these people will not become one. On award, the
+/// team creates or comps their attendee record separately.
+model ScholarshipApplication {
+  id        String  @id @default(cuid())
+  email     String
+  firstName String
+  lastName  String
+  phone     String?
+
+  /// How the roster classified them when they applied: "alumni", "student", or
+  /// "unverified" when they applied without matching and asked us to check.
+  standing String
+  /// Training session number from the roster, when we have one.
+  cohort   String?
+
+  /// Their answers. Long-form, because the point is to read them.
+  currentRole    String?
+  languages      String?
+  whyAttend      String  @db.Text
+  barrierSeen    String  @db.Text
+  whatTheyWillDo String  @db.Text
+  costBarrier    String? @db.Text
+  accessibility  String?
+  dietary        String?
+
+  /// Set when they cannot travel and want the virtual seat instead.
+  virtualInstead Boolean @default(false)
+
+  status      String    @default("submitted")
+  reviewNotes String?
+  score       Int?
+  decidedAt   DateTime?
+  decidedBy   String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
+
+  @@index([email])
+  @@index([status])
+  @@map("lcc_scholarship_applications")
+  @@schema("lcc")
+}
+
 model SystemSetting {
   key       String   @id
   value     String

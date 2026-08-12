@@ -31,3 +31,35 @@ ALTER TABLE IF EXISTS "lcc"."lcc_sponsors"
 -- attendee guide. Its own column so sending one never suppresses the other.
 ALTER TABLE IF EXISTS "lcc"."lcc_attendees"
   ADD COLUMN IF NOT EXISTS "chicagoGuideSentAt" TIMESTAMP(3);
+
+-- Scholarship applications: the ten free in-person seats for AALB alumni and
+-- current students. New table, additive and idempotent, scoped to lcc.
+CREATE TABLE IF NOT EXISTS "lcc"."lcc_scholarship_applications" (
+  "id"             TEXT PRIMARY KEY,
+  "email"          TEXT NOT NULL,
+  "firstName"      TEXT NOT NULL,
+  "lastName"       TEXT NOT NULL,
+  "phone"          TEXT,
+  "standing"       TEXT NOT NULL,
+  "cohort"         TEXT,
+  "currentRole"    TEXT,
+  "languages"      TEXT,
+  "whyAttend"      TEXT NOT NULL,
+  "barrierSeen"    TEXT NOT NULL,
+  "whatTheyWillDo" TEXT NOT NULL,
+  "costBarrier"    TEXT,
+  "accessibility"  TEXT,
+  "dietary"        TEXT,
+  "virtualInstead" BOOLEAN NOT NULL DEFAULT false,
+  "status"         TEXT NOT NULL DEFAULT 'submitted',
+  "reviewNotes"    TEXT,
+  "score"          INTEGER,
+  "decidedAt"      TIMESTAMP(3),
+  "decidedBy"      TEXT,
+  "createdAt"      TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt"      TIMESTAMP(3)
+);
+CREATE INDEX IF NOT EXISTS "lcc_scholarship_applications_email_idx"
+  ON "lcc"."lcc_scholarship_applications" ("email");
+CREATE INDEX IF NOT EXISTS "lcc_scholarship_applications_status_idx"
+  ON "lcc"."lcc_scholarship_applications" ("status");

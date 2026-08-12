@@ -1411,6 +1411,47 @@ export function chicagoGuideEmail({
   });
 }
 
+export type ScholarshipReceivedEmailArgs = {
+  firstName: string;
+  standing: "alumni" | "student";
+  awardCount: number;
+  assetBase?: string;
+};
+
+/**
+ * The receipt for a scholarship application.
+ *
+ * Says what happens next and when, because the alternative is somebody
+ * refreshing their inbox for a week wondering whether the form worked.
+ */
+export function scholarshipReceivedEmail({
+  firstName, standing, awardCount, assetBase,
+}: ScholarshipReceivedEmailArgs) {
+  const first = (firstName || "").trim();
+  const body = `
+      ${gH1(addressed("We have your application", first))}
+      ${gP(`Thank you for writing it out properly. ${awardCount} seats are being awarded, and every application is read by the committee rather than sorted by a form.`)}
+
+      ${gLabel("What happens now")}
+      ${gFacts([
+        { label: "We read them", value: "All of them, after applications close. Answers are what decides this, not the order they arrived in." },
+        { label: "You hear either way", value: "Everyone who applies gets an answer, including the ones we cannot fund." },
+        { label: "If you are awarded", value: "Your seat is booked for you and you will not be asked for payment details at any point." },
+      ])}
+
+      ${gP(`You applied as ${standing === "student" ? "a current AALB student" : "AALB alumni"}. If anything in your application needs correcting, reply to this message and say what changed.`)}
+      ${gSignOff()}`;
+
+  return guideShell({
+    title: "Your scholarship application",
+    preheader: "Received. Here is what happens next, and when.",
+    kicker: "Scholarship",
+    body,
+    footerNote: "You are receiving this because you applied for a scholarship seat at the 2026 Lurie Children&rsquo;s &amp; AALB Conference.",
+    assetBase,
+  });
+}
+
 export type FoodPlanEmailArgs = {
   contactName: string | null;
   companyName: string;
