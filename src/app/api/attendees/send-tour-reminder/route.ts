@@ -42,6 +42,15 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => ({} as Record<string, unknown>));
   const day: TourDayKey = body?.day === "sun" ? "sun" : "sat";
 
+  // Renders the email for the on-page preview modal. Touches nothing.
+  if (body?.preview) {
+    const firstName = String(body?.firstName || "").trim() || "Marisa";
+    return NextResponse.json({
+      subject: tourReminderSubject(firstName, day),
+      html: tourReminderEmail({ firstName, day, assetBase: appUrl() }),
+    });
+  }
+
   if (body?.dryRun) {
     const lines = (Array.isArray(body?.list) ? body.list : [])
       .map((l: unknown) => String(l).trim())
