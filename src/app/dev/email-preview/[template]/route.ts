@@ -19,7 +19,9 @@ import {
   sponsorFoodLetterEmail,
   plainStandardInviteEmail,
   plainCommunityInviteEmail,
+  virtualAttendeeInfoEmail,
 } from "@/lib/mail-templates";
+import { zoomDaysFor } from "@/lib/virtual-event";
 import { fullBenefits } from "@/lib/sponsors";
 
 // Dev-only HTML preview of outreach email templates, so we can eyeball the
@@ -143,6 +145,26 @@ export async function GET(
         },
         portalUrl: `${base}/sponsor/status/demo-token`,
         ticketsIncluded: 2, assetBase: base,
+      });
+      break;
+    case "virtual-info":
+      html = virtualAttendeeInfoEmail({
+        firstName: "Miriam",
+        days: zoomDaysFor(null),
+        portalUrl: `${base}/attend/demo-token`,
+        exhibitorsUrl: `${base}/#sponsors`,
+        scheduleUrl: `${base}/#program`,
+        assetBase: base,
+      });
+      break;
+    case "virtual-info-sat":
+      html = virtualAttendeeInfoEmail({
+        firstName: "Miriam",
+        days: zoomDaysFor("sat"),
+        portalUrl: `${base}/attend/demo-token`,
+        exhibitorsUrl: `${base}/#sponsors`,
+        scheduleUrl: `${base}/#program`,
+        assetBase: base,
       });
       break;
     case "attendee-guide":

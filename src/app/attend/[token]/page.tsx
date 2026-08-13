@@ -22,8 +22,8 @@ export default async function AttendPage({ params }: { params: { token: string }
         firstName={attendee.firstName}
         email={attendee.email}
         attendanceMode={attendee.attendanceMode}
+        attendDay={attendee.attendDay}
         finalPriceCents={attendee.finalPriceCents}
-        joinUrl={settings.joinUrl}
         agendaUrl={settings.agendaUrl}
         details={{
           phone: attendee.phone || "",

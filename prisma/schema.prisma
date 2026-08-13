@@ -507,6 +507,11 @@ model Attendee {
   // guideSentAt so sending one never suppresses the other.
   chicagoGuideSentAt DateTime?
 
+  // The virtual counterpart of the guide: Zoom links, sign-in times, and CEU
+  // rules, emailed to paid virtual attendees. Its own stamp so a second run
+  // catches up late registrants instead of mailing everyone twice.
+  virtualInfoSentAt DateTime?
+
   adminNotes String?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime? @updatedAt

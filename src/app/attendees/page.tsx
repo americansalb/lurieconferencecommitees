@@ -78,6 +78,7 @@ export default function AttendeesPage() {
   const [nudge, setNudge] = useState<{ sending: boolean; note: string | null }>({ sending: false, note: null });
   const [guides, setGuides] = useState<{ sending: boolean; note: string | null }>({ sending: false, note: null });
   const [chicago, setChicago] = useState<{ sending: boolean; note: string | null }>({ sending: false, note: null });
+  const [virtualInfo, setVirtualInfo] = useState<{ sending: boolean; note: string | null }>({ sending: false, note: null });
   // One-click AALB student roster load (draft only, nothing sent).
   const [rosterLoading, setRosterLoading] = useState(false);
   const [rosterNote, setRosterNote] = useState<string | null>(null);
@@ -744,6 +745,32 @@ export default function AttendeesPage() {
     setTimeout(() => setChicago((c) => ({ ...c, note: null })), 9000);
   }
 
+  // The virtual counterpart of the guide: Zoom links for their registered
+  // day(s), sign-in times, CEU rules, and the program PDF. Its own sent-stamp,
+  // so it never affects who is due the in-person letters.
+  async function sendVirtualInfo(mode: "initial" | "all", ids?: string[]) {
+    setVirtualInfo({ sending: true, note: null });
+    try {
+      const res = await fetch("/api/attendees/send-virtual-info", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode, ...(ids && ids.length ? { ids } : {}) }),
+      });
+      const json = await res.json().catch(() => ({}));
+      setVirtualInfo({
+        sending: false,
+        note: res.ok
+          ? (json.sent || 0) === 0
+            ? "Nobody to send to: every paid virtual attendee already has their Zoom links."
+            : `Sent ${json.sent} virtual info email${json.sent === 1 ? "" : "s"}${json.failed ? ` · ${json.failed} failed: ${(json.failures || []).map((f: { email: string }) => f.email).join(", ")}` : ""}.`
+          : (json.error || "Could not send the virtual info emails."),
+      });
+      await load();
+    } catch {
+      setVirtualInfo({ sending: false, note: "Network error while sending." });
+    }
+    setTimeout(() => setVirtualInfo((v) => ({ ...v, note: null })), 9000);
+  }
+
   // No ids -> every never-reminded person in the started-not-paid bucket,
   // paced through the queue. With ids (the list's bulk bar) -> the selection
   // is sent IMMEDIATELY (up to 100 per click), already-reminded included;
@@ -816,6 +843,14 @@ export default function AttendeesPage() {
   );
   const guideEligible = guideEligibleRows.length;
   const guideSent = guideEligibleRows.filter((a) => a.guideSentAt).length;
+
+  // The virtual mirror of the guide coverage: paid virtual attendees and how
+  // many already have their Zoom-links email. Same predicate as the server.
+  const virtualEligibleRows = attendees.filter(
+    (a) => a.paid && !a.isTest && !a.unsubscribedAt && a.attendanceMode === "virtual"
+  );
+  const virtualEligible = virtualEligibleRows.length;
+  const virtualSent = virtualEligibleRows.filter((a) => a.virtualInfoSentAt).length;
 
   // Chicago people who are loaded but have neither been queued nor written to
   // — the ones the "Queue Chicago letters" button would actually act on.
@@ -1265,6 +1300,55 @@ export default function AttendeesPage() {
                       </div>
                     </div>
                     {chicago.note && <div className="mt-2 text-xs font-semibold text-[#0066B3]">{chicago.note}</div>}
+
+                    {/* The virtual mirror of the two letters above: Zoom links,
+                        sign-in times, CEU rules, program attached. */}
+                    <div className="mt-4 pt-4 border-t border-slate-200 flex items-start justify-between gap-3 flex-wrap">
+                      <div className="min-w-0">
+                        <div className="text-sm font-bold text-slate-900">Virtual attendee info</div>
+                        <p className="text-xs text-slate-500 mt-1 max-w-xl leading-relaxed">
+                          Zoom links for the days their ticket covers, sign-in times, the exhibitor
+                          lounge, CEU rules, and chat etiquette, with the program PDF attached
+                          (cover page removed). One-day tickets get only their day&rsquo;s room. The
+                          links also live on each attendee&rsquo;s portal page. In-person attendees are
+                          left out.
+                          <br />
+                          <strong className="text-slate-700">
+                            {virtualSent} of {virtualEligible} paid virtual attendee{virtualEligible === 1 ? "" : "s"} {virtualSent === 1 ? "has" : "have"} it
+                            {virtualEligible - virtualSent > 0 ? `, ${virtualEligible - virtualSent} still to go` : ""}.
+                          </strong>
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={() => setConfirmDialog({
+                            title: "Send Zoom links to every paid virtual attendee?",
+                            message: "Every paid virtual attendee who has never been sent the virtual info email gets it now: their Zoom room for each registered day, sign-in times, CEU rules, and the program PDF attached. In-person attendees are left out, and anyone already sent it is skipped, so this is safe to run again after new registrations.",
+                            confirmLabel: "Send virtual info",
+                            onConfirm: () => { setConfirmDialog(null); void sendVirtualInfo("initial"); },
+                          })}
+                          disabled={virtualInfo.sending}
+                          className="px-4 py-2 rounded-lg text-sm font-bold text-white shadow-sm inline-flex items-center gap-1.5 disabled:opacity-50"
+                          style={{ background: "#7C3AED" }}
+                        >
+                          {virtualInfo.sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Video className="w-4 h-4" />}
+                          Send virtual info
+                        </button>
+                        <button
+                          onClick={() => setConfirmDialog({
+                            title: "Re-send the virtual info to everyone?",
+                            message: "This mails every paid virtual attendee again, including people who already have it. Use it when the links or the program have changed.",
+                            confirmLabel: "Re-send to all",
+                            onConfirm: () => { setConfirmDialog(null); void sendVirtualInfo("all"); },
+                          })}
+                          disabled={virtualInfo.sending}
+                          className="px-3 py-2 rounded-lg text-sm font-bold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                        >
+                          Re-send to all
+                        </button>
+                      </div>
+                    </div>
+                    {virtualInfo.note && <div className="mt-2 text-xs font-semibold text-purple-700">{virtualInfo.note}</div>}
                   </div>
                 )}
 

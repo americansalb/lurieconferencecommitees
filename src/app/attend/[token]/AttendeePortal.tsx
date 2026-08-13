@@ -3,6 +3,7 @@ import { Calendar, MapPin, Monitor, Video, CalendarPlus, ListChecks, Mail, Train
 import {
   E, Parchment, TicketCard, GoldRule, Eyebrow, Perforation, FactCell, TicketFooter, HostsLockup, Seal,
 } from "@/components/attend/engraved";
+import { zoomDaysFor } from "@/lib/virtual-event";
 import PortalDetailsForm from "./PortalDetailsForm";
 
 // The returning home for a paid attendee, set in the same engraved gold-foil
@@ -11,14 +12,15 @@ import PortalDetailsForm from "./PortalDetailsForm";
 // Presentational so it can be rendered server-side or screenshotted with
 // mock data (see /dev/portal-preview).
 export default function AttendeePortal({
-  token, firstName, email, attendanceMode, finalPriceCents, joinUrl, agendaUrl, details,
+  token, firstName, email, attendanceMode, attendDay, finalPriceCents, agendaUrl, details,
 }: {
   token: string;
   firstName: string;
   email: string;
   attendanceMode: string | null;
+  /** One-day virtual tickets: "sat" | "sun". Null = both days. */
+  attendDay?: string | null;
   finalPriceCents: number | null;
-  joinUrl: string | null;
   agendaUrl: string;
   // Post-payment logistics (parking, dietary, accessibility, …), collected
   // here instead of before the pay button. Optional so preview harnesses can
@@ -33,6 +35,9 @@ export default function AttendeePortal({
   };
 }) {
   const isVirtual = attendanceMode === "virtual";
+  const zoomDays = zoomDaysFor(attendDay);
+  const virtualDaysLabel =
+    zoomDays.length === 2 ? "both days" : `${zoomDays[0].shortLabel} only`;
   const paidLabel =
     finalPriceCents == null ? null
     : finalPriceCents === 0 ? "Complimentary"
@@ -96,7 +101,7 @@ export default function AttendeePortal({
                   {isVirtual ? "Virtual" : "In-Person"}
                 </span>
               }
-              sub={isVirtual ? "Live stream, both days" : "Streeterville, Chicago"}
+              sub={isVirtual ? `Live stream, ${virtualDaysLabel}` : "Streeterville, Chicago"}
             />
             {paidLabel && <FactCell label="Paid" value={paidLabel} sub="Receipt in your inbox" />}
           </div>
@@ -107,40 +112,41 @@ export default function AttendeePortal({
         <div className="px-7 sm:px-9 pt-6 pb-7">
           {isVirtual ? (
             <section>
-              <Eyebrow>Joining live</Eyebrow>
-              {joinUrl ? (
-                <div className="mt-3">
-                  <p className="text-[13px]" style={{ color: E.soft }}>
-                    One link for both days. It goes live shortly before the opening session.
-                  </p>
-                  <a
-                    href={joinUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-3 inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold text-white"
-                    style={{ background: E.teal, boxShadow: "0 10px 24px -10px rgba(14,85,102,0.55)" }}
-                  >
-                    <Video className="w-4 h-4" /> Join the conference
-                  </a>
-                </div>
-              ) : (
+              <Eyebrow>Joining live on Zoom</Eyebrow>
+              <p className="mt-2 text-[13px] leading-relaxed" style={{ color: E.soft }}>
+                {zoomDays.length === 2
+                  ? "One room per day, and this page always has the links."
+                  : `Your ticket covers ${zoomDays[0].label}, and this page always has the link.`}{" "}
+                All times are US Central Time (Chicago). Please be signed in 15 minutes before the
+                first session; early sign-in keeps the register clear for CEU tracking.
+              </p>
+              {zoomDays.map((d) => (
                 <div
-                  className="mt-3 rounded-xl px-4 py-3.5"
+                  key={d.key}
+                  className="mt-3 rounded-xl px-4 py-4"
                   style={{ background: E.cream, border: "1.5px solid " + E.gold }}
                 >
-                  <div className="flex items-center gap-2">
-                    <Video className="w-4 h-4 shrink-0" style={{ color: E.goldDark }} />
-                    <span className="text-[13.5px] font-bold" style={{ color: E.ink }}>
-                      Join link coming soon
-                    </span>
+                  <div className="text-[10px] font-bold uppercase" style={{ letterSpacing: "0.2em", color: "#8a744a" }}>
+                    Day {d.dayNumber} &middot; {d.label}
                   </div>
-                  <p className="mt-1.5 text-[12.5px] leading-relaxed" style={{ color: E.soft }}>
-                    We send it a few days before the conference, to{" "}
-                    <strong style={{ color: E.ink }}>{email}</strong>. It will also appear right here,
-                    so you can always come back to this page for it. One link covers both days.
+                  <p className="mt-1.5 text-[12.5px]" style={{ color: E.soft }}>
+                    Zoom opens at <strong style={{ color: E.ink }}>{d.opensCT}</strong> &middot; be
+                    signed in by <strong style={{ color: E.ink }}>{d.signInByCT}</strong>
+                  </p>
+                  <a
+                    href={d.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white"
+                    style={{ background: E.teal, boxShadow: "0 10px 24px -10px rgba(14,85,102,0.55)" }}
+                  >
+                    <Video className="w-4 h-4" /> Join {d.shortLabel} on Zoom
+                  </a>
+                  <p className="mt-2 text-[11.5px]" style={{ color: "#8a744a" }}>
+                    Meeting ID: {d.meetingId}
                   </p>
                 </div>
-              )}
+              ))}
             </section>
           ) : (
             <section>

@@ -19,6 +19,7 @@ export type Attendee = {
   status: string;
   paid: boolean;
   guideSentAt?: string | null;
+  virtualInfoSentAt?: string | null;
   // Present on every row from the API; declared so the page can mirror the
   // server's send filter exactly when it counts guide coverage.
   isTest?: boolean;

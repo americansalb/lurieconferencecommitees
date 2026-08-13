@@ -4617,3 +4617,143 @@ export function aslInterpreterConfirmedEmail({
     "You are confirmed as an ASL interpreter for August 15 and 16."
   );
 }
+
+// The virtual attendee's counterpart to the conference guide: their Zoom
+// room for each registered day, sign-in expectations, the exhibitor lounge,
+// the CEU rules, and chat etiquette. The trimmed program PDF rides along as
+// an attachment; the links live permanently in their attendee portal too.
+import type { ZoomDay } from "./virtual-event";
+
+export function virtualAttendeeInfoEmail({
+  firstName,
+  days,
+  portalUrl,
+  exhibitorsUrl,
+  scheduleUrl,
+  assetBase,
+}: {
+  firstName: string;
+  /** The Zoom day(s) this attendee's ticket covers, from zoomDaysFor(). */
+  days: ZoomDay[];
+  portalUrl: string;
+  exhibitorsUrl: string;
+  scheduleUrl: string;
+  assetBase: string;
+}) {
+  const first = (firstName || "").trim() || null;
+  const oneDay = days.length === 1 ? days[0] : null;
+
+  const dayCard = (d: ZoomDay) => `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:12px 0;border-radius:14px;background:#0E4456;background:linear-gradient(160deg,#0E4456 0%,#0C3B4B 100%);">
+      <tr><td style="padding:22px 24px;">
+        <div style="font-size:11px;letter-spacing:0.16em;font-weight:800;color:${GOLD};text-transform:uppercase;">Day ${d.dayNumber} &middot; ${d.label}</div>
+        <div style="font-size:14px;color:#D8E8ED;margin-top:9px;line-height:1.65;">
+          Zoom opens at <strong style="color:#ffffff;">${d.opensCT}</strong> &middot; please be signed in by <strong style="color:#ffffff;">${d.signInByCT}</strong>
+        </div>
+        <table role="presentation" cellpadding="0" cellspacing="0" style="margin:15px 0 11px 0;"><tr><td style="border-radius:10px;background:${GOLD};">
+          <a href="${d.url}" style="display:inline-block;padding:13px 26px;color:#0C3B4B;text-decoration:none;font-weight:800;font-size:15px;border-radius:10px;">Join ${d.shortLabel} on Zoom</a>
+        </td></tr></table>
+        <div style="font-size:12.5px;color:#9FBFC9;line-height:1.6;">
+          Meeting ID: ${d.meetingId}<br/>
+          <a href="${d.url}" style="color:#D8E8ED;text-decoration:underline;word-break:break-all;">${d.url}</a>
+        </div>
+      </td></tr>
+    </table>`;
+
+  const rule = (n: number, title: string, body: string) => `
+    <tr>
+      <td style="vertical-align:top;padding:9px 12px 9px 0;width:30px;">
+        <div style="width:26px;height:26px;border-radius:50%;background:${TEAL};color:#ffffff;font-size:13px;font-weight:800;text-align:center;line-height:26px;">${n}</div>
+      </td>
+      <td style="vertical-align:top;padding:9px 0;border-bottom:1px solid #eef1f4;">
+        <div style="font-size:14px;font-weight:700;color:${TEXT};">${title}</div>
+        <div style="font-size:13.5px;line-height:1.65;color:${MUTED};margin-top:2px;">${body}</div>
+      </td>
+    </tr>`;
+
+  return shell(
+    `
+    <h1 style="font-size:23px;font-weight:800;margin:0 0 12px 0;letter-spacing:-0.01em;">${addressed("Welcome", first)}</h1>
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
+      We are excited to welcome you to the <strong>2nd Joint Conference</strong> of Lurie Children&rsquo;s
+      and AALB: <em>True Language Access: Yesterday, Today, and Tomorrow</em>, this
+      <strong>Saturday, August 15 and Sunday, August 16</strong>. You are joining us online, and
+      everything you need for a smooth, engaging conference is below.
+    </p>
+    <div style="background:#F4E9CD;border-radius:10px;padding:10px 16px;margin:18px 0;text-align:center;font-size:13px;font-weight:700;color:#6b5314;">
+      All times in this email are US Central Time (Chicago)
+    </div>
+
+    ${sectionHeading(oneDay ? "Your Zoom link" : "Your Zoom links")}
+    ${oneDay ? `<p style="font-size:14px;line-height:1.7;color:${MUTED};margin:0 0 4px 0;">Your ticket covers ${oneDay.label}.</p>` : ""}
+    ${days.map(dayCard).join("")}
+    <p style="font-size:13.5px;line-height:1.7;color:${MUTED};margin:10px 0 0 0;">
+      Signing in early keeps our register clear for Continuing Education Unit tracking and avoids
+      delays. These links are also saved in your attendee portal, so you can always find them again:
+    </p>
+    ${button(portalUrl, "Open my attendee portal")}
+
+    ${sectionHeading("The program")}
+    <p style="font-size:14.5px;line-height:1.7;color:${TEXT};margin:0;">
+      The complete schedule and session breakdown is <strong>attached to this email as a PDF</strong>,
+      and the full program with speakers is always on the
+      <a href="${scheduleUrl}" style="color:${TEAL};font-weight:600;">conference site</a>.
+    </p>
+
+    ${sectionHeading("Virtual morning lounge and coffee with exhibitors")}
+    <p style="font-size:14.5px;line-height:1.7;color:${TEXT};margin:0 0 10px 0;">
+      Join the Zoom early to meet fellow attendees, and drop into our virtual sponsor spaces during
+      designated times. Meet our valued exhibitors, learn about their work, and see how they
+      actively support language access. Exhibitors will be available:
+    </p>
+    ${bulletList([
+      "During morning sign-in hours",
+      "During scheduled program breaks",
+    ])}
+    <p style="font-size:14px;line-height:1.7;color:${MUTED};margin:10px 0 0 0;">
+      Meet them ahead of time on the
+      <a href="${exhibitorsUrl}" style="color:${TEAL};font-weight:600;">sponsors and exhibitors page</a>.
+    </p>
+
+    ${sectionHeading("Earning your CEUs (up to 12.5 hours)")}
+    <p style="font-size:14.5px;line-height:1.7;color:${TEXT};margin:0 0 6px 0;">
+      Virtual and in-person attendees alike can earn approximately 12.5 hours of CEUs, approved or
+      pending with CCHI, NBCMI, RID, and other credentialing bodies. To receive credit for the
+      sessions you attend, please follow these three rules carefully:
+    </p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:6px 0 2px 0;">
+      ${rule(1, "Camera on, actively present", "Be present with your camera turned on for at least 90% of each presentation&rsquo;s duration.")}
+      ${rule(2, "Submit the attendance form within 15 minutes", "At the end of each presentation, a unique link to the attendance form is shared in the Zoom chat. Forms close automatically 15 minutes after the session ends, and late submissions cannot be accepted.")}
+      ${rule(3, "Records are verified", "Form submissions are cross-referenced with the automated Zoom logs (time spent in the call, camera status). If the records do not match, CEUs for that session may be withheld.")}
+    </table>
+
+    ${sectionHeading("Engagement and Zoom chat etiquette")}
+    ${bulletList([
+      "We have designed virtual engagement activities to keep everyone connected. Stay tuned during networking times and lunch breaks to take part.",
+      "To minimize distractions for speakers, the Zoom chat is disabled during formal presentations and opens during designated Q&amp;A portions.",
+      "You are encouraged to chat and connect freely with colleagues during the dedicated networking breaks.",
+    ])}
+
+    ${sectionHeading("Need assistance?")}
+    <p style="font-size:14.5px;line-height:1.7;color:${TEXT};margin:0;">
+      For urgent requests, technical difficulties, or questions during the event, contact our
+      support team at
+      <a href="mailto:contact@aalb.org" style="color:${TEAL};font-weight:600;">contact@aalb.org</a>.
+    </p>
+
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:22px 0 0 0;">
+      We look forward to seeing you online for an inspiring conference!
+    </p>
+    <p style="font-size:14.5px;line-height:1.7;color:${TEXT};margin:18px 0 0 0;">Warmly,</p>
+    <p style="font-size:14.5px;line-height:1.6;color:${TEXT};margin:6px 0 0 0;">
+      <strong>The 2026 Conference Planning Committee</strong><br/>
+      <span style="color:${MUTED};">Lurie Children&rsquo;s Hospital of Chicago &amp; Americans Against Language Barriers (AALB)</span>
+    </p>
+    ${logoLockup(assetBase)}
+  `,
+    oneDay
+      ? `Your Zoom link for ${oneDay.label}, sign-in times, and CEU rules.`
+      : "Your Zoom links for both days, sign-in times, and CEU rules.",
+    "You are receiving this because you are registered as a virtual attendee of the 2026 Lurie Children&rsquo;s and AALB Conference."
+  );
+}
