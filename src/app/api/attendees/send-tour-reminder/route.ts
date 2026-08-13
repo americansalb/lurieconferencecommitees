@@ -30,6 +30,33 @@ function norm(s: string): string {
     .trim();
 }
 
+// Words of a name with punctuation and hyphens dissolved, so
+// "Tatiana Gonz\u00e1lez-Cestari" becomes ["tatiana","gonzalez","cestari"].
+function tokens(s: string): string[] {
+  return norm(s)
+    .replace(/[^a-z0-9 ]+/g, " ")
+    .split(" ")
+    .filter(Boolean);
+}
+
+// Whether a pasted line names this attendee. Beyond plain containment, a
+// token-subset check lets middle initials, honorifics ("Patricia A Alonzo,
+// EdD." vs "Patricia Alonzo") and hyphenated double surnames ("Tatiana
+// Cestari" vs "Tatiana Gonz\u00e1lez-Cestari") still match, requiring at least
+// two real words in common so single names never fuzzy-match half a room.
+function nameMatches(query: string, fullName: string): boolean {
+  const qt = tokens(query);
+  const ft = tokens(fullName);
+  if (!qt.length || !ft.length) return false;
+  const qs = qt.join(" ");
+  const fs = ft.join(" ");
+  if (qs === fs || fs.includes(qs) || qs.includes(fs)) return true;
+  const smaller = qt.length <= ft.length ? qt : ft;
+  const biggerSet = new Set(qt.length <= ft.length ? ft : qt);
+  const meaningful = smaller.filter((t) => t.length > 1);
+  return meaningful.length >= 2 && meaningful.every((t) => biggerSet.has(t));
+}
+
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -81,10 +108,7 @@ export async function POST(req: Request) {
       if (line.includes("@")) {
         found = candidates.filter((c) => norm(c.email) === q);
       } else {
-        found = candidates.filter((c) => {
-          const full = norm(`${c.firstName} ${c.lastName}`);
-          return full === q || full.includes(q) || q.includes(full);
-        });
+        found = candidates.filter((c) => nameMatches(line, `${c.firstName} ${c.lastName}`));
       }
       if (found.length === 1) {
         const c = found[0];

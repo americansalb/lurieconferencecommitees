@@ -83,9 +83,11 @@ export default function AttendeesPage() {
   const [tourDay, setTourDay] = useState<"sat" | "sun">("sat");
   // Pre-loaded with the form responses as of August 13 (Iris excluded as a
   // test entry). Editable, so new RSVPs can be added right in the box.
+  // America Moreno's form row RSVP'd BOTH mornings; she is loaded under
+  // Saturday, so add her to the Sunday box too if she should get both.
   const [tourLists, setTourLists] = useState<Record<"sat" | "sun", string>>({
-    sat: "Marisa Rueda Will\nColleen Holbrook\nDiana Díaz\nHayerah Jalil",
-    sun: "Hathar Saleh\nGerardo Calderon",
+    sat: "Aída Sánchez\nTatiana Cestari\nLuke Karana\nSarah Stockler-Rex\nWilma Alvarado-Little\nPatricia A Alonzo\nJane Kontrimas\nYuliya Speroff\nDanilo Formolo\nAmerica Moreno\nMichael Mule",
+    sun: "Marisa Rueda Will\nColleen Holbrook\nDiana Díaz\nHathar Saleh\nGerardo Calderon\nHayerah Jalil",
   });
   const [tourPreview, setTourPreview] = useState<{
     day: "sat" | "sun";
