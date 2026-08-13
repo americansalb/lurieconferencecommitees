@@ -4622,11 +4622,12 @@ export function aslInterpreterConfirmedEmail({
 // room for each registered day, sign-in expectations, the exhibitor lounge,
 // the CEU rules, and chat etiquette. The trimmed program PDF rides along as
 // an attachment; the links live permanently in their attendee portal too.
-import type { ZoomDay } from "./virtual-event";
+import { usZoneLine, type ZoomDay } from "./virtual-event";
 
 export function virtualAttendeeInfoEmail({
   firstName,
   days,
+  zoomHrefBase,
   portalUrl,
   exhibitorsUrl,
   scheduleUrl,
@@ -4635,6 +4636,12 @@ export function virtualAttendeeInfoEmail({
   firstName: string;
   /** The Zoom day(s) this attendee's ticket covers, from zoomDaysFor(). */
   days: ZoomDay[];
+  /**
+   * This attendee's personal redirect base, `<site>/z/<inviteToken>`. Every
+   * Zoom href in the email is `<base>/<day>` so clicks are recorded against
+   * this attendee before the redirect; the raw Zoom URL never appears.
+   */
+  zoomHrefBase: string;
   portalUrl: string;
   exhibitorsUrl: string;
   scheduleUrl: string;
@@ -4648,14 +4655,17 @@ export function virtualAttendeeInfoEmail({
       <tr><td style="padding:22px 24px;">
         <div style="font-size:11px;letter-spacing:0.16em;font-weight:800;color:${GOLD};text-transform:uppercase;">Day ${d.dayNumber} &middot; ${d.label}</div>
         <div style="font-size:14px;color:#D8E8ED;margin-top:9px;line-height:1.65;">
-          Zoom opens at <strong style="color:#ffffff;">${d.opensCT}</strong> &middot; please be signed in by <strong style="color:#ffffff;">${d.signInByCT}</strong>
+          Zoom opens at <strong style="color:#ffffff;">${d.opensCT} CT</strong> &middot; please be signed in by <strong style="color:#ffffff;">${d.signInByCT} CT</strong>
+        </div>
+        <div style="font-size:12px;color:#9FBFC9;margin-top:5px;">
+          Opens ${usZoneLine(d.opensMs)}
         </div>
         <table role="presentation" cellpadding="0" cellspacing="0" style="margin:15px 0 11px 0;"><tr><td style="border-radius:10px;background:${GOLD};">
-          <a href="${d.url}" style="display:inline-block;padding:13px 26px;color:#0C3B4B;text-decoration:none;font-weight:800;font-size:15px;border-radius:10px;">Join ${d.shortLabel} on Zoom</a>
+          <a href="${zoomHrefBase}/${d.key}" style="display:inline-block;padding:13px 26px;color:#0C3B4B;text-decoration:none;font-weight:800;font-size:15px;border-radius:10px;">Join ${d.shortLabel} on Zoom</a>
         </td></tr></table>
         <div style="font-size:12.5px;color:#9FBFC9;line-height:1.6;">
           Meeting ID: ${d.meetingId}<br/>
-          <a href="${d.url}" style="color:#D8E8ED;text-decoration:underline;word-break:break-all;">${d.url}</a>
+          Your personal link: <a href="${zoomHrefBase}/${d.key}" style="color:#D8E8ED;text-decoration:underline;word-break:break-all;">${zoomHrefBase}/${d.key}</a>
         </div>
       </td></tr>
     </table>`;

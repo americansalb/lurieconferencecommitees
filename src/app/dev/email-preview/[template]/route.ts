@@ -151,6 +151,7 @@ export async function GET(
       html = virtualAttendeeInfoEmail({
         firstName: "Miriam",
         days: zoomDaysFor(null),
+        zoomHrefBase: `${base}/z/demo-token`,
         portalUrl: `${base}/attend/demo-token`,
         exhibitorsUrl: `${base}/#sponsors`,
         scheduleUrl: `${base}/#program`,
@@ -161,6 +162,7 @@ export async function GET(
       html = virtualAttendeeInfoEmail({
         firstName: "Miriam",
         days: zoomDaysFor("sat"),
+        zoomHrefBase: `${base}/z/demo-token`,
         portalUrl: `${base}/attend/demo-token`,
         exhibitorsUrl: `${base}/#sponsors`,
         scheduleUrl: `${base}/#program`,

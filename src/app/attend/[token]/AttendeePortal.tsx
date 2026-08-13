@@ -4,6 +4,7 @@ import {
   E, Parchment, TicketCard, GoldRule, Eyebrow, Perforation, FactCell, TicketFooter, HostsLockup, Seal,
 } from "@/components/attend/engraved";
 import { zoomDaysFor } from "@/lib/virtual-event";
+import LocalTimeHint from "./LocalTimeHint";
 import PortalDetailsForm from "./PortalDetailsForm";
 
 // The returning home for a paid attendee, set in the same engraved gold-foil
@@ -130,11 +131,17 @@ export default function AttendeePortal({
                     Day {d.dayNumber} &middot; {d.label}
                   </div>
                   <p className="mt-1.5 text-[12.5px]" style={{ color: E.soft }}>
-                    Zoom opens at <strong style={{ color: E.ink }}>{d.opensCT}</strong> &middot; be
-                    signed in by <strong style={{ color: E.ink }}>{d.signInByCT}</strong>
+                    Zoom opens at <strong style={{ color: E.ink }}>{d.opensCT} CT</strong> &middot;
+                    be signed in by <strong style={{ color: E.ink }}>{d.signInByCT} CT</strong>
                   </p>
+                  <LocalTimeHint
+                    opensMs={d.opensMs}
+                    signInByMs={d.signInByMs}
+                    className="mt-1 text-[11.5px] font-bold"
+                    style={{ color: E.teal }}
+                  />
                   <a
-                    href={d.url}
+                    href={`/z/${token}/${d.key}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="mt-3 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white"

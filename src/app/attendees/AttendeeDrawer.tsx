@@ -55,7 +55,30 @@ const EVENT_LABELS: Record<string, string> = {
   sponsor_comp_seat: "Given an included ticket by a sponsor",
   sponsor_team_added: "Added to a sponsor's team",
   sponsor_team_linked: "Linked to a sponsor's team",
+  virtual_info_sent: "Zoom links emailed",
+  virtual_info_send_failed: "Zoom links email failed to send",
+  zoom_click: "Clicked their Zoom link",
 };
+
+// The forensic detail on a zoom_click: which room, whether their ticket
+// covered it, and where the click came from. If a personal link leaks, the
+// stranger clicks show up here under the attendee the link was issued to.
+function zoomClickDetail(meta: string | null): string | null {
+  if (!meta) return null;
+  try {
+    const m = JSON.parse(meta) as { day?: string; allowed?: boolean; ip?: string | null; ua?: string | null };
+    return [
+      m.day === "sun" ? "Sunday room" : m.day === "sat" ? "Saturday room" : m.day || null,
+      m.allowed === false ? "BLOCKED: ticket does not cover this" : null,
+      m.ip || null,
+      m.ua ? m.ua.slice(0, 70) : null,
+    ]
+      .filter(Boolean)
+      .join(" · ");
+  } catch {
+    return meta;
+  }
+}
 
 export default function AttendeeDrawer({
   attendeeId, isAdmin, onClose, onChanged, onCompose,
@@ -275,6 +298,9 @@ export default function AttendeeDrawer({
                       <div className="w-1.5 h-1.5 rounded-full bg-slate-300 mt-1.5 shrink-0" />
                       <div className="min-w-0">
                         <div className="text-[13px] text-slate-700">{EVENT_LABELS[e.type] || e.type}</div>
+                        {e.type === "zoom_click" && zoomClickDetail(e.meta) && (
+                          <div className="text-[11px] text-slate-500 break-all">{zoomClickDetail(e.meta)}</div>
+                        )}
                         <div className="text-[11px] text-slate-400">{new Date(e.createdAt).toLocaleString()}</div>
                       </div>
                     </li>

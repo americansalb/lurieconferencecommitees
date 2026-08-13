@@ -72,6 +72,7 @@ export async function POST(req: Request) {
         html: virtualAttendeeInfoEmail({
           firstName: a.firstName,
           days,
+          zoomHrefBase: `${appUrl()}/z/${a.inviteToken}`,
           portalUrl: `${appUrl()}/attend/${a.inviteToken}`,
           exhibitorsUrl: `${appUrl()}/#sponsors`,
           scheduleUrl: `${appUrl()}/#program`,
