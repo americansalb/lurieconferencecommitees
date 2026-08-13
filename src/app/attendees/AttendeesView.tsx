@@ -85,7 +85,7 @@ function shortDate(iso: string | null): string {
 }
 
 export default function AttendeesView({
-  attendees, onOpenDetail, onCompose, onSendPortal, onQueueInvites, onSendInvitesNow, onNudge, onSendGuide, onSendChicago, onOpenSheet,
+  attendees, onOpenDetail, onCompose, onSendPortal, onQueueInvites, onSendInvitesNow, onNudge, onSendGuide, onSendChicago, onSendVirtualInfo, onOpenSheet,
 }: {
   attendees: Attendee[];
   onOpenDetail: (id: string) => void;
@@ -95,6 +95,7 @@ export default function AttendeesView({
   onSendInvitesNow: (ids: string[]) => void;
   onNudge: (ids: string[]) => void;
   onSendGuide: (ids: string[]) => void;
+  onSendVirtualInfo: (ids: string[]) => void;
   onSendChicago: (ids: string[]) => void;
   onOpenSheet: () => void;
 }) {
@@ -283,6 +284,12 @@ export default function AttendeesView({
   const inPersonById = new Map(attendees.map((a) => [a.id, a.attendanceMode !== "virtual"]));
   const chicagoSelected = selectedIds.reduce(
     (n, id) => n + (paidById.get(id) && inPersonById.get(id) ? 1 : 0),
+    0,
+  );
+  // The virtual info email carries the Zoom links, so only the paid virtual
+  // people in the selection can receive it.
+  const virtualInfoSelected = selectedIds.reduce(
+    (n, id) => n + (paidById.get(id) && inPersonById.get(id) === false ? 1 : 0),
     0,
   );
 
@@ -497,6 +504,11 @@ export default function AttendeesView({
             {chicagoSelected > 0 && (
               <button onClick={() => onSendChicago(selectedIds)} className="text-xs font-bold px-3 py-1.5 rounded-lg text-white inline-flex items-center gap-1.5" style={{ background: "#0066B3" }} title="Email the Welcome to Chicago letter to the paid in-person people in your selection, right now: the hospital, the city guide as an attachment, and the sign-up form for the tour and the Saturday social. Virtual attendees in the selection are skipped.">
                 <MapPin className="w-3.5 h-3.5" /> Send Chicago ({chicagoSelected.toLocaleString()})
+              </button>
+            )}
+            {virtualInfoSelected > 0 && (
+              <button onClick={() => onSendVirtualInfo(selectedIds)} className="text-xs font-bold px-3 py-1.5 rounded-lg text-white inline-flex items-center gap-1.5" style={{ background: "#7C3AED" }} title="Email the virtual attendee info to the paid virtual people in your selection, right now: their Zoom room for each day their ticket covers, sign-in times, CEU rules, and the program PDF attached. In-person attendees in the selection are skipped.">
+                <Monitor className="w-3.5 h-3.5" /> Send Zoom links ({virtualInfoSelected.toLocaleString()})
               </button>
             )}
             <button onClick={() => onCompose(selectedIds)} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 inline-flex items-center gap-1.5" title="Write and send a one-off message now (capped at 100 for deliverability)"><Mail className="w-3.5 h-3.5" /> Email them</button>

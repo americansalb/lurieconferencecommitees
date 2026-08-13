@@ -36,10 +36,11 @@ export type ProgramDay = {
 
 export const PROGRAM_NOTE = "All times CDT · Lurie Children’s, Chicago + Virtual";
 
-// What we advertise across the site: 12.5 hours, rounded DOWN from the 12h55m
-// actually scheduled. The 25-minute cushion absorbs a session that starts late
-// or runs short without turning the promise into an overstatement.
-export const CEU_TOTAL_LABEL = "12.5 hours";
+// What we advertise across the site. Deliberately loose ("more than 10")
+// rather than the 12h55m actually scheduled, so overruns, shortened sessions
+// and per-body accreditation differences can never turn it into an
+// overstatement. Matches the FAQ and the outreach emails, which say 10+.
+export const CEU_TOTAL_LABEL = "More than 10 hours";
 export const CEU_PENDING_NOTE =
   "CEU hours shown are per session and are pending accreditation by NBCMI, CCHI and RID. CEUs are earned by attending live.";
 

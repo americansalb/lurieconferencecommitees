@@ -1645,6 +1645,12 @@ export default function AttendeesPage() {
                   confirmLabel: "Send Welcome to Chicago",
                   onConfirm: () => { setConfirmDialog(null); void sendChicagoGuides("all", ids); },
                 })}
+                onSendVirtualInfo={(ids) => setConfirmDialog({
+                  title: `Send the Zoom links to ${ids.length} selected ${ids.length === 1 ? "person" : "people"}?`,
+                  message: "The paid virtual people in your selection get the virtual info email immediately: their Zoom room for each day their ticket covers, sign-in times, CEU rules, and the program PDF attached. In-person attendees and anyone who has not paid are skipped, and re-sending is fine.",
+                  confirmLabel: "Send Zoom links",
+                  onConfirm: () => { setConfirmDialog(null); void sendVirtualInfo("all", ids); },
+                })}
                 onOpenSheet={() => setShowSheet(true)}
                 onNudge={(ids) => setConfirmDialog({
                   title: `Send the reminder to this selection right now?`,
