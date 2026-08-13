@@ -20,6 +20,7 @@ import {
   plainStandardInviteEmail,
   plainCommunityInviteEmail,
   virtualAttendeeInfoEmail,
+  tourReminderEmail,
 } from "@/lib/mail-templates";
 import { zoomDaysFor } from "@/lib/virtual-event";
 import { fullBenefits } from "@/lib/sponsors";
@@ -146,6 +147,12 @@ export async function GET(
         portalUrl: `${base}/sponsor/status/demo-token`,
         ticketsIncluded: 2, assetBase: base,
       });
+      break;
+    case "tour-sat":
+      html = tourReminderEmail({ firstName: "Marisa", day: "sat", assetBase: base });
+      break;
+    case "tour-sun":
+      html = tourReminderEmail({ firstName: "Hathar", day: "sun", assetBase: base });
       break;
     case "virtual-info":
       html = virtualAttendeeInfoEmail({

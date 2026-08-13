@@ -4768,3 +4768,98 @@ export function virtualAttendeeInfoEmail({
     "You are receiving this because you are registered as a virtual attendee of the 2026 Lurie Children&rsquo;s and AALB Conference."
   );
 }
+
+// Reminder for people who RSVP'd for the optional hospital tour, one variant
+// per morning. Faithful to the day-of plan: Saturday's 8:30 tour meets
+// Joanna, Sunday's 8:00 tour meets TJ, both register on the 2nd floor first,
+// meet on the 1st floor under the ceiling whales, and are escorted to the
+// 11th floor afterward for their conference badge.
+const TOUR_DAYS = {
+  sat: {
+    label: "Saturday, August 15",
+    shortLabel: "Saturday",
+    tourTime: "8:30 AM",
+    arriveBy: "8:20 AM",
+    guide: "Joanna",
+  },
+  sun: {
+    label: "Sunday, August 16",
+    shortLabel: "Sunday",
+    tourTime: "8:00 AM",
+    arriveBy: "7:50 AM",
+    guide: "TJ",
+  },
+} as const;
+
+export type TourDayKey = keyof typeof TOUR_DAYS;
+
+export function tourReminderSubject(firstName: string, day: TourDayKey): string {
+  const d = TOUR_DAYS[day];
+  const first = (firstName || "").trim();
+  return `${first ? `${first}, your` : "Your"} hospital tour ${d.shortLabel} morning: arrive by ${d.arriveBy}`;
+}
+
+export function tourReminderEmail({
+  firstName,
+  day,
+  assetBase,
+}: {
+  firstName: string;
+  day: TourDayKey;
+  assetBase: string;
+}) {
+  const d = TOUR_DAYS[day];
+  const first = (firstName || "").trim() || null;
+
+  const step = (n: number, title: string, body: string) => `
+    <tr>
+      <td style="vertical-align:top;padding:9px 12px 9px 0;width:30px;">
+        <div style="width:26px;height:26px;border-radius:50%;background:${TEAL};color:#ffffff;font-size:13px;font-weight:800;text-align:center;line-height:26px;">${n}</div>
+      </td>
+      <td style="vertical-align:top;padding:9px 0;border-bottom:1px solid #eef1f4;">
+        <div style="font-size:14.5px;font-weight:700;color:${TEXT};">${title}</div>
+        <div style="font-size:13.5px;line-height:1.65;color:${MUTED};margin-top:2px;">${body}</div>
+      </td>
+    </tr>`;
+
+  return shell(
+    `
+    <h1 style="font-size:23px;font-weight:800;margin:0 0 12px 0;letter-spacing:-0.01em;">${addressed("See you " + d.shortLabel + " morning", first)}</h1>
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
+      A quick reminder about the optional hospital tour you signed up for at the
+      2026 Lurie Children&rsquo;s and AALB Conference. Your tour is
+      <strong>${d.label} at ${d.tourTime}</strong>, and here is exactly where to go.
+    </p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:14px 0;border-radius:14px;background:#0E4456;background:linear-gradient(160deg,#0E4456 0%,#0C3B4B 100%);">
+      <tr><td style="padding:20px 24px;">
+        <div style="font-size:11px;letter-spacing:0.16em;font-weight:800;color:${GOLD};text-transform:uppercase;">Hospital tour &middot; ${d.label}</div>
+        <div style="font-size:15px;color:#ffffff;margin-top:9px;line-height:1.65;">
+          Please arrive by <strong>${d.arriveBy}</strong>, ten minutes before the ${d.tourTime} tour.
+        </div>
+        <div style="font-size:12.5px;color:#9FBFC9;margin-top:5px;">
+          Ann &amp; Robert H. Lurie Children&rsquo;s Hospital of Chicago &middot; 225 E Chicago Ave
+        </div>
+      </td></tr>
+    </table>
+    ${sectionHeading("Where to go")}
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:6px 0 2px 0;">
+      ${step(1, "Register on the 2nd floor", "Check in at registration first.")}
+      ${step(2, `Meet ${d.guide} on the 1st floor`, `Come down to the 1st floor, near the escalator and Potbelly&rsquo;s, under the ceiling whales. ${d.guide} will meet you there and lead the tour.`)}
+      ${step(3, "Pick up your badge on the 11th floor", "After the tour you will be escorted to the 11th floor to pick up your conference badge directly at our welcome table.")}
+    </table>
+    <p style="font-size:14.5px;line-height:1.7;color:${TEXT};margin:18px 0 0 0;">
+      Questions on the morning of? Write to
+      <a href="mailto:contact@aalb.org" style="color:${TEAL};font-weight:600;">contact@aalb.org</a>.
+      We are glad you are coming early; the whales are worth it.
+    </p>
+    <p style="font-size:14.5px;line-height:1.7;color:${TEXT};margin:18px 0 0 0;">Warmly,</p>
+    <p style="font-size:14.5px;line-height:1.6;color:${TEXT};margin:6px 0 0 0;">
+      <strong>The 2026 Conference Planning Committee</strong><br/>
+      <span style="color:${MUTED};">Lurie Children&rsquo;s Hospital of Chicago &amp; Americans Against Language Barriers (AALB)</span>
+    </p>
+    ${logoLockup(assetBase)}
+  `,
+    `Arrive by ${d.arriveBy}. Register on the 2nd floor, then meet ${d.guide} under the whales on the 1st floor.`,
+    "You are receiving this because you signed up for the optional hospital tour at the 2026 Lurie Children&rsquo;s and AALB Conference."
+  );
+}

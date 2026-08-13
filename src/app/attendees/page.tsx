@@ -79,6 +79,9 @@ export default function AttendeesPage() {
   const [guides, setGuides] = useState<{ sending: boolean; note: string | null }>({ sending: false, note: null });
   const [chicago, setChicago] = useState<{ sending: boolean; note: string | null }>({ sending: false, note: null });
   const [virtualInfo, setVirtualInfo] = useState<{ sending: boolean; note: string | null }>({ sending: false, note: null });
+  const [tour, setTour] = useState<{ sending: boolean; note: string | null }>({ sending: false, note: null });
+  const [tourDay, setTourDay] = useState<"sat" | "sun">("sat");
+  const [tourList, setTourList] = useState("");
   // One-click AALB student roster load (draft only, nothing sent).
   const [rosterLoading, setRosterLoading] = useState(false);
   const [rosterNote, setRosterNote] = useState<string | null>(null);
@@ -771,6 +774,67 @@ export default function AttendeesPage() {
     setTimeout(() => setVirtualInfo((v) => ({ ...v, note: null })), 9000);
   }
 
+  // Tour RSVPs live in the Google Form, so the flow is paste -> match ->
+  // human confirms the exact recipients -> send. Matching happens
+  // server-side, accent- and case-insensitive.
+  async function sendTourReminder() {
+    const lines = tourList.split("\n").map((l) => l.trim()).filter(Boolean);
+    if (!lines.length) {
+      setTour({ sending: false, note: "Paste at least one name or email first." });
+      return;
+    }
+    setTour({ sending: true, note: null });
+    try {
+      const res = await fetch("/api/attendees/send-tour-reminder", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ day: tourDay, dryRun: true, list: lines }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setTour({ sending: false, note: json.error || "Could not match the list." });
+        return;
+      }
+      const matches = (json.matches || []) as { id: string; name: string; email: string; note: string | null }[];
+      const problems: string[] = [];
+      if (json.unmatched?.length) problems.push(`No attendee found for: ${json.unmatched.join(", ")}.`);
+      if (json.ambiguous?.length)
+        problems.push(`More than one match (paste their email instead): ${json.ambiguous.map((x: { query: string }) => x.query).join(", ")}.`);
+      if (!matches.length) {
+        setTour({ sending: false, note: problems.join(" ") || "Nobody in that list matched an attendee." });
+        return;
+      }
+      setTour({ sending: false, note: null });
+      const dayLabel = tourDay === "sat" ? "Saturday 8:30 AM" : "Sunday 8:00 AM";
+      setConfirmDialog({
+        title: `Send the ${dayLabel} tour reminder to ${matches.length} ${matches.length === 1 ? "person" : "people"}?`,
+        message: `Going to: ${matches.map((m) => `${m.name} (${m.email}${m.note ? `, ${m.note}` : ""})`).join("; ")}.${problems.length ? ` NOT included: ${problems.join(" ")}` : ""}`,
+        confirmLabel: "Send tour reminder",
+        onConfirm: async () => {
+          setConfirmDialog(null);
+          setTour({ sending: true, note: null });
+          try {
+            const res2 = await fetch("/api/attendees/send-tour-reminder", {
+              method: "POST", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ day: tourDay, ids: matches.map((m) => m.id) }),
+            });
+            const j2 = await res2.json().catch(() => ({}));
+            setTour({
+              sending: false,
+              note: res2.ok
+                ? `Sent ${j2.sent} reminder${j2.sent === 1 ? "" : "s"} to: ${(j2.recipients || []).join(", ")}${j2.skipped?.length ? ` · skipped (unsubscribed): ${j2.skipped.join(", ")}` : ""}${j2.failed ? ` · ${j2.failed} failed` : ""}.`
+                : (j2.error || "Could not send the reminders."),
+            });
+            await load();
+          } catch {
+            setTour({ sending: false, note: "Network error while sending." });
+          }
+        },
+      });
+    } catch {
+      setTour({ sending: false, note: "Network error while matching." });
+    }
+  }
+
   // No ids -> every never-reminded person in the started-not-paid bucket,
   // paced through the queue. With ids (the list's bulk bar) -> the selection
   // is sent IMMEDIATELY (up to 100 per click), already-reminded included;
@@ -1349,6 +1413,55 @@ export default function AttendeesPage() {
                       </div>
                     </div>
                     {virtualInfo.note && <div className="mt-2 text-xs font-semibold text-purple-700">{virtualInfo.note}</div>}
+
+                    {/* Tour reminder: RSVPs live in the Google Form, so the
+                        list is pasted here and matched to attendees by name
+                        or email, with a confirm step naming every recipient. */}
+                    <div className="mt-4 pt-4 border-t border-slate-200">
+                      <div className="text-sm font-bold text-slate-900">Hospital tour reminder</div>
+                      <p className="text-xs text-slate-500 mt-1 max-w-xl leading-relaxed">
+                        For people who RSVP&rsquo;d for the optional tour. Paste one name or email per
+                        line from the form responses, pick the morning, and you will confirm the
+                        exact matched recipients before anything sends. Saturday arrives by 8:20 AM
+                        and meets Joanna; Sunday arrives by 7:50 AM and meets TJ; both register on
+                        the 2nd floor first and meet on the 1st floor under the whales.
+                      </p>
+                      <div className="mt-2 flex flex-wrap items-start gap-2">
+                        <textarea
+                          value={tourList}
+                          onChange={(e) => setTourList(e.target.value)}
+                          rows={3}
+                          placeholder={"Marisa Rueda Will\nColleen Holbrook"}
+                          className="flex-1 min-w-[240px] text-sm border border-slate-200 rounded-lg px-3 py-2 outline-none focus:border-teal-500"
+                        />
+                        <div className="flex flex-col gap-2">
+                          <div className="flex rounded-lg border border-slate-200 overflow-hidden text-xs font-bold">
+                            <button
+                              onClick={() => setTourDay("sat")}
+                              className={`px-3 py-1.5 ${tourDay === "sat" ? "bg-slate-900 text-white" : "bg-white text-slate-600"}`}
+                            >
+                              Saturday 8:30
+                            </button>
+                            <button
+                              onClick={() => setTourDay("sun")}
+                              className={`px-3 py-1.5 ${tourDay === "sun" ? "bg-slate-900 text-white" : "bg-white text-slate-600"}`}
+                            >
+                              Sunday 8:00
+                            </button>
+                          </div>
+                          <button
+                            onClick={() => void sendTourReminder()}
+                            disabled={tour.sending}
+                            className="px-4 py-2 rounded-lg text-sm font-bold text-white shadow-sm inline-flex items-center gap-1.5 disabled:opacity-50"
+                            style={{ background: "#0E5566" }}
+                          >
+                            {tour.sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
+                            Match and send
+                          </button>
+                        </div>
+                      </div>
+                      {tour.note && <div className="mt-2 text-xs font-semibold text-teal-700">{tour.note}</div>}
+                    </div>
                   </div>
                 )}
 

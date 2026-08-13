@@ -58,6 +58,7 @@ const EVENT_LABELS: Record<string, string> = {
   virtual_info_sent: "Zoom links emailed",
   virtual_info_send_failed: "Zoom links email failed to send",
   zoom_click: "Clicked their Zoom link",
+  tour_reminder_sent: "Hospital tour reminder emailed",
 };
 
 // The forensic detail on a zoom_click: which room, whether their ticket
