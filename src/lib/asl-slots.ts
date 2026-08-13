@@ -116,3 +116,33 @@ export function slotChicagoLabel(slot: AslSlot): string {
   const day = ASL_DAYS.find((d) => d.key === slot.dayKey);
   return `${day ? day.label : slot.dayKey} · ${slotTimeLabel(slot, CONFERENCE_TZ)} to ${slotTimeLabel(slot, CONFERENCE_TZ, true)} CT`;
 }
+
+/**
+ * The selected hours of each day merged into human ranges ("9:00 AM to
+ * 12:00 PM, 2:00 PM to 5:00 PM"), rendered in the given timezone. Days with
+ * nothing selected are omitted.
+ */
+export function availabilityRanges(
+  slotIds: Set<string>,
+  timeZone: string
+): { day: AslDay; hours: number; text: string }[] {
+  const out: { day: AslDay; hours: number; text: string }[] = [];
+  for (const day of ASL_DAYS) {
+    const daySlots = slotsForDay(day).filter((s) => slotIds.has(s.id));
+    if (!daySlots.length) continue;
+    const ranges: { from: AslSlot; to: AslSlot }[] = [];
+    for (const slot of daySlots) {
+      const last = ranges[ranges.length - 1];
+      if (last && slot.hourCT === last.to.hourCT + 1) last.to = slot;
+      else ranges.push({ from: slot, to: slot });
+    }
+    out.push({
+      day,
+      hours: daySlots.length,
+      text: ranges
+        .map((r) => `${slotTimeLabel(r.from, timeZone)} to ${slotTimeLabel(r.to, timeZone, true)}`)
+        .join(", "),
+    });
+  }
+  return out;
+}

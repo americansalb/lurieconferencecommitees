@@ -957,13 +957,17 @@ model ScheduleSession {
 // background connection check that runs while they complete the form; they
 // are null when every sample failed (which is itself signal).
 model AslInterpreter {
-  id                String    @id @default(cuid())
-  fullName          String
-  email             String    @unique
-  phone             String?
-  ridNumber         String
-  yearsFluent       Int
-  yearsInterpreting Int
+  id                 String    @id @default(cuid())
+  fullName           String
+  email              String    @unique
+  phone              String?
+  // Certification keys from the form (rid, bei, eipa, state, other, none).
+  // ridNumber is asked for, and required, only when "rid" is among them.
+  certifications     String[]  @default([])
+  certificationOther String?
+  ridNumber          String?
+  yearsFluent        Int
+  yearsInterpreting  Int
   timezone          String
   hourlyCents       Int
   availability      String[]  @default([])
@@ -973,7 +977,12 @@ model AslInterpreter {
   speedPingMs       Float?
   speedTestSeconds  Int?
   speedTestDetail   String?
-  status            String    @default("accepted")
+  // "submitted" until a teammate clicks Accept on /asl-team, which sends the
+  // interpreter their confirmation email and flips this to "accepted".
+  // Nothing is emailed to the interpreter automatically on submission.
+  status            String    @default("submitted")
+  acceptedAt        DateTime?
+  acceptedById      String?
   userAgent         String?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime? @updatedAt

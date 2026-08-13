@@ -2,14 +2,9 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
 import { ASL_FEE_ERROR, feeWithinBudget } from "@/lib/asl-budget";
-import {
-  ASL_DAYS,
-  ASL_SLOT_IDS,
-  CONFERENCE_TZ,
-  isValidTimeZone,
-  slotTimeLabel,
-  slotsForDay,
-} from "@/lib/asl-slots";
+import { appUrl } from "@/lib/presenters";
+import { ASL_CERT_KEYS, aslCertSummary } from "@/lib/asl-certs";
+import { ASL_SLOT_IDS, CONFERENCE_TZ, availabilityRanges, isValidTimeZone } from "@/lib/asl-slots";
 
 // Public acceptance from the /asl interpreter invitation. Everything is
 // re-validated here regardless of what the page already checked: the rate
@@ -25,6 +20,7 @@ function escapeHtml(s: string): string {
 function isEmail(s: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((s || "").trim());
 }
+
 
 function cleanStr(v: unknown, max: number): string {
   return String(v ?? "").trim().slice(0, max);
@@ -42,26 +38,10 @@ function cleanMetric(v: unknown, max: number): number | null {
   return Math.min(Math.round(n * 100) / 100, max);
 }
 
-// "8:00 AM to 12:00 PM CT" style ranges from the selected hour slots, per
-// day, merging contiguous hours so the scheduling email reads like a human
-// wrote it.
 function chicagoRanges(slotIds: Set<string>): string[] {
-  const lines: string[] = [];
-  for (const day of ASL_DAYS) {
-    const daySlots = slotsForDay(day).filter((s) => slotIds.has(s.id));
-    if (!daySlots.length) continue;
-    const ranges: { from: (typeof daySlots)[number]; to: (typeof daySlots)[number] }[] = [];
-    for (const slot of daySlots) {
-      const last = ranges[ranges.length - 1];
-      if (last && slot.hourCT === last.to.hourCT + 1) last.to = slot;
-      else ranges.push({ from: slot, to: slot });
-    }
-    const text = ranges
-      .map((r) => `${slotTimeLabel(r.from, CONFERENCE_TZ)} to ${slotTimeLabel(r.to, CONFERENCE_TZ, true)}`)
-      .join(", ");
-    lines.push(`${day.label}: ${text} CT (${daySlots.length} hr)`);
-  }
-  return lines;
+  return availabilityRanges(slotIds, CONFERENCE_TZ).map(
+    (r) => `${r.day.label}: ${r.text} CT (${r.hours} hr)`
+  );
 }
 
 export async function POST(req: Request) {
@@ -79,8 +59,21 @@ export async function POST(req: Request) {
 
   const phone = cleanStr(body?.phone, 40) || null;
 
-  const ridNumber = cleanStr(body?.ridNumber, 60);
-  if (!ridNumber) {
+  const certsRaw: unknown[] = Array.isArray(body?.certifications) ? body.certifications : [];
+  const certifications = ASL_CERT_KEYS.filter((k) => certsRaw.map(String).includes(k));
+  if (!certifications.length) {
+    return NextResponse.json(
+      { error: "Please tell us which certifications you hold, or choose None of these yet." },
+      { status: 400 }
+    );
+  }
+  const certificationOther = cleanStr(body?.certificationOther, 200) || null;
+
+  // The RID number is only asked for, and only required, when they said they
+  // hold an RID credential.
+  const hasRid = certifications.includes("rid");
+  const ridNumber = hasRid ? cleanStr(body?.ridNumber, 60) : "";
+  if (hasRid && !ridNumber) {
     return NextResponse.json({ error: "Please enter your RID member number." }, { status: 400 });
   }
 
@@ -138,7 +131,9 @@ export async function POST(req: Request) {
   const data = {
     fullName,
     phone,
-    ridNumber,
+    certifications,
+    certificationOther,
+    ridNumber: ridNumber || null,
     yearsFluent,
     yearsInterpreting,
     timezone,
@@ -150,7 +145,9 @@ export async function POST(req: Request) {
     speedPingMs,
     speedTestSeconds,
     speedTestDetail,
-    status: "accepted",
+    // Submissions wait for a manual Accept on /asl-team. The interpreter is
+    // emailed nothing until that button is clicked.
+    status: "submitted",
     userAgent: cleanStr(req.headers.get("user-agent"), 300) || null,
   };
 
@@ -173,16 +170,18 @@ export async function POST(req: Request) {
         ? `${speedDownMbps ?? "?"} Mbps down · ${speedUpMbps ?? "?"} Mbps up · ${speedPingMs ?? "?"} ms ping (${speedTestSeconds ?? "?"}s test)`
         : "Connection check did not complete";
     const lines = chicagoRanges(new Set(availability));
+    const certText = aslCertSummary(certifications, ridNumber, certificationOther);
     await sendMail({
       to: "contact@aalb.org",
-      subject: `ASL interpreter accepted: ${fullName} (${totalHours} hr, ${rate})`,
+      subject: `ASL interpreter form: ${fullName} (${totalHours} hr, ${rate})`,
       html: [
-        `<p><strong>${escapeHtml(fullName)}</strong> accepted the ASL interpreter invitation.</p>`,
-        `<p>Email: ${escapeHtml(email)}${phone ? `<br/>Phone: ${escapeHtml(phone)}` : ""}<br/>RID #: ${escapeHtml(ridNumber)}<br/>Fluent in ASL: ${yearsFluent} years · Interpreting: ${yearsInterpreting} years<br/>Timezone: ${escapeHtml(timezone)}</p>`,
+        `<p><strong>${escapeHtml(fullName)}</strong> filled out the ASL interpreter form. They have not been emailed anything yet.</p>`,
+        `<p>Email: ${escapeHtml(email)}${phone ? `<br/>Phone: ${escapeHtml(phone)}` : ""}<br/>Certifications: ${escapeHtml(certText)}<br/>Fluent in ASL: ${yearsFluent} years · Interpreting: ${yearsInterpreting} years<br/>Timezone: ${escapeHtml(timezone)}</p>`,
         `<p><strong>Rate:</strong> ${rate} · ${totalHours} hour${totalHours === 1 ? "" : "s"} offered · up to ${est} if all hours are used</p>`,
         `<p><strong>Availability (Chicago time):</strong><br/>${lines.map(escapeHtml).join("<br/>")}</p>`,
         `<p><strong>Connection:</strong> ${escapeHtml(speedLine)}</p>`,
         notes ? `<p><strong>Notes:</strong> ${escapeHtml(notes)}</p>` : "",
+        `<p><a href="${appUrl()}/asl-team">Review and accept them from the ASL team page</a>. Accepting is what sends their confirmation email.</p>`,
       ]
         .filter(Boolean)
         .join(""),

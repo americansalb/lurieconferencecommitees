@@ -4561,3 +4561,59 @@ export function sponsorPaymentReminderEmail({
 </body>
 </html>`;
 }
+
+// Sent to an ASL interpreter when a teammate clicks Accept on /asl-team.
+// This is the only email the interpreter ever gets from the invitation flow;
+// submitting the form itself sends them nothing.
+export function aslInterpreterConfirmedEmail({
+  fullName,
+  dayLines,
+  chicagoLines,
+  timezone,
+  rateLabel,
+  assetBase,
+}: {
+  fullName: string;
+  /** Availability per day, rendered in the interpreter's own timezone. */
+  dayLines: string[];
+  /** Same ranges in Chicago time; empty when their clock matches Chicago. */
+  chicagoLines: string[];
+  timezone: string;
+  rateLabel: string;
+  assetBase: string;
+}) {
+  const first = (fullName || "").trim().split(/\s+/)[0] || null;
+  const availabilityValue =
+    dayLines.map(escapeHtml).join("<br/>") +
+    (chicagoLines.length
+      ? `<br/><span style="color:${MUTED};font-size:12.5px;">In Chicago time: ${chicagoLines
+          .map(escapeHtml)
+          .join(" · ")}</span>`
+      : "");
+  return shell(
+    `
+    <h1 style="font-size:23px;font-weight:800;margin:0 0 12px 0;letter-spacing:-0.01em;">${addressed("You are confirmed", first)}</h1>
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
+      Thank you for offering to interpret the 2026 Lurie Children&rsquo;s and AALB Conference.
+      We have accepted your offer: you are on the ASL interpreting team for
+      <strong>Saturday, August 15 and Sunday, August 16</strong>.
+    </p>
+    ${sectionHeading("What you told us")}
+    ${glanceCard([
+      { label: "Your availability", value: availabilityValue },
+      { label: "Your rate", value: escapeHtml(rateLabel) },
+      { label: "Your timezone", value: escapeHtml(timezone) },
+    ])}
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:16px 0 0 0;">
+      You will work as part of a team of interpreters that rotates, so you will not be signing
+      any hour alone. We will follow up with your exact hours and the day-of details.
+    </p>
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:14px 0 0 0;">
+      If anything changes, or any of the details above are wrong, just reply to this email.
+    </p>
+    ${signOff("With thanks,")}
+    ${logoLockup(assetBase)}
+  `,
+    "You are confirmed as an ASL interpreter for August 15 and 16."
+  );
+}

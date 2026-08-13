@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { useEffect, useState } from "react";
-import { LayoutDashboard, CalendarDays, MessageSquare, UserCircle, LogOut, Shield, Mic, Bell, AtSign, Search, Ticket, Award, Tag, CalendarClock, Upload, CalendarRange, Mail, BarChart3, Megaphone, Gift, Banknote, GraduationCap } from "lucide-react";
+import { LayoutDashboard, CalendarDays, MessageSquare, UserCircle, LogOut, Shield, Mic, Bell, AtSign, Search, Ticket, Award, Tag, CalendarClock, Upload, CalendarRange, Mail, BarChart3, Megaphone, Gift, Banknote, GraduationCap, Hand } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -19,6 +19,7 @@ const navItems = [
   { href: "/scholarships", label: "Scholarships", icon: GraduationCap, iconBg: "bg-cyan-500/20", iconColor: "text-cyan-400", adminOnly: true },
   { href: "/sponsors", label: "Sponsors", icon: Award, iconBg: "bg-amber-500/20", iconColor: "text-amber-400" },
   { href: "/ambassadors", label: "Ambassadors", icon: Megaphone, iconBg: "bg-yellow-500/20", iconColor: "text-yellow-400" },
+  { href: "/asl-team", label: "ASL team", icon: Hand, iconBg: "bg-fuchsia-500/20", iconColor: "text-fuchsia-400" },
   { href: "/partners", label: "Partners", icon: Gift, iconBg: "bg-emerald-500/20", iconColor: "text-emerald-400", adminOnly: true },
   { href: "/queue", label: "Email queue", icon: Mail, iconBg: "bg-blue-500/20", iconColor: "text-blue-400", adminOnly: true },
   { href: "/email-analytics", label: "Email analytics", icon: BarChart3, iconBg: "bg-indigo-500/20", iconColor: "text-indigo-400", adminOnly: true },

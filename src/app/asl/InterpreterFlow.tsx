@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CONFERENCE, TOKENS } from "@/components/landing/tokens";
+import { ASL_CERT_OPTIONS } from "@/lib/asl-certs";
 import {
   ASL_DAYS,
   CONFERENCE_TZ,
@@ -138,6 +139,10 @@ const COMMON_TZS = [
 
 const STEP_TITLES = ["", "About you", "Your timezone", "Your availability", "Your rate", "Review and accept"];
 
+// "none" is exclusive: picking it clears the rest, and picking anything else
+// clears it. The RID member number field only appears when "rid" is checked.
+const CERT_OPTIONS = ASL_CERT_OPTIONS;
+
 const INPUT_CLS =
   "mt-1.5 w-full rounded-lg border bg-white px-3.5 py-2.5 text-[15px] text-[#0B1F25] outline-none transition focus:border-[#2A8FCC] focus:ring-2 focus:ring-[#2A8FCC33] disabled:opacity-60";
 
@@ -205,6 +210,8 @@ export default function InterpreterFlow() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [certs, setCerts] = useState<Set<string>>(() => new Set());
+  const [certOther, setCertOther] = useState("");
   const [ridNumber, setRidNumber] = useState("");
   const [yearsFluent, setYearsFluent] = useState("");
   const [yearsInterpreting, setYearsInterpreting] = useState("");
@@ -340,12 +347,28 @@ export default function InterpreterFlow() {
     }
   }, [mounted, nowMs, tz]);
 
+  function toggleCert(key: string) {
+    setAboutErrors((prev) => ({ ...prev, certs: "" }));
+    setCerts((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        if (key === "none") next.clear();
+        else next.delete("none");
+        next.add(key);
+      }
+      return next;
+    });
+  }
+
   function validateAbout(): boolean {
     const errs: Record<string, string> = {};
     if (fullName.trim().length < 2) errs.fullName = "Please enter your full name.";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) errs.email = "Please enter a valid email address.";
     if (!phone.trim()) errs.phone = "Please enter a phone number we can reach you at.";
-    if (!ridNumber.trim()) errs.ridNumber = "Please enter your RID member number.";
+    if (!certs.size) errs.certs = "Please check all that apply, or choose None of these yet.";
+    if (certs.has("rid") && !ridNumber.trim()) errs.ridNumber = "Please enter your RID member number.";
     const yf = Math.round(Number(yearsFluent));
     if (!yearsFluent.trim() || !Number.isFinite(yf) || yf < 0 || yf > 90)
       errs.yearsFluent = "Please enter a number of years.";
@@ -426,7 +449,9 @@ export default function InterpreterFlow() {
       fullName: fullName.trim(),
       email: email.trim(),
       phone: phone.trim(),
-      ridNumber: ridNumber.trim(),
+      certifications: CERT_OPTIONS.map((o) => o.key).filter((k) => certs.has(k)),
+      certificationOther: certOther.trim(),
+      ridNumber: certs.has("rid") ? ridNumber.trim() : "",
       yearsFluent: Math.round(Number(yearsFluent)),
       yearsInterpreting: Math.round(Number(yearsInterpreting)),
       timezone: tz,
@@ -472,6 +497,10 @@ export default function InterpreterFlow() {
       setSubmitting(false);
     }
   }
+
+  const certSummary = CERT_OPTIONS.filter((o) => certs.has(o.key))
+    .map((o) => (o.key === "other" && certOther.trim() ? `Other: ${certOther.trim()}` : o.label))
+    .join(", ");
 
   function localRangeLabel(daySlots: AslSlot[]): string {
     const chosen = daySlots.filter((s) => selected.has(s.id));
@@ -572,8 +601,9 @@ export default function InterpreterFlow() {
                   Thank you, {fullName.trim().split(/\s+/)[0] || "friend"}.
                 </h1>
                 <p className="mx-auto mt-3 max-w-md text-[15px] leading-relaxed" style={{ color: TOKENS.inkSoft }}>
-                  Your acceptance is in. We will email you shortly to confirm your hours and the
-                  day-of details. If anything changes before the conference, write to{" "}
+                  We have your details and your available hours. Our team will match interpreters
+                  to hours and you will hear from us by email to confirm yours. If anything
+                  changes before the conference, write to{" "}
                   <a href={`mailto:${CONFERENCE.contactEmail}`} className="font-semibold underline" style={{ color: TOKENS.blueDeep }}>
                     {CONFERENCE.contactEmail}
                   </a>
@@ -652,18 +682,80 @@ export default function InterpreterFlow() {
                       />
                     </Field>
                   </div>
-                  <Field
-                    label="RID member number"
-                    hint="Your Registry of Interpreters for the Deaf member number."
-                    error={aboutErrors.ridNumber}
-                  >
-                    <input
-                      className={INPUT_CLS}
-                      value={ridNumber}
-                      onChange={(e) => setRidNumber(e.target.value)}
-                      placeholder="e.g. 45210"
-                    />
-                  </Field>
+                  <div>
+                    <span className="text-[13px] font-semibold tracking-wide" style={{ color: TOKENS.inkSoft }}>
+                      Which interpreting certifications do you hold?
+                    </span>
+                    <span className="mt-0.5 block text-[12px]" style={{ color: TOKENS.muted }}>
+                      Check all that apply.
+                    </span>
+                    <div className="mt-2.5 grid gap-2 sm:grid-cols-2">
+                      {CERT_OPTIONS.map((opt) => {
+                        const on = certs.has(opt.key);
+                        return (
+                          <label
+                            key={opt.key}
+                            className="flex cursor-pointer items-start gap-2.5 rounded-lg border px-3 py-2.5 transition"
+                            style={
+                              on
+                                ? { borderColor: TOKENS.teal, background: TOKENS.tealSoft }
+                                : { borderColor: TOKENS.hairline, background: "#fff" }
+                            }
+                          >
+                            <input
+                              type="checkbox"
+                              className="mt-0.5 h-4 w-4 accent-[#0E5566]"
+                              checked={on}
+                              onChange={() => toggleCert(opt.key)}
+                            />
+                            <span>
+                              <span className="block text-[14px] font-semibold" style={{ color: TOKENS.ink }}>
+                                {opt.label}
+                              </span>
+                              {opt.detail ? (
+                                <span className="block text-[11.5px]" style={{ color: TOKENS.muted }}>
+                                  {opt.detail}
+                                </span>
+                              ) : null}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                    {aboutErrors.certs ? (
+                      <span className="mt-1.5 block text-[13px] font-medium text-red-600" role="alert">
+                        {aboutErrors.certs}
+                      </span>
+                    ) : null}
+                    {certs.has("other") ? (
+                      <div className="mt-3">
+                        <Field label="Which other certification?">
+                          <input
+                            className={INPUT_CLS}
+                            value={certOther}
+                            onChange={(e) => setCertOther(e.target.value)}
+                            placeholder="Name of the credential"
+                          />
+                        </Field>
+                      </div>
+                    ) : null}
+                    {certs.has("rid") ? (
+                      <div className="mt-3">
+                        <Field
+                          label="RID member number"
+                          hint="Your Registry of Interpreters for the Deaf member number."
+                          error={aboutErrors.ridNumber}
+                        >
+                          <input
+                            className={INPUT_CLS}
+                            value={ridNumber}
+                            onChange={(e) => setRidNumber(e.target.value)}
+                            placeholder="e.g. 45210"
+                          />
+                        </Field>
+                      </div>
+                    ) : null}
+                  </div>
                   <div className="grid gap-5 sm:grid-cols-2">
                     <Field label="Years fluent in ASL" error={aboutErrors.yearsFluent}>
                       <input
@@ -781,11 +873,19 @@ export default function InterpreterFlow() {
                   Which hours can you cover?
                 </h2>
                 <p className="mt-1.5 text-[14px]" style={{ color: TOKENS.muted }}>
-                  Check every hour you are available to interpret.
+                  Check every hour you are available.
                   {!tzIsChicagoClock
                     ? ` Times are shown in your local time (${tz.replace(/_/g, " ")}), with Chicago time underneath.`
                     : " All times are Chicago time."}
                 </p>
+                <div
+                  className="mt-4 rounded-xl border px-4 py-3.5 text-[13.5px] leading-relaxed"
+                  style={{ borderColor: "#CBE4F6", background: TOKENS.blueSoft, color: TOKENS.inkSoft }}
+                >
+                  <strong>You will not be signing a full hour alone.</strong> Interpreters work as a
+                  team and rotate through the day, so checking an hour means you are available
+                  during it, not that you will interpret it start to finish.
+                </div>
                 {ASL_DAYS.map((day) => {
                   const daySlots = slotsForDay(day);
                   const chosen = daySlots.filter((s) => selected.has(s.id)).length;
@@ -941,7 +1041,10 @@ export default function InterpreterFlow() {
                     ["Name", fullName.trim(), 1],
                     ["Email", email.trim(), 1],
                     ["Phone", phone.trim(), 1],
-                    ["RID member number", ridNumber.trim(), 1],
+                    ["Certifications", certSummary, 1],
+                    ...(certs.has("rid")
+                      ? [["RID member number", ridNumber.trim(), 1] as (string | number)[]]
+                      : []),
                     ["Fluent in ASL", `${yearsFluent} year${yearsFluent === "1" ? "" : "s"}`, 1],
                     ["Interpreting in ASL", `${yearsInterpreting} year${yearsInterpreting === "1" ? "" : "s"}`, 1],
                     ["Timezone", tz.replace(/_/g, " "), 2],
