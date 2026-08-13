@@ -55,14 +55,20 @@ export async function POST(req: Request) {
 
   for (const a of targets) {
     const days = zoomDaysFor(a.attendDay);
-    const subjectDays =
-      days.length === 2 ? "August 15 and 16" : days[0].label;
+    // Personal and specific: their name, the event by name, and the days
+    // their ticket covers.
+    const firstName = (a.firstName || "").trim();
+    const you = firstName ? `${firstName}, your` : "Your";
+    const subject =
+      days.length === 2
+        ? `${you} Zoom links for the 2026 Lurie Children's & AALB Conference (Aug 15 and 16)`
+        : `${you} Zoom link for the 2026 Lurie Children's & AALB Conference (${days[0].label})`;
     try {
       await sendMail({
         to: a.email,
         from: attendeeFromHeader(),
         replyTo: attendeeReplyTo(),
-        subject: `Your Zoom ${days.length === 2 ? "links" : "link"} and virtual guide: ${subjectDays}`,
+        subject,
         html: virtualAttendeeInfoEmail({
           firstName: a.firstName,
           days,
