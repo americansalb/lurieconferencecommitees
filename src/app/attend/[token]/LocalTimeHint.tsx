@@ -27,12 +27,7 @@ export default function LocalTimeHint({
           ...(timeZone ? { timeZone } : {}),
         }).format(new Date(ms));
       if (fmtIn(opensMs) === fmtIn(opensMs, "America/Chicago")) return;
-      const zone = new Intl.DateTimeFormat("en-US", { timeZoneName: "short" })
-        .formatToParts(new Date(opensMs))
-        .find((p) => p.type === "timeZoneName")?.value;
-      setText(
-        `In your local time${zone ? ` (${zone})` : ""}: opens ${fmtIn(opensMs)}, be signed in by ${fmtIn(signInByMs)}`
-      );
+      setText(`In your local time: opens ${fmtIn(opensMs)}, be signed in by ${fmtIn(signInByMs)}`);
     } catch {
       /* the CT labels still carry the information */
     }

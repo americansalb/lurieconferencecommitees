@@ -60,16 +60,17 @@ export function timeInZone(ms: number, tz: string): string {
 }
 
 /**
- * The room-open time translated to the other mainland US zones, e.g.
- * "10:00 AM ET · 8:00 AM MT · 7:00 AM PT". The email cannot know a
- * recipient's timezone, so it shows Central plus these; the portal page can
- * know (it runs in their browser) and converts exactly there.
+ * The room-open time translated for the coasts, e.g. "10:00 AM Eastern
+ * Time · 7:00 AM Pacific Time". Full zone names only, no abbreviations.
+ * Mountain Time is deliberately absent: Arizona skips daylight saving, so
+ * one "Mountain" figure would be wrong for part of the zone in August. The
+ * email cannot know a recipient's timezone, so it shows Central plus these;
+ * the portal page can know (it runs in their browser) and converts there.
  */
 export function usZoneLine(ms: number): string {
   return [
-    { label: "ET", tz: "America/New_York" },
-    { label: "MT", tz: "America/Denver" },
-    { label: "PT", tz: "America/Los_Angeles" },
+    { label: "Eastern Time", tz: "America/New_York" },
+    { label: "Pacific Time", tz: "America/Los_Angeles" },
   ]
     .map((z) => `${timeInZone(ms, z.tz)} ${z.label}`)
     .join(" · ");

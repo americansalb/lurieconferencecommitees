@@ -131,8 +131,8 @@ export default function AttendeePortal({
                     Day {d.dayNumber} &middot; {d.label}
                   </div>
                   <p className="mt-1.5 text-[12.5px]" style={{ color: E.soft }}>
-                    Zoom opens at <strong style={{ color: E.ink }}>{d.opensCT} CT</strong> &middot;
-                    be signed in by <strong style={{ color: E.ink }}>{d.signInByCT} CT</strong>
+                    Zoom opens at <strong style={{ color: E.ink }}>{d.opensCT} Central Time</strong>{" "}
+                    &middot; be signed in by <strong style={{ color: E.ink }}>{d.signInByCT} Central Time</strong>
                   </p>
                   <LocalTimeHint
                     opensMs={d.opensMs}

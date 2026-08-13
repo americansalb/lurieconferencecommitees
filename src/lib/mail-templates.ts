@@ -4655,7 +4655,7 @@ export function virtualAttendeeInfoEmail({
       <tr><td style="padding:22px 24px;">
         <div style="font-size:11px;letter-spacing:0.16em;font-weight:800;color:${GOLD};text-transform:uppercase;">Day ${d.dayNumber} &middot; ${d.label}</div>
         <div style="font-size:14px;color:#D8E8ED;margin-top:9px;line-height:1.65;">
-          Zoom opens at <strong style="color:#ffffff;">${d.opensCT} CT</strong> &middot; please be signed in by <strong style="color:#ffffff;">${d.signInByCT} CT</strong>
+          Zoom opens at <strong style="color:#ffffff;">${d.opensCT} Central Time</strong> &middot; please be signed in by <strong style="color:#ffffff;">${d.signInByCT} Central Time</strong>
         </div>
         <div style="font-size:12px;color:#9FBFC9;margin-top:5px;">
           Opens ${usZoneLine(d.opensMs)}
@@ -4705,8 +4705,9 @@ export function virtualAttendeeInfoEmail({
 
     ${sectionHeading("The program")}
     <p style="font-size:14.5px;line-height:1.7;color:${TEXT};margin:0;">
-      The complete schedule and session breakdown is <strong>attached to this email as a PDF</strong>,
-      and the full program with speakers is always on the
+      The complete schedule and session breakdown is <strong>attached to this email as a PDF</strong>.
+      Every time in the attached program is <strong>Central Time</strong>. The full program with
+      speakers is always on the
       <a href="${scheduleUrl}" style="color:${TEAL};font-weight:600;">conference site</a>.
     </p>
 
