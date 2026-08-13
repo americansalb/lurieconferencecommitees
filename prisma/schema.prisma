@@ -950,6 +950,38 @@ model ScheduleSession {
   @@schema("lcc")
 }
 
+// An ASL interpreter who accepted (or is filling out) the public invitation
+// at /asl for the two conference days. Availability is stored as UTC ISO
+// hour-start strings from src/lib/asl-slots.ts, so the row is unambiguous no
+// matter what timezone the interpreter verified. Speed figures come from the
+// background connection check that runs while they complete the form; they
+// are null when every sample failed (which is itself signal).
+model AslInterpreter {
+  id                String    @id @default(cuid())
+  fullName          String
+  email             String    @unique
+  phone             String?
+  ridNumber         String
+  yearsFluent       Int
+  yearsInterpreting Int
+  timezone          String
+  hourlyCents       Int
+  availability      String[]  @default([])
+  notes             String?
+  speedDownMbps     Float?
+  speedUpMbps       Float?
+  speedPingMs       Float?
+  speedTestSeconds  Int?
+  speedTestDetail   String?
+  status            String    @default("accepted")
+  userAgent         String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime? @updatedAt
+
+  @@map("lcc_asl_interpreters")
+  @@schema("lcc")
+}
+
 // An ambassador: an educator, program director, or association leader we ask
 // to SHARE the conference with their students/members (not to sponsor). Each
 // carries a personal 20% discount code (created in DiscountCode at queue time,
