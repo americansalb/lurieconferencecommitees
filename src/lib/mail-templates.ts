@@ -4715,11 +4715,11 @@ export function virtualAttendeeInfoEmail({
       <a href="${exhibitorsUrl}" style="color:${TEAL};font-weight:600;">sponsors and exhibitors page</a>.
     </p>
 
-    ${sectionHeading("Earning your CEUs (up to 12.5 hours)")}
+    ${sectionHeading("Earning your CEUs")}
     <p style="font-size:14.5px;line-height:1.7;color:${TEXT};margin:0 0 6px 0;">
-      Virtual and in-person attendees alike can earn approximately 12.5 hours of CEUs, approved or
-      pending with CCHI, NBCMI, RID, and other credentialing bodies. To receive credit for the
-      sessions you attend, please follow these three rules carefully:
+      Virtual and in-person attendees alike can earn more than 10 hours of CEUs between both days,
+      approved or pending with CCHI, NBCMI, RID, and other credentialing bodies. To receive credit
+      for the sessions you attend, please follow these three rules carefully:
     </p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:6px 0 2px 0;">
       ${rule(1, "Camera on, actively present", "Be present with your camera turned on for at least 90% of each presentation&rsquo;s duration.")}
