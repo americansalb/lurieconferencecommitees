@@ -15,7 +15,7 @@ import { STATUS_LABELS } from "@/lib/presenters";
 import { parseResponse } from "@/lib/api";
 import { InviteComposer, type InviteEditable } from "@/components/presenters/InviteComposer";
 import ProposalCallComposer from "@/components/presenters/ProposalCallComposer";
-import { SLIDE_ACCEPT } from "@/lib/slide-types";
+import { SLIDE_ACCEPT, MAX_SLIDE_LABEL } from "@/lib/slide-types";
 import { fileSize } from "@/components/presenters/SlideUpload";
 
 interface PresenterRow {
@@ -305,9 +305,9 @@ export default function PresentersPage() {
                       </span>
                     </div>
                     <p className="text-xs text-slate-500 mt-1 max-w-xl">
-                      Confirmed presenters upload their deck (PowerPoint, Keynote, PDF up to 50 MB, or a Google
+                      Confirmed presenters upload their deck (PowerPoint, Keynote, PDF up to {MAX_SLIDE_LABEL}, or a Google
                       Slides link) right in their portal, due <strong>Saturday, August 8</strong>, so there&rsquo;s time
-                      to review formatting. Files over 50 MB come in by email to contact@aalb.org. If someone
+                      to review formatting. Files over {MAX_SLIDE_LABEL} come in by email to contact@aalb.org. If someone
                       is not going to manage the form, use the upload arrow on their row and put the deck on file
                       for them; rows say which decks came in that way. Each row below shows who has delivered;
                       sends log to the presenter&rsquo;s history.

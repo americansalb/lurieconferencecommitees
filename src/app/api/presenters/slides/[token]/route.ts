@@ -6,7 +6,7 @@ import {
 
 // Public, token-gated: a presenter submits their deck from the portal.
 // Three shapes on one POST:
-//   multipart/form-data with `file`  -> store the deck (<= 50 MB, slide types)
+//   raw body + X-File-Name header    -> store the deck (size cap, slide types)
 //   JSON { linkUrl }                 -> store a Google Slides (etc.) link
 //   JSON { remove: true }            -> withdraw what they sent
 // The token is the credential, same as the rest of the presenter portal.

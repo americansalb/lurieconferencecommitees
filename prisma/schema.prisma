@@ -382,7 +382,7 @@ model Presenter {
 }
 
 // A presenter's talk deck: either an uploaded file (PowerPoint / Keynote /
-// PDF, capped at 50 MB) or a pasted link (Google Slides etc.). One per
+// PDF, size capped) or a pasted link (Google Slides etc.). One per
 // presenter, out-of-row so Presenter list queries never pull file bytes.
 // Uploaded via the tokenized portal; served to the team via
 // /api/presenters/[id]/slides. Decks too big to upload are emailed to
@@ -394,15 +394,39 @@ model PresenterSlide {
   fileName    String?
   mime        String?
   sizeBytes   Int?
+  // Decks uploaded before the move to chunked storage still live here. New
+  // uploads leave it null and write PresenterSlideChunk rows instead.
   data        Bytes?
   linkUrl     String?
   // Set when a team member uploaded this for a presenter who could not, so a
   // deck on file is never mistaken for a presenter who answered.
   uploadedBy  String?
+  // Which upload the current chunks belong to. A second upload starting for the
+  // same presenter takes this over, and the first one notices and gives up
+  // rather than leaving the two spliced together.
+  uploadId    String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime? @updatedAt
+  chunks      PresenterSlideChunk[]
 
   @@map("lcc_presenter_slides")
+  @@schema("lcc")
+}
+
+/// One slice of an uploaded deck.
+///
+/// Files are stored in pieces rather than as one column because appending to a
+/// single bytea rewrites the whole value every time: 100 MB took 34.5 seconds
+/// that way and 3.5 seconds as rows, because the cost stops being quadratic.
+model PresenterSlideChunk {
+  presenterId String
+  uploadId    String
+  seq         Int
+  data        Bytes
+  slide       PresenterSlide @relation(fields: [presenterId], references: [presenterId], onDelete: Cascade)
+
+  @@id([presenterId, uploadId, seq])
+  @@map("lcc_presenter_slide_chunks")
   @@schema("lcc")
 }
 

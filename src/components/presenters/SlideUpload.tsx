@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import {
   Presentation, Upload, Link2, Download, ExternalLink, Trash2, Loader2, Check,
 } from "lucide-react";
-import { SLIDE_ACCEPT, SLIDE_TYPES_SENTENCE, MAX_SLIDE_BYTES } from "@/lib/slide-types";
+import { SLIDE_ACCEPT, SLIDE_TYPES_SENTENCE, MAX_SLIDE_BYTES, MAX_SLIDE_LABEL } from "@/lib/slide-types";
 
 // Putting a presentation on file for a presenter who cannot do it themselves.
 //
@@ -89,7 +89,7 @@ export function SlideUpload({
     // Caught here as well as on the server, so picking a 300 MB file says so
     // straight away instead of after a long upload that ends in a refusal.
     if (file.size > MAX_SLIDE_BYTES) {
-      setError(`${file.name} is ${fileSize(file.size)}. The limit is 50 MB, so put it in Drive or Dropbox and paste the link instead.`);
+      setError(`${file.name} is ${fileSize(file.size)}. The limit is ${MAX_SLIDE_LABEL}, so put it in Drive or Dropbox and paste the link instead.`);
       return;
     }
     void send(file);
@@ -203,7 +203,7 @@ export function SlideUpload({
             {busy ? "Uploading" : slide ? "Replace the file" : `Upload ${first}'s deck`}
           </button>
           <div className="text-[11.5px] text-slate-500 mt-2">
-            or drop it here. {SLIDE_TYPES_SENTENCE}, up to 50 MB.
+            or drop it here. {SLIDE_TYPES_SENTENCE}, up to {MAX_SLIDE_LABEL}.
           </div>
         </div>
 

@@ -31,7 +31,7 @@ export default function SlidesPreviewPage() {
           />
         </div>
         <div>
-          <div className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">File over 50 MB — email fallback</div>
+          <div className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">File over the limit, email fallback</div>
           <SlidesPanel
             token="DEV-PREVIEW"
             initial={null}

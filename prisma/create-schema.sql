@@ -68,3 +68,28 @@ CREATE INDEX IF NOT EXISTS "lcc_scholarship_applications_status_idx"
 -- their own portal, an email when the team did it for them. Additive.
 ALTER TABLE "lcc"."lcc_presenter_slides"
   ADD COLUMN IF NOT EXISTS "uploadedBy" TEXT;
+
+-- Presentations are stored in pieces. Appending to a single bytea rewrites the
+-- whole value each time, which made a 100 MB deck take 34.5 seconds; as rows it
+-- takes 3.5. Additive, and the old "data" column stays for decks uploaded
+-- before this.
+ALTER TABLE "lcc"."lcc_presenter_slides"
+  ADD COLUMN IF NOT EXISTS "uploadId" TEXT;
+
+CREATE TABLE IF NOT EXISTS "lcc"."lcc_presenter_slide_chunks" (
+  "presenterId" TEXT    NOT NULL,
+  "uploadId"    TEXT    NOT NULL,
+  "seq"         INTEGER NOT NULL,
+  "data"        BYTEA   NOT NULL,
+  PRIMARY KEY ("presenterId", "uploadId", "seq")
+);
+
+DO $$
+BEGIN
+  ALTER TABLE "lcc"."lcc_presenter_slide_chunks"
+    ADD CONSTRAINT "lcc_presenter_slide_chunks_presenterId_fkey"
+    FOREIGN KEY ("presenterId") REFERENCES "lcc"."lcc_presenter_slides"("presenterId")
+    ON DELETE CASCADE;
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;

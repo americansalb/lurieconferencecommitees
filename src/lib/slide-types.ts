@@ -2,7 +2,10 @@
 // the upload form can state the rules without dragging Prisma into the browser
 // bundle, and so the form and the server can never disagree about them.
 
-export const MAX_SLIDE_BYTES = 50 * 1024 * 1024;
+export const MAX_SLIDE_MB = 100;
+export const MAX_SLIDE_BYTES = MAX_SLIDE_MB * 1024 * 1024;
+/** For copy, so the number in a sentence cannot drift from the number enforced. */
+export const MAX_SLIDE_LABEL = `${MAX_SLIDE_MB} MB`;
 export const SLIDE_NAME_RE = /\.(ppt|pptx|key|odp|pdf)$/i;
 /** For the `accept` attribute on a file input. */
 export const SLIDE_ACCEPT = ".ppt,.pptx,.key,.odp,.pdf";

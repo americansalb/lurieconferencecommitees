@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { CheckCircle2, Copy, ExternalLink, FileText, Link2, Loader2, Mail, Presentation, RefreshCw, Trash2, UploadCloud } from "lucide-react";
+import { MAX_SLIDE_MB } from "@/lib/slide-types";
 
 // The presentation drop-box on the presenter portal's confirmed screen.
 // One card, three states: nothing yet (upload zone + link field), a file on
@@ -11,7 +12,9 @@ import { CheckCircle2, Copy, ExternalLink, FileText, Link2, Loader2, Mail, Prese
 
 const TEAL = "#0E5566";
 const BLUE = "#0066B3";
-export const SLIDE_MAX_MB = 50;
+// Derived, not repeated: the number in this copy has to be the number the
+// server actually enforces.
+export const SLIDE_MAX_MB = MAX_SLIDE_MB;
 export const SLIDES_DEADLINE_LABEL = "Saturday, August 8";
 const SLIDES_EMAIL = "contact@aalb.org";
 
@@ -100,7 +103,7 @@ export default function SlidesPanel({
     }
     setPhase("uploading");
     setProgress(0);
-    // XMLHttpRequest instead of fetch: a 50 MB deck on hotel wifi needs a
+    // XMLHttpRequest instead of fetch: a large deck on hotel wifi needs a
     // real progress bar, not a spinner of unknown duration.
     const xhr = new XMLHttpRequest();
     xhr.open("POST", `/api/presenters/slides/${token}`);

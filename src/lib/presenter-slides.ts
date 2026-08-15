@@ -1,12 +1,17 @@
 import { prisma } from "./db";
-import { MAX_SLIDE_BYTES, SLIDE_NAME_RE, SLIDE_TYPES_SENTENCE, MIME_BY_EXT } from "./slide-types";
+import { randomUUID } from "crypto";
+import {
+  MAX_SLIDE_BYTES, MAX_SLIDE_LABEL, SLIDE_NAME_RE, SLIDE_TYPES_SENTENCE, MIME_BY_EXT,
+} from "./slide-types";
 
-export { MAX_SLIDE_BYTES, SLIDE_NAME_RE, SLIDE_ACCEPT, SLIDE_TYPES_SENTENCE } from "./slide-types";
+export {
+  MAX_SLIDE_BYTES, MAX_SLIDE_LABEL, SLIDE_NAME_RE, SLIDE_ACCEPT, SLIDE_TYPES_SENTENCE,
+} from "./slide-types";
 
 // Saving a presentation, in one place.
 //
 // Two doors lead here and they must agree on what a valid deck is, or a
-// presenter gets told 50 MB and the team gets told something else:
+// presenter gets told one size limit and the team gets told another:
 //   - the presenter's own portal, gated by their token
 //   - the team, uploading on someone's behalf from the presenters page
 //
@@ -16,12 +21,16 @@ export { MAX_SLIDE_BYTES, SLIDE_NAME_RE, SLIDE_ACCEPT, SLIDE_TYPES_SENTENCE } fr
 // arrived that way, so nobody later reads a green "slides in" badge as evidence
 // the presenter sent it themselves.
 //
-// Decks are streamed in and appended a megabyte at a time, never held whole.
+// Decks are streamed in and stored a megabyte at a time, never held whole.
 // The obvious version took the instance down: handing a 20 MB Buffer to Prisma
 // as a Bytes column cost 596 MB of peak memory, because the value is base64'd
 // into the query protocol and copied several times on the way to Postgres. A
 // 50 MB deck wanted over a gigabyte on a 512 MB box. Measured on the same file,
-// appending in 1 MB pieces costs 24 MB and does not grow with the file.
+// writing in 1 MB pieces costs 24 MB and does not grow with the file.
+//
+// The pieces are rows rather than one growing column, which matters at these
+// sizes: appending to a single bytea rewrites the whole value each time, so the
+// cost is quadratic. 100 MB took 34.5 seconds that way against 3.5 as rows.
 
 /**
  * A file name that travelled in a header. Encoded by the browser so accents and
@@ -46,13 +55,14 @@ export function safeDecode(raw: string): string {
 export function tooBigUpFront(contentLength: string | null, actor: string | null): SaveResult | null {
   const declared = Number(contentLength);
   if (!Number.isFinite(declared) || declared <= MAX_SLIDE_BYTES) return null;
-  return {
-    ok: false,
-    status: 413,
-    error: actor
-      ? "That file is over 50 MB. Put it in Drive or Dropbox and paste the link instead."
-      : "That file is over 50 MB. Please email it to contact@aalb.org instead.",
-  };
+  return { ok: false, status: 413, error: oversizeMessage(actor) };
+}
+
+/** What to tell someone whose file will not fit, in their own terms. */
+export function oversizeMessage(actor: string | null): string {
+  return actor
+    ? `That file is over ${MAX_SLIDE_LABEL}. Put it in Drive or Dropbox and paste the link instead.`
+    : `That file is over ${MAX_SLIDE_LABEL}. Please email it to contact@aalb.org instead.`;
 }
 
 /** How much is buffered before it goes to the database. Deliberately small. */
@@ -114,17 +124,24 @@ export async function saveSlideStream(
     ? declaredMime
     : MIME_BY_EXT[ext] || "application/octet-stream";
   const name = fileName.slice(0, 200);
+  // Names this upload's chunks. A second upload for the same presenter claims
+  // the id on the metadata row, and this one notices at the end and gives up,
+  // so the two can never end up spliced together.
+  const uploadId = randomUUID();
 
-  // Start the row empty, then grow it. Anything already on file is replaced the
-  // moment the new upload begins, which is the same as before.
+  // Claim the row, and drop any chunks from an upload that never finished.
   await prisma.$executeRaw`
     INSERT INTO lcc.lcc_presenter_slides
-      ("presenterId","fileName","mime","sizeBytes","data","linkUrl","uploadedBy","createdAt","updatedAt")
-    VALUES (${presenterId}, ${name}, ${mime}, 0, ''::bytea, NULL, ${actor}, NOW(), NOW())
+      ("presenterId","fileName","mime","sizeBytes","data","linkUrl","uploadedBy","uploadId","createdAt","updatedAt")
+    VALUES (${presenterId}, ${name}, ${mime}, 0, NULL, NULL, ${actor}, ${uploadId}, NOW(), NOW())
     ON CONFLICT ("presenterId") DO UPDATE SET
       "fileName" = EXCLUDED."fileName", "mime" = EXCLUDED."mime",
-      "sizeBytes" = 0, data = ''::bytea, "linkUrl" = NULL,
-      "uploadedBy" = EXCLUDED."uploadedBy", "updatedAt" = NOW()`;
+      "sizeBytes" = 0, data = NULL, "linkUrl" = NULL,
+      "uploadedBy" = EXCLUDED."uploadedBy", "uploadId" = EXCLUDED."uploadId",
+      "updatedAt" = NOW()`;
+  await prisma.$executeRaw`
+    DELETE FROM lcc.lcc_presenter_slide_chunks
+     WHERE "presenterId" = ${presenterId} AND "uploadId" <> ${uploadId}`;
 
   const fail = async (status: number, error: string): Promise<SaveResult> => {
     // Never leave half a deck looking like a whole one.
@@ -136,22 +153,18 @@ export async function saveSlideStream(
   const pending: Buffer[] = [];
   let pendingBytes = 0;
   let written = 0;
+  let seq = 0;
 
-  // Append one buffered chunk, refusing to write if the row is not exactly the
-  // length we last left it. Two uploads racing for the same presenter would
-  // otherwise interleave into a file that is neither of them.
-  const flush = async (): Promise<string | null> => {
-    if (!pendingBytes) return null;
+  const flush = async (): Promise<void> => {
+    if (!pendingBytes) return;
     const chunk = Buffer.concat(pending, pendingBytes);
     pending.length = 0;
     pendingBytes = 0;
-    const rows = await prisma.$executeRaw`
-      UPDATE lcc.lcc_presenter_slides
-         SET data = data || ${chunk}, "sizeBytes" = "sizeBytes" + ${chunk.length}, "updatedAt" = NOW()
-       WHERE "presenterId" = ${presenterId} AND "sizeBytes" = ${written}`;
-    if (rows !== 1) return "Something else was writing this presenter's deck at the same time. Try again.";
+    await prisma.$executeRaw`
+      INSERT INTO lcc.lcc_presenter_slide_chunks ("presenterId","uploadId","seq","data")
+      VALUES (${presenterId}, ${uploadId}, ${seq}, ${chunk})`;
     written += chunk.length;
-    return null;
+    seq += 1;
   };
 
   try {
@@ -162,24 +175,35 @@ export async function saveSlideStream(
       pending.push(Buffer.from(value));
       pendingBytes += value.length;
       if (written + pendingBytes > MAX_SLIDE_BYTES) {
-        // Stop reading rather than draining 200 MB somebody picked by mistake.
+        // Stop reading rather than draining 300 MB somebody picked by mistake.
         await reader.cancel().catch(() => {});
-        return fail(413, actor
-          ? "That file is over 50 MB. Put it in Drive or Dropbox and paste the link instead."
-          : "That file is over 50 MB. Please email it to contact@aalb.org instead.");
+        return fail(413, oversizeMessage(actor));
       }
-      if (pendingBytes >= WRITE_CHUNK) {
-        const clash = await flush();
-        if (clash) return fail(409, clash);
-      }
+      if (pendingBytes >= WRITE_CHUNK) await flush();
     }
-    const clash = await flush();
-    if (clash) return fail(409, clash);
+    await flush();
   } catch {
     return fail(500, "The upload stopped part way through. Please try again.");
   }
 
   if (written === 0) return fail(400, "That file looks empty.");
+
+  // Record the finished length, but only if this is still the upload that owns
+  // the row. If somebody started another one while this was going, theirs wins
+  // and these chunks are thrown away rather than mixed into it.
+  const claimed = await prisma.$executeRaw`
+    UPDATE lcc.lcc_presenter_slides
+       SET "sizeBytes" = ${written}, "updatedAt" = NOW()
+     WHERE "presenterId" = ${presenterId} AND "uploadId" = ${uploadId}`;
+  if (claimed !== 1) {
+    await prisma.$executeRaw`
+      DELETE FROM lcc.lcc_presenter_slide_chunks
+       WHERE "presenterId" = ${presenterId} AND "uploadId" = ${uploadId}`.catch(() => {});
+    return {
+      ok: false, status: 409,
+      error: "Another upload for this presenter finished first. Check what is on file, and send this one again if it is the one you want.",
+    };
+  }
 
   const saved = await prisma.presenterSlide.findUnique({ where: { presenterId } });
   if (!saved) return fail(500, "The upload did not save. Please try again.");
@@ -223,13 +247,31 @@ export async function saveSlideLink(
  *
  * Same reason as the write: `Buffer.from(row.data)` pulls the whole file into
  * memory and then the response holds another copy of it. Reading slices keeps a
- * 50 MB download flat instead of spiking on every click.
+ * large download flat instead of spiking on every click.
  */
 export async function* slideChunks(presenterId: string, total: number): AsyncGenerator<Buffer> {
+  const [meta] = await prisma.$queryRaw<{ uploadId: string | null }[]>`
+    SELECT "uploadId" FROM lcc.lcc_presenter_slides WHERE "presenterId" = ${presenterId}`;
+
+  if (meta?.uploadId) {
+    // Stored in pieces: hand them over in order, one round trip each, so the
+    // whole file is never assembled on this side.
+    for (let seq = 0; ; seq += 1) {
+      const rows = await prisma.$queryRaw<{ data: Buffer }[]>`
+        SELECT data FROM lcc.lcc_presenter_slide_chunks
+         WHERE "presenterId" = ${presenterId} AND "uploadId" = ${meta.uploadId} AND seq = ${seq}`;
+      const part = rows[0]?.data;
+      if (!part?.length) return;
+      yield Buffer.from(part);
+    }
+  }
+
+  // Decks uploaded before chunked storage still live in the single column.
+  // Read them in slices for the same reason. Postgres substring is 1-indexed,
+  // and the casts are required: a JavaScript number binds as bigint, and
+  // substring(bytea, bigint, bigint) does not exist, so without them every one
+  // of these downloads fails.
   for (let off = 0; off < total; off += READ_CHUNK) {
-    // Postgres substring is 1-indexed, and the casts are required: a JavaScript
-    // number binds as bigint, and substring(bytea, bigint, bigint) does not
-    // exist, so without them every download fails.
     const rows = await prisma.$queryRaw<{ part: Buffer }[]>`
       SELECT substring(data from ${off + 1}::int for ${READ_CHUNK}::int) AS part
         FROM lcc.lcc_presenter_slides
