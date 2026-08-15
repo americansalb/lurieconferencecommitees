@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import {
   Presentation, Upload, Link2, Download, ExternalLink, Trash2, Loader2, Check,
 } from "lucide-react";
-import { SLIDE_ACCEPT, SLIDE_TYPES_SENTENCE } from "@/lib/slide-types";
+import { SLIDE_ACCEPT, SLIDE_TYPES_SENTENCE, MAX_SLIDE_BYTES } from "@/lib/slide-types";
 
 // Putting a presentation on file for a presenter who cannot do it themselves.
 //
@@ -52,15 +52,25 @@ export function SlideUpload({
     setTimeout(() => setSaved(false), 3000);
   }
 
-  async function send(body: FormData | string) {
+  async function send(body: File | string) {
     setBusy(true);
     setError(null);
     try {
       const res = await fetch(`/api/presenters/${presenterId}/slides`, {
         method: "POST",
+        // The file goes up as its own body with the name in a header. Wrapping
+        // it in FormData would make the server buffer the whole deck before
+        // saving any of it, which is what used to crash the site.
         ...(typeof body === "string"
           ? { headers: { "Content-Type": "application/json" }, body }
-          : { body }),
+          : {
+              headers: {
+                "Content-Type": body.type || "application/octet-stream",
+                "X-File-Name": encodeURIComponent(body.name),
+                "X-File-Type": body.type || "application/octet-stream",
+              },
+              body,
+            }),
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok || !j.ok) throw new Error(j.error || "That did not save.");
@@ -76,9 +86,13 @@ export function SlideUpload({
 
   function upload(file: File | null | undefined) {
     if (!file) return;
-    const form = new FormData();
-    form.append("file", file);
-    void send(form);
+    // Caught here as well as on the server, so picking a 300 MB file says so
+    // straight away instead of after a long upload that ends in a refusal.
+    if (file.size > MAX_SLIDE_BYTES) {
+      setError(`${file.name} is ${fileSize(file.size)}. The limit is 50 MB, so put it in Drive or Dropbox and paste the link instead.`);
+      return;
+    }
+    void send(file);
   }
 
   async function remove() {

@@ -100,12 +100,17 @@ export default function SlidesPanel({
     }
     setPhase("uploading");
     setProgress(0);
-    const form = new FormData();
-    form.append("file", file);
     // XMLHttpRequest instead of fetch: a 50 MB deck on hotel wifi needs a
     // real progress bar, not a spinner of unknown duration.
     const xhr = new XMLHttpRequest();
     xhr.open("POST", `/api/presenters/slides/${token}`);
+    // The file is sent as the raw body with its name in a header, rather than
+    // wrapped in FormData. Multipart makes the server hold the entire deck in
+    // memory before it can save any of it, and that is what was crashing the
+    // site on upload. Progress reporting works the same either way.
+    xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+    xhr.setRequestHeader("X-File-Name", encodeURIComponent(file.name));
+    xhr.setRequestHeader("X-File-Type", file.type || "application/octet-stream");
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable) setProgress(Math.round((e.loaded / e.total) * 100));
     };
@@ -126,7 +131,7 @@ export default function SlidesPanel({
       setPhase("idle");
       setError("The upload didn't go through. Check your connection and try again.");
     };
-    xhr.send(form);
+    xhr.send(file);
   }, [token]);
 
   const saveLink = useCallback(async () => {

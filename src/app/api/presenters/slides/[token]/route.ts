@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { saveSlideFile, saveSlideLink, removeSlide } from "@/lib/presenter-slides";
+import {
+  saveSlideStream, saveSlideLink, removeSlide, safeDecode, tooBigUpFront,
+} from "@/lib/presenter-slides";
 
 // Public, token-gated: a presenter submits their deck from the portal.
 // Three shapes on one POST:
@@ -26,15 +28,17 @@ export async function POST(req: Request, { params }: { params: { token: string }
     return NextResponse.json({ error: "This portal isn't set up for uploads yet." }, { status: 403 });
   }
 
-  const contentType = req.headers.get("content-type") || "";
-
-  if (contentType.includes("multipart/form-data")) {
-    const form = await req.formData().catch(() => null);
-    const file = form?.get("file");
-    if (!(file instanceof File)) {
-      return NextResponse.json({ error: "No file received." }, { status: 400 });
-    }
-    const result = await saveSlideFile(presenter.id, file, null);
+  // The deck arrives as its own raw body with the name in a header. Multipart
+  // would mean buffering the whole file in memory before a byte reaches the
+  // database, which is what used to take the instance down.
+  const rawName = req.headers.get("x-file-name");
+  if (rawName) {
+    if (!req.body) return NextResponse.json({ error: "No file received." }, { status: 400 });
+    const early = tooBigUpFront(req.headers.get("content-length"), null);
+    if (early && !early.ok) return NextResponse.json({ error: early.error }, { status: early.status });
+    const result = await saveSlideStream(
+      presenter.id, req.body, safeDecode(rawName), req.headers.get("x-file-type"), null,
+    );
     if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
     return NextResponse.json({ ok: true, slide: result.slide });
   }

@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { saveSlideFile, saveSlideLink, removeSlide } from "@/lib/presenter-slides";
+import {
+  saveSlideStream, saveSlideLink, removeSlide, slideChunks, safeDecode, tooBigUpFront,
+} from "@/lib/presenter-slides";
 
 // Team-facing, by presenter id.
 //
@@ -31,21 +33,42 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const slide = await prisma.presenterSlide.findUnique({ where: { presenterId: params.id } });
+  // Metadata only. Selecting `data` here would load the whole deck just to find
+  // out how big it is.
+  const slide = await prisma.presenterSlide.findUnique({
+    where: { presenterId: params.id },
+    select: { fileName: true, mime: true, sizeBytes: true, linkUrl: true },
+  });
   if (!slide) return NextResponse.json({ error: "No presentation on file." }, { status: 404 });
 
-  if (!slide.data && slide.linkUrl) {
+  if (!slide.sizeBytes && slide.linkUrl) {
     return NextResponse.redirect(slide.linkUrl);
   }
-  if (!slide.data) return NextResponse.json({ error: "No presentation on file." }, { status: 404 });
+  if (!slide.sizeBytes) return NextResponse.json({ error: "No presentation on file." }, { status: 404 });
 
+  const total = slide.sizeBytes;
   const mime = slide.mime || "application/octet-stream";
   const name = (slide.fileName || "presentation").replace(/[^\w.\- ()]/g, "_");
   const inline = mime === "application/pdf";
-  return new NextResponse(Buffer.from(slide.data), {
+
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      try {
+        for await (const part of slideChunks(params.id, total)) controller.enqueue(part);
+        controller.close();
+      } catch {
+        // Nothing useful to say inside a binary file; drop the connection so
+        // the browser reports a failed download rather than saving a truncated
+        // deck that looks fine until someone opens it.
+        controller.error(new Error("read failed"));
+      }
+    },
+  });
+
+  return new NextResponse(stream, {
     headers: {
       "Content-Type": mime,
-      "Content-Length": String(slide.data.length),
+      "Content-Length": String(total),
       "Content-Disposition": `${inline ? "inline" : "attachment"}; filename="${name}"`,
       "Cache-Control": "private, no-store",
     },
@@ -65,15 +88,19 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   // Whoever is signed in, so the badge can say the deck came from us rather
   // than from the presenter.
   const actor = session.user?.email || "the team";
-  const contentType = req.headers.get("content-type") || "";
 
-  if (contentType.includes("multipart/form-data")) {
-    const form = await req.formData().catch(() => null);
-    const file = form?.get("file");
-    if (!(file instanceof File)) {
-      return NextResponse.json({ error: "No file received." }, { status: 400 });
-    }
-    const result = await saveSlideFile(presenter.id, file, actor);
+  // A file arrives as its own raw body with the name in a header, not as
+  // multipart: parsing multipart means buffering the whole deck first, which is
+  // exactly what we are avoiding.
+  const rawName = req.headers.get("x-file-name");
+  if (rawName) {
+    if (!req.body) return NextResponse.json({ error: "No file received." }, { status: 400 });
+    const early = tooBigUpFront(req.headers.get("content-length"), actor);
+    if (early && !early.ok) return NextResponse.json({ error: early.error }, { status: early.status });
+    const fileName = safeDecode(rawName);
+    const result = await saveSlideStream(
+      presenter.id, req.body, fileName, req.headers.get("x-file-type"), actor,
+    );
     if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
     return NextResponse.json({ ok: true, slide: result.slide });
   }

@@ -672,10 +672,18 @@ function RowSlideUpload({ id, name, hasSlide, onDone }: {
     if (!file) return;
     setBusy(true);
     setError(null);
-    const form = new FormData();
-    form.append("file", file);
     try {
-      const res = await fetch(`/api/presenters/${id}/slides`, { method: "POST", body: form });
+      // Raw body, name in a header: see SlideUpload for why this is not
+      // multipart.
+      const res = await fetch(`/api/presenters/${id}/slides`, {
+        method: "POST",
+        headers: {
+          "Content-Type": file.type || "application/octet-stream",
+          "X-File-Name": encodeURIComponent(file.name),
+          "X-File-Type": file.type || "application/octet-stream",
+        },
+        body: file,
+      });
       const j = await res.json().catch(() => ({}));
       if (!res.ok || !j.ok) throw new Error(j.error || "That did not save.");
       onDone();
