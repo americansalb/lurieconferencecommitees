@@ -39,7 +39,12 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     }
     const presenter = await prisma.presenter.findUnique({
       where: { id: params.id },
-      include: { events: { orderBy: { createdAt: "desc" } } },
+      include: {
+        events: { orderBy: { createdAt: "desc" } },
+        // Summary only. The deck itself is served by the /slides route so a
+        // 40 MB file never rides along with the page data.
+        slide: { select: { fileName: true, sizeBytes: true, linkUrl: true, uploadedBy: true, updatedAt: true, createdAt: true } },
+      },
     });
     if (!presenter) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });

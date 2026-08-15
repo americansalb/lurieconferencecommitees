@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Mic, Search, UserCheck, Download, Send, Check,
   Clock, XCircle, RefreshCw, AlertCircle, CircleHelp, Trash2, Megaphone, Inbox,
-  Presentation, ExternalLink, StickyNote, Ticket, BookOpen } from "lucide-react";
+  Presentation, ExternalLink, StickyNote, Ticket, BookOpen, Upload } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
 import MobileNav from "@/components/layout/MobileNav";
@@ -15,6 +15,8 @@ import { STATUS_LABELS } from "@/lib/presenters";
 import { parseResponse } from "@/lib/api";
 import { InviteComposer, type InviteEditable } from "@/components/presenters/InviteComposer";
 import ProposalCallComposer from "@/components/presenters/ProposalCallComposer";
+import { SLIDE_ACCEPT } from "@/lib/slide-types";
+import { fileSize } from "@/components/presenters/SlideUpload";
 
 interface PresenterRow {
   id: string;
@@ -41,7 +43,12 @@ interface PresenterRow {
   attendeeInvitedAt: string | null;
   slidesRemindCount: number;
   slideNotes: string | null;
-  slide: { fileName: string | null; sizeBytes: number | null; linkUrl: string | null; updatedAt: string | null; createdAt: string } | null;
+  slide: {
+    fileName: string | null; sizeBytes: number | null; linkUrl: string | null;
+    // An email when we uploaded it for them, null when they sent it themselves.
+    uploadedBy: string | null;
+    updatedAt: string | null; createdAt: string;
+  } | null;
 }
 
 function shortDate(iso: string | null | undefined): string {
@@ -300,8 +307,10 @@ export default function PresentersPage() {
                     <p className="text-xs text-slate-500 mt-1 max-w-xl">
                       Confirmed presenters upload their deck (PowerPoint, Keynote, PDF up to 50 MB, or a Google
                       Slides link) right in their portal, due <strong>Saturday, August 8</strong>, so there&rsquo;s time
-                      to review formatting. Files over 50 MB come in by email to contact@aalb.org. Each row below shows
-                      who has delivered; sends log to the presenter&rsquo;s history.
+                      to review formatting. Files over 50 MB come in by email to contact@aalb.org. If someone
+                      is not going to manage the form, use the upload arrow on their row and put the deck on file
+                      for them; rows say which decks came in that way. Each row below shows who has delivered;
+                      sends log to the presenter&rsquo;s history.
                     </p>
                   </div>
                   <div className="flex flex-col gap-2 shrink-0">
@@ -545,13 +554,20 @@ function PresenterRowItem({
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold border bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
-            title={row.slide.fileName
-              ? `${row.slide.fileName}${row.slide.sizeBytes ? ` · ${(row.slide.sizeBytes / 1024 / 1024).toFixed(1)} MB` : ""} — click to download`
-              : `${row.slide.linkUrl} — click to open`}
+            title={`${row.slide.fileName
+              ? `${row.slide.fileName}${row.slide.sizeBytes ? ` · ${fileSize(row.slide.sizeBytes)}` : ""} — click to download`
+              : `${row.slide.linkUrl} — click to open`}${
+              row.slide.uploadedBy ? `\nUploaded for them by ${row.slide.uploadedBy}` : "\nSent by the presenter"}`}
           >
             {row.slide.fileName ? <Download className="w-3 h-3" /> : <ExternalLink className="w-3 h-3" />}
-            Slides in · {shortDate(row.slide.updatedAt || row.slide.createdAt)}
+            Slides in{row.slide.uploadedBy ? " (we uploaded)" : ""} · {shortDate(row.slide.updatedAt || row.slide.createdAt)}
           </a>
+        )}
+        {/* Load a deck for someone who is not going to work the portal form.
+            Right here on the row, because the point is to do it in one go for
+            the handful of people it applies to, not to open each one. */}
+        {isAdmin && row.status === "confirmed" && (
+          <RowSlideUpload id={row.id} name={row.name} hasSlide={!!row.slide} onDone={onChanged} />
         )}
         {row.status === "confirmed" && row.slideNotes && (
           <span
@@ -634,6 +650,67 @@ function PresenterRowItem({
   );
 }
 
+
+/**
+ * The upload button on a presenter row.
+ *
+ * Deliberately tiny: pick a file, it saves, the row refreshes. Anything more
+ * involved (links, replacing, removing) lives on the presenter's own page,
+ * which is one click away.
+ */
+function RowSlideUpload({ id, name, hasSlide, onDone }: {
+  id: string;
+  name: string;
+  hasSlide: boolean;
+  onDone: () => void;
+}) {
+  const input = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function upload(file: File | null | undefined) {
+    if (!file) return;
+    setBusy(true);
+    setError(null);
+    const form = new FormData();
+    form.append("file", file);
+    try {
+      const res = await fetch(`/api/presenters/${id}/slides`, { method: "POST", body: form });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok || !j.ok) throw new Error(j.error || "That did not save.");
+      onDone();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "That did not save.");
+      setTimeout(() => setError(null), 6000);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <>
+      <input
+        ref={input}
+        type="file"
+        accept={SLIDE_ACCEPT}
+        className="hidden"
+        onChange={(e) => { void upload(e.target.files?.[0]); e.target.value = ""; }}
+      />
+      <button
+        type="button"
+        onClick={() => input.current?.click()}
+        disabled={busy}
+        title={error || `Upload a presentation for ${name.split(" ")[0]}${hasSlide ? ", replacing what is on file" : ""}`}
+        className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold disabled:opacity-40 ${
+          error ? "text-rose-700 bg-rose-50" : "text-slate-500 hover:text-[#0066B3] hover:bg-[#0066B3]/5"
+        }`}
+      >
+        <Upload className="w-3.5 h-3.5" />
+        {busy ? "Uploading" : error ? "Failed" : hasSlide ? "" : "Upload"}
+      </button>
+    </>
+  );
+}
 
 function csvEscape(s: string) {
   if (s == null) return "";

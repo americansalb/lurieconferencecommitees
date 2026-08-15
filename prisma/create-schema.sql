@@ -63,3 +63,8 @@ CREATE INDEX IF NOT EXISTS "lcc_scholarship_applications_email_idx"
   ON "lcc"."lcc_scholarship_applications" ("email");
 CREATE INDEX IF NOT EXISTS "lcc_scholarship_applications_status_idx"
   ON "lcc"."lcc_scholarship_applications" ("status");
+
+-- Who put a presentation on file: null when the presenter uploaded it from
+-- their own portal, an email when the team did it for them. Additive.
+ALTER TABLE "lcc"."lcc_presenter_slides"
+  ADD COLUMN IF NOT EXISTS "uploadedBy" TEXT;

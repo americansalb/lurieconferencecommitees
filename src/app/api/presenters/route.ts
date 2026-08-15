@@ -54,7 +54,7 @@ export async function GET() {
         slidesRemindCount: true,
         slideNotes: true,
         // Deck summary for the dashboard chip — never the bytes.
-        slide: { select: { fileName: true, sizeBytes: true, linkUrl: true, updatedAt: true, createdAt: true } },
+        slide: { select: { fileName: true, sizeBytes: true, linkUrl: true, uploadedBy: true, updatedAt: true, createdAt: true } },
       },
     });
     return NextResponse.json(presenters);

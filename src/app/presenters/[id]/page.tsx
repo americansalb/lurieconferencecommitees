@@ -13,6 +13,7 @@ import Navbar from "@/components/layout/Navbar";
 import MobileNav from "@/components/layout/MobileNav";
 import { STATUS_LABELS, STATUS_ORDER } from "@/lib/presenters";
 import { InviteComposer } from "@/components/presenters/InviteComposer";
+import { SlideUpload, type Slide } from "@/components/presenters/SlideUpload";
 
 interface Presenter {
   id: string;
@@ -71,6 +72,7 @@ interface Presenter {
   adminNotes: string | null;
   token: string;
   hasHeadshot: boolean;
+  slide: Slide | null;
   events: { id: string; type: string; createdAt: string; actorEmail: string | null; meta: string | null }[];
 }
 
@@ -264,6 +266,14 @@ export default function PresenterDetailPage() {
                     <KV label="Abstract" value={presenter.talkAbstract} multiline />
                     <KV label="Learning objectives" value={presenter.learningObjectives} multiline />
                   </Section>
+                  {isAdmin && (
+                    <SlideUpload
+                      presenterId={presenter.id}
+                      presenterName={presenter.name}
+                      slide={presenter.slide}
+                      onChanged={(slide) => setPresenter((p) => (p ? { ...p, slide } : p))}
+                    />
+                  )}
                   {(presenter.requestedChanges || presenter.presenterMessage) && (
                     <Section title="From the presenter">
                       <KV label="Requested adjustments" value={presenter.requestedChanges} multiline />

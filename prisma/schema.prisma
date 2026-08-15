@@ -396,6 +396,9 @@ model PresenterSlide {
   sizeBytes   Int?
   data        Bytes?
   linkUrl     String?
+  // Set when a team member uploaded this for a presenter who could not, so a
+  // deck on file is never mistaken for a presenter who answered.
+  uploadedBy  String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime? @updatedAt
 
