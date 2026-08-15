@@ -305,7 +305,7 @@ export default function PresentersPage() {
                       </span>
                     </div>
                     <p className="text-xs text-slate-500 mt-1 max-w-xl">
-                      Confirmed presenters upload their deck (PowerPoint, Keynote, PDF up to {MAX_SLIDE_LABEL}, or a Google
+                      Confirmed presenters upload their deck (PowerPoint, Keynote, PDF or a video up to {MAX_SLIDE_LABEL}, or a Google
                       Slides link) right in their portal, due <strong>Saturday, August 8</strong>, so there&rsquo;s time
                       to review formatting. Files over {MAX_SLIDE_LABEL} come in by email to contact@aalb.org. If someone
                       is not going to manage the form, use the upload arrow on their row and put the deck on file

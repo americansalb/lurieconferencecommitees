@@ -209,7 +209,7 @@ export function presenterConfirmedEmail({ name, url }: { name: string; url: stri
 }
 
 // The ask (and its reminder) for a confirmed presenter's slide deck. The
-// portal accepts PowerPoint / Keynote / PDF up to the size cap or a Google Slides
+// portal accepts PowerPoint / Keynote / PDF / video up to the size cap or a Google Slides
 // link; anything bigger goes to contact@aalb.org by email. Deadline is a
 // week before the conference so formatting can be checked on the venue
 // systems with time to fix things together.
@@ -223,7 +223,7 @@ export function presenterSlidesRequestEmail({ name, url, reminder }: { name: str
         : `You&rsquo;re confirmed to present at the 2026 Lurie Children&rsquo;s and AALB Conference, August 15 and 16. So that everything looks right on the venue screens, we&rsquo;d love your presentation by <strong>Saturday, August 8</strong>.`}
     </p>
     <p style="font-size:15px;line-height:1.65;color:${TEXT};margin:0 0 14px 0;">
-      PowerPoint, Keynote, or PDF up to ${MAX_SLIDE_LABEL}, or a link to Google Slides, whatever you&rsquo;re working in. Uploading takes a moment in your presenter portal:
+      PowerPoint, Keynote, PDF, or a video up to ${MAX_SLIDE_LABEL}, or a link to Google Slides, whatever you&rsquo;re working in. Uploading takes a moment in your presenter portal:
     </p>
     ${button(url, reminder ? "Upload my presentation" : "Upload your presentation")}
     <p style="font-size:13px;line-height:1.6;color:${MUTED};margin:8px 0 0 0;">

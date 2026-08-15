@@ -5,10 +5,11 @@ import { prisma } from "@/lib/db";
 import {
   saveSlideStream, saveSlideLink, removeSlide, slideChunks, safeDecode, tooBigUpFront,
 } from "@/lib/presenter-slides";
+import { opensInBrowser } from "@/lib/slide-types";
 
 // Team-facing, by presenter id.
 //
-// GET fetches a submitted deck: PDFs render inline in the browser tab (that's
+// GET fetches a submitted deck: PDFs and videos open in the browser tab (that's
 // the preview); slide files download with their original name; a link
 // submission 302s straight to the link. Any logged-in member can view, matching
 // the presenters dashboard.
@@ -49,7 +50,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   const total = slide.sizeBytes;
   const mime = slide.mime || "application/octet-stream";
   const name = (slide.fileName || "presentation").replace(/[^\w.\- ()]/g, "_");
-  const inline = mime === "application/pdf";
+  const inline = opensInBrowser(mime);
 
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {

@@ -2,7 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { CheckCircle2, Copy, ExternalLink, FileText, Link2, Loader2, Mail, Presentation, RefreshCw, Trash2, UploadCloud } from "lucide-react";
-import { MAX_SLIDE_MB } from "@/lib/slide-types";
+import { MAX_SLIDE_MB, SLIDE_ACCEPT, SLIDE_NAME_RE, SLIDE_TYPES_SENTENCE } from "@/lib/slide-types";
 
 // The presentation drop-box on the presenter portal's confirmed screen.
 // One card, three states: nothing yet (upload zone + link field), a file on
@@ -37,8 +37,10 @@ function fmtDate(iso: string | null | undefined): string {
   return isNaN(d.getTime()) ? "" : d.toLocaleDateString("en-US", { month: "long", day: "numeric" });
 }
 
-const ACCEPT = ".ppt,.pptx,.key,.odp,.pdf";
-const ACCEPT_RE = /\.(ppt|pptx|key|odp|pdf)$/i;
+// Taken from the shared list, not written out again: the portal used to keep
+// its own copy, which is how it ends up accepting something the server refuses.
+const ACCEPT = SLIDE_ACCEPT;
+const ACCEPT_RE = SLIDE_NAME_RE;
 
 export default function SlidesPanel({
   token,
@@ -94,7 +96,7 @@ export default function SlidesPanel({
     setError(null);
     setOversize(null);
     if (!ACCEPT_RE.test(file.name)) {
-      setError("PowerPoint (.ppt, .pptx), Keynote (.key), OpenDocument (.odp), or PDF, please.");
+      setError(`${SLIDE_TYPES_SENTENCE}, please.`);
       return;
     }
     if (file.size > SLIDE_MAX_MB * 1024 * 1024) {
@@ -224,7 +226,7 @@ export default function SlidesPanel({
           {!hasFile && !hasLink && !oversize && (
             <>
               <p className="mt-3 text-sm text-slate-500 leading-relaxed">
-                PowerPoint, Keynote, or PDF up to {SLIDE_MAX_MB} MB — or a link to Google Slides.
+                PowerPoint, Keynote, PDF, or a video up to {SLIDE_MAX_MB} MB, or a link to Google Slides.
                 Sending it by {SLIDES_DEADLINE_LABEL} gives us time to check the formatting on the
                 venue screens with you, well before the day.
               </p>
@@ -261,7 +263,7 @@ export default function SlidesPanel({
                     <div className="mt-2.5 text-sm font-semibold text-slate-800">
                       Drop your file here, or click to choose
                     </div>
-                    <div className="mt-1 text-xs text-slate-400">.pptx · .key · .pdf · up to {SLIDE_MAX_MB} MB</div>
+                    <div className="mt-1 text-xs text-slate-400">.pptx · .key · .pdf · .mp4 · up to {SLIDE_MAX_MB} MB</div>
                   </button>
                   <input
                     ref={fileRef}
