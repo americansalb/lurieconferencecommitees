@@ -23,6 +23,7 @@ import AttendeeDrawer from "./AttendeeDrawer";
 import BroadcastComposer from "./BroadcastComposer";
 import EventSettingsModal from "./EventSettingsModal";
 import GoogleSheetPanel from "./GoogleSheetPanel";
+import { ZOOM_DAYS, zoomDaysFor } from "@/lib/virtual-event";
 
 type PreviewState = { title: string; meta?: string; html: string | null };
 
@@ -764,12 +765,12 @@ export default function AttendeesPage() {
   // The virtual counterpart of the guide: Zoom links for their registered
   // day(s), sign-in times, CEU rules, and the program PDF. Its own sent-stamp,
   // so it never affects who is due the in-person letters.
-  async function sendVirtualInfo(mode: "initial" | "all", ids?: string[]) {
+  async function sendVirtualInfo(mode: "initial" | "all", ids?: string[], day?: "sat" | "sun") {
     setVirtualInfo({ sending: true, note: null });
     try {
       const res = await fetch("/api/attendees/send-virtual-info", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode, ...(ids && ids.length ? { ids } : {}) }),
+        body: JSON.stringify({ mode, ...(ids && ids.length ? { ids } : {}), ...(day ? { day } : {}) }),
       });
       const json = await res.json().catch(() => ({}));
       setVirtualInfo({
@@ -956,6 +957,14 @@ export default function AttendeesPage() {
   );
   const virtualEligible = virtualEligibleRows.length;
   const virtualSent = virtualEligibleRows.filter((a) => a.virtualInfoSentAt).length;
+
+  // Sending one day's room on its own reaches everyone whose ticket covers that
+  // day, whether or not they already have the both-days email. Same predicate
+  // as the server, so the button cannot promise a different number.
+  const dayTwo = ZOOM_DAYS[ZOOM_DAYS.length - 1];
+  const dayTwoEligible = virtualEligibleRows.filter(
+    (a) => zoomDaysFor(a.attendDay).some((d) => d.key === dayTwo.key)
+  ).length;
 
   // Chicago people who are loaded but have neither been queued nor written to
   // — the ones the "Queue Chicago letters" button would actually act on.
@@ -1438,6 +1447,19 @@ export default function AttendeesPage() {
                         >
                           {virtualInfo.sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Video className="w-4 h-4" />}
                           Send virtual info
+                        </button>
+                        <button
+                          onClick={() => setConfirmDialog({
+                            title: `Send the ${dayTwo.shortLabel} Zoom link to ${dayTwoEligible} virtual attendee${dayTwoEligible === 1 ? "" : "s"}?`,
+                            message: `The same email, carrying only the Day ${dayTwo.dayNumber} room for ${dayTwo.label}, so nobody is hunting for the right link on the morning. It goes to every paid virtual attendee whose ticket covers ${dayTwo.shortLabel}, including people who already have the both-days email. Anyone on a ${ZOOM_DAYS[0].shortLabel}-only ticket is left out, and nobody is told their ticket is one day when it is not.`,
+                            confirmLabel: `Send ${dayTwo.shortLabel} link`,
+                            onConfirm: () => { setConfirmDialog(null); void sendVirtualInfo("all", undefined, dayTwo.key); },
+                          })}
+                          disabled={virtualInfo.sending}
+                          className="px-3 py-2 rounded-lg text-sm font-bold border border-purple-200 text-purple-700 bg-purple-50 hover:bg-purple-100 disabled:opacity-50 inline-flex items-center gap-1.5"
+                        >
+                          <Video className="w-4 h-4" />
+                          Send {dayTwo.shortLabel} link only ({dayTwoEligible})
                         </button>
                         <button
                           onClick={() => setConfirmDialog({

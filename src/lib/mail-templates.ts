@@ -4633,10 +4633,18 @@ export function virtualAttendeeInfoEmail({
   exhibitorsUrl,
   scheduleUrl,
   assetBase,
+  dayFocus = false,
 }: {
   firstName: string;
   /** The Zoom day(s) this attendee's ticket covers, from zoomDaysFor(). */
   days: ZoomDay[];
+  /**
+   * True when a single day is being sent on purpose, to put the right room in
+   * front of people the day before, rather than because their ticket only
+   * covers that day. It changes what the email is allowed to claim: someone
+   * holding a both-days ticket must not be told their ticket covers one day.
+   */
+  dayFocus?: boolean;
   /**
    * This attendee's personal redirect base, `<site>/z/<inviteToken>`. Every
    * Zoom href in the email is `<base>/<day>` so clicks are recorded against
@@ -4686,17 +4694,16 @@ export function virtualAttendeeInfoEmail({
     `
     <h1 style="font-size:23px;font-weight:800;margin:0 0 12px 0;letter-spacing:-0.01em;">${addressed("Welcome", first)}</h1>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
-      We are excited to welcome you to the <strong>2nd Joint Conference</strong> of Lurie Children&rsquo;s
-      and AALB: <em>True Language Access: Yesterday, Today, and Tomorrow</em>, this
-      <strong>Saturday, August 15 and Sunday, August 16</strong>. You are joining us online, and
-      everything you need for a smooth, engaging conference is below.
+      ${dayFocus && oneDay
+        ? `So that nobody is hunting for a link on the morning, here is your Zoom room for <strong>${oneDay.label}</strong>, day ${oneDay.dayNumber} of the <strong>2nd Joint Conference</strong> of Lurie Children&rsquo;s and AALB. Each day has its own room, so please use this one rather than the link from the other day.`
+        : `We are excited to welcome you to the <strong>2nd Joint Conference</strong> of Lurie Children&rsquo;s and AALB: <em>True Language Access: Yesterday, Today, and Tomorrow</em>, this <strong>Saturday, August 15 and Sunday, August 16</strong>. You are joining us online, and everything you need for a smooth, engaging conference is below.`}
     </p>
     <div style="background:#F4E9CD;border-radius:10px;padding:10px 16px;margin:18px 0;text-align:center;font-size:13px;font-weight:700;color:#6b5314;">
       All times in this email are US Central Time (Chicago)
     </div>
 
     ${sectionHeading(oneDay ? "Your Zoom link" : "Your Zoom links")}
-    ${oneDay ? `<p style="font-size:14px;line-height:1.7;color:${MUTED};margin:0 0 4px 0;">Your ticket covers ${oneDay.label}.</p>` : ""}
+    ${oneDay && !dayFocus ? `<p style="font-size:14px;line-height:1.7;color:${MUTED};margin:0 0 4px 0;">Your ticket covers ${oneDay.label}.</p>` : ""}
     ${days.map(dayCard).join("")}
     <p style="font-size:13.5px;line-height:1.7;color:${MUTED};margin:10px 0 0 0;">
       Signing in early keeps our register clear for Continuing Education Unit tracking and avoids

@@ -16,6 +16,8 @@ export type Attendee = {
   lastName: string;
   affiliation: string | null;
   attendanceMode: string | null;
+  /** "sat" / "sun" for a one-day ticket, null or otherwise for both days. */
+  attendDay?: string | null;
   status: string;
   paid: boolean;
   guideSentAt?: string | null;

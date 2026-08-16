@@ -165,6 +165,20 @@ export async function GET(
         assetBase: base,
       });
       break;
+    // The day-two-only resend as a both-days attendee receives it: one room,
+    // and no claim that their ticket covers a single day.
+    case "virtual-info-day2":
+      html = virtualAttendeeInfoEmail({
+        firstName: "Miriam",
+        days: zoomDaysFor(null).filter((d) => d.key === "sun"),
+        dayFocus: true,
+        zoomHrefBase: `${base}/z/demo-token`,
+        portalUrl: `${base}/attend/demo-token`,
+        exhibitorsUrl: `${base}/#sponsors`,
+        scheduleUrl: `${base}/#program`,
+        assetBase: base,
+      });
+      break;
     case "virtual-info-sat":
       html = virtualAttendeeInfoEmail({
         firstName: "Miriam",

@@ -16,9 +16,13 @@ import { zoomDaysFor } from "@/lib/virtual-event";
 // Sends immediately rather than through the Email Queue, exactly like the
 // in-person guide: these are paid attendees expecting event logistics.
 //
-// POST { mode?: "initial" | "all", ids?: string[] }
+// POST { mode?: "initial" | "all", ids?: string[], day?: "sat" | "sun" }
 //   "initial" (default) skips anyone already sent it; "all" re-sends.
 //   `ids` restricts the run so a late registrant can be caught up alone.
+//   `day` sends one day's room on its own, for putting tomorrow's link in
+//   front of people the night before. It only reaches attendees whose ticket
+//   actually covers that day, and the email does not claim their ticket is
+//   one day when it is not.
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -33,6 +37,8 @@ export async function POST(req: Request) {
   const ids = Array.isArray((body as { ids?: unknown }).ids)
     ? ((body as { ids: unknown[] }).ids.filter((x) => typeof x === "string") as string[])
     : null;
+  const rawDay = (body as { day?: unknown }).day;
+  const day = rawDay === "sat" || rawDay === "sun" ? rawDay : null;
 
   const targets = await prisma.attendee.findMany({
     where: {
@@ -43,18 +49,24 @@ export async function POST(req: Request) {
       // attendees, even when specific ids are passed.
       attendanceMode: "virtual",
       ...(ids?.length ? { id: { in: ids } } : {}),
-      ...(mode === "initial" ? { virtualInfoSentAt: null } : {}),
+      ...(mode === "initial" && !day ? { virtualInfoSentAt: null } : {}),
     },
     orderBy: { createdAt: "asc" },
   });
-  if (!targets.length) return NextResponse.json({ sent: 0, failed: 0 });
+  // A one-day send skips anyone whose ticket does not cover that day, rather
+  // than mailing a Saturday-only attendee a Sunday room they cannot use.
+  const eligible = day
+    ? targets.filter((a) => zoomDaysFor(a.attendDay).some((d) => d.key === day))
+    : targets;
+  if (!eligible.length) return NextResponse.json({ sent: 0, failed: 0 });
 
   let sent = 0;
   const failures: { email: string; error: string }[] = [];
   const recipients: string[] = [];
 
-  for (const a of targets) {
-    const days = zoomDaysFor(a.attendDay);
+  for (const a of eligible) {
+    const all = zoomDaysFor(a.attendDay);
+    const days = day ? all.filter((d) => d.key === day) : all;
     // Personal and specific: their name, the event by name, and the days
     // their ticket covers.
     const firstName = (a.firstName || "").trim();
@@ -72,6 +84,9 @@ export async function POST(req: Request) {
         html: virtualAttendeeInfoEmail({
           firstName: a.firstName,
           days,
+          // Says "here is the room for this day" rather than "your ticket
+          // covers this day", which would be false for a both-days ticket.
+          dayFocus: !!day,
           zoomHrefBase: `${appUrl()}/z/${a.inviteToken}`,
           portalUrl: `${appUrl()}/attend/${a.inviteToken}`,
           exhibitorsUrl: `${appUrl()}/#sponsors`,
@@ -93,7 +108,13 @@ export async function POST(req: Request) {
         data: { virtualInfoSentAt: new Date() },
       });
       await prisma.attendeeEvent
-        .create({ data: { attendeeId: a.id, type: "virtual_info_sent", meta: actorEmail } })
+        .create({
+          data: {
+            attendeeId: a.id,
+            type: "virtual_info_sent",
+            meta: day ? `${actorEmail || ""} · ${days[0].label} only` : actorEmail,
+          },
+        })
         .catch(() => {});
       recipients.push(a.email);
       sent++;
