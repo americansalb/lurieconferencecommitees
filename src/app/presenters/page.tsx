@@ -7,7 +7,7 @@ import Link from "next/link";
 import {
   Mic, Search, UserCheck, Download, Send, Check,
   Clock, XCircle, RefreshCw, AlertCircle, CircleHelp, Trash2, Megaphone, Inbox,
-  Presentation, ExternalLink, StickyNote, Ticket, BookOpen, Upload } from "lucide-react";
+  Presentation, ExternalLink, StickyNote, Ticket, BookOpen, Upload, Banknote } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
 import MobileNav from "@/components/layout/MobileNav";
@@ -41,6 +41,8 @@ interface PresenterRow {
   // Set once we've registered them as a complimentary attendee and sent
   // them their portal link.
   attendeeInvitedAt: string | null;
+  // When we asked them where to send the honorarium cheque.
+  honorariumAskedAt: string | null;
   slidesRemindCount: number;
   slideNotes: string | null;
   slide: {
@@ -71,6 +73,8 @@ export default function PresentersPage() {
   const [seatBusy, setSeatBusy] = useState<"initial" | "all" | null>(null);
   const [seatNote, setSeatNote] = useState<string | null>(null);
   const [slidesNote, setSlidesNote] = useState<string | null>(null);
+  const [honorariumBusy, setHonorariumBusy] = useState<"initial" | "all" | null>(null);
+  const [honorariumNote, setHonorariumNote] = useState<string | null>(null);
 
   const role = (session?.user as { role?: string } | undefined)?.role;
   const isAdmin = role === "admin" || role === "developer";
@@ -152,6 +156,15 @@ export default function PresentersPage() {
       // Presenters attend free; this is who has not yet been told so and
       // given their attendee page.
       seatNotSent: confirmed.filter((r) => !r.attendeeInvitedAt).length,
+      // Paying them afterwards. Somebody with no amount on file is not a
+      // recipient: we would be writing to them about an honorarium we have
+      // not agreed. Counted separately so the gap is visible rather than
+      // silently dropped.
+      owed: confirmed.filter((r) => (r.honorariumAmount || 0) > 0 || (r.travelReimbursement || 0) > 0),
+      owedNotAsked: confirmed.filter(
+        (r) => ((r.honorariumAmount || 0) > 0 || (r.travelReimbursement || 0) > 0) && !r.honorariumAskedAt
+      ).length,
+      noAmount: confirmed.filter((r) => !(r.honorariumAmount || 0) && !(r.travelReimbursement || 0)).length,
     };
   }, [rows]);
 
@@ -176,6 +189,35 @@ export default function PresentersPage() {
     } finally {
       setSeatBusy(null);
       setTimeout(() => setSeatNote(null), 9000);
+    }
+  }
+
+  // Thank you, and where should the cheque go. Sent after the conference, so
+  // it is the first thing presenters hear from us afterwards.
+  async function requestHonorarium(mode: "initial" | "all") {
+    setHonorariumBusy(mode);
+    setHonorariumNote(null);
+    try {
+      const res = await fetch("/api/presenters/request-honorarium", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode }),
+      });
+      const json = await res.json().catch(() => ({}));
+      const skipped = json.skippedNoAmount
+        ? ` · ${json.skippedNoAmount} skipped with no amount on file`
+        : "";
+      setHonorariumNote(res.ok
+        ? (json.sent || 0) === 0
+          ? `Nobody to write to${skipped || ": everyone with an amount on file has already been asked"}.`
+          : `Asked ${json.sent} presenter${json.sent === 1 ? "" : "s"}${json.failed ? ` · ${json.failed} failed: ${(json.failures || []).map((f: { email: string }) => f.email).join(", ")}` : ""}${skipped}.`
+        : (json.error || "Could not send."));
+      await load();
+    } catch {
+      setHonorariumNote("Network error while sending.");
+    } finally {
+      setHonorariumBusy(null);
+      setTimeout(() => setHonorariumNote(null), 12000);
     }
   }
 
@@ -381,6 +423,66 @@ export default function PresentersPage() {
                   </div>
                 </div>
                 {seatNote && <div className="mt-2 text-xs font-semibold text-teal-700">{seatNote}</div>}
+              </div>
+            )}
+
+            {/* Paying them, after the fact. Sits below the seats panel because
+                that is the order the work happens in: invite, collect decks,
+                seat them, and then settle up once the conference is over. */}
+            {isAdmin && slides.owed.length > 0 && (
+              <div className="rounded-2xl p-4 shadow-sm mb-4 border" style={{ background: "linear-gradient(180deg,#F5F3FF,#ffffff)", borderColor: "#DDD6FE" }}>
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <div className="min-w-0">
+                    <div className="text-sm font-bold text-slate-900 inline-flex items-center gap-1.5">
+                      <Banknote className="w-4 h-4" style={{ color: "#7C3AED" }} /> Honorarium payment
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                        {slides.owed.length - slides.owedNotAsked}/{slides.owed.length} asked
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1 max-w-xl">
+                      Thanks them for the weekend, tells them the attendee feedback is coming, and asks
+                      where to post the cheque. They can reply with a mailing address, or send an invoice
+                      to <strong className="text-slate-700">invoice@aalb.org</strong> if they would rather
+                      bill us. Each email names that presenter&rsquo;s own honorarium, and travel
+                      reimbursement where they have one.
+                      {slides.noAmount > 0 && (
+                        <>
+                          {" "}
+                          <strong className="text-amber-700">
+                            {slides.noAmount} confirmed presenter{slides.noAmount === 1 ? " has" : "s have"} no
+                            amount on file and {slides.noAmount === 1 ? "is" : "are"} left out
+                          </strong>
+                          , since we would be writing to them about money we have not agreed. Add an amount on
+                          their page to include them.
+                        </>
+                      )}
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => requestHonorarium("initial")}
+                      disabled={honorariumBusy !== null || slides.owedNotAsked === 0}
+                      className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white shadow-sm disabled:opacity-50"
+                      style={{ background: "linear-gradient(90deg,#7C3AED,#6D28D9)" }}
+                      title="Thank every confirmed presenter we owe, and ask where to send their cheque"
+                    >
+                      {honorariumBusy === "initial" ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Banknote className="w-4 h-4" />}
+                      {slides.owedNotAsked === 0 ? "Everyone asked" : `Ask for addresses (${slides.owedNotAsked})`}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => requestHonorarium("all")}
+                      disabled={honorariumBusy !== null}
+                      className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold border disabled:opacity-50 text-[#6D28D9] border-[#DDD6FE] bg-white"
+                      title="Send again to everyone we owe, including those already asked"
+                    >
+                      {honorariumBusy === "all" ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Clock className="w-4 h-4" />}
+                      Send again to all
+                    </button>
+                  </div>
+                </div>
+                {honorariumNote && <div className="mt-2 text-xs font-semibold text-[#6D28D9]">{honorariumNote}</div>}
               </div>
             )}
 

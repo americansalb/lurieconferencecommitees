@@ -20,6 +20,7 @@ import {
   plainStandardInviteEmail,
   plainCommunityInviteEmail,
   virtualAttendeeInfoEmail,
+  presenterHonorariumRequestEmail,
   tourReminderEmail,
 } from "@/lib/mail-templates";
 import { zoomDaysFor } from "@/lib/virtual-event";
@@ -167,6 +168,36 @@ export async function GET(
       break;
     // The day-two-only resend as a both-days attendee receives it: one room,
     // and no claim that their ticket covers a single day.
+    case "honorarium-request":
+      html = presenterHonorariumRequestEmail({
+        name: "Mercedes Alvarado",
+        honorariumAmount: 500,
+        travelReimbursement: 300,
+        invoiceEmail: "invoice@aalb.org",
+        replyToEmail: "contact@aalb.org",
+      });
+      break;
+    // The same email for somebody with an honorarium but no travel.
+    case "honorarium-request-no-travel":
+      html = presenterHonorariumRequestEmail({
+        name: "Daniel",
+        honorariumAmount: 400,
+        travelReimbursement: null,
+        invoiceEmail: "invoice@aalb.org",
+        replyToEmail: "contact@aalb.org",
+      });
+      break;
+    // Travel reimbursement but no honorarium: the email must not say the
+    // word honorarium about money we are not paying.
+    case "honorarium-request-travel-only":
+      html = presenterHonorariumRequestEmail({
+        name: "Jane Kontrimas",
+        honorariumAmount: null,
+        travelReimbursement: 250,
+        invoiceEmail: "invoice@aalb.org",
+        replyToEmail: "contact@aalb.org",
+      });
+      break;
     case "virtual-info-day2":
       html = virtualAttendeeInfoEmail({
         firstName: "Miriam",

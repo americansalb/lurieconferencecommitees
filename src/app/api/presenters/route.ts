@@ -51,6 +51,7 @@ export async function GET() {
         headshotMime: true,
         slidesRequestedAt: true,
         attendeeInvitedAt: true,
+        honorariumAskedAt: true,
         slidesRemindCount: true,
         slideNotes: true,
         // Deck summary for the dashboard chip — never the bytes.

@@ -93,3 +93,9 @@ BEGIN
 EXCEPTION
   WHEN duplicate_object THEN NULL;
 END $$;
+
+-- Paying presenters after the conference: when we asked where to send the
+-- cheque, and the address if they replied with one. Additive.
+ALTER TABLE "lcc"."lcc_presenters"
+  ADD COLUMN IF NOT EXISTS "honorariumAskedAt" TIMESTAMP(3),
+  ADD COLUMN IF NOT EXISTS "mailingAddress"    TEXT;

@@ -524,6 +524,8 @@ function eventLabel(type: string) {
     case "confirmed": return "Confirmed participation";
     case "declined": return "Declined";
     case "admin_edited": return "Edited by admin";
+    case "honorarium_request_sent": return "Asked where to send their honorarium";
+    case "honorarium_request_failed": return "Honorarium email failed to send";
     default: return type;
   }
 }

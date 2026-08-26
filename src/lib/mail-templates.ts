@@ -4871,3 +4871,112 @@ export function tourReminderEmail({
     "You are receiving this because you signed up for the optional hospital tour at the 2026 Lurie Children&rsquo;s and AALB Conference."
   );
 }
+
+// The first thing a presenter hears from us after the conference: thank you,
+// and where should the honorarium go.
+//
+// Two ways to be paid, because people's situations differ. Most will want a
+// cheque and just need to tell us where to send it, which is a reply to this
+// email. Anyone who bills through their own system, or whose employer requires
+// it, can invoice instead.
+//
+// The tone is deliberate. This is the first contact after they stood up and
+// taught, and an email that opens with paperwork reads as though the work is
+// already forgotten. The thanks come first and the admin second. It promises
+// attendee feedback because that is a real commitment being made here, and it
+// says nothing about what any individual attendee wrote, because those forms
+// are still coming in.
+export function presenterHonorariumRequestEmail({
+  name,
+  honorariumAmount,
+  travelReimbursement,
+  invoiceEmail,
+  replyToEmail,
+}: {
+  name: string;
+  /** Dollars, when an amount is on file. Omitted from the email when not. */
+  honorariumAmount?: number | null;
+  travelReimbursement?: number | null;
+  invoiceEmail: string;
+  replyToEmail: string;
+}) {
+  const first = (name || "").split(" ")[0] || "";
+  const money = (n: number) => `$${n.toLocaleString("en-US")}`;
+  // Someone owed travel but no honorarium must not be sent an email headed
+  // "Your honorarium". Name whichever we are actually paying.
+  const owedLabel = honorariumAmount ? "honorarium" : "travel reimbursement";
+
+  // Only ever states a figure we actually hold. Saying "your honorarium" with
+  // no number is fine; inventing one is not.
+  const amountLine = honorariumAmount
+    ? `Your honorarium is <strong>${money(honorariumAmount)}</strong>${
+        travelReimbursement
+          ? `, and you are also covered for travel up to <strong>${money(travelReimbursement)}</strong> with receipts`
+          : ""
+      }.`
+    : travelReimbursement
+    ? `You are covered for travel up to <strong>${money(travelReimbursement)}</strong> with receipts.`
+    : "";
+
+  const mailto = `mailto:${replyToEmail}?subject=${encodeURIComponent(
+    `Mailing address${name ? ` for ${name}` : ""}`
+  )}&body=${encodeURIComponent(
+    "Here is where to send my cheque:\n\nName:\nStreet:\nCity, State, ZIP:\n\n"
+  )}`;
+
+  return shell(
+    `
+    <h1 style="font-size:23px;font-weight:800;margin:0 0 14px 0;letter-spacing:-0.01em;">${addressed("Thank you", first)}</h1>
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
+      The conference would not have been what it was without you. This year&rsquo;s presenters were
+      genuinely excellent, and you were part of that. Thank you for the preparation that went in
+      before the weekend as much as for the session itself.
+    </p>
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 20px 0;">
+      Attendee feedback forms are still coming in. Once we have them gathered, we will send you
+      what people said about your session, because you should get to hear it.
+    </p>
+
+    ${sectionHeading(`Your ${owedLabel}`)}
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
+      ${amountLine} We would like to get this to you promptly, and there are two ways to do it,
+      whichever suits you better.
+    </p>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:6px 0 4px 0;">
+      <tr><td style="padding:16px 18px;background:#F7FAFB;border-radius:12px;border:1px solid #E3ECEF;">
+        <div style="font-size:11px;letter-spacing:0.14em;font-weight:800;color:${TEAL};text-transform:uppercase;">Option one &middot; a cheque in the post</div>
+        <div style="font-size:14.5px;line-height:1.65;color:${TEXT};margin-top:8px;">
+          Just reply to this email with the name and mailing address the cheque should go to, and we
+          will put it in the post.
+        </div>
+      </td></tr>
+    </table>
+    ${button(mailto, "Reply with my address")}
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:4px 0 18px 0;">
+      <tr><td style="padding:16px 18px;background:#F7FAFB;border-radius:12px;border:1px solid #E3ECEF;">
+        <div style="font-size:11px;letter-spacing:0.14em;font-weight:800;color:${TEAL};text-transform:uppercase;">Option two &middot; send us an invoice</div>
+        <div style="font-size:14.5px;line-height:1.65;color:${TEXT};margin-top:8px;">
+          If you would rather bill us through your own invoicing system, or your employer needs it
+          that way, send the invoice to
+          <a href="mailto:${invoiceEmail}" style="color:${BLUE};font-weight:600;">${invoiceEmail}</a>
+          and we will take it from there.
+        </div>
+      </td></tr>
+    </table>
+
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 6px 0;">
+      If anything above looks wrong, or you need something different from either of these, just say
+      so in a reply and we will sort it out.
+    </p>
+    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:14px 0 0 0;">
+      With real gratitude,<br/>
+      The Lurie Children&rsquo;s and AALB conference team
+    </p>
+  `,
+    first
+      ? `${first}, thank you. Here is how to get your honorarium to you.`
+      : "Thank you. Here is how to get your honorarium to you."
+  );
+}

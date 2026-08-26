@@ -90,3 +90,8 @@ export function formatMoney(cents: number | null | undefined) {
   if (cents == null) return null;
   return `$${cents.toLocaleString("en-US")}`;
 }
+
+/** Where presenters send an invoice, if they would rather bill than be posted a cheque. */
+export const INVOICE_EMAIL = "invoice@aalb.org";
+/** Where a presenter's reply with their mailing address lands. */
+export const HONORARIUM_REPLY_TO = "contact@aalb.org";

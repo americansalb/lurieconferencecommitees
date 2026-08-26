@@ -373,6 +373,12 @@ model Presenter {
   // notes survive even when the deck itself arrives by email.
   slideNotes        String?
 
+  // Paying them afterwards: when we asked where to send the honorarium
+  // cheque, and the address they sent back if they replied with one rather
+  // than invoicing. Kept here so a second run does not ask twice.
+  honorariumAskedAt DateTime?
+  mailingAddress    String?
+
   events PresenterEvent[]
   slide  PresenterSlide?
 
