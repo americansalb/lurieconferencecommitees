@@ -4880,6 +4880,12 @@ export function tourReminderEmail({
 // email. Anyone who bills through their own system, or whose employer requires
 // it, can invoice instead.
 //
+// It names no figures. A number in an email cannot be unsaid, and the amounts
+// on file are not all trustworthy enough to put in front of the person being
+// paid. Leaving them out also means everyone can be written to, including the
+// presenters whose amount was never recorded. The figure gets agreed in the
+// reply, where it can still be corrected.
+//
 // The tone is deliberate. This is the first contact after they stood up and
 // taught, and an email that opens with paperwork reads as though the work is
 // already forgotten. The thanks come first and the admin second. It promises
@@ -4901,22 +4907,10 @@ export function presenterHonorariumRequestEmail({
   replyToEmail: string;
 }) {
   const first = (name || "").split(" ")[0] || "";
-  const money = (n: number) => `$${n.toLocaleString("en-US")}`;
-  // Someone owed travel but no honorarium must not be sent an email headed
-  // "Your honorarium". Name whichever we are actually paying.
-  const owedLabel = honorariumAmount ? "honorarium" : "travel reimbursement";
-
-  // Only ever states a figure we actually hold. Saying "your honorarium" with
-  // no number is fine; inventing one is not.
-  const amountLine = honorariumAmount
-    ? `Your honorarium is <strong>${money(honorariumAmount)}</strong>${
-        travelReimbursement
-          ? `, and you are also covered for travel up to <strong>${money(travelReimbursement)}</strong> with receipts`
-          : ""
-      }.`
-    : travelReimbursement
-    ? `You are covered for travel up to <strong>${money(travelReimbursement)}</strong> with receipts.`
-    : "";
+  // Someone owed travel but no honorarium should not read "your honorarium".
+  // Where we hold nothing either way, "honorarium" is what this payment is
+  // called, and the email is only asking where to send it.
+  const owedLabel = !honorariumAmount && travelReimbursement ? "travel reimbursement" : "honorarium";
 
   const mailto = `mailto:${replyToEmail}?subject=${encodeURIComponent(
     `Mailing address${name ? ` for ${name}` : ""}`
@@ -4929,8 +4923,8 @@ export function presenterHonorariumRequestEmail({
     <h1 style="font-size:23px;font-weight:800;margin:0 0 14px 0;letter-spacing:-0.01em;">${addressed("Thank you", first)}</h1>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
       The conference would not have been what it was without you. This year&rsquo;s presenters were
-      genuinely excellent, and you were part of that. Thank you for the preparation that went in
-      before the weekend as much as for the session itself.
+      excellent, and you were part of that. Thank you for the preparation that went in before the
+      weekend as much as for the session itself.
     </p>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 20px 0;">
       Attendee feedback forms are still coming in. Once we have them gathered, we will send you
@@ -4939,7 +4933,7 @@ export function presenterHonorariumRequestEmail({
 
     ${sectionHeading(`Your ${owedLabel}`)}
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
-      ${amountLine} We would like to get this to you promptly, and there are two ways to do it,
+      We would like to get your ${owedLabel} to you promptly, and there are two ways to do it,
       whichever suits you better.
     </p>
 
@@ -4967,11 +4961,11 @@ export function presenterHonorariumRequestEmail({
     </table>
 
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 6px 0;">
-      If anything above looks wrong, or you need something different from either of these, just say
-      so in a reply and we will sort it out.
+      If you need something different from either of these, just say so in a reply and we will sort
+      it out.
     </p>
     <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:14px 0 0 0;">
-      With real gratitude,<br/>
+      With thanks,<br/>
       The Lurie Children&rsquo;s and AALB conference team
     </p>
   `,

@@ -158,14 +158,12 @@ export default function PresentersPage() {
       // Presenters attend free; this is who has not yet been told so and
       // given their attendee page.
       seatNotSent: confirmed.filter((r) => !r.attendeeInvitedAt).length,
-      // Paying them afterwards. Somebody with no amount on file is not a
-      // recipient: we would be writing to them about an honorarium we have
-      // not agreed. Counted separately so the gap is visible rather than
-      // silently dropped.
-      owed: confirmed.filter((r) => (r.honorariumAmount || 0) > 0 || (r.travelReimbursement || 0) > 0),
-      owedNotAsked: confirmed.filter(
-        (r) => ((r.honorariumAmount || 0) > 0 || (r.travelReimbursement || 0) > 0) && !r.honorariumAskedAt
-      ).length,
+      // Paying them afterwards. Everyone confirmed gets the letter: it names no
+      // figure, so a missing amount is no reason to leave somebody out of a
+      // thank-you. The amounts below are shown for our own eyes, so a blank one
+      // is easy to spot and fill in before the cheque is written.
+      owed: confirmed,
+      owedNotAsked: confirmed.filter((r) => !r.honorariumAskedAt).length,
       noAmount: confirmed.filter((r) => !(r.honorariumAmount || 0) && !(r.travelReimbursement || 0)).length,
     };
   }, [rows]);
@@ -253,13 +251,10 @@ export default function PresentersPage() {
         body: JSON.stringify({ mode }),
       });
       const json = await res.json().catch(() => ({}));
-      const skipped = json.skippedNoAmount
-        ? ` · ${json.skippedNoAmount} skipped with no amount on file`
-        : "";
       setHonorariumNote(res.ok
         ? (json.sent || 0) === 0
-          ? `Nobody to write to${skipped || ": everyone with an amount on file has already been asked"}.`
-          : `Asked ${json.sent} presenter${json.sent === 1 ? "" : "s"}${json.failed ? ` · ${json.failed} failed: ${(json.failures || []).map((f: { email: string }) => f.email).join(", ")}` : ""}${skipped}.`
+          ? "Nobody to write to: every confirmed presenter has already been asked."
+          : `Asked ${json.sent} presenter${json.sent === 1 ? "" : "s"}${json.failed ? ` · ${json.failed} failed: ${(json.failures || []).map((f: { email: string }) => f.email).join(", ")}` : ""}.`
         : (json.error || "Could not send."));
       await load();
     } catch {
@@ -492,17 +487,16 @@ export default function PresentersPage() {
                       Thanks them for the weekend, tells them the attendee feedback is coming, and asks
                       where to post the cheque. They can reply with a mailing address, or send an invoice
                       to <strong className="text-slate-700">invoice@aalb.org</strong> if they would rather
-                      bill us. Each email names that presenter&rsquo;s own honorarium, and travel
-                      reimbursement where they have one.
+                      bill us. The email names no dollar figure, so a wrong number cannot go out and
+                      nobody is left out for want of one. The amounts below are for your eyes.
                       {slides.noAmount > 0 && (
                         <>
                           {" "}
                           <strong className="text-amber-700">
-                            {slides.noAmount} confirmed presenter{slides.noAmount === 1 ? " has" : "s have"} no
-                            amount on file and {slides.noAmount === 1 ? "is" : "are"} left out
+                            {slides.noAmount} of them {slides.noAmount === 1 ? "has" : "have"} no amount
+                            recorded
                           </strong>
-                          , since we would be writing to them about money we have not agreed. Add an amount on
-                          their page to include them.
+                          , which is worth filling in before the cheques are written.
                         </>
                       )}
                     </p>
@@ -541,6 +535,7 @@ export default function PresentersPage() {
                             {r.email}
                             {r.honorariumAmount ? ` · $${r.honorariumAmount.toLocaleString("en-US")} honorarium` : ""}
                             {r.travelReimbursement ? ` · up to $${r.travelReimbursement.toLocaleString("en-US")} travel` : ""}
+                            {!r.honorariumAmount && !r.travelReimbursement ? " · no amount recorded" : ""}
                           </div>
                         </div>
                         {r.honorariumAskedAt && (

@@ -10,10 +10,10 @@ import { INVOICE_EMAIL, HONORARIUM_REPLY_TO } from "@/lib/presenters";
 // over. Thanks first, then the two ways to be paid: reply with a mailing
 // address for a cheque, or invoice us instead.
 //
-// Only confirmed presenters, and only ones we actually owe something. Mailing
-// somebody about "your honorarium" when no amount is on file for them would be
-// a promise we have not made, so they are skipped and counted separately
-// rather than quietly included.
+// Every confirmed presenter. The email names no figure, so there is nothing to
+// get wrong for somebody whose amount was never recorded, and no reason to
+// leave them out of a thank-you and a question about where to post a cheque.
+// What they are owed gets settled in the reply.
 //
 // POST { mode?: "initial" | "all", ids?: string[], test?: true }
 //   "initial" (default) skips anyone already asked; "all" asks again.
@@ -60,11 +60,8 @@ export async function POST(req: Request) {
     orderBy: { confirmedAt: "asc" },
   });
 
-  // Someone with nothing owed is not a failure, and not a recipient either.
-  const payable = confirmed.filter((p) => (p.honorariumAmount || 0) > 0 || (p.travelReimbursement || 0) > 0);
-  const skippedNoAmount = confirmed.length - payable.length;
-  if (!payable.length) {
-    return NextResponse.json({ sent: 0, failed: 0, skippedNoAmount, recipients: [] });
+  if (!confirmed.length) {
+    return NextResponse.json({ sent: 0, failed: 0, recipients: [] });
   }
 
   let sent = 0;
@@ -73,7 +70,7 @@ export async function POST(req: Request) {
 
   // A test goes to whoever is signed in, one copy, using a real presenter's
   // figures so the amounts are the ones that would actually go out.
-  const queue = isTest ? payable.slice(0, 1) : payable;
+  const queue = isTest ? confirmed.slice(0, 1) : confirmed;
 
   for (const p of queue) {
     const first = (p.name || "").split(" ")[0] || "";
@@ -123,7 +120,6 @@ export async function POST(req: Request) {
     sent,
     failed: failures.length,
     failures: failures.slice(0, 10),
-    skippedNoAmount,
     recipients: recipients.slice(0, 200),
   });
 }
