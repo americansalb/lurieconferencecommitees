@@ -77,6 +77,9 @@ export default function PresentersPage() {
   const [honorariumNote, setHonorariumNote] = useState<string | null>(null);
   const [honorariumOne, setHonorariumOne] = useState<string | null>(null);
   const [showHonorariumList, setShowHonorariumList] = useState(false);
+  // Who the bulk send will write to. Null means nobody has touched it yet, so
+  // the default below applies: only presenters with an amount on file.
+  const [honorariumPicked, setHonorariumPicked] = useState<Set<string> | null>(null);
 
   const role = (session?.user as { role?: string } | undefined)?.role;
   const isAdmin = role === "admin" || role === "developer";
@@ -158,15 +161,32 @@ export default function PresentersPage() {
       // Presenters attend free; this is who has not yet been told so and
       // given their attendee page.
       seatNotSent: confirmed.filter((r) => !r.attendeeInvitedAt).length,
-      // Paying them afterwards. Everyone confirmed gets the letter: it names no
-      // figure, so a missing amount is no reason to leave somebody out of a
-      // thank-you. The amounts below are shown for our own eyes, so a blank one
-      // is easy to spot and fill in before the cheque is written.
+      // Everyone confirmed is listed, and you choose from them. The list is
+      // the whole roster because an amount can be missing from the record
+      // rather than from the agreement; the ticks are what decides.
       owed: confirmed,
-      owedNotAsked: confirmed.filter((r) => !r.honorariumAskedAt).length,
+      // Ticked by default: the people we have actually agreed to pay. Everyone
+      // else starts unticked, because offering money to a presenter who is not
+      // being paid one is a bad email to send by accident. Some of them speak
+      // for bodies that could not accept it if we offered.
+      defaultPicked: confirmed
+        .filter((r) => (r.honorariumAmount || 0) > 0 || (r.travelReimbursement || 0) > 0)
+        .map((r) => r.id),
       noAmount: confirmed.filter((r) => !(r.honorariumAmount || 0) && !(r.travelReimbursement || 0)).length,
     };
   }, [rows]);
+
+  // The live selection, and the subset of it the bulk button would write to.
+  const honorariumSelected = honorariumPicked ?? new Set(slides.defaultPicked);
+  const honorariumToSend = slides.owed.filter((r) => honorariumSelected.has(r.id) && !r.honorariumAskedAt);
+
+  function toggleHonorarium(id: string) {
+    setHonorariumPicked((prev) => {
+      const next = new Set(prev ?? slides.defaultPicked);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
 
   // Confirm presenters as attendees: creates their attendee record with the
   // details their proposal already gave us, and mails them the portal link.
@@ -225,7 +245,14 @@ export default function PresentersPage() {
       const res = await fetch("/api/presenters/request-honorarium", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: "all", test: true }),
+        body: JSON.stringify({
+          mode: "all",
+          test: true,
+          // Use a ticked presenter's record, so the test is the letter a real
+          // recipient would get rather than one belonging to somebody we are
+          // not writing to.
+          ...(honorariumToSend[0] ? { ids: [honorariumToSend[0].id] } : {}),
+        }),
       });
       const json = await res.json().catch(() => ({}));
       setHonorariumNote(res.ok && json.sent
@@ -241,19 +268,19 @@ export default function PresentersPage() {
 
   // Thank you, and where should the cheque go. Sent after the conference, so
   // it is the first thing presenters hear from us afterwards.
-  async function requestHonorarium(mode: "initial" | "all") {
+  async function requestHonorarium(mode: "initial" | "all", ids?: string[]) {
     setHonorariumBusy(mode);
     setHonorariumNote(null);
     try {
       const res = await fetch("/api/presenters/request-honorarium", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode }),
+        body: JSON.stringify({ mode, ...(ids && ids.length ? { ids } : {}) }),
       });
       const json = await res.json().catch(() => ({}));
       setHonorariumNote(res.ok
         ? (json.sent || 0) === 0
-          ? "Nobody to write to: every confirmed presenter has already been asked."
+          ? "Nobody to write to: everyone ticked has already been asked."
           : `Asked ${json.sent} presenter${json.sent === 1 ? "" : "s"}${json.failed ? ` · ${json.failed} failed: ${(json.failures || []).map((f: { email: string }) => f.email).join(", ")}` : ""}.`
         : (json.error || "Could not send."));
       await load();
@@ -480,23 +507,27 @@ export default function PresentersPage() {
                     <div className="text-sm font-bold text-slate-900 inline-flex items-center gap-1.5">
                       <Banknote className="w-4 h-4" style={{ color: "#7C3AED" }} /> Honorarium payment
                       <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
-                        {slides.owed.length - slides.owedNotAsked}/{slides.owed.length} asked
+                        {slides.owed.filter((r) => r.honorariumAskedAt).length}/{slides.owed.length} asked
                       </span>
                     </div>
                     <p className="text-xs text-slate-500 mt-1 max-w-xl">
                       Thanks them for the weekend, tells them the attendee feedback is coming, and asks
                       where to post the cheque. They can reply with a mailing address, or send an invoice
                       to <strong className="text-slate-700">invoice@aalb.org</strong> if they would rather
-                      bill us. The email names no dollar figure, so a wrong number cannot go out and
-                      nobody is left out for want of one. The amounts below are for your eyes.
+                      bill us. The email names no dollar figure, so a wrong number cannot go out.
+                      <br />
+                      <strong className="text-slate-700">You pick who it goes to.</strong> Presenters with
+                      an honorarium on file are ticked; anyone without one starts unticked, since offering
+                      money to somebody who is not being paid it is not an email to send by accident.
                       {slides.noAmount > 0 && (
                         <>
                           {" "}
                           <strong className="text-amber-700">
-                            {slides.noAmount} of them {slides.noAmount === 1 ? "has" : "have"} no amount
-                            recorded
-                          </strong>
-                          , which is worth filling in before the cheques are written.
+                            {slides.noAmount} of them {slides.noAmount === 1 ? "has" : "have"} no honorarium
+                            on file.
+                          </strong>{" "}
+                          Tick them only if they really are being paid and the amount is simply missing
+                          from the record.
                         </>
                       )}
                     </p>
@@ -519,7 +550,7 @@ export default function PresentersPage() {
                       className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold border text-[#6D28D9] border-[#DDD6FE] bg-white"
                     >
                       <Banknote className="w-4 h-4" />
-                      {showHonorariumList ? "Hide the list" : `Send one at a time (${slides.owed.length})`}
+                      {showHonorariumList ? "Hide the list" : `Choose who to send to (${slides.owed.length})`}
                     </button>
                   </div>
                 </div>
@@ -529,13 +560,20 @@ export default function PresentersPage() {
                   <div className="mt-3 rounded-xl border border-[#DDD6FE] bg-white overflow-hidden">
                     {slides.owed.map((r) => (
                       <div key={r.id} className="px-3 py-2.5 flex items-center gap-3 border-b border-slate-100 last:border-0">
+                        <input
+                          type="checkbox"
+                          checked={honorariumSelected.has(r.id)}
+                          onChange={() => toggleHonorarium(r.id)}
+                          className="w-4 h-4 shrink-0 accent-[#6D28D9] cursor-pointer"
+                          title={honorariumSelected.has(r.id) ? `Do not write to ${r.name}` : `Write to ${r.name}`}
+                        />
                         <div className="min-w-0 flex-1">
                           <div className="text-[13px] font-bold text-slate-900 truncate">{r.name}</div>
                           <div className="text-[11.5px] text-slate-500 truncate">
                             {r.email}
                             {r.honorariumAmount ? ` · $${r.honorariumAmount.toLocaleString("en-US")} honorarium` : ""}
                             {r.travelReimbursement ? ` · up to $${r.travelReimbursement.toLocaleString("en-US")} travel` : ""}
-                            {!r.honorariumAmount && !r.travelReimbursement ? " · no amount recorded" : ""}
+                            {!r.honorariumAmount && !r.travelReimbursement ? " · no honorarium on file" : ""}
                           </div>
                         </div>
                         {r.honorariumAskedAt && (
@@ -555,25 +593,31 @@ export default function PresentersPage() {
                         </button>
                       </div>
                     ))}
-                    {/* Still available, but it asks first: going one at a time
-                        is the point of this list. */}
+                    {/* Acts on the ticks, and names every recipient before it
+                        fires. Nobody gets an offer of money by accident. */}
                     <div className="px-3 py-2.5 bg-slate-50/70 flex items-center justify-between gap-3 flex-wrap">
                       <span className="text-[11.5px] text-slate-500">
-                        Done checking? You can send to everyone not yet asked in one go.
+                        {honorariumToSend.length === 0
+                          ? "Nobody ticked is still waiting to be asked."
+                          : `Ticked and not yet asked: ${honorariumToSend.map((r) => r.name).join(", ")}.`}
                       </span>
                       <button
                         type="button"
                         onClick={() => {
-                          if (slides.owedNotAsked === 0) return;
-                          if (confirm(`Email all ${slides.owedNotAsked} presenters who have not been asked yet? This sends immediately and cannot be taken back.`)) {
-                            void requestHonorarium("initial");
+                          if (!honorariumToSend.length) return;
+                          if (confirm(
+                            `Email these ${honorariumToSend.length} presenter${honorariumToSend.length === 1 ? "" : "s"}?\n\n` +
+                            honorariumToSend.map((r) => `  ${r.name} <${r.email}>`).join("\n") +
+                            `\n\nThis sends immediately and cannot be taken back.`
+                          )) {
+                            void requestHonorarium("initial", honorariumToSend.map((r) => r.id));
                           }
                         }}
-                        disabled={honorariumBusy !== null || honorariumOne !== null || slides.owedNotAsked === 0}
+                        disabled={honorariumBusy !== null || honorariumOne !== null || honorariumToSend.length === 0}
                         className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold border disabled:opacity-40 text-slate-600 border-slate-200 bg-white hover:bg-white"
                       >
                         {honorariumBusy === "initial" ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                        {slides.owedNotAsked === 0 ? "Everyone asked" : `Send to the remaining ${slides.owedNotAsked}`}
+                        {honorariumToSend.length === 0 ? "Nobody ticked to send" : `Send to the ${honorariumToSend.length} ticked`}
                       </button>
                     </div>
                   </div>
