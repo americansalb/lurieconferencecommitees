@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  Mic, Search, UserCheck, Download, Send, Check,
+  Mic, Search, UserCheck, Download, Send, Check, Mail,
   Clock, XCircle, RefreshCw, AlertCircle, CircleHelp, Trash2, Megaphone, Inbox,
   Presentation, ExternalLink, StickyNote, Ticket, BookOpen, Upload, Banknote } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
@@ -75,6 +75,8 @@ export default function PresentersPage() {
   const [slidesNote, setSlidesNote] = useState<string | null>(null);
   const [honorariumBusy, setHonorariumBusy] = useState<"initial" | "all" | null>(null);
   const [honorariumNote, setHonorariumNote] = useState<string | null>(null);
+  const [honorariumOne, setHonorariumOne] = useState<string | null>(null);
+  const [showHonorariumList, setShowHonorariumList] = useState(false);
 
   const role = (session?.user as { role?: string } | undefined)?.role;
   const isAdmin = role === "admin" || role === "developer";
@@ -189,6 +191,53 @@ export default function PresentersPage() {
     } finally {
       setSeatBusy(null);
       setTimeout(() => setSeatNote(null), 9000);
+    }
+  }
+
+  // One presenter, on purpose. This is the normal way to use this: send to
+  // yourself first, then work down the list watching each one go.
+  async function requestHonorariumFor(id: string, name: string) {
+    setHonorariumOne(id);
+    setHonorariumNote(null);
+    try {
+      const res = await fetch("/api/presenters/request-honorarium", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "all", ids: [id] }),
+      });
+      const json = await res.json().catch(() => ({}));
+      setHonorariumNote(res.ok && json.sent
+        ? `Sent to ${name} at ${(json.recipients || [])[0] || "their address"}.`
+        : (json.error || (json.failures || [])[0]?.error || `Could not send to ${name}.`));
+      await load();
+    } catch {
+      setHonorariumNote("Network error while sending.");
+    } finally {
+      setHonorariumOne(null);
+      setTimeout(() => setHonorariumNote(null), 12000);
+    }
+  }
+
+  // A copy to yourself, with a real presenter's figures, marking nobody as
+  // asked. What the presenters will get, before any of them get it.
+  async function testHonorarium() {
+    setHonorariumBusy("initial");
+    setHonorariumNote(null);
+    try {
+      const res = await fetch("/api/presenters/request-honorarium", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "all", test: true }),
+      });
+      const json = await res.json().catch(() => ({}));
+      setHonorariumNote(res.ok && json.sent
+        ? `Test copy sent to ${(json.recipients || [])[0]}. Nobody was marked as asked.`
+        : (json.error || (json.failures || [])[0]?.error || "Could not send the test."));
+    } catch {
+      setHonorariumNote("Network error while sending.");
+    } finally {
+      setHonorariumBusy(null);
+      setTimeout(() => setHonorariumNote(null), 12000);
     }
   }
 
@@ -461,28 +510,79 @@ export default function PresentersPage() {
                   <div className="flex flex-col gap-2 shrink-0">
                     <button
                       type="button"
-                      onClick={() => requestHonorarium("initial")}
-                      disabled={honorariumBusy !== null || slides.owedNotAsked === 0}
+                      onClick={testHonorarium}
+                      disabled={honorariumBusy !== null || honorariumOne !== null}
                       className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white shadow-sm disabled:opacity-50"
                       style={{ background: "linear-gradient(90deg,#7C3AED,#6D28D9)" }}
-                      title="Thank every confirmed presenter we owe, and ask where to send their cheque"
+                      title="Send yourself one copy, with a real presenter's figures. Marks nobody as asked."
                     >
-                      {honorariumBusy === "initial" ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Banknote className="w-4 h-4" />}
-                      {slides.owedNotAsked === 0 ? "Everyone asked" : `Ask for addresses (${slides.owedNotAsked})`}
+                      {honorariumBusy === "initial" ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+                      Send me a test copy
                     </button>
                     <button
                       type="button"
-                      onClick={() => requestHonorarium("all")}
-                      disabled={honorariumBusy !== null}
-                      className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold border disabled:opacity-50 text-[#6D28D9] border-[#DDD6FE] bg-white"
-                      title="Send again to everyone we owe, including those already asked"
+                      onClick={() => setShowHonorariumList((v) => !v)}
+                      className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold border text-[#6D28D9] border-[#DDD6FE] bg-white"
                     >
-                      {honorariumBusy === "all" ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Clock className="w-4 h-4" />}
-                      Send again to all
+                      <Banknote className="w-4 h-4" />
+                      {showHonorariumList ? "Hide the list" : `Send one at a time (${slides.owed.length})`}
                     </button>
                   </div>
                 </div>
                 {honorariumNote && <div className="mt-2 text-xs font-semibold text-[#6D28D9]">{honorariumNote}</div>}
+
+                {showHonorariumList && (
+                  <div className="mt-3 rounded-xl border border-[#DDD6FE] bg-white overflow-hidden">
+                    {slides.owed.map((r) => (
+                      <div key={r.id} className="px-3 py-2.5 flex items-center gap-3 border-b border-slate-100 last:border-0">
+                        <div className="min-w-0 flex-1">
+                          <div className="text-[13px] font-bold text-slate-900 truncate">{r.name}</div>
+                          <div className="text-[11.5px] text-slate-500 truncate">
+                            {r.email}
+                            {r.honorariumAmount ? ` · $${r.honorariumAmount.toLocaleString("en-US")} honorarium` : ""}
+                            {r.travelReimbursement ? ` · up to $${r.travelReimbursement.toLocaleString("en-US")} travel` : ""}
+                          </div>
+                        </div>
+                        {r.honorariumAskedAt && (
+                          <span className="text-[10.5px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 shrink-0">
+                            Asked {shortDate(r.honorariumAskedAt)}
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => requestHonorariumFor(r.id, r.name)}
+                          disabled={honorariumOne !== null || honorariumBusy !== null}
+                          className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold border disabled:opacity-40 text-[#6D28D9] border-[#DDD6FE] bg-white hover:bg-[#F5F3FF]"
+                          title={r.honorariumAskedAt ? `Send to ${r.name} again` : `Send to ${r.name}`}
+                        >
+                          {honorariumOne === r.id ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                          {honorariumOne === r.id ? "Sending" : r.honorariumAskedAt ? "Send again" : "Send"}
+                        </button>
+                      </div>
+                    ))}
+                    {/* Still available, but it asks first: going one at a time
+                        is the point of this list. */}
+                    <div className="px-3 py-2.5 bg-slate-50/70 flex items-center justify-between gap-3 flex-wrap">
+                      <span className="text-[11.5px] text-slate-500">
+                        Done checking? You can send to everyone not yet asked in one go.
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (slides.owedNotAsked === 0) return;
+                          if (confirm(`Email all ${slides.owedNotAsked} presenters who have not been asked yet? This sends immediately and cannot be taken back.`)) {
+                            void requestHonorarium("initial");
+                          }
+                        }}
+                        disabled={honorariumBusy !== null || honorariumOne !== null || slides.owedNotAsked === 0}
+                        className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold border disabled:opacity-40 text-slate-600 border-slate-200 bg-white hover:bg-white"
+                      >
+                        {honorariumBusy === "initial" ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                        {slides.owedNotAsked === 0 ? "Everyone asked" : `Send to the remaining ${slides.owedNotAsked}`}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

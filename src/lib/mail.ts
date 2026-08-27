@@ -65,7 +65,9 @@ export async function sendMail({ to, subject, html, text, replyTo, bcc, cc, from
 
   let res: Response;
   try {
-    res = await fetch("https://api.resend.com/emails", {
+    // Overridable so the send path can be exercised against a local stub in
+    // testing. Unset everywhere else, which is the real Resend endpoint.
+    res = await fetch(process.env.RESEND_API_URL || "https://api.resend.com/emails", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,

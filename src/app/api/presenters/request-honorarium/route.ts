@@ -15,9 +15,13 @@ import { INVOICE_EMAIL, HONORARIUM_REPLY_TO } from "@/lib/presenters";
 // a promise we have not made, so they are skipped and counted separately
 // rather than quietly included.
 //
-// POST { mode?: "initial" | "all", ids?: string[] }
+// POST { mode?: "initial" | "all", ids?: string[], test?: true }
 //   "initial" (default) skips anyone already asked; "all" asks again.
-//   `ids` restricts the run to specific presenters.
+//   `ids` restricts the run to specific presenters, which is how the page
+//   sends these one at a time rather than to the whole roster at once.
+//   `test` sends the email to the signed-in admin instead of the presenter,
+//   with that presenter's real amounts, and stamps nothing. It is how you
+//   see the thing before a presenter does.
 
 function isAdmin(role?: string) {
   return role === "admin" || role === "developer";
@@ -38,12 +42,16 @@ export async function POST(req: Request) {
   const ids = Array.isArray((body as { ids?: unknown }).ids)
     ? ((body as { ids: unknown[] }).ids.filter((x) => typeof x === "string") as string[])
     : null;
+  const isTest = (body as { test?: unknown }).test === true;
+  if (isTest && !adminEmail) {
+    return NextResponse.json({ error: "No address on your account to send a test to." }, { status: 400 });
+  }
 
   const confirmed = await prisma.presenter.findMany({
     where: {
       status: "confirmed",
       ...(ids?.length ? { id: { in: ids } } : {}),
-      ...(mode === "initial" ? { honorariumAskedAt: null } : {}),
+      ...(mode === "initial" && !isTest ? { honorariumAskedAt: null } : {}),
     },
     select: {
       id: true, name: true, email: true,
@@ -63,18 +71,24 @@ export async function POST(req: Request) {
   const failures: { email: string; error: string }[] = [];
   const recipients: string[] = [];
 
-  for (const p of payable) {
+  // A test goes to whoever is signed in, one copy, using a real presenter's
+  // figures so the amounts are the ones that would actually go out.
+  const queue = isTest ? payable.slice(0, 1) : payable;
+
+  for (const p of queue) {
     const first = (p.name || "").split(" ")[0] || "";
     // Match the email: never say "honorarium" to somebody we are only
     // reimbursing for travel.
     const owedLabel = p.honorariumAmount ? "honorarium" : "travel reimbursement";
     try {
       await sendMail({
-        to: p.email,
+        to: isTest ? (adminEmail as string) : p.email,
         replyTo: HONORARIUM_REPLY_TO,
-        subject: first
-          ? `Thank you, ${first}. Where should we send your ${owedLabel}?`
-          : `Thank you. Where should we send your ${owedLabel}?`,
+        subject: `${isTest ? `[Test, would go to ${p.email}] ` : ""}${
+          first
+            ? `Thank you, ${first}. Where should we send your ${owedLabel}?`
+            : `Thank you. Where should we send your ${owedLabel}?`
+        }`,
         html: presenterHonorariumRequestEmail({
           name: p.name,
           honorariumAmount: p.honorariumAmount,
@@ -83,14 +97,16 @@ export async function POST(req: Request) {
           replyToEmail: HONORARIUM_REPLY_TO,
         }),
       });
-      await prisma.presenter.update({
-        where: { id: p.id },
-        data: { honorariumAskedAt: new Date(), lastSentAt: new Date() },
-      });
-      await prisma.presenterEvent.create({
-        data: { presenterId: p.id, type: "honorarium_request_sent", actorEmail: adminEmail },
-      }).catch(() => {});
-      recipients.push(p.email);
+      if (!isTest) {
+        await prisma.presenter.update({
+          where: { id: p.id },
+          data: { honorariumAskedAt: new Date(), lastSentAt: new Date() },
+        });
+        await prisma.presenterEvent.create({
+          data: { presenterId: p.id, type: "honorarium_request_sent", actorEmail: adminEmail },
+        }).catch(() => {});
+      }
+      recipients.push(isTest ? (adminEmail as string) : p.email);
       sent++;
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -103,6 +119,7 @@ export async function POST(req: Request) {
   }
 
   return NextResponse.json({
+    test: isTest,
     sent,
     failed: failures.length,
     failures: failures.slice(0, 10),
