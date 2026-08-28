@@ -81,10 +81,11 @@ export async function POST(req: Request) {
       await sendMail({
         to: isTest ? (adminEmail as string) : p.email,
         replyTo: HONORARIUM_REPLY_TO,
-        subject: `${isTest ? `[Test, would go to ${p.email}] ` : ""}${
-          first
-            ? `Thank you, ${first}. Where should we send your ${owedLabel}?`
-            : `Thank you. Where should we send your ${owedLabel}?`
+        // Short, and the thanks lead. The old subject was two sentences with
+        // the money question in front, which is the wrong first thing a
+        // presenter reads from us.
+        subject: `${isTest ? `[Test, would go to ${p.email}] ` : ""}Thank you for presenting${
+          first ? `, ${first}` : ""
         }`,
         html: presenterHonorariumRequestEmail({
           name: p.name,

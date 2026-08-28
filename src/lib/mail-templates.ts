@@ -4875,102 +4875,47 @@ export function tourReminderEmail({
 // The first thing a presenter hears from us after the conference: thank you,
 // and where should the honorarium go.
 //
-// Two ways to be paid, because people's situations differ. Most will want a
-// cheque and just need to tell us where to send it, which is a reply to this
-// email. Anyone who bills through their own system, or whose employer requires
-// it, can invoice instead.
+// A plain note, not one of the engraved letters. The designed template reads
+// as marketing to Gmail and to the reader, and this is the most one-to-one
+// email we send: a thank-you and a question about a cheque, from a person who
+// worked with them all weekend. Buttons and gold section headings make it a
+// mailshot. It is signed by a human for the same reason.
 //
-// It names no figures. A number in an email cannot be unsaid, and the amounts
+// It names no figure. A number in an email cannot be unsaid, and the amounts
 // on file are not all trustworthy enough to put in front of the person being
-// paid. Leaving them out also means everyone can be written to, including the
-// presenters whose amount was never recorded. The figure gets agreed in the
-// reply, where it can still be corrected.
+// paid. The figure gets agreed in the reply, where it can still be corrected.
 //
-// The tone is deliberate. This is the first contact after they stood up and
-// taught, and an email that opens with paperwork reads as though the work is
-// already forgotten. The thanks come first and the admin second. It promises
-// attendee feedback because that is a real commitment being made here, and it
-// says nothing about what any individual attendee wrote, because those forms
-// are still coming in.
+// Two ways to be paid, because people's situations differ: reply with an
+// address for a cheque, or invoice us. It says nothing about what any
+// individual attendee wrote, because those forms are still coming in.
 export function presenterHonorariumRequestEmail({
   name,
   honorariumAmount,
   travelReimbursement,
   invoiceEmail,
-  replyToEmail,
 }: {
   name: string;
-  /** Dollars, when an amount is on file. Omitted from the email when not. */
+  /** Only decides what the payment is called. No figure reaches the email. */
   honorariumAmount?: number | null;
   travelReimbursement?: number | null;
   invoiceEmail: string;
-  replyToEmail: string;
+  replyToEmail?: string;
 }) {
-  const first = (name || "").split(" ")[0] || "";
-  // Someone owed travel but no honorarium should not read "your honorarium".
-  // Where we hold nothing either way, "honorarium" is what this payment is
-  // called, and the email is only asking where to send it.
+  const firstName = (name || "").split(" ")[0] || "";
+  // Somebody owed travel but no honorarium should not read "your honorarium".
   const owedLabel = !honorariumAmount && travelReimbursement ? "travel reimbursement" : "honorarium";
 
-  const mailto = `mailto:${replyToEmail}?subject=${encodeURIComponent(
-    `Mailing address${name ? ` for ${name}` : ""}`
-  )}&body=${encodeURIComponent(
-    "Here is where to send my cheque:\n\nName:\nStreet:\nCity, State, ZIP:\n\n"
-  )}`;
-
-  return shell(
-    `
-    <h1 style="font-size:23px;font-weight:800;margin:0 0 14px 0;letter-spacing:-0.01em;">${addressed("Thank you", first)}</h1>
-    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
-      The conference would not have been what it was without you. This year&rsquo;s presenters were
-      excellent, and you were part of that. Thank you for the preparation that went in before the
-      weekend as much as for the session itself.
-    </p>
-    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 20px 0;">
-      Attendee feedback forms are still coming in. Once we have them gathered, we will send you
-      what people said about your session, because you should get to hear it.
-    </p>
-
-    ${sectionHeading(`Your ${owedLabel}`)}
-    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 14px 0;">
-      We would like to get your ${owedLabel} to you promptly, and there are two ways to do it,
-      whichever suits you better.
-    </p>
-
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:6px 0 4px 0;">
-      <tr><td style="padding:16px 18px;background:#F7FAFB;border-radius:12px;border:1px solid #E3ECEF;">
-        <div style="font-size:11px;letter-spacing:0.14em;font-weight:800;color:${TEAL};text-transform:uppercase;">Option one &middot; a cheque in the post</div>
-        <div style="font-size:14.5px;line-height:1.65;color:${TEXT};margin-top:8px;">
-          Just reply to this email with the name and mailing address the cheque should go to, and we
-          will put it in the post.
-        </div>
-      </td></tr>
-    </table>
-    ${button(mailto, "Reply with my address")}
-
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:4px 0 18px 0;">
-      <tr><td style="padding:16px 18px;background:#F7FAFB;border-radius:12px;border:1px solid #E3ECEF;">
-        <div style="font-size:11px;letter-spacing:0.14em;font-weight:800;color:${TEAL};text-transform:uppercase;">Option two &middot; send us an invoice</div>
-        <div style="font-size:14.5px;line-height:1.65;color:${TEXT};margin-top:8px;">
-          If you would rather bill us through your own invoicing system, or your employer needs it
-          that way, send the invoice to
-          <a href="mailto:${invoiceEmail}" style="color:${BLUE};font-weight:600;">${invoiceEmail}</a>
-          and we will take it from there.
-        </div>
-      </td></tr>
-    </table>
-
-    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:0 0 6px 0;">
-      If you need something different from either of these, just say so in a reply and we will sort
-      it out.
-    </p>
-    <p style="font-size:15px;line-height:1.7;color:${TEXT};margin:14px 0 0 0;">
-      With thanks,<br/>
-      The Lurie Children&rsquo;s and AALB conference team
-    </p>
-  `,
-    first
-      ? `${first}, thank you. Here is how to get your honorarium to you.`
-      : "Thank you. Here is how to get your honorarium to you."
-  );
+  return plainNoteEmail({
+    firstName,
+    paras: [
+      `Thank you for presenting at the conference. I know how much work goes in before a session like yours, and it showed. Our presenters this year were excellent and you were part of that.`,
+      `The attendee feedback forms are still coming in. Once we've got them together I'll send you what people said about your session.`,
+      `Now the practical bit: I'd like to get your ${owedLabel} to you. If a cheque suits you, just reply to this email with the name and mailing address it should go to and I'll put it in the post. If you'd rather invoice us (or your employer needs it that way), send the invoice to <a href="mailto:${invoiceEmail}" style="color:#0066B3;">${invoiceEmail}</a> and we'll take it from there.`,
+      `If you need it done some other way, tell me and we'll sort it out.`,
+    ],
+    // One-to-one, like the Chicago letters: no unsubscribe furniture on a note
+    // about paying somebody.
+    footerReason: null,
+    replyLine: null,
+  });
 }
