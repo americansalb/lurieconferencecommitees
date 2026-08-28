@@ -558,6 +558,43 @@ export default function PresentersPage() {
 
                 {showHonorariumList && (
                   <div className="mt-3 rounded-xl border border-[#DDD6FE] bg-white overflow-hidden">
+                    {/* The default only ticks people with an amount on file, which
+                        ticks nobody when the amounts were never recorded. These
+                        make the list usable either way. */}
+                    <div className="px-3 py-2 bg-[#F5F3FF] border-b border-[#DDD6FE] flex items-center justify-between gap-3 flex-wrap">
+                      <span className="text-[11.5px] font-bold text-[#6D28D9]">
+                        {honorariumSelected.size} of {slides.owed.length} ticked
+                        {honorariumToSend.length !== honorariumSelected.size && (
+                          <span className="font-semibold text-slate-500">
+                            {" "}&middot; {honorariumToSend.length} still to write to
+                          </span>
+                        )}
+                      </span>
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setHonorariumPicked(new Set(slides.owed.map((r) => r.id)))}
+                          className="text-[11.5px] font-bold text-[#6D28D9] hover:underline"
+                        >
+                          Tick everyone
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setHonorariumPicked(new Set(slides.defaultPicked))}
+                          className="text-[11.5px] font-semibold text-slate-500 hover:underline"
+                          title="Back to just the presenters with an amount on file"
+                        >
+                          Only those with an amount
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setHonorariumPicked(new Set())}
+                          className="text-[11.5px] font-semibold text-slate-500 hover:underline"
+                        >
+                          Untick all
+                        </button>
+                      </div>
+                    </div>
                     {slides.owed.map((r) => (
                       <div key={r.id} className="px-3 py-2.5 flex items-center gap-3 border-b border-slate-100 last:border-0">
                         <input
@@ -597,8 +634,10 @@ export default function PresentersPage() {
                         fires. Nobody gets an offer of money by accident. */}
                     <div className="px-3 py-2.5 bg-slate-50/70 flex items-center justify-between gap-3 flex-wrap">
                       <span className="text-[11.5px] text-slate-500">
-                        {honorariumToSend.length === 0
-                          ? "Nobody ticked is still waiting to be asked."
+                        {honorariumSelected.size === 0
+                          ? "Nobody is ticked. Tick the presenters you are paying, or use Tick everyone above."
+                          : honorariumToSend.length === 0
+                          ? "Everyone ticked has already been asked."
                           : `Ticked and not yet asked: ${honorariumToSend.map((r) => r.name).join(", ")}.`}
                       </span>
                       <button
