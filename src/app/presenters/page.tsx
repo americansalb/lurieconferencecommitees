@@ -41,7 +41,7 @@ interface PresenterRow {
   // Set once we've registered them as a complimentary attendee and sent
   // them their portal link.
   attendeeInvitedAt: string | null;
-  // When we asked them where to send the honorarium cheque.
+  // When we asked them where to send the honorarium check.
   honorariumAskedAt: string | null;
   slidesRemindCount: number;
   slideNotes: string | null;
@@ -266,7 +266,7 @@ export default function PresentersPage() {
     }
   }
 
-  // Thank you, and where should the cheque go. Sent after the conference, so
+  // Thank you, and where should the check go. Sent after the conference, so
   // it is the first thing presenters hear from us afterwards.
   async function requestHonorarium(mode: "initial" | "all", ids?: string[]) {
     setHonorariumBusy(mode);
@@ -512,7 +512,7 @@ export default function PresentersPage() {
                     </div>
                     <p className="text-xs text-slate-500 mt-1 max-w-xl">
                       Thanks them for the weekend, tells them the attendee feedback is coming, and asks
-                      where to post the cheque. They can reply with a mailing address, or send an invoice
+                      where to send the check. They can reply with a mailing address, or send an invoice
                       to <strong className="text-slate-700">invoice@aalb.org</strong> if they would rather
                       bill us. The email names no dollar figure, so a wrong number cannot go out.
                       <br />

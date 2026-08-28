@@ -8,11 +8,11 @@ import { INVOICE_EMAIL, HONORARIUM_REPLY_TO } from "@/lib/presenters";
 
 // Ask presenters where to send their honorarium, now that the conference is
 // over. Thanks first, then the two ways to be paid: reply with a mailing
-// address for a cheque, or invoice us instead.
+// address for a check, or invoice us instead.
 //
 // Every confirmed presenter. The email names no figure, so there is nothing to
 // get wrong for somebody whose amount was never recorded, and no reason to
-// leave them out of a thank-you and a question about where to post a cheque.
+// leave them out of a thank-you and a question about where to send a check.
 // What they are owed gets settled in the reply.
 //
 // POST { mode?: "initial" | "all", ids?: string[], test?: true }
@@ -84,9 +84,9 @@ export async function POST(req: Request) {
         // Short, and the thanks lead. The old subject was two sentences with
         // the money question in front, which is the wrong first thing a
         // presenter reads from us.
-        subject: `${isTest ? `[Test, would go to ${p.email}] ` : ""}Thank you for presenting${
-          first ? `, ${first}` : ""
-        }`,
+        subject: `${isTest ? `[Test, would go to ${p.email}] ` : ""}${
+          first ? `${first}, thank you` : "Thank you"
+        } for presenting at the 2026 Lurie Children's and AALB Conference`,
         html: presenterHonorariumRequestEmail({
           name: p.name,
           honorariumAmount: p.honorariumAmount,

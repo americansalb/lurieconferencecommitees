@@ -4873,49 +4873,87 @@ export function tourReminderEmail({
 }
 
 // The first thing a presenter hears from us after the conference: thank you,
-// and where should the honorarium go.
+// and where the honorarium should go.
 //
-// A plain note, not one of the engraved letters. The designed template reads
-// as marketing to Gmail and to the reader, and this is the most one-to-one
-// email we send: a thank-you and a question about a cheque, from a person who
-// worked with them all weekend. Buttons and gold section headings make it a
-// mailshot. It is signed by a human for the same reason.
+// Written in the same register as the rest of the presenter correspondence,
+// because it is the last thing they will read from us and it is about paying
+// them. The thanks carry the letter and the payment sits under its own
+// heading, laid out so there is nothing to work out.
 //
 // It names no figure. A number in an email cannot be unsaid, and the amounts
 // on file are not all trustworthy enough to put in front of the person being
 // paid. The figure gets agreed in the reply, where it can still be corrected.
-//
-// Two ways to be paid, because people's situations differ: reply with an
-// address for a cheque, or invoice us. It says nothing about what any
-// individual attendee wrote, because those forms are still coming in.
+// It says nothing about what any individual attendee wrote, because those
+// forms are still coming in.
 export function presenterHonorariumRequestEmail({
   name,
   honorariumAmount,
   travelReimbursement,
   invoiceEmail,
+  replyToEmail,
 }: {
   name: string;
   /** Only decides what the payment is called. No figure reaches the email. */
   honorariumAmount?: number | null;
   travelReimbursement?: number | null;
   invoiceEmail: string;
-  replyToEmail?: string;
+  replyToEmail: string;
 }) {
-  const firstName = (name || "").split(" ")[0] || "";
+  const first = (name || "").split(" ")[0] || "";
   // Somebody owed travel but no honorarium should not read "your honorarium".
   const owedLabel = !honorariumAmount && travelReimbursement ? "travel reimbursement" : "honorarium";
+  const signer = (process.env.ATTENDEE_SIGNER_NAME || "Kevin Thakkar").trim();
+  const signerName = escapeHtml(signer.includes(",") ? signer.slice(0, signer.indexOf(",")).trim() : signer);
+  const signerTitle = escapeHtml(signer.includes(",") ? signer.slice(signer.indexOf(",") + 1).trim() : "");
 
-  return plainNoteEmail({
-    firstName,
-    paras: [
-      `Thank you for presenting at the conference. I know how much work goes in before a session like yours, and it showed. Our presenters this year were excellent and you were part of that.`,
-      `The attendee feedback forms are still coming in. Once we've got them together I'll send you what people said about your session.`,
-      `Now the practical bit: I'd like to get your ${owedLabel} to you. If a cheque suits you, just reply to this email with the name and mailing address it should go to and I'll put it in the post. If you'd rather invoice us (or your employer needs it that way), send the invoice to <a href="mailto:${invoiceEmail}" style="color:#0066B3;">${invoiceEmail}</a> and we'll take it from there.`,
-      `If you need it done some other way, tell me and we'll sort it out.`,
-    ],
-    // One-to-one, like the Chicago letters: no unsubscribe furniture on a note
-    // about paying somebody.
-    footerReason: null,
-    replyLine: null,
-  });
+  const mailto = `mailto:${replyToEmail}?subject=${encodeURIComponent(
+    `Mailing address${name ? ` for ${name}` : ""}`
+  )}&body=${encodeURIComponent(
+    "Please send my check to:\n\nName:\nStreet:\nCity, State, ZIP:\n\n"
+  )}`;
+
+  const option = (label: string, body: string) => `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:10px 0;">
+      <tr><td style="padding:18px 20px;background:#F7FAFB;border-radius:12px;border:1px solid #E3ECEF;">
+        <div style="font-size:11px;letter-spacing:0.14em;font-weight:800;color:${TEAL};text-transform:uppercase;">${label}</div>
+        <div style="font-size:14.5px;line-height:1.7;color:${TEXT};margin-top:8px;">${body}</div>
+      </td></tr>
+    </table>`;
+
+  return shell(
+    `
+    <h1 style="font-size:23px;font-weight:800;margin:0 0 14px 0;letter-spacing:-0.01em;">${addressed("Thank you", first)}</h1>
+    <p style="font-size:15px;line-height:1.75;color:${TEXT};margin:0 0 14px 0;">
+      The 2026 Lurie Children&rsquo;s and AALB Conference is behind us, and it was our presenters who
+      made it what it was. This year&rsquo;s group was excellent and you were part of it. Thank you for
+      the work that went in long before the weekend itself, which is the part nobody in the room ever
+      sees.
+    </p>
+    <p style="font-size:15px;line-height:1.75;color:${TEXT};margin:0 0 22px 0;">
+      Attendee feedback forms are still arriving. Once we have them gathered we will send you what
+      people said about your session. You should get to hear it.
+    </p>
+
+    ${sectionHeading(`Your ${owedLabel}`)}
+    <p style="font-size:15px;line-height:1.75;color:${TEXT};margin:0 0 6px 0;">
+      We would like to settle your ${owedLabel} promptly. There are two ways to do it, whichever is
+      easier for you.
+    </p>
+
+    ${option("A check in the mail", `Reply to this email with the name and mailing address the check should go to, and we will send it out.`)}
+    ${button(mailto, "Reply with my address")}
+    ${option("An invoice", `If you would rather bill us through your own system, or your employer requires it that way, send your invoice to <a href="mailto:${invoiceEmail}" style="color:${BLUE};font-weight:600;">${invoiceEmail}</a>.`)}
+
+    <p style="font-size:15px;line-height:1.75;color:${TEXT};margin:18px 0 0 0;">
+      If neither of those suits you, tell us what does and we will arrange it.
+    </p>
+    <p style="font-size:15px;line-height:1.75;color:${TEXT};margin:22px 0 0 0;">
+      With thanks,<br/>
+      <strong>${signerName}</strong>${signerTitle ? `<br/><span style="color:${MUTED};font-size:13.5px;">${signerTitle}</span>` : ""}
+    </p>
+  `,
+    first
+      ? `${first}, thank you for presenting. Here is how to get your ${owedLabel} to you.`
+      : `Thank you for presenting. Here is how to get your ${owedLabel} to you.`
+  );
 }

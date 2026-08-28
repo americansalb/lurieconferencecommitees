@@ -174,6 +174,7 @@ export async function GET(
         honorariumAmount: 500,
         travelReimbursement: 300,
         invoiceEmail: "invoice@aalb.org",
+        replyToEmail: "contact@aalb.org",
       });
       break;
     // The same email for somebody with an honorarium but no travel.
@@ -183,6 +184,7 @@ export async function GET(
         honorariumAmount: 400,
         travelReimbursement: null,
         invoiceEmail: "invoice@aalb.org",
+        replyToEmail: "contact@aalb.org",
       });
       break;
     // Travel reimbursement but no honorarium: the email must not say the
@@ -193,6 +195,7 @@ export async function GET(
         honorariumAmount: null,
         travelReimbursement: 250,
         invoiceEmail: "invoice@aalb.org",
+        replyToEmail: "contact@aalb.org",
       });
       break;
     case "virtual-info-day2":
