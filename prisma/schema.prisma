@@ -379,8 +379,14 @@ model Presenter {
   honorariumAskedAt DateTime?
   mailingAddress    String?
 
-  events PresenterEvent[]
-  slide  PresenterSlide?
+  // The feedback share page's own token, distinct from the portal token so a
+  // shared feedback link never opens the portal (honorarium, personal data)
+  // and can be revoked without cutting the presenter off from their portal.
+  feedbackToken String? @unique
+
+  events   PresenterEvent[]
+  slide    PresenterSlide?
+  feedback FeedbackResponse[]
 
   @@index([email])
   @@map("lcc_presenters")
@@ -395,8 +401,8 @@ model Presenter {
 // contact@aalb.org instead (the portal says so), so this row may stay empty
 // for a presenter who has genuinely delivered.
 model PresenterSlide {
-  presenterId String    @id
-  presenter   Presenter @relation(fields: [presenterId], references: [id], onDelete: Cascade)
+  presenterId String                @id
+  presenter   Presenter             @relation(fields: [presenterId], references: [id], onDelete: Cascade)
   fileName    String?
   mime        String?
   sizeBytes   Int?
@@ -411,8 +417,8 @@ model PresenterSlide {
   // same presenter takes this over, and the first one notices and gives up
   // rather than leaving the two spliced together.
   uploadId    String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime? @updatedAt
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime?             @updatedAt
   chunks      PresenterSlideChunk[]
 
   @@map("lcc_presenter_slides")
@@ -433,6 +439,39 @@ model PresenterSlideChunk {
 
   @@id([presenterId, uploadId, seq])
   @@map("lcc_presenter_slide_chunks")
+  @@schema("lcc")
+}
+
+/// One feedback-form response about one session.
+///
+/// A spreadsheet row that rated several sessions is split into several of
+/// these at import, so the storage and the statistics never care which shape
+/// the form was. `data` keeps the untouched row for auditing; `ratings` and
+/// `comments` hold just the mapped answers, keyed by question label.
+model FeedbackResponse {
+  id           String     @id @default(cuid())
+  /// Which import batch brought it in, so a re-import replaces its own rows.
+  importId     String
+  /// The session as the form named it, before any matching.
+  sessionLabel String
+  /// Matched presenter. Null until matched; unmatched rows appear only in the
+  /// admin fix-up list, never on a share page.
+  presenterId  String?
+  presenter    Presenter? @relation(fields: [presenterId], references: [id], onDelete: SetNull)
+  /// Numeric answers, keyed by question label.
+  ratings      Json
+  /// Free-text answers, keyed by question label.
+  comments     Json
+  /// Comment keys hidden from the presenter page: {label: {by, at}}.
+  hiddenKeys   Json       @default("{}")
+  /// The raw row as imported, untouched.
+  data         Json
+  submittedAt  DateTime?
+  importedAt   DateTime   @default(now())
+
+  @@index([presenterId])
+  @@index([importId])
+  @@map("lcc_feedback_responses")
   @@schema("lcc")
 }
 
@@ -1006,24 +1045,24 @@ model AslInterpreter {
   ridNumber          String?
   yearsFluent        Int
   yearsInterpreting  Int
-  timezone          String
-  hourlyCents       Int
-  availability      String[]  @default([])
-  notes             String?
-  speedDownMbps     Float?
-  speedUpMbps       Float?
-  speedPingMs       Float?
-  speedTestSeconds  Int?
-  speedTestDetail   String?
+  timezone           String
+  hourlyCents        Int
+  availability       String[]  @default([])
+  notes              String?
+  speedDownMbps      Float?
+  speedUpMbps        Float?
+  speedPingMs        Float?
+  speedTestSeconds   Int?
+  speedTestDetail    String?
   // "submitted" until a teammate clicks Accept on /asl-team, which sends the
   // interpreter their confirmation email and flips this to "accepted".
   // Nothing is emailed to the interpreter automatically on submission.
-  status            String    @default("submitted")
-  acceptedAt        DateTime?
-  acceptedById      String?
-  userAgent         String?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime? @updatedAt
+  status             String    @default("submitted")
+  acceptedAt         DateTime?
+  acceptedById       String?
+  userAgent          String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime? @updatedAt
 
   @@map("lcc_asl_interpreters")
   @@schema("lcc")

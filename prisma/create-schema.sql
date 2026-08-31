@@ -99,3 +99,36 @@ END $$;
 ALTER TABLE "lcc"."lcc_presenters"
   ADD COLUMN IF NOT EXISTS "honorariumAskedAt" TIMESTAMP(3),
   ADD COLUMN IF NOT EXISTS "mailingAddress"    TEXT;
+
+-- Attendee feedback about sessions, shared with each presenter through a
+-- dedicated token. Additive.
+ALTER TABLE "lcc"."lcc_presenters"
+  ADD COLUMN IF NOT EXISTS "feedbackToken" TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS "lcc_presenters_feedbackToken_key"
+  ON "lcc"."lcc_presenters" ("feedbackToken");
+
+CREATE TABLE IF NOT EXISTS "lcc"."lcc_feedback_responses" (
+  "id"           TEXT PRIMARY KEY,
+  "importId"     TEXT NOT NULL,
+  "sessionLabel" TEXT NOT NULL,
+  "presenterId"  TEXT,
+  "ratings"      JSONB NOT NULL,
+  "comments"     JSONB NOT NULL,
+  "hiddenKeys"   JSONB NOT NULL DEFAULT '{}',
+  "data"         JSONB NOT NULL,
+  "submittedAt"  TIMESTAMP(3),
+  "importedAt"   TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS "lcc_feedback_responses_presenterId_idx"
+  ON "lcc"."lcc_feedback_responses" ("presenterId");
+CREATE INDEX IF NOT EXISTS "lcc_feedback_responses_importId_idx"
+  ON "lcc"."lcc_feedback_responses" ("importId");
+DO $$
+BEGIN
+  ALTER TABLE "lcc"."lcc_feedback_responses"
+    ADD CONSTRAINT "lcc_feedback_responses_presenterId_fkey"
+    FOREIGN KEY ("presenterId") REFERENCES "lcc"."lcc_presenters"("id")
+    ON DELETE SET NULL;
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;

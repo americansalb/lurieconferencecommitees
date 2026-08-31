@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { useEffect, useState } from "react";
-import { LayoutDashboard, CalendarDays, MessageSquare, UserCircle, LogOut, Shield, Mic, Bell, AtSign, Search, Ticket, Award, Tag, CalendarClock, Upload, CalendarRange, Mail, BarChart3, Megaphone, Gift, Banknote, GraduationCap, Hand, Video } from "lucide-react";
+import { LayoutDashboard, CalendarDays, MessageSquare, UserCircle, LogOut, Shield, Mic, Bell, AtSign, Search, Ticket, Award, Tag, CalendarClock, Upload, CalendarRange, Mail, BarChart3, Megaphone, Gift, Banknote, GraduationCap, Hand, Video , MessageSquareText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -17,6 +17,7 @@ const navItems = [
   { href: "/meetings", label: "Meetings", icon: CalendarClock, iconBg: "bg-violet-500/20", iconColor: "text-violet-400" },
   { href: "/attendees", label: "Attendees", icon: Ticket, iconBg: "bg-teal-500/20", iconColor: "text-teal-400" },
   { href: "/scholarships", label: "Scholarships", icon: GraduationCap, iconBg: "bg-cyan-500/20", iconColor: "text-cyan-400", adminOnly: true },
+  { href: "/feedback", label: "Feedback", icon: MessageSquareText, iconBg: "bg-teal-500/20", iconColor: "text-teal-400", adminOnly: true },
   { href: "/sponsors", label: "Sponsors", icon: Award, iconBg: "bg-amber-500/20", iconColor: "text-amber-400" },
   { href: "/ambassadors", label: "Ambassadors", icon: Megaphone, iconBg: "bg-yellow-500/20", iconColor: "text-yellow-400" },
   { href: "/asl-team", label: "ASL team", icon: Hand, iconBg: "bg-fuchsia-500/20", iconColor: "text-fuchsia-400" },
