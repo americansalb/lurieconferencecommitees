@@ -70,6 +70,7 @@ interface Presenter {
   confirmedAt: string | null;
   lastSentAt: string | null;
   adminNotes: string | null;
+  honorariumAskedAt: string | null;
   token: string;
   hasHeadshot: boolean;
   slide: Slide | null;
@@ -149,6 +150,36 @@ export default function PresenterDetailPage() {
     }
   }
 
+  // Ask this one presenter where to send their honorarium. The same email the
+  // Presenters page sends, aimed at exactly one person from their own page.
+  const [askingPay, setAskingPay] = useState(false);
+  const [askPayNote, setAskPayNote] = useState<string | null>(null);
+  async function askHonorarium() {
+    if (!presenter) return;
+    if (!window.confirm(
+      presenter.honorariumAskedAt
+        ? `Send the honorarium email to ${presenter.name} (${presenter.email}) again?`
+        : `Ask ${presenter.name} (${presenter.email}) where to send their honorarium? Just this one person.`
+    )) return;
+    setAskingPay(true);
+    setAskPayNote(null);
+    try {
+      const res = await fetch("/api/presenters/request-honorarium", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "all", ids: [presenter.id] }),
+      });
+      const j = await res.json().catch(() => ({}));
+      setAskPayNote(res.ok && j.sent ? `Sent to ${presenter.email}.` : (j.error || "Could not send."));
+      await load();
+    } catch {
+      setAskPayNote("Network error while sending.");
+    } finally {
+      setAskingPay(false);
+      setTimeout(() => setAskPayNote(null), 9000);
+    }
+  }
+
   async function resend() {
     await fetch(`/api/presenters/${params.id}/resend`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
     await load();
@@ -205,6 +236,9 @@ export default function PresenterDetailPage() {
                     {presenter.jobTitle && <span className="text-slate-400">{presenter.jobTitle}</span>}
                   </div>
                 </div>
+                {askPayNote && (
+                  <div className="w-full text-xs font-semibold text-[#6D28D9]">{askPayNote}</div>
+                )}
                 {isAdmin && (
                   <div className="flex items-center gap-1.5">
                     <button onClick={() => setEditingInvitation(true)} className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 rounded-lg">
@@ -213,6 +247,23 @@ export default function PresenterDetailPage() {
                     <button onClick={resend} className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 rounded-lg">
                       <Send className="w-3.5 h-3.5" /> Resend
                     </button>
+                    {presenter.status === "confirmed" && (
+                      <button
+                        onClick={askHonorarium}
+                        disabled={askingPay}
+                        title={presenter.honorariumAskedAt
+                          ? `Asked ${new Date(presenter.honorariumAskedAt).toLocaleDateString("en-US")}. Click to send again.`
+                          : "Email this one presenter asking where to send their honorarium"}
+                        className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg disabled:opacity-50 ${
+                          presenter.honorariumAskedAt
+                            ? "text-emerald-700 border border-emerald-200 bg-white hover:bg-emerald-50"
+                            : "text-white bg-[#6D28D9] hover:bg-[#5B21B6]"
+                        }`}
+                      >
+                        {askingPay ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
+                        {presenter.honorariumAskedAt ? "Honorarium asked" : "Ask honorarium address"}
+                      </button>
+                    )}
                     <label
                       className="inline-flex items-center gap-1.5 px-2.5 py-2 text-xs font-medium bg-white border border-slate-200 rounded-lg"
                       title="Manually set this presenter's status. Fully reversible, pick any stage, including reverting an accidental Confirmed back to Invited."

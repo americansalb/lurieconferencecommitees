@@ -412,6 +412,29 @@ export default function AslTeamPage() {
                             {accepted ? "Resend confirmation" : "Accept and email them"}
                           </button>
                         )}
+                        {isAdmin && accepted && (
+                          <button
+                            onClick={() => {
+                              if (window.confirm(
+                                person.paymentAskedAt
+                                  ? `Send the payment-address email to ${person.fullName} (${person.email}) again? They were asked ${chicagoStamp(person.paymentAskedAt)}.`
+                                  : `Ask ${person.fullName} (${person.email}) where to send their payment? Just this one person.`
+                              )) void requestPayment("one", person);
+                            }}
+                            disabled={payBusy !== null}
+                            className={`inline-flex items-center gap-1.5 text-xs font-semibold rounded-lg px-3 py-2 transition disabled:opacity-50 ${
+                              person.paymentAskedAt
+                                ? "bg-white border border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                                : "bg-[#6D28D9] text-white hover:bg-[#5B21B6]"
+                            }`}
+                            title={person.paymentAskedAt
+                              ? `Payment address asked ${chicagoStamp(person.paymentAskedAt)}. Click to send again.`
+                              : "Email this one interpreter asking where to send their payment"}
+                          >
+                            {payBusy === person.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
+                            {person.paymentAskedAt ? "Payment asked" : "Ask payment address"}
+                          </button>
+                        )}
                       </div>
 
                       <div className="mt-3 grid gap-2 sm:grid-cols-2 text-[13px] text-slate-700">
