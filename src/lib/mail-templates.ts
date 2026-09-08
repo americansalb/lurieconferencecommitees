@@ -4963,7 +4963,8 @@ export function presenterHonorariumRequestEmail({
 //
 // Same bones as the presenter honorarium letter and the same rules: no figure
 // (their pay is hourly and the total gets agreed in the reply, where a wrong
-// number can still be corrected), two ways to be paid, signed by a person.
+// number can still be corrected) and two ways to be paid. Signed by Student
+// Support and sent from contact@aalb.org, where the replies are handled.
 // The thanks are about the work interpreters actually did: a conference about
 // language access is accessible because of them.
 export function aslPaymentRequestEmail({
@@ -4976,9 +4977,6 @@ export function aslPaymentRequestEmail({
   replyToEmail: string;
 }) {
   const first = (fullName || "").split(" ")[0] || "";
-  const signer = (process.env.ATTENDEE_SIGNER_NAME || "Kevin Thakkar").trim();
-  const signerName = escapeHtml(signer.includes(",") ? signer.slice(0, signer.indexOf(",")).trim() : signer);
-  const signerTitle = escapeHtml(signer.includes(",") ? signer.slice(signer.indexOf(",") + 1).trim() : "");
 
   const mailto = `mailto:${replyToEmail}?subject=${encodeURIComponent(
     `Mailing address${fullName ? ` for ${fullName}` : ""}`
@@ -5019,7 +5017,8 @@ export function aslPaymentRequestEmail({
     </p>
     <p style="font-size:15px;line-height:1.75;color:${TEXT};margin:22px 0 0 0;">
       With thanks,<br/>
-      <strong>${signerName}</strong>${signerTitle ? `<br/><span style="color:${MUTED};font-size:13.5px;">${signerTitle}</span>` : ""}
+      <strong>AALB Student Support</strong><br/>
+      <span style="color:${MUTED};font-size:13.5px;">Americans Against Language Barriers</span>
     </p>
   `,
     first

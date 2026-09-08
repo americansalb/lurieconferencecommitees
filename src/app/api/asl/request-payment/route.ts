@@ -59,6 +59,10 @@ export async function POST(req: Request) {
     try {
       await sendMail({
         to: isTest ? (adminEmail as string) : p.email,
+        // From the inbox that will actually handle the replies, under the team
+        // name rather than a person. No comma in the display name: mail
+        // clients read a comma there as an address-list separator.
+        from: `"AALB Student Support" <${HONORARIUM_REPLY_TO}>`,
         replyTo: HONORARIUM_REPLY_TO,
         subject: `${isTest ? `[Test, would go to ${p.email}] ` : ""}${
           first ? `${first}, thank you` : "Thank you"
