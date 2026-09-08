@@ -21,6 +21,7 @@ import {
   plainCommunityInviteEmail,
   virtualAttendeeInfoEmail,
   presenterHonorariumRequestEmail,
+  aslPaymentRequestEmail,
   tourReminderEmail,
 } from "@/lib/mail-templates";
 import { zoomDaysFor } from "@/lib/virtual-event";
@@ -168,6 +169,13 @@ export async function GET(
       break;
     // The day-two-only resend as a both-days attendee receives it: one room,
     // and no claim that their ticket covers a single day.
+    case "asl-payment":
+      html = aslPaymentRequestEmail({
+        fullName: "Robyn Castillo",
+        invoiceEmail: "invoice@aalb.org",
+        replyToEmail: "contact@aalb.org",
+      });
+      break;
     case "honorarium-request":
       html = presenterHonorariumRequestEmail({
         name: "Mercedes Alvarado",

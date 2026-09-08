@@ -4957,3 +4957,73 @@ export function presenterHonorariumRequestEmail({
       : `Thank you for presenting. Here is how to get your ${owedLabel} to you.`
   );
 }
+
+// The post-conference note to an ASL interpreter: thank you, and where should
+// the payment go.
+//
+// Same bones as the presenter honorarium letter and the same rules: no figure
+// (their pay is hourly and the total gets agreed in the reply, where a wrong
+// number can still be corrected), two ways to be paid, signed by a person.
+// The thanks are about the work interpreters actually did: a conference about
+// language access is accessible because of them.
+export function aslPaymentRequestEmail({
+  fullName,
+  invoiceEmail,
+  replyToEmail,
+}: {
+  fullName: string;
+  invoiceEmail: string;
+  replyToEmail: string;
+}) {
+  const first = (fullName || "").split(" ")[0] || "";
+  const signer = (process.env.ATTENDEE_SIGNER_NAME || "Kevin Thakkar").trim();
+  const signerName = escapeHtml(signer.includes(",") ? signer.slice(0, signer.indexOf(",")).trim() : signer);
+  const signerTitle = escapeHtml(signer.includes(",") ? signer.slice(signer.indexOf(",") + 1).trim() : "");
+
+  const mailto = `mailto:${replyToEmail}?subject=${encodeURIComponent(
+    `Mailing address${fullName ? ` for ${fullName}` : ""}`
+  )}&body=${encodeURIComponent(
+    "Please send my check to:\n\nName:\nStreet:\nCity, State, ZIP:\n\nHours worked:\n\n"
+  )}`;
+
+  const option = (label: string, body: string) => `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:10px 0;">
+      <tr><td style="padding:18px 20px;background:#F7FAFB;border-radius:12px;border:1px solid #E3ECEF;">
+        <div style="font-size:11px;letter-spacing:0.14em;font-weight:800;color:${TEAL};text-transform:uppercase;">${label}</div>
+        <div style="font-size:14.5px;line-height:1.7;color:${TEXT};margin-top:8px;">${body}</div>
+      </td></tr>
+    </table>`;
+
+  return shell(
+    `
+    <h1 style="font-size:23px;font-weight:800;margin:0 0 14px 0;letter-spacing:-0.01em;">${addressed("Thank you", first)}</h1>
+    <p style="font-size:15px;line-height:1.75;color:${TEXT};margin:0 0 22px 0;">
+      The 2026 Lurie Children&rsquo;s and AALB Conference was about language access, and you are one
+      of the people who made it accessible in the room rather than in name. Interpreting a full
+      program is demanding work, and it was done well. Thank you.
+    </p>
+
+    ${sectionHeading("Your payment")}
+    <p style="font-size:15px;line-height:1.75;color:${TEXT};margin:0 0 6px 0;">
+      We would like to settle your payment promptly. There are two ways to do it, whichever is
+      easier for you. Either way, include the hours you worked so we can match it against the
+      schedule.
+    </p>
+
+    ${option("A check in the mail", `Reply to this email with the name and mailing address the check should go to, along with your hours, and we will send it out.`)}
+    ${button(mailto, "Reply with my address")}
+    ${option("An invoice", `If you would rather bill us through your own system, send your invoice to <a href="mailto:${invoiceEmail}" style="color:${BLUE};font-weight:600;">${invoiceEmail}</a>.`)}
+
+    <p style="font-size:15px;line-height:1.75;color:${TEXT};margin:18px 0 0 0;">
+      If neither of those suits you, tell us what does and we will arrange it.
+    </p>
+    <p style="font-size:15px;line-height:1.75;color:${TEXT};margin:22px 0 0 0;">
+      With thanks,<br/>
+      <strong>${signerName}</strong>${signerTitle ? `<br/><span style="color:${MUTED};font-size:13.5px;">${signerTitle}</span>` : ""}
+    </p>
+  `,
+    first
+      ? `${first}, thank you for interpreting. Here is how to get your payment to you.`
+      : "Thank you for interpreting. Here is how to get your payment to you."
+  );
+}

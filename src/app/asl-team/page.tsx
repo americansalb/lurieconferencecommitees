@@ -34,6 +34,8 @@ type Interpreter = {
   speedPingMs: number | null;
   status: string;
   acceptedAt: string | null;
+  // When we asked where to send their payment.
+  paymentAskedAt?: string | null;
   createdAt: string;
 };
 
@@ -56,6 +58,12 @@ export default function AslTeamPage() {
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [showPay, setShowPay] = useState(false);
+  const [payBusy, setPayBusy] = useState<string | null>(null);
+  const [payNote, setPayNote] = useState<string | null>(null);
+  // Ticks for the payment ask. Null = untouched, and the default is everyone
+  // accepted: unlike the presenters, being on this team means being paid.
+  const [payPicked, setPayPicked] = useState<Set<string> | null>(null);
 
   const isAdmin = ["admin", "developer"].includes(
     (session?.user as { role?: string } | undefined)?.role || ""
@@ -113,6 +121,40 @@ export default function AslTeamPage() {
     }
   }
 
+  const acceptedPeople = interpreters.filter((p) => p.status === "accepted");
+  const payPickedSet = payPicked ?? new Set(acceptedPeople.map((p) => p.id));
+  const payToSend = acceptedPeople.filter((p) => payPickedSet.has(p.id) && !p.paymentAskedAt);
+
+  async function requestPayment(kind: "one" | "bulk" | "test", one?: Interpreter) {
+    setPayBusy(kind === "one" && one ? one.id : kind);
+    setPayNote(null);
+    try {
+      const body =
+        kind === "test" ? { mode: "all", test: true, ...(payToSend[0] ? { ids: [payToSend[0].id] } : {}) }
+        : kind === "one" && one ? { mode: "all", ids: [one.id] }
+        : { mode: "initial", ids: payToSend.map((p) => p.id) };
+      const res = await fetch("/api/asl/request-payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const j = await res.json().catch(() => ({}));
+      setPayNote(res.ok
+        ? j.sent
+          ? kind === "test"
+            ? `Test copy sent to ${(j.recipients || [])[0]}. Nobody was marked as asked.`
+            : `Sent to ${(j.recipients || []).join(", ")}.`
+          : "Nobody to send to."
+        : (j.error || (j.failures || [])[0]?.error || "Could not send."));
+      if (kind !== "test") await load();
+    } catch {
+      setPayNote("Network error while sending.");
+    } finally {
+      setPayBusy(null);
+      setTimeout(() => setPayNote(null), 12000);
+    }
+  }
+
   if (status !== "authenticated") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -152,6 +194,118 @@ export default function AslTeamPage() {
               <p className="text-sm font-medium text-red-600 mb-4" role="alert">
                 {error}
               </p>
+            )}
+
+            {/* Paying the team, mirroring the presenters' honorarium panel:
+                a test copy to yourself, then send one at a time from a ticked
+                list. Everyone accepted starts ticked, because being on this
+                team means being paid; untick anyone who ended up not working. */}
+            {isAdmin && acceptedPeople.length > 0 && (
+              <div className="rounded-2xl p-4 shadow-sm mb-5 border" style={{ background: "linear-gradient(180deg,#F5F3FF,#ffffff)", borderColor: "#DDD6FE" }}>
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <div className="min-w-0">
+                    <div className="text-sm font-bold text-slate-900 inline-flex items-center gap-1.5">
+                      Payment
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                        {acceptedPeople.filter((p) => p.paymentAskedAt).length}/{acceptedPeople.length} asked
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1 max-w-xl">
+                      Thanks each interpreter and asks where to send their payment: they reply with a
+                      mailing address for a check, or invoice <strong className="text-slate-700">invoice@aalb.org</strong>.
+                      The email names no dollar figure and asks them to include their hours. Untick anyone
+                      who ended up not working the conference.
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => void requestPayment("test")}
+                      disabled={payBusy !== null}
+                      className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white shadow-sm disabled:opacity-50"
+                      style={{ background: "linear-gradient(90deg,#7C3AED,#6D28D9)" }}
+                      title="Send yourself one copy. Marks nobody as asked."
+                    >
+                      {payBusy === "test" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+                      Send me a test copy
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowPay((v) => !v)}
+                      className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold border text-[#6D28D9] border-[#DDD6FE] bg-white"
+                    >
+                      {showPay ? "Hide the list" : `Choose who to send to (${acceptedPeople.length})`}
+                    </button>
+                  </div>
+                </div>
+                {payNote && <div className="mt-2 text-xs font-semibold text-[#6D28D9]">{payNote}</div>}
+
+                {showPay && (
+                  <div className="mt-3 rounded-xl border border-[#DDD6FE] bg-white overflow-hidden">
+                    {acceptedPeople.map((p) => (
+                      <div key={p.id} className="px-3 py-2.5 flex items-center gap-3 border-b border-slate-100 last:border-0">
+                        <input
+                          type="checkbox"
+                          checked={payPickedSet.has(p.id)}
+                          onChange={() => setPayPicked((prev) => {
+                            const next = new Set(prev ?? acceptedPeople.map((x) => x.id));
+                            if (next.has(p.id)) next.delete(p.id); else next.add(p.id);
+                            return next;
+                          })}
+                          className="w-4 h-4 shrink-0 accent-[#6D28D9] cursor-pointer"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="text-[13px] font-bold text-slate-900 truncate">{p.fullName}</div>
+                          <div className="text-[11.5px] text-slate-500 truncate">
+                            {p.email} · ${(p.hourlyCents / 100).toFixed(0)}/hr
+                          </div>
+                        </div>
+                        {p.paymentAskedAt && (
+                          <span className="text-[10.5px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 shrink-0">
+                            Asked {chicagoStamp(p.paymentAskedAt)}
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => void requestPayment("one", p)}
+                          disabled={payBusy !== null}
+                          className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold border disabled:opacity-40 text-[#6D28D9] border-[#DDD6FE] bg-white hover:bg-[#F5F3FF]"
+                        >
+                          {payBusy === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
+                          {payBusy === p.id ? "Sending" : p.paymentAskedAt ? "Send again" : "Send"}
+                        </button>
+                      </div>
+                    ))}
+                    <div className="px-3 py-2.5 bg-slate-50/70 flex items-center justify-between gap-3 flex-wrap">
+                      <span className="text-[11.5px] text-slate-500">
+                        {payPickedSet.size === 0
+                          ? "Nobody is ticked."
+                          : payToSend.length === 0
+                          ? "Everyone ticked has already been asked."
+                          : `Ticked and not yet asked: ${payToSend.map((p) => p.fullName).join(", ")}.`}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!payToSend.length) return;
+                          if (window.confirm(
+                            `Email these ${payToSend.length} interpreter${payToSend.length === 1 ? "" : "s"}?\n\n` +
+                            payToSend.map((p) => `  ${p.fullName} <${p.email}>`).join("\n") +
+                            `\n\nThis sends immediately and cannot be taken back.`
+                          )) {
+                            void requestPayment("bulk");
+                          }
+                        }}
+                        disabled={payBusy !== null || payToSend.length === 0}
+                        className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold border disabled:opacity-40 text-slate-600 border-slate-200 bg-white"
+                      >
+                        {payBusy === "bulk" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
+                        {payToSend.length === 0 ? "Nobody ticked to send" : `Send to the ${payToSend.length} ticked`}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
 
             {loading ? (

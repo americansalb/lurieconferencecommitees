@@ -132,3 +132,8 @@ BEGIN
 EXCEPTION
   WHEN duplicate_object THEN NULL;
 END $$;
+
+-- Paying the ASL team after the conference. Additive.
+ALTER TABLE "lcc"."lcc_asl_interpreters"
+  ADD COLUMN IF NOT EXISTS "paymentAskedAt" TIMESTAMP(3),
+  ADD COLUMN IF NOT EXISTS "mailingAddress" TEXT;

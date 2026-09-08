@@ -1060,6 +1060,10 @@ model AslInterpreter {
   status             String    @default("submitted")
   acceptedAt         DateTime?
   acceptedById       String?
+  // Paying them after the conference: when we asked where to send the check,
+  // and the address if they replied with one. Same shape as the presenters'.
+  paymentAskedAt     DateTime?
+  mailingAddress     String?
   userAgent          String?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime? @updatedAt
