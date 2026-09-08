@@ -212,6 +212,23 @@ export default function PresentersPage() {
     }
   }
 
+  // For presenters contacted by hand before this panel existed: stamp them as
+  // asked (or clear it) without sending anything, so sends skip them like
+  // anyone the system itself has asked.
+  async function markHonorariumAsked(id: string, asked: boolean) {
+    setHonorariumOne(id);
+    try {
+      const res = await fetch("/api/presenters/request-honorarium", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, asked }),
+      });
+      if (res.ok) await load();
+    } finally {
+      setHonorariumOne(null);
+    }
+  }
+
   // One presenter, on purpose. This is the normal way to use this: send to
   // yourself first, then work down the list watching each one go.
   async function requestHonorariumFor(id: string, name: string) {
@@ -613,10 +630,31 @@ export default function PresentersPage() {
                             {!r.honorariumAmount && !r.travelReimbursement ? " · no honorarium on file" : ""}
                           </div>
                         </div>
-                        {r.honorariumAskedAt && (
-                          <span className="text-[10.5px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 shrink-0">
-                            Asked {shortDate(r.honorariumAskedAt)}
-                          </span>
+                        {r.honorariumAskedAt ? (
+                          <>
+                            <span className="text-[10.5px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 shrink-0">
+                              Asked {shortDate(r.honorariumAskedAt)}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => void markHonorariumAsked(r.id, false)}
+                              disabled={honorariumOne !== null || honorariumBusy !== null}
+                              title="Clear the asked mark, so they are included in the next send"
+                              className="shrink-0 text-[11px] font-semibold text-slate-400 hover:text-rose-600 underline decoration-dotted disabled:opacity-40"
+                            >
+                              Unmark
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => void markHonorariumAsked(r.id, true)}
+                            disabled={honorariumOne !== null || honorariumBusy !== null}
+                            title="They were already asked outside this page (for example from your own inbox). Marks them asked so sends skip them; nothing is emailed."
+                            className="shrink-0 text-[11px] font-semibold text-slate-400 hover:text-emerald-700 underline decoration-dotted disabled:opacity-40"
+                          >
+                            Mark asked
+                          </button>
                         )}
                         <button
                           type="button"

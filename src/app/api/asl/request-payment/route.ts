@@ -18,6 +18,25 @@ function isAdmin(role?: string) {
   return role === "admin" || role === "developer";
 }
 
+// Mark somebody as already asked, or clear that, without sending anything.
+// For the people contacted by hand before this existed: the system can only
+// skip what it knows about, so this is how it gets told.
+export async function PATCH(req: Request) {
+  const session = await getServerSession(authOptions);
+  if (!isAdmin((session?.user as { role?: string })?.role)) {
+    return NextResponse.json({ error: "Admins only" }, { status: 403 });
+  }
+  const body = await req.json().catch(() => ({})) as { id?: string; asked?: boolean };
+  if (!body.id || typeof body.asked !== "boolean") {
+    return NextResponse.json({ error: "Send id and asked." }, { status: 400 });
+  }
+  await prisma.aslInterpreter.update({
+    where: { id: body.id },
+    data: { paymentAskedAt: body.asked ? new Date() : null },
+  });
+  return NextResponse.json({ ok: true });
+}
+
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!isAdmin((session?.user as { role?: string })?.role)) {

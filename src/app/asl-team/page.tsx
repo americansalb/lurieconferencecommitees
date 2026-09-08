@@ -125,6 +125,23 @@ export default function AslTeamPage() {
   const payPickedSet = payPicked ?? new Set(acceptedPeople.map((p) => p.id));
   const payToSend = acceptedPeople.filter((p) => payPickedSet.has(p.id) && !p.paymentAskedAt);
 
+  // For interpreters contacted by hand before this panel existed: stamp them
+  // as asked (or clear it) without sending anything, so the bulk send skips
+  // them the way it skips everyone the system itself has asked.
+  async function markAsked(p: Interpreter, asked: boolean) {
+    setPayBusy(p.id);
+    try {
+      const res = await fetch("/api/asl/request-payment", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: p.id, asked }),
+      });
+      if (res.ok) await load();
+    } finally {
+      setPayBusy(null);
+    }
+  }
+
   async function requestPayment(kind: "one" | "bulk" | "test", one?: Interpreter) {
     setPayBusy(kind === "one" && one ? one.id : kind);
     setPayNote(null);
@@ -214,7 +231,8 @@ export default function AslTeamPage() {
                       Thanks each interpreter and asks where to send their payment: they reply with a
                       mailing address for a check, or invoice <strong className="text-slate-700">invoice@aalb.org</strong>.
                       The email names no dollar figure and asks them to include their hours. Untick anyone
-                      who ended up not working the conference.
+                      who ended up not working the conference, and use Mark asked on anyone you
+                      already contacted yourself so sends skip them.
                     </p>
                   </div>
                   <div className="flex flex-col gap-2 shrink-0">
@@ -260,10 +278,31 @@ export default function AslTeamPage() {
                             {p.email} · ${(p.hourlyCents / 100).toFixed(0)}/hr
                           </div>
                         </div>
-                        {p.paymentAskedAt && (
+                        {p.paymentAskedAt ? (
                           <span className="text-[10.5px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 shrink-0">
                             Asked {chicagoStamp(p.paymentAskedAt)}
                           </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => void markAsked(p, true)}
+                            disabled={payBusy !== null}
+                            title="They were already asked outside this page (for example from your own inbox). Marks them asked so sends skip them; nothing is emailed."
+                            className="shrink-0 text-[11px] font-semibold text-slate-400 hover:text-emerald-700 underline decoration-dotted disabled:opacity-40"
+                          >
+                            Mark asked
+                          </button>
+                        )}
+                        {p.paymentAskedAt && (
+                          <button
+                            type="button"
+                            onClick={() => void markAsked(p, false)}
+                            disabled={payBusy !== null}
+                            title="Clear the asked mark, so they are included in the next send"
+                            className="shrink-0 text-[11px] font-semibold text-slate-400 hover:text-rose-600 underline decoration-dotted disabled:opacity-40"
+                          >
+                            Unmark
+                          </button>
                         )}
                         <button
                           type="button"
