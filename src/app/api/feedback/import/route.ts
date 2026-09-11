@@ -15,13 +15,16 @@ import { parseCsv, matchSessionLabel } from "@/lib/feedback";
 //                               assigns specific columns to one presenter, and
 //                               the row is split into one response per entry.
 //
-// Either way, storage is one response per (row x session). importId groups the
-// batch so `replace: true` swaps an earlier upload atomically rather than
-// stacking duplicates.
+// Either way, storage is one response per (row x session).
+//
+// Several forms live side by side. Each response remembers the form it came
+// from, and an upload replaces only rows carrying the same sourceName, so a
+// second form never wipes the first and re-uploading one form as more
+// responses arrive updates just that form.
 //
 // POST {
 //   csv: string,
-//   replace?: boolean,
+//   sourceName?: string,
 //   mapping: {
 //     sessionColumn?: string,
 //     ratingColumns?: string[],
@@ -47,7 +50,7 @@ export async function POST(req: Request) {
 
   const body = await req.json().catch(() => null) as {
     csv?: string;
-    replace?: boolean;
+    sourceName?: string;
     mapping?: {
       sessionColumn?: string;
       ratingColumns?: string[];
@@ -60,6 +63,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Send csv and mapping." }, { status: 400 });
   }
 
+  const sourceName = (body.sourceName || "").trim().slice(0, 200) || "Feedback form";
   const rows = parseCsv(body.csv);
   if (rows.length < 2) {
     return NextResponse.json({ error: "That file has a header but no responses." }, { status: 400 });
@@ -82,7 +86,7 @@ export async function POST(req: Request) {
 
   const importId = randomUUID();
   const toCreate: {
-    importId: string; sessionLabel: string; presenterId: string | null;
+    importId: string; sourceName: string; sessionLabel: string; presenterId: string | null;
     ratings: Record<string, number>; comments: Record<string, string>;
     data: Record<string, string>; submittedAt: Date | null;
   }[] = [];
@@ -125,7 +129,7 @@ export async function POST(req: Request) {
         // A respondent who skipped this session entirely leaves no response.
         if (!Object.keys(ratings).length && !Object.keys(comments).length) continue;
         toCreate.push({
-          importId, sessionLabel: entry.label, presenterId: entry.presenterId,
+          importId, sourceName, sessionLabel: entry.label, presenterId: entry.presenterId,
           ratings, comments, data: raw, submittedAt: stamp,
         });
       }
@@ -136,7 +140,7 @@ export async function POST(req: Request) {
       const comments = collect(m.commentColumns, false) as Record<string, string>;
       if (!Object.keys(ratings).length && !Object.keys(comments).length) continue;
       toCreate.push({
-        importId, sessionLabel: label, presenterId: matchLabel(label),
+        importId, sourceName, sessionLabel: label, presenterId: matchLabel(label),
         ratings, comments, data: raw, submittedAt: stamp,
       });
     }
@@ -146,10 +150,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "No usable responses found with that mapping." }, { status: 400 });
   }
 
-  // Replace-in-one-transaction, so a re-import can never leave the table half
-  // old and half new.
+  // Replace this form's own rows only, in one transaction, so an upload can
+  // never leave a form half old and half new and can never touch another form.
   await prisma.$transaction([
-    ...(body.replace ? [prisma.feedbackResponse.deleteMany({})] : []),
+    prisma.feedbackResponse.deleteMany({ where: { sourceName } }),
     prisma.feedbackResponse.createMany({ data: toCreate }),
   ]);
 
@@ -157,6 +161,7 @@ export async function POST(req: Request) {
   return NextResponse.json({
     ok: true,
     importId,
+    sourceName,
     imported: toCreate.length,
     matched,
     unmatched: toCreate.length - matched,

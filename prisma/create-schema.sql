@@ -137,3 +137,10 @@ END $$;
 ALTER TABLE "lcc"."lcc_asl_interpreters"
   ADD COLUMN IF NOT EXISTS "paymentAskedAt" TIMESTAMP(3),
   ADD COLUMN IF NOT EXISTS "mailingAddress" TEXT;
+
+-- Several feedback forms side by side: each response remembers which form it
+-- came from, so re-uploading one form replaces only its own rows. Additive.
+ALTER TABLE "lcc"."lcc_feedback_responses"
+  ADD COLUMN IF NOT EXISTS "sourceName" TEXT NOT NULL DEFAULT 'Feedback form';
+CREATE INDEX IF NOT EXISTS "lcc_feedback_responses_sourceName_idx"
+  ON "lcc"."lcc_feedback_responses" ("sourceName");

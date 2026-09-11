@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import {
   MessageSquareText, Upload, Loader2, RefreshCw, Copy, Check, EyeOff, Eye,
-  ChevronDown, ChevronRight, ExternalLink,
+  ChevronDown, ChevronRight, ExternalLink, FileSpreadsheet, Trash2, BarChart3,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
@@ -23,6 +23,8 @@ type ColumnRole = "ignore" | "session" | "rating" | "comment" | "timestamp";
 
 type AdminData = {
   total: number;
+  overall: { responses: number; sessionsRated: number; questions: QuestionStats[] };
+  sources: { name: string; responses: number; matched: number }[];
   byPresenter: {
     presenter: { id: string; name: string; talkTitle: string | null };
     responseCount: number;
@@ -45,12 +47,30 @@ export default function FeedbackAdminPage() {
 
   // Import state.
   const [csv, setCsv] = useState("");
+  const [sourceName, setSourceName] = useState("");
   const [mode, setMode] = useState<"perRow" | "perColumn">("perRow");
   const [roles, setRoles] = useState<Record<string, ColumnRole>>({});
   const [columnOwner, setColumnOwner] = useState<Record<string, string>>({});
   const [importing, setImporting] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+
+  // Reading the file here rather than posting it keeps the import route on one
+  // JSON shape, and the mapping step needs the text in hand anyway.
+  async function takeFiles(files: FileList | null) {
+    const file = files?.[0];
+    if (!file) return;
+    const text = await file.text();
+    setCsv(text);
+    setSourceName(file.name.replace(/\.csv$/i, ""));
+    setNote(null);
+  }
+
+  async function deleteSource(name: string) {
+    if (!window.confirm(`Remove "${name}" and all its responses? The other forms are untouched.`)) return;
+    const res = await fetch(`/api/feedback?sourceName=${encodeURIComponent(name)}`, { method: "DELETE" });
+    if (res.ok) { setNote(`Removed "${name}".`); await load(); }
+  }
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -65,9 +85,17 @@ export default function FeedbackAdminPage() {
   }, []);
 
   useEffect(() => {
-    if (status === "unauthenticated") router.replace("/login");
-    if (status === "authenticated") void load();
-  }, [status, router, load]);
+    // Wait for the session to resolve before judging it. On a statically
+    // rendered page the first client render can report unauthenticated before
+    // the session request finishes, and redirecting on that bounces a
+    // signed-in admin to the login screen.
+    if (status === "loading") return;
+    if (!session) {
+      router.replace("/login");
+      return;
+    }
+    void load();
+  }, [session, status, router, load]);
 
   const header = useMemo(() => {
     if (!csv.trim()) return [];
@@ -132,13 +160,13 @@ export default function FeedbackAdminPage() {
       const res = await fetch("/api/feedback/import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ csv, replace: true, mapping }),
+        body: JSON.stringify({ csv, sourceName, mapping }),
       });
       const j = await res.json();
       setNote(res.ok
-        ? `Imported ${j.imported} responses: ${j.matched} matched to a presenter, ${j.unmatched} to assign below.`
+        ? `"${j.sourceName}": ${j.imported} responses, ${j.matched} matched to a presenter${j.unmatched ? `, ${j.unmatched} to assign below` : ""}.`
         : (j.error || "Import failed."));
-      if (res.ok) { setCsv(""); await load(); }
+      if (res.ok) { setCsv(""); setSourceName(""); await load(); }
     } catch {
       setNote("Network error during import.");
     } finally {
@@ -184,8 +212,9 @@ export default function FeedbackAdminPage() {
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight mt-1">Attendee feedback</h1>
             <p className="text-sm text-slate-500 mt-1 max-w-2xl">
-              Paste the feedback spreadsheet, map its columns, and each presenter gets a private page
-              with their numbers and every comment. Only this page compares sessions to each other.
+              Upload every feedback form, map its columns once, and each presenter gets a private page
+              with their own numbers and every comment. The overall picture and the comparison between
+              sessions live here and nowhere else.
             </p>
 
             {isAdmin && (
@@ -194,9 +223,26 @@ export default function FeedbackAdminPage() {
                   <Upload className="w-4 h-4 text-[#0E5566]" /> Import responses
                 </div>
                 <p className="text-xs text-slate-500 mt-1">
-                  In Google Sheets: File, Download, Comma Separated Values, then paste the whole file here.
-                  Importing replaces what was imported before, so re-importing as more forms arrive is safe.
+                  In Google Sheets: File, Download, Comma Separated Values. Upload the file here, or paste it
+                  below. Upload as many forms as you have; each is kept separately, and uploading the same
+                  form again replaces only that form as more responses arrive.
                 </p>
+                <div className="mt-3 flex items-center gap-3 flex-wrap">
+                  <label className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-[13px] font-bold text-white cursor-pointer bg-gradient-to-r from-[#0E5566] to-[#0066B3]">
+                    <Upload className="w-4 h-4" /> Choose a CSV file
+                    <input type="file" accept=".csv,text/csv" className="hidden"
+                           onChange={(e) => { void takeFiles(e.target.files); e.target.value = ""; }} />
+                  </label>
+                  <label className="flex-1 min-w-[220px] inline-flex items-center gap-2">
+                    <span className="text-[12px] font-semibold text-slate-600 shrink-0">Call this form</span>
+                    <input
+                      value={sourceName}
+                      onChange={(e) => setSourceName(e.target.value)}
+                      placeholder="Saturday sessions"
+                      className="flex-1 rounded-lg border border-slate-200 px-2 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#0E5566]/20"
+                    />
+                  </label>
+                </div>
                 <textarea
                   value={csv}
                   onChange={(e) => setCsv(e.target.value)}
@@ -259,6 +305,29 @@ export default function FeedbackAdminPage() {
                   </div>
                 )}
                 {note && <div className="mt-3 text-[12.5px] font-semibold text-[#0E5566]">{note}</div>}
+
+                {data && data.sources.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-slate-100">
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Forms on file</div>
+                    <div className="mt-2 space-y-1.5">
+                      {data.sources.map((src) => (
+                        <div key={src.name} className="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2">
+                          <FileSpreadsheet className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                          <span className="text-[13px] font-semibold text-slate-800 truncate flex-1 min-w-0">{src.name}</span>
+                          <span className="text-[11.5px] text-slate-500 shrink-0">
+                            {src.responses} response{src.responses === 1 ? "" : "s"}
+                            {src.matched < src.responses ? ` · ${src.responses - src.matched} unassigned` : ""}
+                          </span>
+                          <button onClick={() => void deleteSource(src.name)}
+                                  title="Remove this form and its responses"
+                                  className="shrink-0 p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -304,6 +373,45 @@ export default function FeedbackAdminPage() {
                     <RefreshCw className="w-3.5 h-3.5" /> Refresh
                   </button>
                 </div>
+
+                {data.overall.questions.length > 0 && (
+                  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+                    <div className="text-sm font-bold text-slate-900 inline-flex items-center gap-1.5">
+                      <BarChart3 className="w-4 h-4 text-[#0E5566]" /> The conference overall
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Every answer across every session, pooled. {data.overall.responses} response
+                      {data.overall.responses === 1 ? "" : "s"} covering {data.overall.sessionsRated} session
+                      {data.overall.sessionsRated === 1 ? "" : "s"}. Presenters never see this; their pages
+                      show only their own numbers.
+                    </p>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      {data.overall.questions.map((q) => (
+                        <div key={q.question} className="rounded-xl border border-slate-150 bg-slate-50/60 px-4 py-3">
+                          <div className="text-[12.5px] font-semibold text-slate-700">{q.question}</div>
+                          <div className="mt-1 flex items-baseline gap-2 flex-wrap">
+                            <span className="text-[22px] font-bold text-slate-900">{q.mean.toFixed(2)}</span>
+                            <span className="text-[11.5px] text-slate-500">
+                              median {q.median} · SD {q.sd === null ? "–" : q.sd.toFixed(2)} ·{" "}
+                              {Math.round(q.topBox * 100)}% rated 4 or 5 · {q.n} answer{q.n === 1 ? "" : "s"}
+                            </span>
+                          </div>
+                          <div className="mt-2 flex gap-1">
+                            {q.distribution.map((d) => (
+                              <div key={d.value} className="flex-1 text-center" title={`${d.count} rated ${d.value}`}>
+                                <div className="h-10 flex items-end">
+                                  <div className="w-full rounded-t"
+                                       style={{ height: `${Math.max(4, Math.round((d.count / q.n) * 100))}%`, background: "linear-gradient(180deg,#0066B3,#0E5566)" }} />
+                                </div>
+                                <div className="text-[10px] text-slate-400 mt-0.5">{d.value}</div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {data.byPresenter.filter((b) => b.responseCount > 0).map((b) => {
                   const isOpen = open === b.presenter.id;

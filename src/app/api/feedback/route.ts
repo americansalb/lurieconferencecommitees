@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { randomBytes } from "crypto";
-import { assemblePresenterFeedback } from "@/lib/feedback";
+import { assemblePresenterFeedback, questionStats } from "@/lib/feedback";
 import { appUrl } from "@/lib/presenters";
 
 // The admin's view of all feedback, and the two corrections they can make:
@@ -34,7 +34,7 @@ export async function GET() {
   const rows = await prisma.feedbackResponse.findMany({
     orderBy: { importedAt: "asc" },
     select: {
-      id: true, sessionLabel: true, presenterId: true,
+      id: true, sessionLabel: true, presenterId: true, sourceName: true,
       ratings: true, comments: true, hiddenKeys: true, submittedAt: true,
     },
   });
@@ -65,6 +65,35 @@ export async function GET() {
     unmatchedRows.reduce((m, r) => m.set(r.sessionLabel, (m.get(r.sessionLabel) || 0) + 1), new Map<string, number>()),
   ).map(([label, count]) => ({ label, count }));
 
+  // The conference as a whole: every answer to every question, across every
+  // session, so the overall picture is not a guess from the per-session means.
+  const overallByQuestion = new Map<string, number[]>();
+  for (const r of rows) {
+    for (const [q, val] of Object.entries((r.ratings || {}) as Record<string, unknown>)) {
+      const num = typeof val === "number" ? val : Number(val);
+      if (!Number.isFinite(num)) continue;
+      if (!overallByQuestion.has(q)) overallByQuestion.set(q, []);
+      overallByQuestion.get(q)!.push(num);
+    }
+  }
+  const overall = {
+    responses: rows.length,
+    sessionsRated: new Set(rows.filter((r) => r.presenterId).map((r) => r.presenterId)).size,
+    questions: Array.from(overallByQuestion.entries())
+      .map(([q, vals]) => questionStats(q, vals))
+      .filter((x): x is NonNullable<typeof x> => !!x),
+  };
+
+  // The forms on file, each replaceable and deletable on its own.
+  const sources = Array.from(
+    rows.reduce((m, r) => {
+      const cur = m.get(r.sourceName) || { responses: 0, matched: 0 };
+      cur.responses += 1;
+      if (r.presenterId) cur.matched += 1;
+      return m.set(r.sourceName, cur);
+    }, new Map<string, { responses: number; matched: number }>()),
+  ).map(([name, v]) => ({ name, ...v }));
+
   // Share links, minted lazily the first time this page loads.
   const links: Record<string, string> = {};
   for (const p of presenters) {
@@ -76,10 +105,24 @@ export async function GET() {
   return NextResponse.json({
     ok: true,
     total: rows.length,
+    overall,
+    sources,
     byPresenter,
     unmatched,
     links,
   });
+}
+
+export async function DELETE(req: Request) {
+  const session = await getServerSession(authOptions);
+  if (!isAdmin((session?.user as { role?: string })?.role)) {
+    return NextResponse.json({ error: "Admins only" }, { status: 403 });
+  }
+  const { searchParams } = new URL(req.url);
+  const sourceName = searchParams.get("sourceName");
+  if (!sourceName) return NextResponse.json({ error: "Which form?" }, { status: 400 });
+  const r = await prisma.feedbackResponse.deleteMany({ where: { sourceName } });
+  return NextResponse.json({ ok: true, deleted: r.count });
 }
 
 export async function PATCH(req: Request) {

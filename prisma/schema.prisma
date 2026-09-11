@@ -452,6 +452,10 @@ model FeedbackResponse {
   id           String     @id @default(cuid())
   /// Which import batch brought it in, so a re-import replaces its own rows.
   importId     String
+  /// The form this came from, as named at upload (usually the file name).
+  /// Several forms live side by side; re-uploading one replaces only its own
+  /// rows, so a second form never wipes the first.
+  sourceName   String     @default("Feedback form")
   /// The session as the form named it, before any matching.
   sessionLabel String
   /// Matched presenter. Null until matched; unmatched rows appear only in the
@@ -471,6 +475,7 @@ model FeedbackResponse {
 
   @@index([presenterId])
   @@index([importId])
+  @@index([sourceName])
   @@map("lcc_feedback_responses")
   @@schema("lcc")
 }
