@@ -48,6 +48,9 @@ export default function FeedbackAdminPage() {
   // Import state.
   const [csv, setCsv] = useState("");
   const [sourceName, setSourceName] = useState("");
+  const [dragging, setDragging] = useState(false);
+  const [showPaste, setShowPaste] = useState(false);
+  const [loadedFile, setLoadedFile] = useState<string | null>(null);
   const [mode, setMode] = useState<"perRow" | "perColumn">("perRow");
   const [roles, setRoles] = useState<Record<string, ColumnRole>>({});
   const [columnOwner, setColumnOwner] = useState<Record<string, string>>({});
@@ -60,8 +63,13 @@ export default function FeedbackAdminPage() {
   async function takeFiles(files: FileList | null) {
     const file = files?.[0];
     if (!file) return;
+    if (!/\.csv$/i.test(file.name) && file.type !== "text/csv") {
+      setNote(`"${file.name}" is not a CSV. In Google Sheets use File, Download, Comma Separated Values.`);
+      return;
+    }
     const text = await file.text();
     setCsv(text);
+    setLoadedFile(file.name);
     setSourceName(file.name.replace(/\.csv$/i, ""));
     setNote(null);
   }
@@ -166,7 +174,7 @@ export default function FeedbackAdminPage() {
       setNote(res.ok
         ? `"${j.sourceName}": ${j.imported} responses, ${j.matched} matched to a presenter${j.unmatched ? `, ${j.unmatched} to assign below` : ""}.`
         : (j.error || "Import failed."));
-      if (res.ok) { setCsv(""); setSourceName(""); await load(); }
+      if (res.ok) { setCsv(""); setSourceName(""); setLoadedFile(null); setShowPaste(false); await load(); }
     } catch {
       setNote("Network error during import.");
     } finally {
@@ -223,17 +231,51 @@ export default function FeedbackAdminPage() {
                   <Upload className="w-4 h-4 text-[#0E5566]" /> Import responses
                 </div>
                 <p className="text-xs text-slate-500 mt-1">
-                  In Google Sheets: File, Download, Comma Separated Values. Upload the file here, or paste it
-                  below. Upload as many forms as you have; each is kept separately, and uploading the same
-                  form again replaces only that form as more responses arrive.
+                  Upload as many forms as you have. Each is kept separately, and uploading the same form
+                  again replaces only that form as more responses arrive.
                 </p>
-                <div className="mt-3 flex items-center gap-3 flex-wrap">
-                  <label className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-[13px] font-bold text-white cursor-pointer bg-gradient-to-r from-[#0E5566] to-[#0066B3]">
-                    <Upload className="w-4 h-4" /> Choose a CSV file
-                    <input type="file" accept=".csv,text/csv" className="hidden"
-                           onChange={(e) => { void takeFiles(e.target.files); e.target.value = ""; }} />
-                  </label>
-                  <label className="flex-1 min-w-[220px] inline-flex items-center gap-2">
+
+                {/* The upload is the main thing on this card, not a button beside a
+                    text box. Drop a file anywhere in the zone or click it. */}
+                <label
+                  onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+                  onDragLeave={() => setDragging(false)}
+                  onDrop={(e) => { e.preventDefault(); setDragging(false); void takeFiles(e.dataTransfer.files); }}
+                  className={`mt-4 flex flex-col items-center justify-center text-center rounded-2xl border-2 border-dashed px-6 py-10 cursor-pointer transition-colors ${
+                    dragging ? "border-[#0066B3] bg-[#0066B3]/5" : loadedFile ? "border-emerald-300 bg-emerald-50/50" : "border-slate-300 bg-slate-50/70 hover:border-[#0E5566] hover:bg-[#0E5566]/[0.03]"
+                  }`}
+                >
+                  <input type="file" accept=".csv,text/csv" className="hidden"
+                         onChange={(e) => { void takeFiles(e.target.files); e.target.value = ""; }} />
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${loadedFile ? "bg-emerald-100" : "bg-white border border-slate-200"}`}>
+                    {loadedFile
+                      ? <Check className="w-7 h-7 text-emerald-600" />
+                      : <FileSpreadsheet className="w-7 h-7 text-[#0E5566]" />}
+                  </div>
+                  {loadedFile ? (
+                    <>
+                      <div className="mt-3 text-[15px] font-bold text-slate-900">{loadedFile}</div>
+                      <div className="text-[12.5px] text-slate-500 mt-0.5">
+                        {Math.max(0, parseCsv(csv).length - 1)} responses read. Check the columns below, then import.
+                        Click here to pick a different file.
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="mt-3 text-[15px] font-bold text-slate-900">Upload a feedback form (CSV)</div>
+                      <div className="text-[13px] text-slate-500 mt-1">Drag the file here, or click to choose it</div>
+                      <div className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-bold text-white bg-gradient-to-r from-[#0E5566] to-[#0066B3]">
+                        <Upload className="w-4 h-4" /> Choose a CSV file
+                      </div>
+                      <div className="text-[11.5px] text-slate-400 mt-3">
+                        From Google Sheets: File, then Download, then Comma Separated Values (.csv)
+                      </div>
+                    </>
+                  )}
+                </label>
+
+                {(loadedFile || csv) && (
+                  <label className="mt-3 flex items-center gap-2">
                     <span className="text-[12px] font-semibold text-slate-600 shrink-0">Call this form</span>
                     <input
                       value={sourceName}
@@ -242,14 +284,23 @@ export default function FeedbackAdminPage() {
                       className="flex-1 rounded-lg border border-slate-200 px-2 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#0E5566]/20"
                     />
                   </label>
-                </div>
-                <textarea
-                  value={csv}
-                  onChange={(e) => setCsv(e.target.value)}
-                  placeholder="Timestamp,Which session did you attend?,How useful was it? ..."
-                  rows={5}
-                  className="mt-3 w-full rounded-xl border border-slate-200 p-3 text-[12.5px] font-mono focus:outline-none focus:ring-2 focus:ring-[#0E5566]/20"
-                />
+                )}
+
+                {!loadedFile && (
+                  <button type="button" onClick={() => setShowPaste((v) => !v)}
+                          className="mt-3 text-[12px] font-semibold text-slate-500 hover:text-[#0E5566] underline decoration-dotted">
+                    {showPaste ? "Hide the paste box" : "Or paste the data instead"}
+                  </button>
+                )}
+                {showPaste && !loadedFile && (
+                  <textarea
+                    value={csv}
+                    onChange={(e) => setCsv(e.target.value)}
+                    placeholder="Timestamp,Which session did you attend?,How useful was it? ..."
+                    rows={5}
+                    className="mt-2 w-full rounded-xl border border-slate-200 p-3 text-[12.5px] font-mono focus:outline-none focus:ring-2 focus:ring-[#0E5566]/20"
+                  />
+                )}
 
                 {header.length > 0 && (
                   <div className="mt-4">

@@ -449,29 +449,33 @@ model PresenterSlideChunk {
 /// the form was. `data` keeps the untouched row for auditing; `ratings` and
 /// `comments` hold just the mapped answers, keyed by question label.
 model FeedbackResponse {
-  id           String     @id @default(cuid())
+  id            String     @id @default(cuid())
   /// Which import batch brought it in, so a re-import replaces its own rows.
-  importId     String
+  importId      String
   /// The form this came from, as named at upload (usually the file name).
   /// Several forms live side by side; re-uploading one replaces only its own
   /// rows, so a second form never wipes the first.
-  sourceName   String     @default("Feedback form")
+  sourceName    String     @default("Feedback form")
   /// The session as the form named it, before any matching.
-  sessionLabel String
+  sessionLabel  String
   /// Matched presenter. Null until matched; unmatched rows appear only in the
   /// admin fix-up list, never on a share page.
-  presenterId  String?
-  presenter    Presenter? @relation(fields: [presenterId], references: [id], onDelete: SetNull)
+  presenterId   String?
+  presenter     Presenter? @relation(fields: [presenterId], references: [id], onDelete: SetNull)
   /// Numeric answers, keyed by question label.
-  ratings      Json
+  ratings       Json
   /// Free-text answers, keyed by question label.
-  comments     Json
+  comments      Json
   /// Comment keys hidden from the presenter page: {label: {by, at}}.
-  hiddenKeys   Json       @default("{}")
+  hiddenKeys    Json       @default("{}")
   /// The raw row as imported, untouched.
-  data         Json
-  submittedAt  DateTime?
-  importedAt   DateTime   @default(now())
+  data          Json
+  /// The mapped questions in the form's own column order. Postgres stores
+  /// ratings and comments as jsonb, which re-sorts object keys, so without this
+  /// "What could be improved?" can come out ahead of "What did you like?".
+  questionOrder String[]   @default([])
+  submittedAt   DateTime?
+  importedAt    DateTime   @default(now())
 
   @@index([presenterId])
   @@index([importId])

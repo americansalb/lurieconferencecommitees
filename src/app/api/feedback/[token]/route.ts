@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { formatFormTimestamp, questionOrderOf } from "@/lib/feedback";
 
 // A presenter's own raw feedback as CSV, behind their share token.
 //
@@ -25,17 +26,16 @@ export async function GET(_req: Request, { params }: { params: { token: string }
   const rows = await prisma.feedbackResponse.findMany({
     where: { presenterId: presenter.id },
     orderBy: { submittedAt: "asc" },
-    select: { ratings: true, comments: true, hiddenKeys: true, submittedAt: true },
+    select: { ratings: true, comments: true, hiddenKeys: true, submittedAt: true, questionOrder: true },
   });
 
-  // Columns are the union of every question that appears, ratings first, in
-  // first-seen order so the file reads like the form did.
-  const ratingCols: string[] = [];
-  const commentCols: string[] = [];
-  for (const r of rows) {
-    for (const q of Object.keys((r.ratings || {}) as object)) if (!ratingCols.includes(q)) ratingCols.push(q);
-    for (const q of Object.keys((r.comments || {}) as object)) if (!commentCols.includes(q)) commentCols.push(q);
-  }
+  // Columns are every question that appears, ratings first, each group in the
+  // order the form asked them so the file reads like the form did.
+  const order = questionOrderOf(rows);
+  const asked = (key: "ratings" | "comments") =>
+    order.filter((q) => rows.some((r) => q in ((r[key] || {}) as object)));
+  const ratingCols = asked("ratings");
+  const commentCols = asked("comments");
 
   const header = ["Submitted", ...ratingCols, ...commentCols];
   const lines = [header.map(esc).join(",")];
@@ -44,7 +44,8 @@ export async function GET(_req: Request, { params }: { params: { token: string }
     const comments = (r.comments || {}) as Record<string, string>;
     const hidden = (r.hiddenKeys || {}) as Record<string, unknown>;
     lines.push([
-      r.submittedAt ? r.submittedAt.toISOString() : "",
+      // Chicago time, in the same shape Google Forms wrote it.
+      formatFormTimestamp(r.submittedAt),
       ...ratingCols.map((q) => (ratings[q] != null ? String(ratings[q]) : "")),
       ...commentCols.map((q) => (hidden[q] ? "" : comments[q] || "")),
     ].map(esc).join(","));

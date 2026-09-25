@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { randomUUID } from "crypto";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { parseCsv, matchSessionLabel } from "@/lib/feedback";
+import { parseCsv, matchSessionLabel, parseFormTimestamp } from "@/lib/feedback";
 
 // Import a feedback spreadsheet.
 //
@@ -88,8 +88,17 @@ export async function POST(req: Request) {
   const toCreate: {
     importId: string; sourceName: string; sessionLabel: string; presenterId: string | null;
     ratings: Record<string, number>; comments: Record<string, string>;
-    data: Record<string, string>; submittedAt: Date | null;
+    data: Record<string, string>; submittedAt: Date | null; questionOrder: string[];
   }[] = [];
+
+  // The order questions appear on the form. Postgres stores ratings and
+  // comments as JSONB, which reorders keys by length, so without this the
+  // presenter page would show "What could be improved?" above "What did you
+  // like most?" whenever the second was shorter.
+  const inFormOrder = (cols: string[] | undefined) => {
+    const wanted = new Set(cols || []);
+    return header.filter((h) => wanted.has(h));
+  };
 
   const tsIdx = m.timestampColumn ? idx(m.timestampColumn) : -1;
   // Session labels repeat constantly, so match each distinct one once.
@@ -103,8 +112,9 @@ export async function POST(req: Request) {
     const row = rows[r];
     const raw: Record<string, string> = {};
     header.forEach((h, i) => { if (h) raw[h] = (row[i] ?? "").trim(); });
-    const submittedAt = tsIdx >= 0 && row[tsIdx] ? new Date(row[tsIdx]) : null;
-    const stamp = submittedAt && !isNaN(submittedAt.getTime()) ? submittedAt : null;
+    // Google Forms writes Chicago wall time with no zone; read as UTC it
+    // lands five hours early.
+    const stamp = tsIdx >= 0 && row[tsIdx] ? parseFormTimestamp(row[tsIdx]) : null;
 
     const collect = (cols: string[] | undefined, numeric: boolean) => {
       const out: Record<string, number | string> = {};
@@ -131,6 +141,7 @@ export async function POST(req: Request) {
         toCreate.push({
           importId, sourceName, sessionLabel: entry.label, presenterId: entry.presenterId,
           ratings, comments, data: raw, submittedAt: stamp,
+          questionOrder: inFormOrder([...entry.ratingColumns, ...entry.commentColumns]),
         });
       }
     } else {
@@ -142,6 +153,7 @@ export async function POST(req: Request) {
       toCreate.push({
         importId, sourceName, sessionLabel: label, presenterId: matchLabel(label),
         ratings, comments, data: raw, submittedAt: stamp,
+        questionOrder: inFormOrder([...(m.ratingColumns || []), ...(m.commentColumns || [])]),
       });
     }
   }

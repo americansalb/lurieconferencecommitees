@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { randomBytes } from "crypto";
-import { assemblePresenterFeedback, questionStats } from "@/lib/feedback";
+import { assemblePresenterFeedback, questionOrderOf, questionStats } from "@/lib/feedback";
 import { appUrl } from "@/lib/presenters";
 
 // The admin's view of all feedback, and the two corrections they can make:
@@ -35,7 +35,7 @@ export async function GET() {
     orderBy: { importedAt: "asc" },
     select: {
       id: true, sessionLabel: true, presenterId: true, sourceName: true,
-      ratings: true, comments: true, hiddenKeys: true, submittedAt: true,
+      ratings: true, comments: true, hiddenKeys: true, submittedAt: true, questionOrder: true,
     },
   });
   const presenters = await prisma.presenter.findMany({
@@ -76,10 +76,13 @@ export async function GET() {
       overallByQuestion.get(q)!.push(num);
     }
   }
+  const formOrder = questionOrderOf(rows);
+  const rank = (q: string) => { const i = formOrder.indexOf(q); return i < 0 ? formOrder.length : i; };
   const overall = {
     responses: rows.length,
     sessionsRated: new Set(rows.filter((r) => r.presenterId).map((r) => r.presenterId)).size,
     questions: Array.from(overallByQuestion.entries())
+      .sort(([a], [b]) => rank(a) - rank(b))
       .map(([q, vals]) => questionStats(q, vals))
       .filter((x): x is NonNullable<typeof x> => !!x),
   };

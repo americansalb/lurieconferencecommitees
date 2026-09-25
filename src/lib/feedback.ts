@@ -43,6 +43,89 @@ export function parseCsv(text: string): string[][] {
   return rows;
 }
 
+// --- Timestamps ----------------------------------------------------------
+
+const TZ = "America/Chicago";
+
+/** Chicago's offset from UTC, in ms, at a given instant. */
+function chicagoOffsetMs(ms: number): number {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: TZ, hourCycle: "h23",
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+  }).formatToParts(new Date(ms));
+  const get = (t: string) => Number(parts.find((p) => p.type === t)?.value || 0);
+  const wall = Date.UTC(get("year"), get("month") - 1, get("day"), get("hour"), get("minute"), get("second"));
+  return wall - ms;
+}
+
+/**
+ * A form's timestamp as the instant it was submitted.
+ *
+ * Google exports "8/15/2026 10:31:02" with no timezone, meaning the form's own
+ * clock, which for this conference is Chicago. `new Date()` would read it as
+ * the server's zone, and the servers run in UTC, which put every response five
+ * hours early. Anything carrying its own zone (ISO with Z or an offset) is
+ * trusted as written.
+ */
+export function parseFormTimestamp(raw: string): Date | null {
+  const s = (raw || "").trim();
+  if (!s) return null;
+  if (/[zZ]$|[+-]\d{2}:?\d{2}$|T\d/.test(s)) {
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})(?:[ ,]+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*([AaPp][Mm])?)?$/);
+  if (!m) {
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  let [, mo, d, y, h = "0", mi = "0", sec = "0", ap] = m;
+  let year = Number(y);
+  if (year < 100) year += 2000;
+  let hour = Number(h);
+  if (ap) {
+    const pm = /p/i.test(ap);
+    if (hour === 12) hour = pm ? 12 : 0;
+    else if (pm) hour += 12;
+  }
+  const wall = Date.UTC(year, Number(mo) - 1, Number(d), hour, Number(mi), Number(sec));
+  // Two passes settle the offset across a daylight-saving boundary.
+  let ms = wall - chicagoOffsetMs(wall);
+  ms = wall - chicagoOffsetMs(ms);
+  return new Date(ms);
+}
+
+/** "8/15/2026 10:31:02" in Chicago time: the shape the form exported. */
+export function formatFormTimestamp(d: Date | null): string {
+  if (!d) return "";
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: TZ, hourCycle: "h23",
+    year: "numeric", month: "numeric", day: "numeric",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+  }).formatToParts(d);
+  const get = (t: string) => parts.find((p) => p.type === t)?.value || "";
+  return `${get("month")}/${get("day")}/${get("year")} ${get("hour")}:${get("minute")}:${get("second")}`;
+}
+
+// --- Question order ------------------------------------------------------
+
+/**
+ * One order for every question across a set of responses: the form's own
+ * column order where it was recorded, then anything older imports carry in
+ * the order it is first met.
+ */
+export function questionOrderOf(rows: { questionOrder?: string[] | null; ratings: unknown; comments: unknown }[]): string[] {
+  const seen: string[] = [];
+  const add = (q: string) => { if (!seen.includes(q)) seen.push(q); };
+  for (const r of rows) for (const q of r.questionOrder || []) add(q);
+  for (const r of rows) {
+    for (const q of Object.keys((r.ratings || {}) as object)) add(q);
+    for (const q of Object.keys((r.comments || {}) as object)) add(q);
+  }
+  return seen;
+}
+
 // --- Matching sessions to presenters -----------------------------------
 
 function normalize(s: string): string {
@@ -167,6 +250,7 @@ type Row = {
   ratings: unknown;
   comments: unknown;
   hiddenKeys: unknown;
+  questionOrder?: string[] | null;
 };
 
 export function assemblePresenterFeedback(rows: Row[]): PresenterFeedback {
@@ -190,11 +274,16 @@ export function assemblePresenterFeedback(rows: Row[]): PresenterFeedback {
       commentMap.get(q)!.push(text);
     }
   }
+  const order = questionOrderOf(rows);
+  const rank = (q: string) => { const i = order.indexOf(q); return i < 0 ? order.length : i; };
   return {
     responseCount: rows.length,
     questions: Array.from(byQuestion.entries())
       .map(([q, vals]) => questionStats(q, vals))
-      .filter((x): x is QuestionStats => !!x),
-    comments: Array.from(commentMap.entries()).map(([question, entries]) => ({ question, entries })),
+      .filter((x): x is QuestionStats => !!x)
+      .sort((a, b) => rank(a.question) - rank(b.question)),
+    comments: Array.from(commentMap.entries())
+      .map(([question, entries]) => ({ question, entries }))
+      .sort((a, b) => rank(a.question) - rank(b.question)),
   };
 }

@@ -144,3 +144,7 @@ ALTER TABLE "lcc"."lcc_feedback_responses"
   ADD COLUMN IF NOT EXISTS "sourceName" TEXT NOT NULL DEFAULT 'Feedback form';
 CREATE INDEX IF NOT EXISTS "lcc_feedback_responses_sourceName_idx"
   ON "lcc"."lcc_feedback_responses" ("sourceName");
+
+-- Feedback questions in the form's own order, which jsonb does not keep.
+ALTER TABLE "lcc"."lcc_feedback_responses"
+  ADD COLUMN IF NOT EXISTS "questionOrder" TEXT[] NOT NULL DEFAULT '{}';
