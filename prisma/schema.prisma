@@ -472,6 +472,12 @@ model FeedbackResponse {
   ratings       Json
   /// Free-text answers, keyed by question label.
   comments      Json
+  /// Multiple-choice answers, keyed by question label, as given ("Yes",
+  /// "Colleague, Email"). Tallied on the team's compiled view only.
+  choices       Json       @default("{}")
+  /// From a form about the whole conference rather than one session. Never
+  /// belongs to a presenter and never appears on a presenter's page.
+  general       Boolean    @default(false)
   /// Comment keys hidden from the presenter page: {label: {by, at}}.
   hiddenKeys    Json       @default("{}")
   /// Comment keys the team chose to feature at the top of the presenter's

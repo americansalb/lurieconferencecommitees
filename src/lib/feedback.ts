@@ -512,3 +512,39 @@ export function buildPresenterReport(rows: (Row & { segment?: string | null })[]
     groups: groups.length >= 2 ? groups : [],
   };
 }
+
+// --- Multiple choice ----------------------------------------------------------
+
+export type ChoiceTally = {
+  question: string;
+  /** People who answered it. Checkbox questions let one person pick several,
+   *  so option counts can add up to more than this. */
+  n: number;
+  options: { label: string; count: number }[];
+};
+
+/**
+ * Count the answers to one multiple-choice question.
+ *
+ * Google Forms writes a checkbox answer as its picks joined by ", ", which
+ * cannot be told apart from a single option that has a comma in it ("Yes, I
+ * understand and agree"). So an answer is split only when every piece is
+ * itself an answer somebody else gave on its own; otherwise it is one option.
+ */
+export function tallyChoices(question: string, answers: string[]): ChoiceTally {
+  const given = answers.map((a) => a.trim()).filter(Boolean);
+  const whole = new Set(given);
+  const counts = new Map<string, number>();
+  for (const a of given) {
+    const parts = a.split(/,\s+/).map((p) => p.trim()).filter(Boolean);
+    const picks = parts.length > 1 && parts.every((p) => whole.has(p)) ? parts : [a];
+    for (const p of picks) counts.set(p, (counts.get(p) || 0) + 1);
+  }
+  return {
+    question,
+    n: given.length,
+    options: Array.from(counts.entries())
+      .map(([label, count]) => ({ label, count }))
+      .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label)),
+  };
+}

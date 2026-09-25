@@ -7,7 +7,10 @@ import { parseCsv, matchSessionLabel, parseFormTimestamp } from "@/lib/feedback"
 
 // Import a feedback spreadsheet.
 //
-// Three shapes, chosen by the mapping the admin built on the page:
+// Four shapes, chosen by the mapping the admin built on the page:
+//   general set              -> the form is about the whole conference, not a
+//                               session. No presenter, never on anyone's page;
+//                               read on the team's compiled view.
 //   presenterId set          -> the whole form is one session's own form, the
 //                               way most of ours are; every row is about that
 //                               presenter.
@@ -36,6 +39,8 @@ import { parseCsv, matchSessionLabel, parseFormTimestamp } from "@/lib/feedback"
 //     timestampColumn?: string,
 //     segmentColumn?: string,     // in person or virtual, for the comparison
 //     sharedWith?: string[],      // co-presenters, with presenterId (a panel)
+//     general?: true,             // a form about the whole conference
+//     choiceColumns?: string[],   // multiple choice, tallied on the compiled view
 //     perPresenterColumns?: { presenterId: string, label: string,
 //                             ratingColumns: string[], commentColumns: string[] }[],
 //   },
@@ -65,6 +70,8 @@ export async function POST(req: Request) {
       timestampColumn?: string;
       segmentColumn?: string;
       sharedWith?: string[];
+      general?: boolean;
+      choiceColumns?: string[];
       perPresenterColumns?: { presenterId: string; label: string; ratingColumns: string[]; commentColumns: string[] }[];
     };
   } | null;
@@ -82,7 +89,8 @@ export async function POST(req: Request) {
 
   const m = body.mapping;
   const perPresenter = Array.isArray(m.perPresenterColumns) && m.perPresenterColumns.length ? m.perPresenterColumns : null;
-  if (!perPresenter && !m.sessionColumn && !m.presenterId) {
+  const general = m.general === true;
+  if (!general && !perPresenter && !m.sessionColumn && !m.presenterId) {
     return NextResponse.json({ error: "Choose whose session this form is for." }, { status: 400 });
   }
 
@@ -133,6 +141,8 @@ export async function POST(req: Request) {
     data: Record<string, string>; submittedAt: Date | null; questionOrder: string[];
     segment: string | null;
     sharedWith?: string[];
+    choices?: Record<string, string>;
+    general?: boolean;
     hiddenKeys?: object; featuredKeys?: object; keptKeys?: object;
   }[] = [];
 
@@ -178,7 +188,20 @@ export async function POST(req: Request) {
       return out;
     };
 
-    if (perPresenter) {
+    // Multiple choice travels with the response whatever the form's shape.
+    const choices = collect(m.choiceColumns, false) as Record<string, string>;
+    const choiceOrder = m.choiceColumns || [];
+
+    if (general) {
+      const ratings = collect(m.ratingColumns, true) as Record<string, number>;
+      const comments = collect(m.commentColumns, false) as Record<string, string>;
+      if (!Object.keys(ratings).length && !Object.keys(comments).length && !Object.keys(choices).length) continue;
+      toCreate.push({
+        importId, sourceName, sessionLabel: "The whole conference", presenterId: null, general: true,
+        ratings, comments, choices, data: raw, submittedAt: stamp, segment,
+        questionOrder: inFormOrder([...(m.ratingColumns || []), ...choiceOrder, ...(m.commentColumns || [])]),
+      });
+    } else if (perPresenter) {
       for (const entry of perPresenter) {
         const ratings = collect(entry.ratingColumns, true) as Record<string, number>;
         const comments = collect(entry.commentColumns, false) as Record<string, string>;
@@ -186,7 +209,7 @@ export async function POST(req: Request) {
         if (!Object.keys(ratings).length && !Object.keys(comments).length) continue;
         toCreate.push({
           importId, sourceName, sessionLabel: entry.label, presenterId: entry.presenterId,
-          ratings, comments, data: raw, submittedAt: stamp, segment,
+          ratings, comments, choices, data: raw, submittedAt: stamp, segment,
           questionOrder: inFormOrder([...entry.ratingColumns, ...entry.commentColumns]),
         });
       }
@@ -197,7 +220,7 @@ export async function POST(req: Request) {
       toCreate.push({
         importId, sourceName, sessionLabel: wholeForm.talkTitle || wholeForm.name,
         presenterId: wholeForm.presenterId, sharedWith,
-        ratings, comments, data: raw, submittedAt: stamp, segment,
+        ratings, comments, choices, data: raw, submittedAt: stamp, segment,
         questionOrder: inFormOrder([...(m.ratingColumns || []), ...(m.commentColumns || [])]),
       });
     } else {
@@ -208,7 +231,7 @@ export async function POST(req: Request) {
       if (!Object.keys(ratings).length && !Object.keys(comments).length) continue;
       toCreate.push({
         importId, sourceName, sessionLabel: label, presenterId: matchLabel(label),
-        ratings, comments, data: raw, submittedAt: stamp, segment,
+        ratings, comments, choices, data: raw, submittedAt: stamp, segment,
         questionOrder: inFormOrder([...(m.ratingColumns || []), ...(m.commentColumns || [])]),
       });
     }
@@ -225,7 +248,7 @@ export async function POST(req: Request) {
       x.featuredKeys = old.featuredKeys as object;
       x.keptKeys = old.keptKeys as object;
     }
-    if (!x.presenterId) x.presenterId = assignedBefore.get(x.sessionLabel) ?? null;
+    if (!x.presenterId && !x.general) x.presenterId = assignedBefore.get(x.sessionLabel) ?? null;
   }
 
   // Replace this form's own rows only, in one transaction, so an upload can
@@ -235,11 +258,13 @@ export async function POST(req: Request) {
     prisma.feedbackResponse.createMany({ data: toCreate }),
   ]);
 
-  const matched = toCreate.filter((x) => x.presenterId).length;
+  // A conference-wide form has nobody to match, so nothing is "unmatched".
+  const matched = general ? toCreate.length : toCreate.filter((x) => x.presenterId).length;
   return NextResponse.json({
     ok: true,
     importId,
     sourceName,
+    general,
     imported: toCreate.length,
     matched,
     unmatched: toCreate.length - matched,

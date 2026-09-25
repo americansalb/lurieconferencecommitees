@@ -10,6 +10,7 @@ import {
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
 import MobileNav from "@/components/layout/MobileNav";
+import FeedbackTabs from "@/components/feedback/FeedbackTabs";
 import { parseCsv, matchSessionLabel, displayTalkTitle, type QuestionStats } from "@/lib/feedback";
 
 // Importing and reading attendee feedback.
@@ -19,7 +20,7 @@ import { parseCsv, matchSessionLabel, displayTalkTitle, type QuestionStats } fro
 // copy each presenter's share link. Cross-presenter comparison lives on this
 // page and nowhere else.
 
-type ColumnRole = "ignore" | "session" | "rating" | "comment" | "timestamp" | "segment";
+type ColumnRole = "ignore" | "session" | "rating" | "comment" | "timestamp" | "segment" | "choice";
 
 type AdminData = {
   total: number;
@@ -28,6 +29,8 @@ type AdminData = {
     name: string; responses: number; matched: number;
     /** Who the form's responses belong to, and who else presented it. */
     presenterIds: string[]; sharedWith: string[];
+    /** A form about the whole conference, not a session. */
+    general: boolean;
   }[];
   byPresenter: {
     presenter: {
@@ -133,7 +136,10 @@ export default function FeedbackAdminPage() {
   const [loadedFile, setLoadedFile] = useState<string | null>(null);
   // Most of our forms are one per session, named only in the file name, so
   // that is the default; the other two shapes are for combined forms.
-  const [mode, setMode] = useState<"onePresenter" | "perRow" | "perColumn">("onePresenter");
+  const [mode, setMode] = useState<"onePresenter" | "perRow" | "perColumn" | "conference">("onePresenter");
+  // The general conference form says so in its name ("General", "Overall",
+  // "Post-conference survey"), and matches no presenter.
+  const [fileLooksGeneral, setFileLooksGeneral] = useState(false);
   const [formPresenter, setFormPresenter] = useState("");
   const [guessedPresenter, setGuessedPresenter] = useState("");
   // Co-presenters for a panel's shared form.
@@ -219,6 +225,10 @@ export default function FeedbackAdminPage() {
       presenterId: b.presenter.id, name: b.presenter.name, talkTitle: b.presenter.talkTitle,
     }));
     const guess = matchSessionLabel(name.replace(/_/g, " "), targets) || "";
+    const existingForm = data?.sources.find((x) => x.name === name);
+    setFileLooksGeneral(existingForm
+      ? existingForm.general
+      : !guess && /\b(general|overall|post[- ]?conference|evaluation|survey|whole conference|conference feedback)\b/i.test(name.replace(/_/g, " ")));
     setFormPresenter(guess);
     setGuessedPresenter(guess);
     // Uploading a form again keeps the co-presenters it already has.
@@ -278,9 +288,11 @@ export default function FeedbackAdminPage() {
 
   // First guesses, correctable: a column whose values are mostly 1-to-5 is a
   // rating, long text is a comment, "timestamp" is the timestamp, and the one
-  // that mentions session or presentation names the session.
-  useEffect(() => {
-    if (!header.length) { setRoles({}); return; }
+  // that mentions session or presentation names the session. On a form about
+  // the whole conference, repeated short answers are multiple choice worth
+  // counting ("Would you come again?"), and "which sessions did you attend" is
+  // one of them rather than a session to match.
+  const guessRoles = useCallback((conference: boolean): Record<string, ColumnRole> => {
     let rows: string[][] = [];
     try { rows = parseCsv(csv).slice(1, 30); } catch { rows = []; }
     const guess: Record<string, ColumnRole> = {};
@@ -300,20 +312,33 @@ export default function FeedbackAdminPage() {
       else if (/\b(name|email|e-mail|phone)\b/.test(hl)) guess[h] = "ignore";
       // Short headers only: a long consent statement that mentions "each
       // presentation" is not the question naming the session.
-      else if (h.length < 80 && (hl.includes("session") || hl.includes("presentation") || hl.includes("which talk"))) guess[h] = "session";
+      else if (h.length < 80 && (hl.includes("session") || hl.includes("presentation") || hl.includes("which talk"))) guess[h] = conference ? "choice" : "session";
       else if (numericish) guess[h] = "rating";
       // Any text column with real sentences is probably a comment. Guessing
       // too many is harmless: the admin flips a select, and empty answers are
       // never shown anyway.
       else if (/comment|suggest|feedback|like|improve/.test(hl)) guess[h] = "comment";
       else if (!repetitive && values.some((v) => v.length > 25 || v.split(" ").length > 3)) guess[h] = "comment";
+      else if (conference && repetitive) guess[h] = "choice";
       else guess[h] = "ignore";
     });
+    return guess;
+  }, [header, csv]);
+
+  useEffect(() => {
+    if (!header.length) { setRoles({}); return; }
+    const guess = guessRoles(fileLooksGeneral);
     setRoles(guess);
     // A column naming the session means a combined form; otherwise it is one
-    // session's own form.
-    setMode(Object.values(guess).includes("session") ? "perRow" : "onePresenter");
-  }, [header, csv]);
+    // session's own form, unless it is the general conference form.
+    setMode(fileLooksGeneral ? "conference" : Object.values(guess).includes("session") ? "perRow" : "onePresenter");
+  }, [header, guessRoles, fileLooksGeneral]);
+
+  // Moving into or out of "whole conference" changes what the columns mean.
+  function chooseMode(next: typeof mode) {
+    if ((next === "conference") !== (mode === "conference")) setRoles(guessRoles(next === "conference"));
+    setMode(next);
+  }
 
   async function runImport() {
     setImporting(true);
@@ -323,18 +348,24 @@ export default function FeedbackAdminPage() {
       const commentColumns = header.filter((h) => roles[h] === "comment");
       const timestampColumn = header.find((h) => roles[h] === "timestamp");
       const segmentColumn = header.find((h) => roles[h] === "segment");
+      const choiceColumns = header.filter((h) => roles[h] === "choice");
       let mapping: Record<string, unknown>;
-      if (mode === "onePresenter") {
+      if (mode === "conference") {
+        if (!ratingColumns.length && !commentColumns.length && !choiceColumns.length) {
+          setNote("Mark at least one column as a rating, a comment or multiple choice."); setImporting(false); return;
+        }
+        mapping = { general: true, ratingColumns, commentColumns, choiceColumns, timestampColumn, segmentColumn };
+      } else if (mode === "onePresenter") {
         if (!formPresenter) { setNote("Choose whose session this form is for."); setImporting(false); return; }
         if (!ratingColumns.length && !commentColumns.length) { setNote("Mark at least one column as a rating or a comment."); setImporting(false); return; }
         mapping = {
           presenterId: formPresenter, sharedWith: formShared.filter((id) => id !== formPresenter),
-          ratingColumns, commentColumns, timestampColumn, segmentColumn,
+          ratingColumns, commentColumns, choiceColumns, timestampColumn, segmentColumn,
         };
       } else if (mode === "perRow") {
         const sessionColumn = header.find((h) => roles[h] === "session");
         if (!sessionColumn) { setNote("Mark one column as the session name first."); setImporting(false); return; }
-        mapping = { sessionColumn, ratingColumns, commentColumns, timestampColumn, segmentColumn };
+        mapping = { sessionColumn, ratingColumns, commentColumns, choiceColumns, timestampColumn, segmentColumn };
       } else {
         // Group each mapped column under the presenter the admin assigned it to.
         const byPresenter = new Map<string, { ratingColumns: string[]; commentColumns: string[] }>();
@@ -360,7 +391,9 @@ export default function FeedbackAdminPage() {
       });
       const j = await res.json();
       setNote(res.ok
-        ? `"${j.sourceName}": ${j.imported} responses, ${j.matched} matched to a presenter${j.unmatched ? `, ${j.unmatched} to assign below` : ""}.`
+        ? j.general
+          ? `"${j.sourceName}": ${j.imported} responses about the whole conference. Read them under All feedback.`
+          : `"${j.sourceName}": ${j.imported} responses, ${j.matched} matched to a presenter${j.unmatched ? `, ${j.unmatched} to assign below` : ""}.`
         : (j.error || "Import failed."));
       if (res.ok) { setCsv(""); setSourceName(""); setLoadedFile(null); setShowPaste(false); setFormPresenter(""); setFormShared([]); await load(); }
     } catch {
@@ -431,6 +464,7 @@ export default function FeedbackAdminPage() {
               with their own numbers and every comment. The overall picture and the comparison between
               sessions live here and nowhere else.
             </p>
+            <FeedbackTabs active="manage" />
 
             {isAdmin && (
               <div className="mt-6 bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
@@ -514,16 +548,20 @@ export default function FeedbackAdminPage() {
                     <div className="flex items-center gap-3 flex-wrap">
                       <span className="text-[12px] font-bold text-slate-700">This form&hellip;</span>
                       <label className="inline-flex items-center gap-1.5 text-[12.5px] text-slate-600">
-                        <input type="radio" checked={mode === "onePresenter"} onChange={() => setMode("onePresenter")} className="accent-[#0E5566]" />
+                        <input type="radio" checked={mode === "onePresenter"} onChange={() => chooseMode("onePresenter")} className="accent-[#0E5566]" />
                         is about one session
                       </label>
                       <label className="inline-flex items-center gap-1.5 text-[12.5px] text-slate-600">
-                        <input type="radio" checked={mode === "perRow"} onChange={() => setMode("perRow")} className="accent-[#0E5566]" />
+                        <input type="radio" checked={mode === "perRow"} onChange={() => chooseMode("perRow")} className="accent-[#0E5566]" />
                         covers several sessions, and a column says which
                       </label>
                       <label className="inline-flex items-center gap-1.5 text-[12.5px] text-slate-600">
-                        <input type="radio" checked={mode === "perColumn"} onChange={() => setMode("perColumn")} className="accent-[#0E5566]" />
+                        <input type="radio" checked={mode === "perColumn"} onChange={() => chooseMode("perColumn")} className="accent-[#0E5566]" />
                         has separate questions for each session
+                      </label>
+                      <label className="inline-flex items-center gap-1.5 text-[12.5px] text-slate-600">
+                        <input type="radio" checked={mode === "conference"} onChange={() => chooseMode("conference")} className="accent-[#0E5566]" />
+                        is about the whole conference
                       </label>
                     </div>
                     {mode === "onePresenter" && (
@@ -578,6 +616,7 @@ export default function FeedbackAdminPage() {
                             <option value="comment">Comment</option>
                             <option value="timestamp">Timestamp</option>
                             <option value="segment">In person or virtual</option>
+                            <option value="choice">Multiple choice (count answers)</option>
                           </select>
                           {mode === "perColumn" && (roles[h] === "rating" || roles[h] === "comment") && (
                             <select
@@ -615,7 +654,10 @@ export default function FeedbackAdminPage() {
                           <FileSpreadsheet className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                           <div className="flex-1 min-w-0">
                             <div className="text-[13px] font-semibold text-slate-800 truncate">{src.name}</div>
-                            {src.presenterIds.length === 1 && (
+                            {src.general && (
+                              <div className="mt-1 text-[11.5px] text-slate-500">About the whole conference</div>
+                            )}
+                            {!src.general && src.presenterIds.length === 1 && (
                               <div className="mt-1 flex items-center gap-1.5 flex-wrap text-[11.5px] text-slate-500">
                                 For {data.byPresenter.find((b) => b.presenter.id === src.presenterIds[0])?.presenter.name || "a presenter"}
                                 <span className="text-slate-300">&middot;</span> with

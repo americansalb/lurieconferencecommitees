@@ -28,7 +28,7 @@ export async function GET() {
     orderBy: { importedAt: "asc" },
     select: {
       id: true, sessionLabel: true, presenterId: true, sourceName: true,
-      ratings: true, comments: true, hiddenKeys: true, featuredKeys: true, keptKeys: true, sharedWith: true, submittedAt: true, questionOrder: true,
+      ratings: true, comments: true, hiddenKeys: true, featuredKeys: true, keptKeys: true, sharedWith: true, general: true, submittedAt: true, questionOrder: true,
     },
   });
   const presenters = await prisma.presenter.findMany({
@@ -94,15 +94,18 @@ export async function GET() {
 
   // What could not be matched, grouped by label so one assignment fixes the
   // whole group.
-  const unmatchedRows = rows.filter((r) => !r.presenterId);
+  // Conference-wide forms have nobody to match and are not waiting on anyone.
+  const unmatchedRows = rows.filter((r) => !r.presenterId && !r.general);
   const unmatched = Array.from(
     unmatchedRows.reduce((m, r) => m.set(r.sessionLabel, (m.get(r.sessionLabel) || 0) + 1), new Map<string, number>()),
   ).map(([label, count]) => ({ label, count }));
 
-  // The conference as a whole: every answer to every question, across every
+  // Every session together: every answer to every question, across every
   // session, so the overall picture is not a guess from the per-session means.
+  // Conference-wide forms are read on the compiled view, not pooled in here.
+  const sessionRows = rows.filter((r) => !r.general);
   const overallByQuestion = new Map<string, number[]>();
-  for (const r of rows) {
+  for (const r of sessionRows) {
     for (const [q, val] of Object.entries((r.ratings || {}) as Record<string, unknown>)) {
       const num = typeof val === "number" ? val : Number(val);
       if (!Number.isFinite(num)) continue;
@@ -110,11 +113,11 @@ export async function GET() {
       overallByQuestion.get(q)!.push(num);
     }
   }
-  const formOrder = questionOrderOf(rows);
+  const formOrder = questionOrderOf(sessionRows);
   const rank = (q: string) => { const i = formOrder.indexOf(q); return i < 0 ? formOrder.length : i; };
   const overall = {
-    responses: rows.length,
-    sessionsRated: new Set(rows.filter((r) => r.presenterId).map((r) => r.presenterId)).size,
+    responses: sessionRows.length,
+    sessionsRated: new Set(sessionRows.filter((r) => r.presenterId).map((r) => r.presenterId)).size,
     questions: Array.from(overallByQuestion.entries())
       .sort(([a], [b]) => rank(a) - rank(b))
       .map(([q, vals]) => questionStats(q, vals))
@@ -124,15 +127,18 @@ export async function GET() {
   // The forms on file, each replaceable and deletable on its own.
   const sources = Array.from(
     rows.reduce((m, r) => {
-      const cur = m.get(r.sourceName) || { responses: 0, matched: 0, presenterIds: [] as string[], sharedWith: [] as string[] };
+      const cur = m.get(r.sourceName) || {
+        responses: 0, matched: 0, presenterIds: [] as string[], sharedWith: [] as string[], general: r.general,
+      };
       cur.responses += 1;
+      if (r.general) cur.matched += 1;
       if (r.presenterId) {
         cur.matched += 1;
         if (!cur.presenterIds.includes(r.presenterId)) cur.presenterIds.push(r.presenterId);
       }
       for (const id of r.sharedWith) if (!cur.sharedWith.includes(id)) cur.sharedWith.push(id);
       return m.set(r.sourceName, cur);
-    }, new Map<string, { responses: number; matched: number; presenterIds: string[]; sharedWith: string[] }>()),
+    }, new Map<string, { responses: number; matched: number; presenterIds: string[]; sharedWith: string[]; general: boolean }>()),
   ).map(([name, v]) => ({ name, ...v }));
 
   // Share links, minted lazily the first time this page loads.

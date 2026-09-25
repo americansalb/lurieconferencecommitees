@@ -167,3 +167,8 @@ ALTER TABLE "lcc"."lcc_feedback_responses"
 -- Feedback forms shared by co-presenters (a panel). Additive.
 ALTER TABLE "lcc"."lcc_feedback_responses"
   ADD COLUMN IF NOT EXISTS "sharedWith" TEXT[] NOT NULL DEFAULT '{}';
+
+-- General conference feedback forms, and multiple-choice answers. Additive.
+ALTER TABLE "lcc"."lcc_feedback_responses"
+  ADD COLUMN IF NOT EXISTS "choices" JSONB NOT NULL DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS "general" BOOLEAN NOT NULL DEFAULT false;
