@@ -7,7 +7,10 @@ import { parseCsv, matchSessionLabel, parseFormTimestamp } from "@/lib/feedback"
 
 // Import a feedback spreadsheet.
 //
-// Two shapes, chosen by the mapping the admin built on the page:
+// Three shapes, chosen by the mapping the admin built on the page:
+//   presenterId set          -> the whole form is one session's own form, the
+//                               way most of ours are; every row is about that
+//                               presenter.
 //   sessionColumn set        -> each row rates the one session that column
 //                               names; ratingColumns/commentColumns apply to
 //                               the whole row.
@@ -26,6 +29,7 @@ import { parseCsv, matchSessionLabel, parseFormTimestamp } from "@/lib/feedback"
 //   csv: string,
 //   sourceName?: string,
 //   mapping: {
+//     presenterId?: string,
 //     sessionColumn?: string,
 //     ratingColumns?: string[],
 //     commentColumns?: string[],
@@ -52,6 +56,7 @@ export async function POST(req: Request) {
     csv?: string;
     sourceName?: string;
     mapping?: {
+      presenterId?: string;
       sessionColumn?: string;
       ratingColumns?: string[];
       commentColumns?: string[];
@@ -73,8 +78,8 @@ export async function POST(req: Request) {
 
   const m = body.mapping;
   const perPresenter = Array.isArray(m.perPresenterColumns) && m.perPresenterColumns.length ? m.perPresenterColumns : null;
-  if (!perPresenter && !m.sessionColumn) {
-    return NextResponse.json({ error: "The mapping needs a session column, or per-presenter columns." }, { status: 400 });
+  if (!perPresenter && !m.sessionColumn && !m.presenterId) {
+    return NextResponse.json({ error: "Choose whose session this form is for." }, { status: 400 });
   }
 
   // Everything confirmed is a match target; the form will not be rating
@@ -83,6 +88,13 @@ export async function POST(req: Request) {
     where: { status: "confirmed" },
     select: { id: true, name: true, talkTitle: true },
   })).map((p) => ({ presenterId: p.id, name: p.name, talkTitle: p.talkTitle }));
+
+  const wholeForm = !perPresenter && m.presenterId
+    ? targets.find((t) => t.presenterId === m.presenterId) || null
+    : null;
+  if (!perPresenter && m.presenterId && !wholeForm) {
+    return NextResponse.json({ error: "That presenter is not on the confirmed list." }, { status: 400 });
+  }
 
   const importId = randomUUID();
   const toCreate: {
@@ -144,6 +156,16 @@ export async function POST(req: Request) {
           questionOrder: inFormOrder([...entry.ratingColumns, ...entry.commentColumns]),
         });
       }
+    } else if (wholeForm) {
+      const ratings = collect(m.ratingColumns, true) as Record<string, number>;
+      const comments = collect(m.commentColumns, false) as Record<string, string>;
+      if (!Object.keys(ratings).length && !Object.keys(comments).length) continue;
+      toCreate.push({
+        importId, sourceName, sessionLabel: wholeForm.talkTitle || wholeForm.name,
+        presenterId: wholeForm.presenterId,
+        ratings, comments, data: raw, submittedAt: stamp,
+        questionOrder: inFormOrder([...(m.ratingColumns || []), ...(m.commentColumns || [])]),
+      });
     } else {
       const label = raw[m.sessionColumn as string] || "";
       if (!label) continue;

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { formatFormTimestamp, questionOrderOf } from "@/lib/feedback";
+import { questionOrderOf } from "@/lib/feedback";
 
 // A presenter's own raw feedback as CSV, behind their share token.
 //
@@ -25,7 +25,7 @@ export async function GET(_req: Request, { params }: { params: { token: string }
 
   const rows = await prisma.feedbackResponse.findMany({
     where: { presenterId: presenter.id },
-    orderBy: { submittedAt: "asc" },
+    orderBy: [{ submittedAt: "asc" }, { importedAt: "asc" }],
     select: { ratings: true, comments: true, hiddenKeys: true, submittedAt: true, questionOrder: true },
   });
 
@@ -37,19 +37,20 @@ export async function GET(_req: Request, { params }: { params: { token: string }
   const ratingCols = asked("ratings");
   const commentCols = asked("comments");
 
-  const header = ["Submitted", ...ratingCols, ...commentCols];
+  // Numbered to match the cards on their page. No submission time, same as
+  // the page: it can point to who wrote a comment.
+  const header = ["Response", ...ratingCols, ...commentCols];
   const lines = [header.map(esc).join(",")];
-  for (const r of rows) {
+  rows.forEach((r, i) => {
     const ratings = (r.ratings || {}) as Record<string, number>;
     const comments = (r.comments || {}) as Record<string, string>;
     const hidden = (r.hiddenKeys || {}) as Record<string, unknown>;
     lines.push([
-      // Chicago time, in the same shape Google Forms wrote it.
-      formatFormTimestamp(r.submittedAt),
+      String(i + 1),
       ...ratingCols.map((q) => (ratings[q] != null ? String(ratings[q]) : "")),
       ...commentCols.map((q) => (hidden[q] ? "" : comments[q] || "")),
     ].map(esc).join(","));
-  }
+  });
 
   const safeName = presenter.name.replace(/[^\w]+/g, "-").toLowerCase();
   return new NextResponse(lines.join("\r\n"), {

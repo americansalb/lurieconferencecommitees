@@ -5,7 +5,7 @@ import { assemblePresenterFeedback, questionOrderOf, type QuestionStats } from "
 // A presenter's feedback page, behind its own share token.
 //
 // Four layers, read top to bottom: the headline (one overall number, the
-// response count, the share rating 4 or 5), each question as a chart, what
+// response count, the share in the top two points), each question as a chart, what
 // people wrote, and then every response as it came in. Someone who wants the
 // gist stops after the first screen; someone who wants the raw data has all
 // of it without downloading anything.
@@ -27,22 +27,14 @@ function fmt(n: number, digits = 2): string {
   return n.toFixed(digits).replace(/\.?0+$/, "");
 }
 
-function when(d: Date | null): string {
-  if (!d) return "";
-  return new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/Chicago",
-    month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
-  }).format(d);
+/** "4 or 5" on a five-point question, "9 or 10" on a ten-point one. */
+function topTwo(scale: number): string {
+  return `${scale - 1} or ${scale}`;
 }
 
-/** The top of a question's scale: 5 unless the answers show otherwise. */
-function scaleOf(q: QuestionStats): number {
-  return q.max > 5 ? 10 : 5;
-}
-
-function Dots({ value, of }: { value: number; of: number }) {
-  if (of > 5) {
-    return <span className="text-[13px] font-bold text-slate-800">{fmt(value, 1)}<span className="text-slate-400 font-medium">/{of}</span></span>;
+function Dots({ value, of, compact }: { value: number; of: number; compact?: boolean }) {
+  if (of > 5 || compact) {
+    return <span className="text-[13px] font-bold text-slate-800 tabular-nums">{fmt(value, 1)}<span className="text-slate-400 font-medium">/{of}</span></span>;
   }
   const full = Math.round(value);
   return (
@@ -70,7 +62,7 @@ function Tile({ label, value, sub }: { label: string; value: string; sub?: strin
 }
 
 function QuestionCard({ q }: { q: QuestionStats }) {
-  const of = scaleOf(q);
+  const of = q.scale;
   const rows: { value: number; count: number }[] = [];
   for (let v = of; v >= 1; v -= 1) {
     rows.push({ value: v, count: q.distribution.find((d) => d.value === v)?.count || 0 });
@@ -82,7 +74,7 @@ function QuestionCard({ q }: { q: QuestionStats }) {
         <div className="text-[40px] leading-none font-bold tabular-nums" style={{ color: TEAL }}>{fmt(q.mean)}</div>
         <div className="pb-1 text-[13px] text-slate-500">
           average out of {of}
-          {of === 5 && <> &middot; <strong className="text-slate-700">{Math.round(q.topBox * 100)}%</strong> rated 4 or 5</>}
+          {" "}&middot; <strong className="text-slate-700">{Math.round(q.topBox * 100)}%</strong> rated {topTwo(of)}
         </div>
       </div>
       <div className="mt-5 space-y-1.5">
@@ -131,18 +123,24 @@ export default async function FeedbackPage({ params }: { params: { token: string
   const view = assemblePresenterFeedback(rows);
   const first = presenter.name.split(" ")[0] || presenter.name;
 
-  // The headline: every 1-to-5 answer pooled, so a question answered by more
-  // people weighs more, which is what an overall rating should mean.
-  const fivePoint = new Set(view.questions.filter((q) => scaleOf(q) === 5).map((q) => q.question));
+  // The headline: every answer on the form's main scale pooled, so a question
+  // answered by more people weighs more, which is what an overall rating
+  // should mean. The main scale is whichever most answers used; a 1-to-10
+  // score and a 1-to-5 score cannot be averaged together honestly.
+  const answersByScale = new Map<number, number>();
+  for (const q of view.questions) answersByScale.set(q.scale, (answersByScale.get(q.scale) || 0) + q.n);
+  const mainScale = Array.from(answersByScale.entries()).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 5;
+  const mixedScales = answersByScale.size > 1;
+  const onMain = new Set(view.questions.filter((q) => q.scale === mainScale).map((q) => q.question));
   const pooled: number[] = [];
   for (const r of rows) {
     for (const [q, v] of Object.entries((r.ratings || {}) as Record<string, unknown>)) {
       const n = typeof v === "number" ? v : Number(v);
-      if (fivePoint.has(q) && Number.isFinite(n)) pooled.push(n);
+      if (onMain.has(q) && Number.isFinite(n)) pooled.push(n);
     }
   }
   const overall = pooled.length ? pooled.reduce((a, b) => a + b, 0) / pooled.length : null;
-  const topBox = pooled.length ? pooled.filter((v) => v >= 4).length / pooled.length : null;
+  const topBox = pooled.length ? pooled.filter((v) => v >= mainScale - 1).length / pooled.length : null;
   const commentCount = view.comments.reduce((a, c) => a + c.entries.length, 0);
 
   // Every response, in order, with hidden comments already gone. Questions run
@@ -150,7 +148,7 @@ export default async function FeedbackPage({ params }: { params: { token: string
   const formOrder = questionOrderOf(rows);
   const rank = (q: string) => { const i = formOrder.indexOf(q); return i < 0 ? formOrder.length : i; };
   const questionOrder = view.questions.map((q) => q.question);
-  const scaleByQuestion = new Map(view.questions.map((q) => [q.question, scaleOf(q)]));
+  const scaleByQuestion = new Map(view.questions.map((q) => [q.question, q.scale]));
   const responses = rows.map((r, i) => {
     const ratings = (r.ratings || {}) as Record<string, unknown>;
     const hidden = (r.hiddenKeys || {}) as Record<string, unknown>;
@@ -160,13 +158,18 @@ export default async function FeedbackPage({ params }: { params: { token: string
       .sort((a, b) => rank(a.question) - rank(b.question));
     return {
       n: i + 1,
-      at: r.submittedAt,
       ratings: questionOrder
         .filter((q) => ratings[q] != null && Number.isFinite(Number(ratings[q])))
         .map((q) => ({ question: q, value: Number(ratings[q]), of: scaleByQuestion.get(q) || 5 })),
       comments,
     };
   });
+
+  // A one-question form gets a narrower table: the question is said once in
+  // the chart above instead of on every line.
+  const singleQuestion = view.questions.length === 1;
+  // Comment headings only earn their place when there is more than one kind.
+  const labelComments = view.comments.length > 1;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -199,7 +202,9 @@ export default async function FeedbackPage({ params }: { params: { token: string
               <Tile
                 label="Overall rating"
                 value={overall !== null ? fmt(overall) : "–"}
-                sub={overall !== null ? "average out of 5, across every question" : undefined}
+                sub={overall !== null
+                  ? `average out of ${mainScale}${onMain.size > 1 ? `, across every ${mixedScales ? `1-to-${mainScale} ` : ""}question` : ""}`
+                  : undefined}
               />
               <Tile
                 label="Responses"
@@ -207,7 +212,7 @@ export default async function FeedbackPage({ params }: { params: { token: string
                 sub={`${commentCount} written comment${commentCount === 1 ? "" : "s"}`}
               />
               <Tile
-                label="Rated 4 or 5"
+                label={`Rated ${topTwo(mainScale)}`}
                 value={topBox !== null ? `${Math.round(topBox * 100)}%` : "–"}
                 sub="of all ratings you received"
               />
@@ -231,7 +236,7 @@ export default async function FeedbackPage({ params }: { params: { token: string
             <section id="ratings" className="scroll-mt-16 mt-8">
               <h2 className="text-[22px] font-bold text-slate-900">How attendees rated it</h2>
               <p className="text-[13px] text-slate-500 mt-1">Each question on its own, with how the answers spread across the scale.</p>
-              <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <div className={`mt-4 grid gap-4 ${singleQuestion ? "" : "md:grid-cols-2"}`}>
                 {view.questions.map((q) => <QuestionCard key={q.question} q={q} />)}
               </div>
             </section>
@@ -260,41 +265,58 @@ export default async function FeedbackPage({ params }: { params: { token: string
             <section id="responses" className="scroll-mt-16 mt-12">
               <h2 className="text-[22px] font-bold text-slate-900">Every response</h2>
               <p className="text-[13px] text-slate-500 mt-1">
-                The raw data, one attendee at a time, in the order they came in. Names are never collected.
+                The raw data, one attendee at a time, in the order they came in. Names and email addresses are never shared here.
               </p>
-              <div className="mt-4 space-y-3">
-                {responses.map((r) => (
-                  <div key={r.n} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                    <div className="px-5 py-2.5 bg-slate-50/80 border-b border-slate-100 flex items-center justify-between">
-                      <span className="text-[12px] font-bold text-slate-700">Response {r.n}</span>
-                      <span className="text-[11.5px] text-slate-400">{when(r.at)}</span>
-                    </div>
-                    <div className="px-5 py-4">
-                      {r.ratings.length > 0 ? (
-                        <div className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
-                          {r.ratings.map((x) => (
-                            <div key={x.question} className="flex items-center justify-between gap-3">
-                              <span className="text-[12.5px] text-slate-600 leading-snug">{x.question}</span>
-                              <Dots value={x.value} of={x.of} />
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-[12.5px] text-slate-400">No ratings given.</div>
-                      )}
-                      {r.comments.length > 0 && (
-                        <div className="mt-4 space-y-3">
-                          {r.comments.map((c) => (
-                            <div key={c.question}>
-                              <div className="text-[10.5px] font-bold uppercase tracking-[0.1em] text-slate-400">{c.question}</div>
-                              <p className="mt-1 text-[14px] leading-relaxed text-slate-700">{c.text}</p>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+              {/* One line per response, like the spreadsheet it came from. Cards
+                  were fine at ten responses and a wall at a hundred and forty.
+                  No submission time: it adds nothing for the presenter, and a
+                  time can point to who wrote it ("the one who left early"). */}
+              <div className="mt-4 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                {singleQuestion && (
+                  <div className="px-5 py-2.5 bg-slate-50/80 border-b border-slate-100 flex gap-4 text-[10.5px] font-bold uppercase tracking-[0.1em] text-slate-400">
+                    <span className="w-8 shrink-0">#</span>
+                    <span className="w-16 shrink-0">Rating</span>
+                    <span>Comment</span>
                   </div>
-                ))}
+                )}
+                <div className="divide-y divide-slate-100">
+                  {responses.map((r) => (
+                    <div key={r.n} className={`px-5 ${singleQuestion ? "py-2" : "py-3"} flex gap-4 items-start`}>
+                      <span className="w-8 shrink-0 pt-0.5 text-[12px] font-bold text-slate-400 tabular-nums">{r.n}</span>
+                      {singleQuestion ? (
+                        <span className="w-16 shrink-0 pt-0.5">
+                          {r.ratings[0] ? <Dots value={r.ratings[0].value} of={r.ratings[0].of} compact /> : <span className="text-[12.5px] text-slate-300">&ndash;</span>}
+                        </span>
+                      ) : null}
+                      <div className="flex-1 min-w-0">
+                        {!singleQuestion && (r.ratings.length > 0 ? (
+                          <div className="flex flex-wrap gap-x-5 gap-y-1.5">
+                            {r.ratings.map((x) => (
+                              <span key={x.question} className="inline-flex items-center gap-2">
+                                <span className="text-[12px] text-slate-500">{x.question}</span>
+                                <Dots value={x.value} of={x.of} />
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-[12.5px] text-slate-400">No ratings given.</div>
+                        ))}
+                        {r.comments.length > 0 && (
+                          <div className={`${singleQuestion ? "" : "mt-2 "}space-y-1.5`}>
+                            {r.comments.map((c) => (
+                              <p key={c.question} className="text-[14px] leading-relaxed text-slate-700">
+                                {labelComments && (
+                                  <span className="block text-[10.5px] font-bold uppercase tracking-[0.1em] text-slate-400">{c.question}</span>
+                                )}
+                                {c.text}
+                              </p>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </section>
 
@@ -304,10 +326,10 @@ export default async function FeedbackPage({ params }: { params: { token: string
                 <div><dt className="font-semibold text-slate-800">Average and median</dt>
                   <dd>The average adds every rating and divides; the median is the middle rating. When they sit close together, the room broadly agreed.</dd></div>
                 <div><dt className="font-semibold text-slate-800">Spread</dt>
-                  <dd>How far ratings usually sit from the average. Under 1 means people mostly agreed; above 1 means opinions were more mixed.</dd></div>
+                  <dd>How far ratings usually sit from the average. The smaller it is, the more people agreed; a larger number means opinions were more mixed.</dd></div>
                 <div><dt className="font-semibold text-slate-800">Likely range</dt>
                   <dd>With a limited number of answers, the true average could be a little higher or lower. This is where it most likely sits, with 95% confidence. Fewer answers give a wider range.</dd></div>
-                <div><dt className="font-semibold text-slate-800">Rated 4 or 5</dt>
+                <div><dt className="font-semibold text-slate-800">Rated {topTwo(mainScale)}</dt>
                   <dd>The share of ratings at the top of the scale. Often the clearest single signal of how a session landed.</dd></div>
               </dl>
             </section>

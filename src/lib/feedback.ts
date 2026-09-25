@@ -96,18 +96,6 @@ export function parseFormTimestamp(raw: string): Date | null {
   return new Date(ms);
 }
 
-/** "8/15/2026 10:31:02" in Chicago time: the shape the form exported. */
-export function formatFormTimestamp(d: Date | null): string {
-  if (!d) return "";
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: TZ, hourCycle: "h23",
-    year: "numeric", month: "numeric", day: "numeric",
-    hour: "2-digit", minute: "2-digit", second: "2-digit",
-  }).formatToParts(d);
-  const get = (t: string) => parts.find((p) => p.type === t)?.value || "";
-  return `${get("month")}/${get("day")}/${get("year")} ${get("hour")}:${get("minute")}:${get("second")}`;
-}
-
 // --- Question order ------------------------------------------------------
 
 /**
@@ -197,7 +185,9 @@ export type QuestionStats = {
   sd: number | null;
   min: number;
   max: number;
-  /** Share of answers at 4 or 5 (for 1-to-5 scales). */
+  /** The top of the scale the question was asked on: 5 or 10. */
+  scale: number;
+  /** Share of answers in the top two points: 4 or 5, or 9 or 10. */
   topBox: number;
   /** Counts per distinct value, ascending. */
   distribution: { value: number; count: number }[];
@@ -217,6 +207,17 @@ function t95(df: number): number {
   return df >= 30 ? 1.96 : table[Math.max(1, df)] || 1.96;
 }
 
+/**
+ * The scale a question was asked on. The question usually says ("How was your
+ * experience from 1 to 10?"), and that wins even when nobody happened to
+ * answer above 5. Otherwise any answer above 5 means it was out of 10.
+ */
+export function scaleFor(question: string, max: number): number {
+  if (/\b1\s*(?:to|-|–)\s*10\b|out of 10\b|\/\s*10\b/i.test(question)) return 10;
+  if (/\b1\s*(?:to|-|–)\s*5\b|out of 5\b|\/\s*5\b/i.test(question)) return 5;
+  return max > 5 ? 10 : 5;
+}
+
 export function questionStats(question: string, values: number[]): QuestionStats | null {
   const v = values.filter((x) => Number.isFinite(x)).sort((a, b) => a - b);
   const n = v.length;
@@ -227,13 +228,14 @@ export function questionStats(question: string, values: number[]): QuestionStats
   const counts = new Map<number, number>();
   for (const x of v) counts.set(x, (counts.get(x) || 0) + 1);
   const distribution = Array.from(counts.entries()).sort((a, b) => a[0] - b[0]).map(([value, count]) => ({ value, count }));
-  const topBox = v.filter((x) => x >= 4).length / n;
+  const scale = scaleFor(question, v[n - 1]);
+  const topBox = v.filter((x) => x >= scale - 1).length / n;
   let ci95: QuestionStats["ci95"] = null;
   if (sd !== null && sd > 0) {
     const half = t95(n - 1) * (sd / Math.sqrt(n));
     ci95 = { low: mean - half, high: mean + half };
   }
-  return { question, n, mean, median, sd, min: v[0], max: v[n - 1], topBox, distribution, ci95 };
+  return { question, n, mean, median, sd, min: v[0], max: v[n - 1], scale, topBox, distribution, ci95 };
 }
 
 // --- Assembling a presenter's view --------------------------------------
