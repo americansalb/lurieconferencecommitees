@@ -35,6 +35,7 @@ import { parseCsv, matchSessionLabel, parseFormTimestamp } from "@/lib/feedback"
 //     commentColumns?: string[],
 //     timestampColumn?: string,
 //     segmentColumn?: string,     // in person or virtual, for the comparison
+//     sharedWith?: string[],      // co-presenters, with presenterId (a panel)
 //     perPresenterColumns?: { presenterId: string, label: string,
 //                             ratingColumns: string[], commentColumns: string[] }[],
 //   },
@@ -63,6 +64,7 @@ export async function POST(req: Request) {
       commentColumns?: string[];
       timestampColumn?: string;
       segmentColumn?: string;
+      sharedWith?: string[];
       perPresenterColumns?: { presenterId: string; label: string; ratingColumns: string[]; commentColumns: string[] }[];
     };
   } | null;
@@ -98,12 +100,40 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "That presenter is not on the confirmed list." }, { status: 400 });
   }
 
+  // What the team already did to this form's rows. An upload replaces the
+  // rows, and without this every comment they had hidden would reappear on a
+  // presenter's page the moment the form was uploaded again with new responses.
+  const previous = await prisma.feedbackResponse.findMany({
+    where: { sourceName },
+    select: {
+      data: true, sessionLabel: true, presenterId: true, sharedWith: true,
+      hiddenKeys: true, featuredKeys: true, keptKeys: true,
+    },
+  });
+  // The same spreadsheet row, whatever order jsonb returns its keys in.
+  const fingerprint = (d: unknown, label: string) =>
+    `${label}|${JSON.stringify(Object.entries((d || {}) as Record<string, unknown>).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)))}`;
+  const before = new Map(previous.map((r) => [fingerprint(r.data, r.sessionLabel), r]));
+  // Labels assigned by hand in the fix-up list stay assigned.
+  const assignedBefore = new Map(previous.filter((r) => r.presenterId).map((r) => [r.sessionLabel, r.presenterId as string]));
+
+  // Co-presenters of a one-session form. Sent with the upload, or else kept
+  // from the last upload of this form, so re-uploading a panel's form never
+  // quietly drops the second presenter.
+  const confirmedIds = new Set(targets.map((t) => t.presenterId));
+  const sharedWith = wholeForm
+    ? Array.from(new Set(Array.isArray(m.sharedWith) ? m.sharedWith : previous[0]?.sharedWith || []))
+        .filter((id) => confirmedIds.has(id) && id !== wholeForm.presenterId)
+    : [];
+
   const importId = randomUUID();
   const toCreate: {
     importId: string; sourceName: string; sessionLabel: string; presenterId: string | null;
     ratings: Record<string, number>; comments: Record<string, string>;
     data: Record<string, string>; submittedAt: Date | null; questionOrder: string[];
     segment: string | null;
+    sharedWith?: string[];
+    hiddenKeys?: object; featuredKeys?: object; keptKeys?: object;
   }[] = [];
 
   // The order questions appear on the form. Postgres stores ratings and
@@ -166,7 +196,7 @@ export async function POST(req: Request) {
       if (!Object.keys(ratings).length && !Object.keys(comments).length) continue;
       toCreate.push({
         importId, sourceName, sessionLabel: wholeForm.talkTitle || wholeForm.name,
-        presenterId: wholeForm.presenterId,
+        presenterId: wholeForm.presenterId, sharedWith,
         ratings, comments, data: raw, submittedAt: stamp, segment,
         questionOrder: inFormOrder([...(m.ratingColumns || []), ...(m.commentColumns || [])]),
       });
@@ -186,6 +216,16 @@ export async function POST(req: Request) {
 
   if (!toCreate.length) {
     return NextResponse.json({ error: "No usable responses found with that mapping." }, { status: 400 });
+  }
+
+  for (const x of toCreate) {
+    const old = before.get(fingerprint(x.data, x.sessionLabel));
+    if (old) {
+      x.hiddenKeys = old.hiddenKeys as object;
+      x.featuredKeys = old.featuredKeys as object;
+      x.keptKeys = old.keptKeys as object;
+    }
+    if (!x.presenterId) x.presenterId = assignedBefore.get(x.sessionLabel) ?? null;
   }
 
   // Replace this form's own rows only, in one transaction, so an upload can

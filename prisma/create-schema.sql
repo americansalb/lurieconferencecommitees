@@ -163,3 +163,7 @@ ALTER TABLE "lcc"."lcc_feedback_responses"
 -- Off-topic comments the team chose to show the speaker anyway. Additive.
 ALTER TABLE "lcc"."lcc_feedback_responses"
   ADD COLUMN IF NOT EXISTS "keptKeys" JSONB NOT NULL DEFAULT '{}';
+
+-- Feedback forms shared by co-presenters (a panel). Additive.
+ALTER TABLE "lcc"."lcc_feedback_responses"
+  ADD COLUMN IF NOT EXISTS "sharedWith" TEXT[] NOT NULL DEFAULT '{}';

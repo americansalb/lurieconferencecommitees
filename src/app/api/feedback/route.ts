@@ -28,19 +28,20 @@ export async function GET() {
     orderBy: { importedAt: "asc" },
     select: {
       id: true, sessionLabel: true, presenterId: true, sourceName: true,
-      ratings: true, comments: true, hiddenKeys: true, featuredKeys: true, keptKeys: true, submittedAt: true, questionOrder: true,
+      ratings: true, comments: true, hiddenKeys: true, featuredKeys: true, keptKeys: true, sharedWith: true, submittedAt: true, questionOrder: true,
     },
   });
   const presenters = await prisma.presenter.findMany({
     where: { status: "confirmed" },
-    select: { id: true, name: true, talkTitle: true, email: true, feedbackSentAt: true },
+    select: { id: true, name: true, talkTitle: true, email: true, feedbackSentAt: true, coPresenters: true },
     orderBy: { name: "asc" },
   });
 
   // Per presenter: full stats and every comment, hidden ones flagged rather
   // than removed, since the admin needs to see what is hidden to unhide it.
   const byPresenter = presenters.map((p) => {
-    const mine = rows.filter((r) => r.presenterId === p.id);
+    // Their own responses and any session they shared (a panel).
+    const mine = rows.filter((r) => r.presenterId === p.id || r.sharedWith.includes(p.id));
     const view = assemblePresenterFeedback(mine);
     const report = buildPresenterReport(mine);
     // Suggestions are keyed by response number, which is position in `mine`.
@@ -123,11 +124,15 @@ export async function GET() {
   // The forms on file, each replaceable and deletable on its own.
   const sources = Array.from(
     rows.reduce((m, r) => {
-      const cur = m.get(r.sourceName) || { responses: 0, matched: 0 };
+      const cur = m.get(r.sourceName) || { responses: 0, matched: 0, presenterIds: [] as string[], sharedWith: [] as string[] };
       cur.responses += 1;
-      if (r.presenterId) cur.matched += 1;
+      if (r.presenterId) {
+        cur.matched += 1;
+        if (!cur.presenterIds.includes(r.presenterId)) cur.presenterIds.push(r.presenterId);
+      }
+      for (const id of r.sharedWith) if (!cur.sharedWith.includes(id)) cur.sharedWith.push(id);
       return m.set(r.sourceName, cur);
-    }, new Map<string, { responses: number; matched: number }>()),
+    }, new Map<string, { responses: number; matched: number; presenterIds: string[]; sharedWith: string[] }>()),
   ).map(([name, v]) => ({ name, ...v }));
 
   // Share links, minted lazily the first time this page loads.
@@ -173,6 +178,7 @@ export async function PATCH(req: Request) {
     hide?: { responseId: string; question: string; hidden: boolean };
     feature?: { responseId: string; question: string; featured: boolean };
     keep?: { responseId: string; question: string; kept: boolean };
+    share?: { sourceName: string; presenterIds: string[] };
   };
 
   if (body.assign) {
@@ -225,6 +231,26 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ ok: true });
   }
 
+  if (body.share) {
+    // Set who else presented the session a one-session form is about.
+    const { sourceName, presenterIds } = body.share;
+    const owners = await prisma.feedbackResponse.findMany({
+      where: { sourceName }, select: { presenterId: true }, distinct: ["presenterId"],
+    });
+    const ownerIds = owners.map((o) => o.presenterId).filter(Boolean) as string[];
+    if (ownerIds.length !== 1) {
+      return NextResponse.json({
+        error: ownerIds.length ? "That form covers several sessions, so it cannot be shared as one." : "Assign the form to a presenter first.",
+      }, { status: 400 });
+    }
+    const confirmed = new Set((await prisma.presenter.findMany({
+      where: { status: "confirmed", id: { in: presenterIds || [] } }, select: { id: true },
+    })).map((p) => p.id));
+    const sharedWith = Array.from(new Set(presenterIds || [])).filter((id) => confirmed.has(id) && id !== ownerIds[0]);
+    const r = await prisma.feedbackResponse.updateMany({ where: { sourceName }, data: { sharedWith } });
+    return NextResponse.json({ ok: true, updated: r.count, sharedWith });
+  }
+
   if (body.keep) {
     // Show a flagged comment to the speaker after all, or take that back.
     const { responseId, question, kept } = body.keep;
@@ -243,5 +269,5 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ ok: true });
   }
 
-  return NextResponse.json({ error: "Send assign, hide, feature or keep." }, { status: 400 });
+  return NextResponse.json({ error: "Send assign, hide, feature, keep or share." }, { status: 400 });
 }

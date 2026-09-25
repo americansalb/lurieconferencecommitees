@@ -4971,10 +4971,13 @@ export function presenterFeedbackEmail({
   talkTitle,
   url,
   quote,
+  presentedWith = [],
 }: {
   name: string;
   talkTitle: string | null;
   url: string;
+  /** Co-presenters of a shared session, who each get their own copy. */
+  presentedWith?: string[];
   /** The first featured comment, verbatim. Omitted when none was picked. */
   quote?: string | null;
 }) {
@@ -4982,7 +4985,11 @@ export function presenterFeedbackEmail({
   const signer = (process.env.ATTENDEE_SIGNER_NAME || "Kevin Thakkar").trim();
   const signerName = escapeHtml(signer.includes(",") ? signer.slice(0, signer.indexOf(",")).trim() : signer);
   const signerTitle = escapeHtml(signer.includes(",") ? signer.slice(signer.indexOf(",") + 1).trim() : "");
-  const session = talkTitle ? `<strong>${escapeHtml(talkTitle)}</strong>` : "your session";
+  const others = presentedWith.map(escapeHtml);
+  const withWhom = others.length
+    ? `, which you presented with ${others.length === 1 ? others[0] : `${others.slice(0, -1).join(", ")} and ${others[others.length - 1]}`},`
+    : "";
+  const session = `${talkTitle ? `<strong>${escapeHtml(talkTitle)}</strong>` : "your session"}${withWhom}`;
 
   return shell(
     `

@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 import { sendMail, isMailConfigured } from "@/lib/mail";
 import { presenterFeedbackEmail } from "@/lib/mail-templates";
 import { buildPresenterReport, displayTalkTitle } from "@/lib/feedback";
-import { feedbackUrlFor } from "@/lib/feedback-links";
+import { coPresentersOf, feedbackUrlFor, feedbackWhereFor, presenterIdsWithFeedback, sessionTitleFor } from "@/lib/feedback-links";
 import { HONORARIUM_REPLY_TO } from "@/lib/presenters";
 
 // Email presenters the link to their feedback page.
@@ -64,8 +64,11 @@ export async function POST(req: Request) {
   const presenters = await prisma.presenter.findMany({
     where: {
       status: "confirmed",
-      feedback: { some: {} },
-      ...(ids?.length ? { id: { in: ids } } : {}),
+      // Their own feedback, or a session they shared with others.
+      AND: [
+        { id: { in: await presenterIdsWithFeedback() } },
+        ...(ids?.length ? [{ id: { in: ids } }] : []),
+      ],
       ...(mode === "initial" && !isTest ? { feedbackSentAt: null } : {}),
     },
     select: { id: true, name: true, email: true, talkTitle: true },
@@ -80,11 +83,15 @@ export async function POST(req: Request) {
   for (const p of queue) {
     try {
       const rows = await prisma.feedbackResponse.findMany({
-        where: { presenterId: p.id },
+        where: feedbackWhereFor(p.id),
         orderBy: [{ submittedAt: "asc" }, { importedAt: "asc" }],
-        select: { id: true, ratings: true, comments: true, hiddenKeys: true, featuredKeys: true, keptKeys: true, questionOrder: true, segment: true },
+        select: {
+          id: true, ratings: true, comments: true, hiddenKeys: true, featuredKeys: true, keptKeys: true,
+          questionOrder: true, segment: true, presenterId: true, sharedWith: true,
+        },
       });
       const report = buildPresenterReport(rows);
+      const others = await coPresentersOf(p.id, rows);
       const first = (p.name || "").split(" ")[0] || "";
       await sendMail({
         to: isTest ? (adminEmail as string) : p.email,
@@ -94,9 +101,10 @@ export async function POST(req: Request) {
         } attendee feedback from the 2026 Lurie Children's and AALB Conference`,
         html: presenterFeedbackEmail({
           name: p.name,
-          talkTitle: displayTalkTitle(p.talkTitle),
+          talkTitle: displayTalkTitle(sessionTitleFor(p, rows, others)),
           url: await feedbackUrlFor(p.id),
           quote: report.highlights[0]?.text || null,
+          presentedWith: others.map((c) => c.name),
         }),
       });
       if (!isTest) {

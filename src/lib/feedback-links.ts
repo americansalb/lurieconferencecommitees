@@ -17,3 +17,61 @@ export async function feedbackTokenFor(presenterId: string): Promise<string> {
 export async function feedbackUrlFor(presenterId: string): Promise<string> {
   return `${appUrl()}/feedback/${await feedbackTokenFor(presenterId)}`;
 }
+
+/**
+ * The responses that belong on a presenter's page: their own, and those of a
+ * session they shared with others (a panel), which are stored once.
+ */
+export function feedbackWhereFor(presenterId: string) {
+  return { OR: [{ presenterId }, { sharedWith: { has: presenterId } }] };
+}
+
+/** Everyone else credited on the same responses: who they presented with. */
+export async function coPresentersOf(
+  presenterId: string,
+  rows: { presenterId?: string | null; sharedWith?: string[] | null }[],
+): Promise<{ id: string; name: string; talkTitle: string | null }[]> {
+  const ids = new Set<string>();
+  for (const r of rows) {
+    if (r.presenterId) ids.add(r.presenterId);
+    for (const id of r.sharedWith || []) ids.add(id);
+  }
+  ids.delete(presenterId);
+  if (!ids.size) return [];
+  return prisma.presenter.findMany({
+    where: { id: { in: Array.from(ids) } },
+    select: { id: true, name: true, talkTitle: true },
+    orderBy: { name: "asc" },
+  });
+}
+
+/**
+ * The title of the session the feedback is about. Normally the presenter's
+ * own; but when every response they have came from somebody else's form (they
+ * joined a panel recorded under another presenter), it is that session's
+ * title, not whatever their own record says.
+ */
+export function sessionTitleFor(
+  presenter: { id: string; talkTitle: string | null },
+  rows: { presenterId?: string | null }[],
+  others: { id: string; talkTitle: string | null }[],
+): string | null {
+  if (!rows.length || rows.some((r) => r.presenterId === presenter.id)) return presenter.talkTitle;
+  const owner = others.find((o) => o.id === rows[0].presenterId);
+  return owner?.talkTitle ?? presenter.talkTitle;
+}
+
+/** Every presenter who has any feedback, shared or their own. */
+export async function presenterIdsWithFeedback(): Promise<string[]> {
+  const rows = await prisma.feedbackResponse.findMany({
+    where: { OR: [{ presenterId: { not: null } }, { sharedWith: { isEmpty: false } }] },
+    select: { presenterId: true, sharedWith: true },
+    distinct: ["presenterId", "sharedWith"],
+  });
+  const ids = new Set<string>();
+  for (const r of rows) {
+    if (r.presenterId) ids.add(r.presenterId);
+    for (const id of r.sharedWith) ids.add(id);
+  }
+  return Array.from(ids);
+}

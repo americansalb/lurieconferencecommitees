@@ -464,6 +464,10 @@ model FeedbackResponse {
   /// admin fix-up list, never on a share page.
   presenterId   String?
   presenter     Presenter? @relation(fields: [presenterId], references: [id], onDelete: SetNull)
+  /// Co-presenters who share this session's form: a panel, or two people who
+  /// presented together. The response is stored once and appears on each of
+  /// their pages; hiding or starring a comment applies to the session.
+  sharedWith    String[]   @default([])
   /// Numeric answers, keyed by question label.
   ratings       Json
   /// Free-text answers, keyed by question label.

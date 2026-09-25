@@ -10,7 +10,7 @@ import {
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
 import MobileNav from "@/components/layout/MobileNav";
-import { parseCsv, matchSessionLabel, type QuestionStats } from "@/lib/feedback";
+import { parseCsv, matchSessionLabel, displayTalkTitle, type QuestionStats } from "@/lib/feedback";
 
 // Importing and reading attendee feedback.
 //
@@ -24,9 +24,16 @@ type ColumnRole = "ignore" | "session" | "rating" | "comment" | "timestamp" | "s
 type AdminData = {
   total: number;
   overall: { responses: number; sessionsRated: number; questions: QuestionStats[] };
-  sources: { name: string; responses: number; matched: number }[];
+  sources: {
+    name: string; responses: number; matched: number;
+    /** Who the form's responses belong to, and who else presented it. */
+    presenterIds: string[]; sharedWith: string[];
+  }[];
   byPresenter: {
-    presenter: { id: string; name: string; talkTitle: string | null; email: string; feedbackSentAt: string | null };
+    presenter: {
+      id: string; name: string; talkTitle: string | null; email: string;
+      feedbackSentAt: string | null; coPresenters: string | null;
+    };
     responseCount: number;
     questions: QuestionStats[];
     commentRows: {
@@ -45,6 +52,68 @@ type AdminData = {
   }[];
   links: Record<string, string>;
 };
+
+type PresenterOption = AdminData["byPresenter"][number]["presenter"];
+
+/**
+ * Who presented alongside somebody, from what we already hold: their own
+ * "co-presenters" answer from the confirmation form, the other person's answer
+ * naming them, or the same (real) talk title. Only a starting point for the
+ * picker; the team confirms it.
+ */
+function guessCoPresenters(id: string, everyone: PresenterOption[]): string[] {
+  const me = everyone.find((p) => p.id === id);
+  if (!me) return [];
+  const mentions = (text: string | null, name: string) => {
+    const t = (text || "").toLowerCase();
+    const n = name.toLowerCase().trim();
+    if (!t || !n) return false;
+    if (t.includes(n)) return true;
+    const last = n.split(/\s+/).pop() || "";
+    return last.length > 3 && new RegExp(`\\b${last.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`).test(t);
+  };
+  const title = displayTalkTitle(me.talkTitle)?.toLowerCase();
+  return everyone
+    .filter((p) => p.id !== id && (
+      mentions(me.coPresenters, p.name)
+      || mentions(p.coPresenters, me.name)
+      || (!!title && displayTalkTitle(p.talkTitle)?.toLowerCase() === title)
+    ))
+    .map((p) => p.id);
+}
+
+/** Chips for the people chosen, and a select to add another. */
+function CoPresenterPicker({
+  value, onChange, options, exclude,
+}: {
+  value: string[];
+  onChange: (ids: string[]) => void;
+  options: PresenterOption[];
+  exclude: string;
+}) {
+  const nameOf = (id: string) => options.find((p) => p.id === id)?.name || "Unknown";
+  return (
+    <span className="inline-flex items-center gap-1.5 flex-wrap">
+      {value.map((id) => (
+        <span key={id} className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-full bg-[#0E5566]/10 text-[12px] font-semibold text-[#0E5566]">
+          {nameOf(id)}
+          <button type="button" title="Remove" onClick={() => onChange(value.filter((x) => x !== id))}
+                  className="w-4 h-4 rounded-full hover:bg-[#0E5566]/20 leading-none">&times;</button>
+        </span>
+      ))}
+      <select
+        value=""
+        onChange={(e) => e.target.value && onChange([...value, e.target.value])}
+        className="text-[12px] rounded-lg border border-slate-200 px-2 py-1 bg-white"
+      >
+        <option value="">{value.length ? "Add another" : "Add a co-presenter"}</option>
+        {options.filter((p) => p.id !== exclude && !value.includes(p.id)).map((p) => (
+          <option key={p.id} value={p.id}>{p.name}</option>
+        ))}
+      </select>
+    </span>
+  );
+}
 
 export default function FeedbackAdminPage() {
   const { data: session, status } = useSession();
@@ -67,6 +136,8 @@ export default function FeedbackAdminPage() {
   const [mode, setMode] = useState<"onePresenter" | "perRow" | "perColumn">("onePresenter");
   const [formPresenter, setFormPresenter] = useState("");
   const [guessedPresenter, setGuessedPresenter] = useState("");
+  // Co-presenters for a panel's shared form.
+  const [formShared, setFormShared] = useState<string[]>([]);
   const [roles, setRoles] = useState<Record<string, ColumnRole>>({});
   const [columnOwner, setColumnOwner] = useState<Record<string, string>>({});
   const [importing, setImporting] = useState(false);
@@ -150,7 +221,23 @@ export default function FeedbackAdminPage() {
     const guess = matchSessionLabel(name.replace(/_/g, " "), targets) || "";
     setFormPresenter(guess);
     setGuessedPresenter(guess);
+    // Uploading a form again keeps the co-presenters it already has.
+    const existing = data?.sources.find((x) => x.name === name);
+    setFormShared(existing?.sharedWith.length
+      ? existing.sharedWith
+      : guessCoPresenters(guess, (data?.byPresenter || []).map((b) => b.presenter)));
     setNote(null);
+  }
+
+  async function shareForm(sourceName: string, presenterIds: string[]) {
+    const res = await fetch("/api/feedback", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ share: { sourceName, presenterIds } }),
+    });
+    const j = await res.json().catch(() => ({}));
+    if (res.ok) await load();
+    else setNote(j.error || "Could not change that.");
   }
 
   async function deleteSource(name: string) {
@@ -240,7 +327,10 @@ export default function FeedbackAdminPage() {
       if (mode === "onePresenter") {
         if (!formPresenter) { setNote("Choose whose session this form is for."); setImporting(false); return; }
         if (!ratingColumns.length && !commentColumns.length) { setNote("Mark at least one column as a rating or a comment."); setImporting(false); return; }
-        mapping = { presenterId: formPresenter, ratingColumns, commentColumns, timestampColumn, segmentColumn };
+        mapping = {
+          presenterId: formPresenter, sharedWith: formShared.filter((id) => id !== formPresenter),
+          ratingColumns, commentColumns, timestampColumn, segmentColumn,
+        };
       } else if (mode === "perRow") {
         const sessionColumn = header.find((h) => roles[h] === "session");
         if (!sessionColumn) { setNote("Mark one column as the session name first."); setImporting(false); return; }
@@ -272,7 +362,7 @@ export default function FeedbackAdminPage() {
       setNote(res.ok
         ? `"${j.sourceName}": ${j.imported} responses, ${j.matched} matched to a presenter${j.unmatched ? `, ${j.unmatched} to assign below` : ""}.`
         : (j.error || "Import failed."));
-      if (res.ok) { setCsv(""); setSourceName(""); setLoadedFile(null); setShowPaste(false); setFormPresenter(""); await load(); }
+      if (res.ok) { setCsv(""); setSourceName(""); setLoadedFile(null); setShowPaste(false); setFormPresenter(""); setFormShared([]); await load(); }
     } catch {
       setNote("Network error during import.");
     } finally {
@@ -441,7 +531,10 @@ export default function FeedbackAdminPage() {
                         <span className="text-[12px] font-bold text-slate-700 shrink-0">Whose session</span>
                         <select
                           value={formPresenter}
-                          onChange={(e) => setFormPresenter(e.target.value)}
+                          onChange={(e) => {
+                            setFormPresenter(e.target.value);
+                            setFormShared(guessCoPresenters(e.target.value, (data?.byPresenter || []).map((b) => b.presenter)));
+                          }}
                           className={`flex-1 min-w-[220px] text-[13px] rounded-lg border px-2 py-1.5 bg-white ${formPresenter ? "border-slate-200" : "border-amber-300"}`}
                         >
                           <option value="">Choose the presenter</option>
@@ -455,6 +548,20 @@ export default function FeedbackAdminPage() {
                           <span className="text-[11.5px] text-slate-400">Guessed from the file name. Change it if it is wrong.</span>
                         )}
                       </label>
+                    )}
+                    {mode === "onePresenter" && formPresenter && (
+                      <div className="mt-2 flex items-center gap-2 flex-wrap">
+                        <span className="text-[12px] font-bold text-slate-700 shrink-0">Presented with</span>
+                        <CoPresenterPicker
+                          value={formShared}
+                          onChange={setFormShared}
+                          options={(data?.byPresenter || []).map((b) => b.presenter)}
+                          exclude={formPresenter}
+                        />
+                        <span className="text-[11.5px] text-slate-400">
+                          For a panel or a shared session. Each co-presenter gets the same feedback on their own page.
+                        </span>
+                      </div>
                     )}
                     <div className="mt-3 rounded-xl border border-slate-200 divide-y divide-slate-100 max-h-80 overflow-y-auto">
                       {header.map((h) => (
@@ -506,7 +613,21 @@ export default function FeedbackAdminPage() {
                       {data.sources.map((src) => (
                         <div key={src.name} className="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2">
                           <FileSpreadsheet className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                          <span className="text-[13px] font-semibold text-slate-800 truncate flex-1 min-w-0">{src.name}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-[13px] font-semibold text-slate-800 truncate">{src.name}</div>
+                            {src.presenterIds.length === 1 && (
+                              <div className="mt-1 flex items-center gap-1.5 flex-wrap text-[11.5px] text-slate-500">
+                                For {data.byPresenter.find((b) => b.presenter.id === src.presenterIds[0])?.presenter.name || "a presenter"}
+                                <span className="text-slate-300">&middot;</span> with
+                                <CoPresenterPicker
+                                  value={src.sharedWith}
+                                  onChange={(ids) => void shareForm(src.name, ids)}
+                                  options={data.byPresenter.map((b) => b.presenter)}
+                                  exclude={src.presenterIds[0]}
+                                />
+                              </div>
+                            )}
+                          </div>
                           <span className="text-[11.5px] text-slate-500 shrink-0">
                             {src.responses} response{src.responses === 1 ? "" : "s"}
                             {src.matched < src.responses ? ` · ${src.responses - src.matched} unassigned` : ""}

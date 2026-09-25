@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { buildPresenterReport, displayTalkTitle, type QuestionStats } from "@/lib/feedback";
 import ResponseTable from "./ResponseTable";
+import { coPresentersOf, feedbackWhereFor, sessionTitleFor } from "@/lib/feedback-links";
 
 // A presenter's feedback page, behind its own share token.
 //
@@ -31,6 +32,11 @@ const REST = "#CBD5E1";
 
 function fmt(n: number, digits = 2): string {
   return n.toFixed(digits).replace(/\.?0+$/, "");
+}
+
+/** "A", "A and B", "A, B and C". */
+function listNames(names: string[]): string {
+  return names.length <= 1 ? names.join("") : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
 }
 
 function pct(part: number, whole: number): string {
@@ -139,13 +145,16 @@ export default async function FeedbackPage({ params }: { params: { token: string
   if (!presenter) notFound();
 
   const rows = await prisma.feedbackResponse.findMany({
-    where: { presenterId: presenter.id },
+    where: feedbackWhereFor(presenter.id),
     orderBy: [{ submittedAt: "asc" }, { importedAt: "asc" }],
     select: {
       id: true, ratings: true, comments: true, hiddenKeys: true, featuredKeys: true, keptKeys: true,
-      submittedAt: true, questionOrder: true, segment: true,
+      submittedAt: true, questionOrder: true, segment: true, presenterId: true, sharedWith: true,
     },
   });
+  // A shared session (a panel) names everyone who presented it.
+  const presentedWith = await coPresentersOf(presenter.id, rows);
+  const sessionTitle = displayTalkTitle(sessionTitleFor(presenter, rows, presentedWith));
   const report = buildPresenterReport(rows);
   const { scale, pooled, overall, questions, responses, commented, highlights, groups } = report;
   const first = presenter.name.split(" ")[0] || presenter.name;
@@ -180,9 +189,12 @@ export default async function FeedbackPage({ params }: { params: { token: string
             )}
           </div>
           <h1 className="mt-4 text-[28px] sm:text-[34px] leading-[1.15] font-semibold tracking-tight text-slate-900">
-            {displayTalkTitle(presenter.talkTitle) || "Your session"}
+            {sessionTitle || "Your session"}
           </h1>
-          <p className="mt-2 text-[15px] text-slate-500">{presenter.name}</p>
+          <p className="mt-2 text-[15px] text-slate-500">
+            {presenter.name}
+            {presentedWith.length > 0 && <>, presented with {listNames(presentedWith.map((c) => c.name))}</>}
+          </p>
         </header>
 
         {n === 0 ? (

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { hiddenFromPresenter, questionOrderOf } from "@/lib/feedback";
+import { feedbackWhereFor } from "@/lib/feedback-links";
 
 // A presenter's own raw feedback as CSV, behind their share token.
 //
@@ -24,7 +25,7 @@ export async function GET(_req: Request, { params }: { params: { token: string }
   if (!presenter) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const rows = await prisma.feedbackResponse.findMany({
-    where: { presenterId: presenter.id },
+    where: feedbackWhereFor(presenter.id),
     orderBy: [{ submittedAt: "asc" }, { importedAt: "asc" }],
     select: { ratings: true, comments: true, hiddenKeys: true, keptKeys: true, submittedAt: true, questionOrder: true },
   });
