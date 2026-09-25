@@ -548,3 +548,47 @@ export function tallyChoices(question: string, answers: string[]): ChoiceTally {
       .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label)),
   };
 }
+
+/**
+ * A session title from a form's file name, for sessions the presenter record
+ * cannot name: a panel, whose members each have their own talk title.
+ * "13. 2026 Lurie Children's & AALB Conference - Lessons from the Department
+ * of Justice's Language Access Enforcement Attendance & Feedback Form
+ * (Responses) - Day 2.6 - Michael" gives "Lessons from the Department of
+ * Justice's Language Access Enforcement".
+ */
+export function titleFromFormName(name: string | null | undefined): string | null {
+  // Only a Google Forms export carries a session name worth reading; a form
+  // somebody named "Saturday feedback" covers several sessions and names none.
+  if (!/\(Responses\)|Feedback Form|Form Responses/i.test((name || "").replace(/_/g, " "))) return null;
+  const t = (name || "")
+    .replace(/_/g, " ")
+    .replace(/^\d+\.\s*/, "")
+    .replace(/^2026\s+Lurie Children.?s\s*(?:&|and)?\s*AALB Conference\s*-\s*/i, "")
+    .replace(/\s*\(Responses\)/i, "")
+    .replace(/\s*-\s*Form Responses \d+$/i, "")
+    .replace(/\s*-\s*Day\s*[\d.]+(\s*-.*)?$/i, "")
+    .replace(/\s*(Attendance\s*(?:&|and)?\s*)?Feedback Form\s*$/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  return t.length >= 6 ? t : null;
+}
+
+/**
+ * A presenter's rows split by session, where a session is who presented it.
+ * Their own solo session first, then the rest by size. No database here, so
+ * the admin page and the presenter page split the same way.
+ */
+export function groupSessions<R extends { presenterId?: string | null; sharedWith?: string[] | null }>(
+  presenterId: string,
+  rows: R[],
+): { ids: string[]; rows: R[]; solo: boolean }[] {
+  const groups = new Map<string, { ids: string[]; rows: R[]; solo: boolean }>();
+  for (const r of rows) {
+    const ids = Array.from(new Set([r.presenterId, ...(r.sharedWith || [])].filter(Boolean) as string[])).sort();
+    const k = ids.join(",");
+    if (!groups.has(k)) groups.set(k, { ids, rows: [], solo: ids.length === 1 && ids[0] === presenterId });
+    groups.get(k)!.rows.push(r);
+  }
+  return Array.from(groups.values()).sort((a, b) => Number(b.solo) - Number(a.solo) || b.rows.length - a.rows.length);
+}

@@ -1,6 +1,7 @@
-import { randomBytes } from "crypto";
+import { createHash, randomBytes } from "crypto";
 import { prisma } from "./db";
 import { appUrl } from "./presenters";
+import { displayTalkTitle, groupSessions, titleFromFormName } from "./feedback";
 
 // A presenter's feedback page address. Server-only, which is why it is not in
 // feedback.ts: that file is also loaded by the admin page in the browser.
@@ -74,4 +75,40 @@ export async function presenterIdsWithFeedback(): Promise<string[]> {
     for (const id of r.sharedWith) ids.add(id);
   }
   return Array.from(ids);
+}
+
+export type PresenterSession<R> = {
+  /** Stable id for the ?session= link parameter. */
+  key: string;
+  rows: R[];
+  /** Who else presented it. Empty for their own solo session. */
+  others: { id: string; name: string; talkTitle: string | null }[];
+  title: string | null;
+};
+
+/**
+ * A presenter's feedback, one entry per session they were part of.
+ *
+ * A session is who presented it: Wilma alone is one, Wilma with the rest of
+ * a panel is another. Pooling them made a panelist's page average her own talk
+ * with the panel's, and quote panel comments as if they were about her talk.
+ * Their own solo session comes first, then the rest by size.
+ */
+export async function sessionsFor<R extends { presenterId?: string | null; sharedWith?: string[] | null; sourceName?: string }>(
+  presenter: { id: string; talkTitle: string | null },
+  rows: R[],
+): Promise<PresenterSession<R>[]> {
+  const everyone = await coPresentersOf(presenter.id, rows);
+  return groupSessions(presenter.id, rows).map(({ ids, rows: mine, solo }) => {
+    const owner = everyone.find((o) => o.id === mine[0].presenterId);
+    const title = solo
+      ? displayTalkTitle(presenter.talkTitle) || titleFromFormName(mine[0].sourceName)
+      : titleFromFormName(mine[0].sourceName) || displayTalkTitle(owner?.talkTitle);
+    return {
+      key: createHash("sha1").update(ids.join(",")).digest("hex").slice(0, 10),
+      rows: mine,
+      others: everyone.filter((o) => ids.includes(o.id)),
+      title,
+    };
+  });
 }

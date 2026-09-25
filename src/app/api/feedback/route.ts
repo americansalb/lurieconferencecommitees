@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import {
   assemblePresenterFeedback, buildPresenterReport, hiddenFromPresenter, isNonAnswer, offTopicReason,
-  questionOrderOf, questionStats, suggestHighlights,
+  groupSessions, questionOrderOf, questionStats, suggestHighlights,
 } from "@/lib/feedback";
 import { feedbackUrlFor } from "@/lib/feedback-links";
 
@@ -77,8 +77,14 @@ export async function GET() {
         || Number(b.suggested) - Number(a.suggested));
     return {
       presenter: p, responseCount: mine.length, questions: view.questions, commentRows,
-      // What their email will quote, so the send panel can show it first.
-      emailQuote: report.highlights[0]?.text || null,
+      // What their email will quote, so the send panel can show it first. The
+      // email leads with their first session, so the quote comes from it.
+      emailQuote: (() => {
+        const first = groupSessions(p.id, mine)[0];
+        return first ? buildPresenterReport(first.rows).highlights[0]?.text || null : null;
+      })(),
+      // A talk and a panel are separate pages and separate links in the email.
+      sessionCount: groupSessions(p.id, mine).length,
     };
   });
 

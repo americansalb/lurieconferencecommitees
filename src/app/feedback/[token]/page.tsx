@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { buildPresenterReport, displayTalkTitle, type QuestionStats } from "@/lib/feedback";
+import { buildPresenterReport, type QuestionStats } from "@/lib/feedback";
 import ResponseTable from "./ResponseTable";
 import { Distribution, Legend, SplitBar, TOP } from "@/components/feedback/RatingCharts";
-import { coPresentersOf, feedbackWhereFor, sessionTitleFor } from "@/lib/feedback-links";
+import { feedbackWhereFor, sessionsFor } from "@/lib/feedback-links";
 
 // A presenter's feedback page, behind its own share token.
 //
@@ -60,7 +60,12 @@ function QuestionRow({ q }: { q: QuestionStats & { values: number[] } }) {
   );
 }
 
-export default async function FeedbackPage({ params }: { params: { token: string } }) {
+export default async function FeedbackPage({
+  params, searchParams,
+}: {
+  params: { token: string };
+  searchParams: { session?: string };
+}) {
   const presenter = await prisma.presenter.findUnique({
     where: { feedbackToken: params.token },
     select: { id: true, name: true, talkTitle: true },
@@ -72,13 +77,16 @@ export default async function FeedbackPage({ params }: { params: { token: string
     orderBy: [{ submittedAt: "asc" }, { importedAt: "asc" }],
     select: {
       id: true, ratings: true, comments: true, hiddenKeys: true, featuredKeys: true, keptKeys: true,
-      submittedAt: true, questionOrder: true, segment: true, presenterId: true, sharedWith: true,
+      submittedAt: true, questionOrder: true, segment: true, presenterId: true, sharedWith: true, sourceName: true,
     },
   });
-  // A shared session (a panel) names everyone who presented it.
-  const presentedWith = await coPresentersOf(presenter.id, rows);
-  const sessionTitle = displayTalkTitle(sessionTitleFor(presenter, rows, presentedWith));
-  const report = buildPresenterReport(rows);
+  // One session at a time. Somebody who gave a talk and also sat on a panel
+  // has two, and their numbers and comments must never be pooled together.
+  const sessions = await sessionsFor(presenter, rows);
+  const current = sessions.find((x) => x.key === searchParams.session) || sessions[0];
+  const presentedWith = current?.others || [];
+  const sessionTitle = current?.title || null;
+  const report = buildPresenterReport(current?.rows || []);
   const { scale, pooled, overall, questions, responses, commented, highlights, groups } = report;
   const first = presenter.name.split(" ")[0] || presenter.name;
   const singleQuestion = questions.length === 1;
@@ -106,7 +114,7 @@ export default async function FeedbackPage({ params }: { params: { token: string
           <div className="flex items-center justify-between gap-4 text-[12.5px] text-slate-500">
             <span>2026 Lurie Children&rsquo;s &amp; AALB Conference &middot; Attendee feedback</span>
             {n > 0 && (
-              <a href={`/api/feedback/${params.token}`} className="shrink-0 font-semibold text-[#0E5566] hover:underline">
+              <a href={`/api/feedback/${params.token}${current ? `?session=${current.key}` : ""}`} className="shrink-0 font-semibold text-[#0E5566] hover:underline">
                 Download CSV
               </a>
             )}
@@ -118,6 +126,30 @@ export default async function FeedbackPage({ params }: { params: { token: string
             {presenter.name}
             {presentedWith.length > 0 && <>, presented with {listNames(presentedWith.map((c) => c.name))}</>}
           </p>
+          {sessions.length > 1 && (
+            <nav className="mt-6">
+              <div className="text-[12.5px] text-slate-500">
+                You were part of {sessions.length} sessions. Each has its own feedback:
+              </div>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {sessions.map((x) => {
+                  const on = x.key === current?.key;
+                  return (
+                    <a key={x.key} href={`?session=${x.key}`}
+                       aria-current={on ? "page" : undefined}
+                       className={`rounded-xl border px-3.5 py-2 text-[13px] leading-snug max-w-full ${
+                         on ? "border-[#0E5566] bg-[#0E5566] text-white" : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                       }`}>
+                      <span className="font-semibold">{x.title || (x.others.length ? "Panel" : "Your session")}</span>
+                      <span className={on ? "text-white/70" : "text-slate-400"}>
+                        {x.others.length ? ` · with ${listNames(x.others.map((o) => o.name))}` : ""} · {x.rows.length} responses
+                      </span>
+                    </a>
+                  );
+                })}
+              </div>
+            </nav>
+          )}
         </header>
 
         {n === 0 ? (

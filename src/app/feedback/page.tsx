@@ -47,6 +47,8 @@ type AdminData = {
     }[];
     /** The comment their email will quote: the first one featured. */
     emailQuote: string | null;
+    /** Separate sessions (a talk and a panel), each its own page. */
+    sessionCount: number;
   }[];
   unmatched: { label: string; count: number }[];
   offTopic: {
@@ -847,7 +849,8 @@ export default function FeedbackAdminPage() {
                               <div className="min-w-0 flex-1">
                                 <div className="text-[13px] font-semibold text-slate-800 truncate">{b.presenter.name}</div>
                                 <div className="text-[11.5px] text-slate-500 truncate">
-                                  {b.responseCount} response{b.responseCount === 1 ? "" : "s"} &middot; {b.presenter.email}
+                                  {b.responseCount} response{b.responseCount === 1 ? "" : "s"}
+                                  {b.sessionCount > 1 ? ` across ${b.sessionCount} sessions, each its own page` : ""} &middot; {b.presenter.email}
                                 </div>
                                 <div className="text-[11.5px] truncate" title={b.emailQuote || undefined}>
                                   {b.emailQuote

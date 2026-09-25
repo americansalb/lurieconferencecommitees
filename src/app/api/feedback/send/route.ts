@@ -4,8 +4,8 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sendMail, isMailConfigured } from "@/lib/mail";
 import { presenterFeedbackEmail } from "@/lib/mail-templates";
-import { buildPresenterReport, displayTalkTitle } from "@/lib/feedback";
-import { coPresentersOf, feedbackUrlFor, feedbackWhereFor, presenterIdsWithFeedback, sessionTitleFor } from "@/lib/feedback-links";
+import { buildPresenterReport } from "@/lib/feedback";
+import { feedbackUrlFor, feedbackWhereFor, presenterIdsWithFeedback, sessionsFor } from "@/lib/feedback-links";
 import { HONORARIUM_REPLY_TO } from "@/lib/presenters";
 
 // Email presenters the link to their feedback page.
@@ -87,11 +87,15 @@ export async function POST(req: Request) {
         orderBy: [{ submittedAt: "asc" }, { importedAt: "asc" }],
         select: {
           id: true, ratings: true, comments: true, hiddenKeys: true, featuredKeys: true, keptKeys: true,
-          questionOrder: true, segment: true, presenterId: true, sharedWith: true,
+          questionOrder: true, segment: true, presenterId: true, sharedWith: true, sourceName: true,
         },
       });
-      const report = buildPresenterReport(rows);
-      const others = await coPresentersOf(p.id, rows);
+      // One link per session: somebody who gave a talk and sat on a panel
+      // gets both, never one page with the two pooled.
+      const sessions = await sessionsFor(p, rows);
+      const base = await feedbackUrlFor(p.id);
+      const [main, ...more] = sessions;
+      const report = buildPresenterReport(main.rows);
       const first = (p.name || "").split(" ")[0] || "";
       await sendMail({
         to: isTest ? (adminEmail as string) : p.email,
@@ -101,10 +105,13 @@ export async function POST(req: Request) {
         } attendee feedback from the 2026 Lurie Children's and AALB Conference`,
         html: presenterFeedbackEmail({
           name: p.name,
-          talkTitle: displayTalkTitle(sessionTitleFor(p, rows, others)),
-          url: await feedbackUrlFor(p.id),
+          talkTitle: main.title,
+          url: `${base}?session=${main.key}`,
           quote: report.highlights[0]?.text || null,
-          presentedWith: others.map((c) => c.name),
+          presentedWith: main.others.map((c) => c.name),
+          otherSessions: more.map((x) => ({
+            title: x.title, presentedWith: x.others.map((c) => c.name), url: `${base}?session=${x.key}`,
+          })),
         }),
       });
       if (!isTest) {

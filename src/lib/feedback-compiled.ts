@@ -1,6 +1,6 @@
 import { prisma } from "./db";
 import {
-  buildPresenterReport, displayTalkTitle, isNonAnswer, offTopicReason, questionOrderOf, tallyChoices,
+  buildPresenterReport, displayTalkTitle, isNonAnswer, offTopicReason, questionOrderOf, tallyChoices, titleFromFormName,
   type ChoiceTally, type QuestionStats,
 } from "./feedback";
 import { feedbackUrlFor } from "./feedback-links";
@@ -40,7 +40,7 @@ type Ratings = {
 };
 
 export type CompiledSession = Ratings & {
-  /** The presenter the form's responses belong to. */
+  /** Who presented it, as one key: a talk and a panel are separate sessions. */
   id: string;
   title: string;
   presenters: { id: string; name: string; link: string }[];
@@ -131,17 +131,21 @@ export async function compileFeedback(): Promise<CompiledFeedback> {
     select: { id: true, name: true, talkTitle: true },
   })).map((p) => [p.id, p]));
 
-  // Sessions: one per presenter who owns responses, with their co-presenters.
-  const byOwner = new Map<string, Row[]>();
+  // Sessions: one per group of people who presented together. Somebody who
+  // gave a talk and sat on a panel is in two, never one pooled.
+  const byCredited = new Map<string, Row[]>();
   for (const r of rows) {
     if (r.general || !r.presenterId) continue;
-    byOwner.set(r.presenterId, [...(byOwner.get(r.presenterId) || []), r]);
+    const k = [r.presenterId, ...r.sharedWith.filter((id) => id !== r.presenterId).sort()].join("-");
+    byCredited.set(k, [...(byCredited.get(k) || []), r]);
   }
   const sessions: CompiledSession[] = [];
-  for (const [ownerId, mine] of Array.from(byOwner.entries())) {
+  for (const [key, mine] of Array.from(byCredited.entries())) {
+    const ownerId = mine[0].presenterId as string;
     const owner = people.get(ownerId);
     const { report, ...stats } = ratingsOf(mine);
     const presenterIds = [ownerId, ...Array.from(new Set(mine.flatMap((r) => r.sharedWith))).filter((id) => id !== ownerId)];
+    const shared = presenterIds.length > 1;
     const presenters = [];
     for (const id of presenterIds) {
       const p = people.get(id);
@@ -149,8 +153,12 @@ export async function compileFeedback(): Promise<CompiledFeedback> {
     }
     sessions.push({
       ...stats,
-      id: ownerId,
-      title: displayTalkTitle(owner?.talkTitle) || `${owner?.name || "Unknown presenter"}'s session`,
+      id: key,
+      // A panel is named by its form; each panelist's own talk title is theirs.
+      title: (shared
+        ? titleFromFormName(mine[0].sourceName) || displayTalkTitle(owner?.talkTitle)
+        : displayTalkTitle(owner?.talkTitle) || titleFromFormName(mine[0].sourceName))
+        || `${owner?.name || "Unknown presenter"}'s session`,
       presenters,
       forms: Array.from(new Set(mine.map((r) => r.sourceName))),
       comments: commentsOf(mine, report.responses.map((x) => x.score), true),

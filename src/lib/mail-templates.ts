@@ -4972,12 +4972,15 @@ export function presenterFeedbackEmail({
   url,
   quote,
   presentedWith = [],
+  otherSessions = [],
 }: {
   name: string;
   talkTitle: string | null;
   url: string;
   /** Co-presenters of a shared session, who each get their own copy. */
   presentedWith?: string[];
+  /** Other sessions they were part of (a talk and a panel), each its own page. */
+  otherSessions?: { title: string | null; presentedWith: string[]; url: string }[];
   /** The first featured comment, verbatim. Omitted when none was picked. */
   quote?: string | null;
 }) {
@@ -5006,7 +5009,16 @@ export function presenterFeedbackEmail({
         &ldquo;${escapeHtml(quote)}&rdquo;
       </td></tr>
     </table>` : ""}
-    ${button(url, "See your feedback")}
+    ${button(url, otherSessions.length ? "See the feedback for this session" : "See your feedback")}
+    ${otherSessions.length ? `
+    <p style="font-size:15px;line-height:1.75;color:${TEXT};margin:0 0 8px 0;">
+      You were also part of ${otherSessions.length === 1 ? "another session" : "other sessions"}, and each has its own page:
+    </p>
+    <ul style="font-size:15px;line-height:1.75;color:${TEXT};margin:0 0 18px 0;padding-left:20px;">
+      ${otherSessions.map((o) => `<li><a href="${o.url}" style="color:${BLUE};font-weight:600;">${
+        o.title ? escapeHtml(o.title) : "Your other session"
+      }</a>${o.presentedWith.length ? `, with ${o.presentedWith.map(escapeHtml).join(", ")}` : ""}</li>`).join("")}
+    </ul>` : ""}
     <p style="font-size:15px;line-height:1.75;color:${TEXT};margin:0 0 14px 0;">
       The page is private to your link, and you can download the responses as a spreadsheet from it if
       you would like to keep a copy. Attendee names and email addresses are not included.

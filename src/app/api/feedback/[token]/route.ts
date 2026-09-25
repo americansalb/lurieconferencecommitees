@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { hiddenFromPresenter, questionOrderOf } from "@/lib/feedback";
-import { feedbackWhereFor } from "@/lib/feedback-links";
+import { feedbackWhereFor, sessionsFor } from "@/lib/feedback-links";
 
 // A presenter's own raw feedback as CSV, behind their share token.
 //
@@ -17,18 +17,25 @@ function esc(v: string): string {
   return `"${(v || "").replace(/"/g, '""')}"`;
 }
 
-export async function GET(_req: Request, { params }: { params: { token: string } }) {
+export async function GET(req: Request, { params }: { params: { token: string } }) {
   const presenter = await prisma.presenter.findUnique({
     where: { feedbackToken: params.token },
-    select: { id: true, name: true },
+    select: { id: true, name: true, talkTitle: true },
   });
   if (!presenter) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const rows = await prisma.feedbackResponse.findMany({
+  const all = await prisma.feedbackResponse.findMany({
     where: feedbackWhereFor(presenter.id),
     orderBy: [{ submittedAt: "asc" }, { importedAt: "asc" }],
-    select: { ratings: true, comments: true, hiddenKeys: true, keptKeys: true, submittedAt: true, questionOrder: true },
+    select: {
+      ratings: true, comments: true, hiddenKeys: true, keptKeys: true, submittedAt: true, questionOrder: true,
+      presenterId: true, sharedWith: true, sourceName: true,
+    },
   });
+  // The same session the page is showing: a talk and a panel are separate files.
+  const sessions = await sessionsFor(presenter, all);
+  const wanted = new URL(req.url).searchParams.get("session");
+  const rows = (sessions.find((x) => x.key === wanted) || sessions[0])?.rows || [];
 
   // Columns are every question that appears, ratings first, each group in the
   // order the form asked them so the file reads like the form did.
