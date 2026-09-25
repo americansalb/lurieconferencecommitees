@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { buildPresenterReport, type QuestionStats } from "@/lib/feedback";
+import { buildPresenterReport, displayTalkTitle, type QuestionStats } from "@/lib/feedback";
 import ResponseTable from "./ResponseTable";
 
 // A presenter's feedback page, behind its own share token.
@@ -10,7 +10,7 @@ import ResponseTable from "./ResponseTable";
 //   2. How the ratings fell, as one chart.
 //   3. In the room against online, when the form asked and both groups are
 //      big enough that no single answer can be picked out.
-//   4. The best comments, from people who rated it at the top of the scale.
+//   4. Comments the team picked to feature. Never chosen automatically.
 //   5. Every response, filterable, including the critical ones.
 //
 // Their own numbers only. No conference average and no ranking, by decision;
@@ -142,7 +142,7 @@ export default async function FeedbackPage({ params }: { params: { token: string
     where: { presenterId: presenter.id },
     orderBy: [{ submittedAt: "asc" }, { importedAt: "asc" }],
     select: {
-      id: true, ratings: true, comments: true, hiddenKeys: true,
+      id: true, ratings: true, comments: true, hiddenKeys: true, featuredKeys: true,
       submittedAt: true, questionOrder: true, segment: true,
     },
   });
@@ -180,7 +180,7 @@ export default async function FeedbackPage({ params }: { params: { token: string
             )}
           </div>
           <h1 className="mt-4 text-[28px] sm:text-[34px] leading-[1.15] font-semibold tracking-tight text-slate-900">
-            {presenter.talkTitle || "Your session"}
+            {displayTalkTitle(presenter.talkTitle) || "Your session"}
           </h1>
           <p className="mt-2 text-[15px] text-slate-500">{presenter.name}</p>
         </header>
@@ -266,7 +266,7 @@ export default async function FeedbackPage({ params }: { params: { token: string
               <section className="py-8 border-t border-slate-200">
                 <h2 className={H2}>What stood out</h2>
                 <p className="mt-1 text-[13px] text-slate-500">
-                  From attendees who rated your session {scale - 1} or {scale}. Every comment is in the table below.
+                  A few of the comments attendees left. Every comment is in the table below.
                 </p>
                 <div className="mt-6 grid gap-x-10 gap-y-8 sm:grid-cols-2">
                   {highlights.map((h, i) => (
@@ -274,9 +274,11 @@ export default async function FeedbackPage({ params }: { params: { token: string
                       <blockquote className="text-[16.5px] leading-relaxed text-slate-800">
                         &ldquo;{h.text}&rdquo;
                       </blockquote>
-                      <figcaption className="mt-2.5 text-[12.5px] text-slate-500">
-                        Rated {fmt(h.score, 1)}/{scale}
-                      </figcaption>
+                      {h.score !== null && (
+                        <figcaption className="mt-2.5 text-[12.5px] text-slate-500">
+                          Rated {fmt(h.score, 1)}/{scale}
+                        </figcaption>
+                      )}
                     </figure>
                   ))}
                 </div>

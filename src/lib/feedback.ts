@@ -252,6 +252,7 @@ type Row = {
   ratings: unknown;
   comments: unknown;
   hiddenKeys: unknown;
+  featuredKeys?: unknown;
   questionOrder?: string[] | null;
 };
 
@@ -291,39 +292,56 @@ export function assemblePresenterFeedback(rows: Row[]): PresenterFeedback {
 }
 
 // --- Highlights -------------------------------------------------------------
+//
+// The comments at the top of a presenter's page, and the one quoted in their
+// email, are chosen by a person. They used to be chosen automatically (the
+// longest comment from somebody who rated the session 9 or 10), and the first
+// test email quoted an attendee's complaint about CEU credits back to the
+// presenter as praise. A high rating says nothing about what the comment is
+// about. So the software only suggests; nothing is featured until somebody on
+// the team stars it.
 
-/** Questions that ask for criticism. Their answers are never "highlights". */
+/** Questions that ask for criticism. Their answers are never suggested. */
 const CRITIQUE_QUESTION = /improv|better|change|suggest|dislike|least|wish|missing/i;
 
-export type Highlight = { text: string; score: number };
+/**
+ * Comments about the event rather than the talk: credits, the camera rule,
+ * Zoom, the room. Those are for us, not the presenter, whatever the rating.
+ */
+const ABOUT_THE_EVENT = /\bceus?\b|\bcredits?\b|\bcertificates?\b|camera|zoom|\blinks?\b|registr|sign(?:ed|ing)? up|refund|audio|sound|wi-?fi|parking|lunch|food|\broom\b|temperature|email(?:ed)?\b|schedule|attendance|recording/i;
+
+export type Highlight = { text: string; score: number | null };
 
 /**
- * The comments worth putting at the top of a presenter's page: written by
- * people who rated the session in the top two points of the scale, from
- * questions that are not asking what to fix, longest first because the
- * longer ones say something specific ("spoke clearly, at an appropriate pace,
- * stayed on topic") where the short ones say "Awesome". Every comment still
- * appears in the full table; this only chooses what leads.
+ * Comments worth offering as highlights, keyed `${n}|${question}` where n is
+ * the response's number. Top-two ratings, not a criticism question, not about
+ * logistics, with some substance, longest first. Only ever a suggestion shown
+ * to the team.
  */
-export function pickHighlights(
-  responses: { score: number | null; comments: { question: string; text: string }[] }[],
+export function suggestHighlights(
+  responses: { n: number; score: number | null; comments: { question: string; text: string }[] }[],
   scale: number,
-  limit = 4,
-): Highlight[] {
+  limit = 6,
+): Set<string> {
   const words = (t: string) => t.trim().split(/\s+/).filter(Boolean).length;
   const pool = responses
     .filter((r) => r.score !== null && r.score >= scale - 1)
     .flatMap((r) => r.comments
-      .filter((c) => !CRITIQUE_QUESTION.test(c.question))
-      .map((c) => ({ text: c.text, score: r.score as number, words: words(c.text) })));
-  const pick = (min: number) => pool
-    .filter((c) => c.words >= min)
-    .sort((a, b) => b.words - a.words)
-    .slice(0, limit);
-  // Prefer comments with some substance; settle for short ones rather than
-  // showing nothing when that is all anyone wrote.
-  const chosen = pick(8).length >= 2 ? pick(8) : pick(3);
-  return chosen.map(({ text, score }) => ({ text, score }));
+      .filter((c) => !CRITIQUE_QUESTION.test(c.question) && !ABOUT_THE_EVENT.test(c.text) && words(c.text) >= 4)
+      .map((c) => ({ key: `${r.n}|${c.question}`, words: words(c.text) })));
+  return new Set(pool.sort((a, b) => b.words - a.words).slice(0, limit).map((c) => c.key));
+}
+
+/**
+ * A talk title fit to put in a sentence. Some sessions are recorded as just
+ * "Panel" or "Keynote", and "everything people said about Panel" reads as a
+ * mistake.
+ */
+export function displayTalkTitle(title: string | null | undefined): string | null {
+  const t = (title || "").trim();
+  if (!t || !/\s/.test(t)) return null;
+  if (/^(the )?(panel|keynote|session|workshop|presentation|talk|tbd|tba)( discussion| session)?$/i.test(t)) return null;
+  return t;
 }
 
 // --- Everything a presenter's page shows ------------------------------------
@@ -423,6 +441,17 @@ export function buildPresenterReport(rows: (Row & { segment?: string | null })[]
     };
   });
 
+  // Hand-picked highlights, in the order they were picked, so the first one
+  // chosen is the one quoted in the email. A hidden comment is never featured.
+  const featured: (Highlight & { at: string })[] = [];
+  rows.forEach((r, i) => {
+    const picks = (r.featuredKeys || {}) as Record<string, { at?: string } | undefined>;
+    for (const c of responses[i].comments) {
+      if (picks[c.question]) featured.push({ text: c.text, score: responses[i].score, at: picks[c.question]?.at || "" });
+    }
+  });
+  featured.sort((a, b) => a.at.localeCompare(b.at));
+
   const byGroup = new Map<string, number[]>();
   for (const r of rows) {
     if (!r.segment) continue;
@@ -443,7 +472,7 @@ export function buildPresenterReport(rows: (Row & { segment?: string | null })[]
     responses,
     commented: responses.filter((r) => r.comments.length > 0).length,
     commentQuestions: new Set(responses.flatMap((r) => r.comments.map((c) => c.question))).size,
-    highlights: pickHighlights(responses, scale),
+    highlights: featured.map(({ text, score }) => ({ text, score })),
     groups: groups.length >= 2 ? groups : [],
   };
 }

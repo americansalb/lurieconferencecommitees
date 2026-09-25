@@ -155,3 +155,7 @@ ALTER TABLE "lcc"."lcc_feedback_responses"
   ADD COLUMN IF NOT EXISTS "segment" TEXT;
 ALTER TABLE "lcc"."lcc_presenters"
   ADD COLUMN IF NOT EXISTS "feedbackSentAt" TIMESTAMP(3);
+
+-- Comments the team hand-picks to feature on a presenter's page. Additive.
+ALTER TABLE "lcc"."lcc_feedback_responses"
+  ADD COLUMN IF NOT EXISTS "featuredKeys" JSONB NOT NULL DEFAULT '{}';

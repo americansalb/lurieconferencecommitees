@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { assemblePresenterFeedback, questionOrderOf, questionStats } from "@/lib/feedback";
+import {
+  assemblePresenterFeedback, buildPresenterReport, isNonAnswer, questionOrderOf, questionStats, suggestHighlights,
+} from "@/lib/feedback";
 import { feedbackUrlFor } from "@/lib/feedback-links";
 
 // The admin's view of all feedback, and the two corrections they can make:
@@ -25,7 +27,7 @@ export async function GET() {
     orderBy: { importedAt: "asc" },
     select: {
       id: true, sessionLabel: true, presenterId: true, sourceName: true,
-      ratings: true, comments: true, hiddenKeys: true, submittedAt: true, questionOrder: true,
+      ratings: true, comments: true, hiddenKeys: true, featuredKeys: true, submittedAt: true, questionOrder: true,
     },
   });
   const presenters = await prisma.presenter.findMany({
@@ -39,13 +41,32 @@ export async function GET() {
   const byPresenter = presenters.map((p) => {
     const mine = rows.filter((r) => r.presenterId === p.id);
     const view = assemblePresenterFeedback(mine);
-    const commentRows = mine.flatMap((r) => {
+    const report = buildPresenterReport(mine);
+    // Suggestions are keyed by response number, which is position in `mine`.
+    const suggested = suggestHighlights(report.responses, report.scale);
+    const commentRows = mine.flatMap((r, i) => {
       const hidden = (r.hiddenKeys || {}) as Record<string, unknown>;
+      const picks = (r.featuredKeys || {}) as Record<string, { at?: string } | undefined>;
       return Object.entries((r.comments || {}) as Record<string, string>)
-        .filter(([, text]) => (text || "").trim())
-        .map(([question, text]) => ({ responseId: r.id, question, text, hidden: !!hidden[question] }));
-    });
-    return { presenter: p, responseCount: mine.length, questions: view.questions, commentRows };
+        .filter(([, text]) => (text || "").trim() && !isNonAnswer(text))
+        .map(([question, text]) => ({
+          responseId: r.id, question, text,
+          hidden: !!hidden[question],
+          featured: !!picks[question] && !hidden[question],
+          featuredAt: picks[question]?.at || "",
+          suggested: suggested.has(`${i + 1}|${question}`),
+        }));
+    })
+      // Picked first, in the order picked; then suggestions; then the rest.
+      .sort((a, b) =>
+        Number(b.featured) - Number(a.featured)
+        || a.featuredAt.localeCompare(b.featuredAt)
+        || Number(b.suggested) - Number(a.suggested));
+    return {
+      presenter: p, responseCount: mine.length, questions: view.questions, commentRows,
+      // What their email will quote, so the send panel can show it first.
+      emailQuote: report.highlights[0]?.text || null,
+    };
   });
 
   // What could not be matched, grouped by label so one assignment fixes the
@@ -127,6 +148,7 @@ export async function PATCH(req: Request) {
   const body = await req.json().catch(() => ({})) as {
     assign?: { sessionLabel: string; presenterId: string | null };
     hide?: { responseId: string; question: string; hidden: boolean };
+    feature?: { responseId: string; question: string; featured: boolean };
   };
 
   if (body.assign) {
@@ -141,18 +163,42 @@ export async function PATCH(req: Request) {
 
   if (body.hide) {
     const { responseId, question, hidden } = body.hide;
-    const row = await prisma.feedbackResponse.findUnique({ where: { id: responseId }, select: { hiddenKeys: true } });
+    const row = await prisma.feedbackResponse.findUnique({
+      where: { id: responseId }, select: { hiddenKeys: true, featuredKeys: true },
+    });
     if (!row) return NextResponse.json({ error: "No such response." }, { status: 404 });
     const keys = { ...((row.hiddenKeys || {}) as Record<string, unknown>) };
+    const picks = { ...((row.featuredKeys || {}) as Record<string, unknown>) };
     if (hidden) {
       // Logged, not silent: who hid it and when travels with the hide.
       keys[question] = { by: email, at: new Date().toISOString() };
+      // A hidden comment cannot also be the one quoted at the presenter.
+      delete picks[question];
     } else {
       delete keys[question];
     }
-    await prisma.feedbackResponse.update({ where: { id: responseId }, data: { hiddenKeys: keys as object } });
+    await prisma.feedbackResponse.update({
+      where: { id: responseId },
+      data: { hiddenKeys: keys as object, featuredKeys: picks as object },
+    });
     return NextResponse.json({ ok: true, hiddenKeys: keys });
   }
 
-  return NextResponse.json({ error: "Send assign or hide." }, { status: 400 });
+  if (body.feature) {
+    const { responseId, question, featured } = body.feature;
+    const row = await prisma.feedbackResponse.findUnique({
+      where: { id: responseId }, select: { hiddenKeys: true, featuredKeys: true },
+    });
+    if (!row) return NextResponse.json({ error: "No such response." }, { status: 404 });
+    if (featured && ((row.hiddenKeys || {}) as Record<string, unknown>)[question]) {
+      return NextResponse.json({ error: "That comment is hidden. Show it again before featuring it." }, { status: 400 });
+    }
+    const picks = { ...((row.featuredKeys || {}) as Record<string, unknown>) };
+    if (featured) picks[question] = { by: email, at: new Date().toISOString() };
+    else delete picks[question];
+    await prisma.feedbackResponse.update({ where: { id: responseId }, data: { featuredKeys: picks as object } });
+    return NextResponse.json({ ok: true });
+  }
+
+  return NextResponse.json({ error: "Send assign, hide or feature." }, { status: 400 });
 }

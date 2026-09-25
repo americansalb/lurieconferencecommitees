@@ -4,16 +4,15 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sendMail, isMailConfigured } from "@/lib/mail";
 import { presenterFeedbackEmail } from "@/lib/mail-templates";
-import { buildPresenterReport } from "@/lib/feedback";
+import { buildPresenterReport, displayTalkTitle } from "@/lib/feedback";
 import { feedbackUrlFor } from "@/lib/feedback-links";
 import { HONORARIUM_REPLY_TO } from "@/lib/presenters";
 
 // Email presenters the link to their feedback page.
 //
 // Only presenters who have feedback. Each email carries their own private
-// link and, when there is one, a comment from somebody who rated the session
-// at the top of the scale, chosen the same way the page chooses its
-// highlights and with hidden comments already excluded.
+// link and, when the team has picked one, the first comment they featured on
+// that presenter's page. With nothing picked, the email goes without a quote.
 //
 // POST { ids?: string[], mode?: "initial" | "all", test?: true }
 //   "initial" (default) skips anyone already sent theirs; "all" sends again.
@@ -83,7 +82,7 @@ export async function POST(req: Request) {
       const rows = await prisma.feedbackResponse.findMany({
         where: { presenterId: p.id },
         orderBy: [{ submittedAt: "asc" }, { importedAt: "asc" }],
-        select: { id: true, ratings: true, comments: true, hiddenKeys: true, questionOrder: true, segment: true },
+        select: { id: true, ratings: true, comments: true, hiddenKeys: true, featuredKeys: true, questionOrder: true, segment: true },
       });
       const report = buildPresenterReport(rows);
       const first = (p.name || "").split(" ")[0] || "";
@@ -95,7 +94,7 @@ export async function POST(req: Request) {
         } attendee feedback from the 2026 Lurie Children's and AALB Conference`,
         html: presenterFeedbackEmail({
           name: p.name,
-          talkTitle: p.talkTitle,
+          talkTitle: displayTalkTitle(p.talkTitle),
           url: await feedbackUrlFor(p.id),
           quote: report.highlights[0]?.text || null,
         }),

@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import {
   MessageSquareText, Upload, Loader2, RefreshCw, Copy, Check, EyeOff, Eye,
-  ChevronDown, ChevronRight, ExternalLink, FileSpreadsheet, Trash2, BarChart3, Send,
+  ChevronDown, ChevronRight, ExternalLink, FileSpreadsheet, Trash2, BarChart3, Send, Star,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
@@ -29,7 +29,12 @@ type AdminData = {
     presenter: { id: string; name: string; talkTitle: string | null; email: string; feedbackSentAt: string | null };
     responseCount: number;
     questions: QuestionStats[];
-    commentRows: { responseId: string; question: string; text: string; hidden: boolean }[];
+    commentRows: {
+      responseId: string; question: string; text: string;
+      hidden: boolean; featured: boolean; suggested: boolean;
+    }[];
+    /** The comment their email will quote: the first one featured. */
+    emailQuote: string | null;
   }[];
   unmatched: { label: string; count: number }[];
   links: Record<string, string>;
@@ -285,6 +290,16 @@ export default function FeedbackAdminPage() {
       body: JSON.stringify({ hide: { responseId, question, hidden } }),
     });
     if (res.ok) await load();
+  }
+
+  async function toggleFeature(responseId: string, question: string, featured: boolean) {
+    const res = await fetch("/api/feedback", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ feature: { responseId, question, featured } }),
+    });
+    if (res.ok) await load();
+    else setNote((await res.json().catch(() => ({}))).error || "Could not change that.");
   }
 
   async function copyLink(id: string, url: string) {
@@ -587,8 +602,8 @@ export default function FeedbackAdminPage() {
                         <Send className="w-4 h-4 text-[#0E5566]" /> Email presenters their feedback
                       </div>
                       <p className="text-xs text-slate-500 mt-1 max-w-2xl">
-                        Each presenter gets their own private link, plus one comment from somebody who rated them at
-                        the top of the scale when there is one. No scores go in the email. Replies come to contact@aalb.org.
+                        Each presenter gets their own private link, plus the first comment you starred for them, if
+                        any. No scores go in the email. Replies come to contact@aalb.org.
                       </p>
                       <div className="mt-3 flex items-center gap-2 flex-wrap">
                         <button className={small} onClick={() => setAll(withFeedback.filter((b) => !b.presenter.feedbackSentAt).map((b) => b.presenter.id))}>
@@ -616,6 +631,11 @@ export default function FeedbackAdminPage() {
                                 <div className="text-[13px] font-semibold text-slate-800 truncate">{b.presenter.name}</div>
                                 <div className="text-[11.5px] text-slate-500 truncate">
                                   {b.responseCount} response{b.responseCount === 1 ? "" : "s"} &middot; {b.presenter.email}
+                                </div>
+                                <div className="text-[11.5px] truncate" title={b.emailQuote || undefined}>
+                                  {b.emailQuote
+                                    ? <span className="text-slate-600">Quotes: &ldquo;{b.emailQuote}&rdquo;</span>
+                                    : <span className="text-slate-400">No quote picked. Star a comment below to add one.</span>}
                                 </div>
                               </div>
                               <span className={`shrink-0 text-[11.5px] font-semibold ${sentAt ? "text-emerald-700" : "text-slate-400"}`}>
@@ -647,7 +667,7 @@ export default function FeedbackAdminPage() {
                           {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                           Send to {ticked.length} ticked
                         </button>
-                        <span className="text-[11.5px] text-slate-400">The test uses the first ticked presenter&rsquo;s real link and comment.</span>
+                        <span className="text-[11.5px] text-slate-400">The test uses the first ticked presenter&rsquo;s real link and quote.</span>
                       </div>
                       {sendNote && <div className="mt-2 text-[12.5px] font-semibold text-[#0E5566]">{sendNote}</div>}
                     </div>
@@ -723,13 +743,41 @@ export default function FeedbackAdminPage() {
                           {b.commentRows.length > 0 && (
                             <div className="mt-4 space-y-1.5">
                               <div className="text-[10.5px] uppercase tracking-wider text-slate-400 font-bold">Comments</div>
+                              <p className="text-[12px] text-slate-500 pb-1">
+                                Star the comments to feature at the top of their page. The first one you star is quoted in
+                                their email. Nothing is featured until you star it; &ldquo;Suggested&rdquo; only marks likely
+                                candidates, so read before you star.
+                              </p>
                               {b.commentRows.map((c, i) => (
                                 <div key={`${c.responseId}-${c.question}-${i}`}
-                                     className={`flex items-start gap-2 rounded-lg border px-3 py-2 ${c.hidden ? "border-rose-200 bg-rose-50/60" : "border-slate-150 bg-slate-50/60"}`}>
+                                     className={`flex items-start gap-2 rounded-lg border px-3 py-2 ${
+                                       c.hidden ? "border-rose-200 bg-rose-50/60"
+                                       : c.featured ? "border-amber-300 bg-amber-50/70"
+                                       : "border-slate-150 bg-slate-50/60"}`}>
                                   <div className="flex-1 min-w-0">
-                                    <div className="text-[10.5px] text-slate-400">{c.question}</div>
+                                    <div className="text-[10.5px] text-slate-400 flex items-center gap-1.5 flex-wrap">
+                                      {c.question}
+                                      {c.featured && b.emailQuote === c.text && (
+                                        <span className="px-1.5 rounded bg-amber-200/70 text-amber-900 font-bold">In their email</span>
+                                      )}
+                                      {c.featured && b.emailQuote !== c.text && (
+                                        <span className="px-1.5 rounded bg-amber-100 text-amber-800 font-bold">Featured</span>
+                                      )}
+                                      {!c.featured && !c.hidden && c.suggested && (
+                                        <span className="px-1.5 rounded bg-sky-100 text-sky-800 font-bold">Suggested</span>
+                                      )}
+                                    </div>
                                     <div className={`text-[13px] leading-relaxed ${c.hidden ? "text-rose-800 line-through" : "text-slate-700"}`}>{c.text}</div>
                                   </div>
+                                  {!c.hidden && (
+                                    <button
+                                      onClick={() => void toggleFeature(c.responseId, c.question, !c.featured)}
+                                      title={c.featured ? "Stop featuring this" : "Feature this on their page"}
+                                      className={`shrink-0 p-1.5 rounded-lg hover:bg-white ${c.featured ? "text-amber-500" : "text-slate-400 hover:text-amber-500"}`}
+                                    >
+                                      <Star className="w-3.5 h-3.5" fill={c.featured ? "currentColor" : "none"} />
+                                    </button>
+                                  )}
                                   <button
                                     onClick={() => void toggleHide(c.responseId, c.question, !c.hidden)}
                                     title={c.hidden ? "Show on their page again" : "Hide from their page"}

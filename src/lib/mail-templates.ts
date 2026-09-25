@@ -4963,8 +4963,9 @@ export function presenterHonorariumRequestEmail({
 // No numbers in the email. A 6 out of 10 arriving cold in an inbox is a
 // different thing from the same 6 on a page that also shows what people
 // liked, and the page is where the context is. What the email carries instead
-// is one real comment from somebody who rated the session at the top of the
-// scale, word for word, when there is one: a reason to click that is true.
+// is one real comment, word for word, that somebody on the team picked for
+// this presenter: a reason to click that is true. Never chosen automatically;
+// the automatic version once quoted a complaint about CEU credits as praise.
 export function presenterFeedbackEmail({
   name,
   talkTitle,
@@ -4974,7 +4975,7 @@ export function presenterFeedbackEmail({
   name: string;
   talkTitle: string | null;
   url: string;
-  /** A highlight from the page, verbatim. Omitted when there is none. */
+  /** The first featured comment, verbatim. Omitted when none was picked. */
   quote?: string | null;
 }) {
   const first = (name || "").split(" ")[0] || "";
