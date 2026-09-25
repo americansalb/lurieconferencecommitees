@@ -34,6 +34,7 @@ import { parseCsv, matchSessionLabel, parseFormTimestamp } from "@/lib/feedback"
 //     ratingColumns?: string[],
 //     commentColumns?: string[],
 //     timestampColumn?: string,
+//     segmentColumn?: string,     // in person or virtual, for the comparison
 //     perPresenterColumns?: { presenterId: string, label: string,
 //                             ratingColumns: string[], commentColumns: string[] }[],
 //   },
@@ -61,6 +62,7 @@ export async function POST(req: Request) {
       ratingColumns?: string[];
       commentColumns?: string[];
       timestampColumn?: string;
+      segmentColumn?: string;
       perPresenterColumns?: { presenterId: string; label: string; ratingColumns: string[]; commentColumns: string[] }[];
     };
   } | null;
@@ -101,6 +103,7 @@ export async function POST(req: Request) {
     importId: string; sourceName: string; sessionLabel: string; presenterId: string | null;
     ratings: Record<string, number>; comments: Record<string, string>;
     data: Record<string, string>; submittedAt: Date | null; questionOrder: string[];
+    segment: string | null;
   }[] = [];
 
   // The order questions appear on the form. Postgres stores ratings and
@@ -127,6 +130,7 @@ export async function POST(req: Request) {
     // Google Forms writes Chicago wall time with no zone; read as UTC it
     // lands five hours early.
     const stamp = tsIdx >= 0 && row[tsIdx] ? parseFormTimestamp(row[tsIdx]) : null;
+    const segment = (m.segmentColumn ? raw[m.segmentColumn] : "")?.slice(0, 120) || null;
 
     const collect = (cols: string[] | undefined, numeric: boolean) => {
       const out: Record<string, number | string> = {};
@@ -152,7 +156,7 @@ export async function POST(req: Request) {
         if (!Object.keys(ratings).length && !Object.keys(comments).length) continue;
         toCreate.push({
           importId, sourceName, sessionLabel: entry.label, presenterId: entry.presenterId,
-          ratings, comments, data: raw, submittedAt: stamp,
+          ratings, comments, data: raw, submittedAt: stamp, segment,
           questionOrder: inFormOrder([...entry.ratingColumns, ...entry.commentColumns]),
         });
       }
@@ -163,7 +167,7 @@ export async function POST(req: Request) {
       toCreate.push({
         importId, sourceName, sessionLabel: wholeForm.talkTitle || wholeForm.name,
         presenterId: wholeForm.presenterId,
-        ratings, comments, data: raw, submittedAt: stamp,
+        ratings, comments, data: raw, submittedAt: stamp, segment,
         questionOrder: inFormOrder([...(m.ratingColumns || []), ...(m.commentColumns || [])]),
       });
     } else {
@@ -174,7 +178,7 @@ export async function POST(req: Request) {
       if (!Object.keys(ratings).length && !Object.keys(comments).length) continue;
       toCreate.push({
         importId, sourceName, sessionLabel: label, presenterId: matchLabel(label),
-        ratings, comments, data: raw, submittedAt: stamp,
+        ratings, comments, data: raw, submittedAt: stamp, segment,
         questionOrder: inFormOrder([...(m.ratingColumns || []), ...(m.commentColumns || [])]),
       });
     }

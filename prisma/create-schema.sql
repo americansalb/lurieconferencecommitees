@@ -148,3 +148,10 @@ CREATE INDEX IF NOT EXISTS "lcc_feedback_responses_sourceName_idx"
 -- Feedback questions in the form's own order, which jsonb does not keep.
 ALTER TABLE "lcc"."lcc_feedback_responses"
   ADD COLUMN IF NOT EXISTS "questionOrder" TEXT[] NOT NULL DEFAULT '{}';
+
+-- How each respondent attended, for the in-person vs online comparison, and
+-- when each presenter was sent their feedback link. Additive.
+ALTER TABLE "lcc"."lcc_feedback_responses"
+  ADD COLUMN IF NOT EXISTS "segment" TEXT;
+ALTER TABLE "lcc"."lcc_presenters"
+  ADD COLUMN IF NOT EXISTS "feedbackSentAt" TIMESTAMP(3);

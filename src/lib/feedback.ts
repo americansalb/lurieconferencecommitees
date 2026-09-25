@@ -289,3 +289,161 @@ export function assemblePresenterFeedback(rows: Row[]): PresenterFeedback {
       .sort((a, b) => rank(a.question) - rank(b.question)),
   };
 }
+
+// --- Highlights -------------------------------------------------------------
+
+/** Questions that ask for criticism. Their answers are never "highlights". */
+const CRITIQUE_QUESTION = /improv|better|change|suggest|dislike|least|wish|missing/i;
+
+export type Highlight = { text: string; score: number };
+
+/**
+ * The comments worth putting at the top of a presenter's page: written by
+ * people who rated the session in the top two points of the scale, from
+ * questions that are not asking what to fix, longest first because the
+ * longer ones say something specific ("spoke clearly, at an appropriate pace,
+ * stayed on topic") where the short ones say "Awesome". Every comment still
+ * appears in the full table; this only chooses what leads.
+ */
+export function pickHighlights(
+  responses: { score: number | null; comments: { question: string; text: string }[] }[],
+  scale: number,
+  limit = 4,
+): Highlight[] {
+  const words = (t: string) => t.trim().split(/\s+/).filter(Boolean).length;
+  const pool = responses
+    .filter((r) => r.score !== null && r.score >= scale - 1)
+    .flatMap((r) => r.comments
+      .filter((c) => !CRITIQUE_QUESTION.test(c.question))
+      .map((c) => ({ text: c.text, score: r.score as number, words: words(c.text) })));
+  const pick = (min: number) => pool
+    .filter((c) => c.words >= min)
+    .sort((a, b) => b.words - a.words)
+    .slice(0, limit);
+  // Prefer comments with some substance; settle for short ones rather than
+  // showing nothing when that is all anyone wrote.
+  const chosen = pick(8).length >= 2 ? pick(8) : pick(3);
+  return chosen.map(({ text, score }) => ({ text, score }));
+}
+
+// --- Everything a presenter's page shows ------------------------------------
+
+/** Groups smaller than this are left out of the in-person/online split. */
+export const MIN_GROUP = 5;
+
+/** The form's own wording is "Virtually" and "In-person in Chicago". */
+export function groupName(raw: string): string {
+  if (/virtual|online|zoom/i.test(raw)) return "Online";
+  if (/in[- ]?person/i.test(raw)) return "In person";
+  return raw;
+}
+
+/**
+ * "None", "N/A", "-": what people type into an optional box to get past it.
+ * Not a comment, so it is not shown or counted as one on the presenter page.
+ * It stays in the CSV, which is the form's answers as given.
+ */
+export function isNonAnswer(text: string): boolean {
+  return /^(none|n\/?a|na|no|nope|nothing|no comments?|not applicable|x|-+|\.+)[.!]*$/i.test(text.trim());
+}
+
+export type PresenterResponse = {
+  n: number;
+  /** Average of this response's ratings on the main scale. */
+  score: number | null;
+  ratings: { question: string; value: number; of: number }[];
+  comments: { question: string; text: string }[];
+};
+
+export type PresenterReport = {
+  responseCount: number;
+  /** The scale most answers used. The headline numbers use it alone. */
+  scale: number;
+  questions: (QuestionStats & { values: number[] })[];
+  /** Every answer on the main scale, pooled. */
+  pooled: number[];
+  overall: number | null;
+  responses: PresenterResponse[];
+  commented: number;
+  /** Distinct comment questions with at least one visible answer. */
+  commentQuestions: number;
+  highlights: Highlight[];
+  /** In person against online, only groups of at least MIN_GROUP answers. */
+  groups: { name: string; values: number[]; mean: number }[];
+};
+
+/**
+ * One presenter's feedback, worked out once, for their page and for the
+ * email that sends them to it, so the two can never disagree.
+ *
+ * Hidden comments are dropped here, before anything is shown or sent.
+ */
+export function buildPresenterReport(rows: (Row & { segment?: string | null })[]): PresenterReport {
+  const view = assemblePresenterFeedback(rows);
+
+  // A 1-to-10 score and a 1-to-5 score cannot be averaged together honestly,
+  // so the headline uses whichever scale most answers were given on.
+  const answersByScale = new Map<number, number>();
+  for (const q of view.questions) answersByScale.set(q.scale, (answersByScale.get(q.scale) || 0) + q.n);
+  const scale = Array.from(answersByScale.entries()).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 5;
+  const onMain = new Set(view.questions.filter((q) => q.scale === scale).map((q) => q.question));
+
+  const numeric = (v: unknown) => (typeof v === "number" ? v : Number(v));
+  const mainValues = (r: Row) =>
+    Object.entries((r.ratings || {}) as Record<string, unknown>)
+      .filter(([q, v]) => onMain.has(q) && Number.isFinite(numeric(v)))
+      .map(([, v]) => numeric(v));
+
+  const pooled = rows.flatMap(mainValues);
+  const overall = pooled.length ? pooled.reduce((a, b) => a + b, 0) / pooled.length : null;
+
+  const questions = view.questions.map((q) => ({
+    ...q,
+    values: rows
+      .map((r) => numeric(((r.ratings || {}) as Record<string, unknown>)[q.question]))
+      .filter((v) => Number.isFinite(v)),
+  }));
+
+  const order = questionOrderOf(rows);
+  const rank = (q: string) => { const i = order.indexOf(q); return i < 0 ? order.length : i; };
+  const responses: PresenterResponse[] = rows.map((r, i) => {
+    const ratings = (r.ratings || {}) as Record<string, unknown>;
+    const hidden = (r.hiddenKeys || {}) as Record<string, unknown>;
+    const mine = mainValues(r);
+    return {
+      n: i + 1,
+      score: mine.length ? mine.reduce((a, b) => a + b, 0) / mine.length : null,
+      ratings: view.questions
+        .filter((q) => ratings[q.question] != null && Number.isFinite(numeric(ratings[q.question])))
+        .map((q) => ({ question: q.question, value: numeric(ratings[q.question]), of: q.scale })),
+      comments: Object.entries((r.comments || {}) as Record<string, unknown>)
+        .filter(([q, t]) => !hidden[q] && typeof t === "string" && t.trim() && !isNonAnswer(t))
+        .map(([q, t]) => ({ question: q, text: (t as string).trim() }))
+        .sort((a, b) => rank(a.question) - rank(b.question)),
+    };
+  });
+
+  const byGroup = new Map<string, number[]>();
+  for (const r of rows) {
+    if (!r.segment) continue;
+    const g = groupName(r.segment);
+    byGroup.set(g, [...(byGroup.get(g) || []), ...mainValues(r)]);
+  }
+  const groups = Array.from(byGroup.entries())
+    .filter(([, v]) => v.length >= MIN_GROUP)
+    .map(([name, v]) => ({ name, values: v, mean: v.reduce((a, b) => a + b, 0) / v.length }))
+    .sort((a, b) => b.values.length - a.values.length);
+
+  return {
+    responseCount: rows.length,
+    scale,
+    questions,
+    pooled,
+    overall,
+    responses,
+    commented: responses.filter((r) => r.comments.length > 0).length,
+    commentQuestions: new Set(responses.flatMap((r) => r.comments.map((c) => c.question))).size,
+    highlights: pickHighlights(responses, scale),
+    groups: groups.length >= 2 ? groups : [],
+  };
+}

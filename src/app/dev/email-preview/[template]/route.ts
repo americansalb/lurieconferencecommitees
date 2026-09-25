@@ -21,6 +21,7 @@ import {
   plainCommunityInviteEmail,
   virtualAttendeeInfoEmail,
   presenterHonorariumRequestEmail,
+  presenterFeedbackEmail,
   aslPaymentRequestEmail,
   tourReminderEmail,
 } from "@/lib/mail-templates";
@@ -174,6 +175,14 @@ export async function GET(
         fullName: "Robyn Castillo",
         invoiceEmail: "invoice@aalb.org",
         replyToEmail: "contact@aalb.org",
+      });
+      break;
+    case "presenter-feedback":
+      html = presenterFeedbackEmail({
+        name: "Michael Mule",
+        talkTitle: "Lessons from the Department of Justice's Language Access Enforcement",
+        url: `${base}/feedback/demo-token`,
+        quote: "This presentation was very enlightening. Thank you for working so hard for the LEP community.",
       });
       break;
     case "honorarium-request":

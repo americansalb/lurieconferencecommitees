@@ -4958,6 +4958,65 @@ export function presenterHonorariumRequestEmail({
   );
 }
 
+// Sending a presenter their attendee feedback.
+//
+// No numbers in the email. A 6 out of 10 arriving cold in an inbox is a
+// different thing from the same 6 on a page that also shows what people
+// liked, and the page is where the context is. What the email carries instead
+// is one real comment from somebody who rated the session at the top of the
+// scale, word for word, when there is one: a reason to click that is true.
+export function presenterFeedbackEmail({
+  name,
+  talkTitle,
+  url,
+  quote,
+}: {
+  name: string;
+  talkTitle: string | null;
+  url: string;
+  /** A highlight from the page, verbatim. Omitted when there is none. */
+  quote?: string | null;
+}) {
+  const first = (name || "").split(" ")[0] || "";
+  const signer = (process.env.ATTENDEE_SIGNER_NAME || "Kevin Thakkar").trim();
+  const signerName = escapeHtml(signer.includes(",") ? signer.slice(0, signer.indexOf(",")).trim() : signer);
+  const signerTitle = escapeHtml(signer.includes(",") ? signer.slice(signer.indexOf(",") + 1).trim() : "");
+  const session = talkTitle ? `<strong>${escapeHtml(talkTitle)}</strong>` : "your session";
+
+  return shell(
+    `
+    <h1 style="font-size:23px;font-weight:800;margin:0 0 14px 0;letter-spacing:-0.01em;">${addressed("Your feedback is in", first)}</h1>
+    <p style="font-size:15px;line-height:1.75;color:${TEXT};margin:0 0 14px 0;">
+      The attendee feedback forms from the 2026 Lurie Children&rsquo;s and AALB Conference are in, and
+      we have put everything people said about ${session} on one page for you: how they rated it, what
+      they wrote, and every response in full.
+    </p>
+    ${quote ? `
+    ${sectionHeading("From one of your attendees")}
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 4px 0;">
+      <tr><td style="border-left:3px solid ${TEAL};padding:4px 0 4px 18px;font-size:16px;line-height:1.7;color:${TEXT};">
+        &ldquo;${escapeHtml(quote)}&rdquo;
+      </td></tr>
+    </table>` : ""}
+    ${button(url, "See your feedback")}
+    <p style="font-size:15px;line-height:1.75;color:${TEXT};margin:0 0 14px 0;">
+      The page is private to your link, and you can download the responses as a spreadsheet from it if
+      you would like to keep a copy. Attendee names and email addresses are not included.
+    </p>
+    <p style="font-size:15px;line-height:1.75;color:${TEXT};margin:0 0 0 0;">
+      Thank you for presenting. If you have any questions about the feedback, reply to this email.
+    </p>
+    <p style="font-size:15px;line-height:1.75;color:${TEXT};margin:22px 0 0 0;">
+      With thanks,<br/>
+      <strong>${signerName}</strong>${signerTitle ? `<br/><span style="color:${MUTED};font-size:13.5px;">${signerTitle}</span>` : ""}
+    </p>
+  `,
+    talkTitle
+      ? `What attendees said about ${escapeHtml(talkTitle)}.`
+      : "What attendees said about your session."
+  );
+}
+
 // The post-conference note to an ASL interpreter: thank you, and where should
 // the payment go.
 //

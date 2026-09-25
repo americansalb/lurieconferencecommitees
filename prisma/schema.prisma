@@ -382,7 +382,9 @@ model Presenter {
   // The feedback share page's own token, distinct from the portal token so a
   // shared feedback link never opens the portal (honorarium, personal data)
   // and can be revoked without cutting the presenter off from their portal.
-  feedbackToken String? @unique
+  feedbackToken  String?   @unique
+  /// When their feedback link was emailed, or marked as sent by hand.
+  feedbackSentAt DateTime?
 
   events   PresenterEvent[]
   slide    PresenterSlide?
@@ -474,6 +476,10 @@ model FeedbackResponse {
   /// ratings and comments as jsonb, which re-sorts object keys, so without this
   /// "What could be improved?" can come out ahead of "What did you like?".
   questionOrder String[]   @default([])
+  /// How they attended ("In-person in Chicago", "Virtually"), when the form
+  /// asked. Only ever shown pooled, and only for groups big enough that no
+  /// single answer can be picked out.
+  segment       String?
   submittedAt   DateTime?
   importedAt    DateTime   @default(now())
 

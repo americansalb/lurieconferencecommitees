@@ -1,108 +1,131 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { assemblePresenterFeedback, questionOrderOf, type QuestionStats } from "@/lib/feedback";
+import { buildPresenterReport, type QuestionStats } from "@/lib/feedback";
+import ResponseTable from "./ResponseTable";
 
 // A presenter's feedback page, behind its own share token.
 //
-// Four layers, read top to bottom: the headline (one overall number, the
-// response count, the share in the top two points), each question as a chart, what
-// people wrote, and then every response as it came in. Someone who wants the
-// gist stops after the first screen; someone who wants the raw data has all
-// of it without downloading anything.
+// Written to be read, not scanned like a dashboard. In order:
+//   1. One sentence saying how it went, beside the average.
+//   2. How the ratings fell, as one chart.
+//   3. In the room against online, when the form asked and both groups are
+//      big enough that no single answer can be picked out.
+//   4. The best comments, from people who rated it at the top of the scale.
+//   5. Every response, filterable, including the critical ones.
 //
 // Their own numbers only. No conference average and no ranking, by decision;
 // comparisons live on the admin page.
 //
 // A comment hidden by the team is simply absent, everywhere on this page: the
 // response it belonged to still counts and still shows its ratings, and
-// nothing marks the place it would have been. A response left with nothing
-// visible reads as one that gave no ratings, which is what it now is.
+// nothing marks the place it would have been.
 
 export const dynamic = "force-dynamic";
 
-const TEAL = "#0E5566";
-const BLUE = "#0066B3";
+// One hue, three steps: the top of the scale, one below, everything else.
+// Ordered light to dark so the tones read as "more" without a legend, and the
+// counts are printed so nothing depends on telling the steps apart.
+const TOP = "#0E5566";
+const NEXT = "#5AA3B3";
+const REST = "#CBD5E1";
 
 function fmt(n: number, digits = 2): string {
   return n.toFixed(digits).replace(/\.?0+$/, "");
 }
 
-/** "4 or 5" on a five-point question, "9 or 10" on a ten-point one. */
-function topTwo(scale: number): string {
-  return `${scale - 1} or ${scale}`;
+function pct(part: number, whole: number): string {
+  return `${whole ? Math.round((part / whole) * 100) : 0}%`;
 }
 
-function Dots({ value, of, compact }: { value: number; of: number; compact?: boolean }) {
-  if (of > 5 || compact) {
-    return <span className="text-[13px] font-bold text-slate-800 tabular-nums">{fmt(value, 1)}<span className="text-slate-400 font-medium">/{of}</span></span>;
-  }
-  const full = Math.round(value);
+function tone(value: number, scale: number): string {
+  return value >= scale ? TOP : value >= scale - 1 ? NEXT : REST;
+}
+
+function people(n: number): string {
+  return `${n} ${n === 1 ? "person" : "people"}`;
+}
+
+function Legend({ scale }: { scale: number }) {
+  const items = [
+    { color: TOP, label: String(scale) },
+    { color: NEXT, label: String(scale - 1) },
+    { color: REST, label: `${scale - 2} or lower` },
+  ];
   return (
-    <span className="inline-flex items-center gap-1" aria-label={`${value} out of ${of}`}>
-      {Array.from({ length: of }, (_, i) => (
-        <span
-          key={i}
-          className="w-2.5 h-2.5 rounded-full"
-          style={{ background: i < full ? `linear-gradient(135deg, ${TEAL}, ${BLUE})` : "#E2E8F0" }}
-        />
+    <div className="flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-slate-500">
+      {items.map((i) => (
+        <span key={i.label} className="inline-flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-sm" style={{ background: i.color }} />
+          {i.label}
+        </span>
       ))}
-      <span className="ml-1.5 text-[13px] font-bold text-slate-800 tabular-nums">{value}</span>
-    </span>
-  );
-}
-
-function Tile({ label, value, sub }: { label: string; value: string; sub?: string }) {
-  return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-4">
-      <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">{label}</div>
-      <div className="mt-1 text-[32px] leading-none font-bold text-slate-900 tabular-nums">{value}</div>
-      {sub && <div className="mt-1.5 text-[12.5px] text-slate-500">{sub}</div>}
     </div>
   );
 }
 
-function QuestionCard({ q }: { q: QuestionStats }) {
-  const of = q.scale;
-  const rows: { value: number; count: number }[] = [];
-  for (let v = of; v >= 1; v -= 1) {
-    rows.push({ value: v, count: q.distribution.find((d) => d.value === v)?.count || 0 });
-  }
+/** Every rating on the scale as a column, counts on the caps. */
+function Distribution({ values, scale }: { values: number[]; scale: number }) {
+  const counts = Array.from({ length: scale }, (_, i) => values.filter((v) => Math.round(v) === i + 1).length);
+  const max = Math.max(1, ...counts);
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-      <h3 className="text-[15px] font-bold text-slate-900 leading-snug">{q.question}</h3>
-      <div className="mt-3 flex items-end gap-3 flex-wrap">
-        <div className="text-[40px] leading-none font-bold tabular-nums" style={{ color: TEAL }}>{fmt(q.mean)}</div>
-        <div className="pb-1 text-[13px] text-slate-500">
-          average out of {of}
-          {" "}&middot; <strong className="text-slate-700">{Math.round(q.topBox * 100)}%</strong> rated {topTwo(of)}
-        </div>
-      </div>
-      <div className="mt-5 space-y-1.5">
-        {rows.map((d) => {
-          const pct = q.n ? d.count / q.n : 0;
+    <div role="img" aria-label={counts.map((c, i) => `${c} rated ${i + 1}`).join(", ")}>
+      <div className="flex items-end gap-2 sm:gap-3 h-44 border-b border-slate-200">
+        {counts.map((c, i) => {
+          const v = i + 1;
           return (
-            <div key={d.value} className="flex items-center gap-3">
-              <span className="w-5 text-right text-[12px] font-bold text-slate-500 tabular-nums">{d.value}</span>
-              <div className="flex-1 h-6 rounded-md bg-slate-100 overflow-hidden">
-                {d.count > 0 && (
-                  <div className="h-full rounded-md"
-                       style={{ width: `${Math.max(3, Math.round(pct * 100))}%`, background: `linear-gradient(90deg, ${TEAL}, ${BLUE})` }} />
-                )}
-              </div>
-              <span className="w-20 text-[12px] text-slate-500 tabular-nums">
-                {d.count} <span className="text-slate-400">({Math.round(pct * 100)}%)</span>
-              </span>
+            <div key={v} className="flex-1 flex flex-col items-center justify-end h-full"
+                 title={`${c} rated it ${v} (${pct(c, values.length)})`}>
+              {c > 0 && <span className="text-[12px] text-slate-600 tabular-nums mb-1">{c}</span>}
+              <div className="w-full max-w-[24px] rounded-t"
+                   style={{ height: c ? `${Math.max(2, (c / max) * 100)}%` : 0, background: tone(v, scale) }} />
             </div>
           );
         })}
       </div>
-      <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap gap-x-5 gap-y-1 text-[12px] text-slate-500">
-        <span>{q.n} answer{q.n === 1 ? "" : "s"}</span>
-        <span>median {fmt(q.median)}</span>
-        {q.sd !== null && <span>spread {fmt(q.sd)}</span>}
-        {q.ci95 && (
-          <span>likely range {fmt(Math.max(1, q.ci95.low))} to {fmt(Math.min(of, q.ci95.high))}</span>
-        )}
+      <div className="flex gap-2 sm:gap-3 mt-1.5">
+        {counts.map((_, i) => (
+          <div key={i} className="flex-1 text-center text-[11.5px] text-slate-400 tabular-nums">{i + 1}</div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** One row's share at the top, one below, and the rest, as a single bar. */
+function SplitBar({ values, scale }: { values: number[]; scale: number }) {
+  const top = values.filter((v) => v >= scale).length;
+  const next = values.filter((v) => v >= scale - 1 && v < scale).length;
+  const rest = values.length - top - next;
+  const parts = [
+    { n: top, color: TOP, label: `${top} rated ${scale}` },
+    { n: next, color: NEXT, label: `${next} rated ${scale - 1}` },
+    { n: rest, color: REST, label: `${rest} rated ${scale - 2} or lower` },
+  ].filter((p) => p.n > 0);
+  return (
+    <div className="flex h-3 w-full gap-[2px]">
+      {parts.map((p, i) => (
+        <div key={i} title={p.label}
+             className={`h-full ${i === 0 ? "rounded-l" : ""} ${i === parts.length - 1 ? "rounded-r" : ""}`}
+             style={{ width: `${(p.n / values.length) * 100}%`, background: p.color }} />
+      ))}
+    </div>
+  );
+}
+
+function QuestionRow({ q }: { q: QuestionStats & { values: number[] } }) {
+  return (
+    <div className="py-4 grid gap-2 sm:grid-cols-[1fr_220px] sm:items-center sm:gap-6">
+      <div>
+        <div className="text-[14px] text-slate-800">{q.question}</div>
+        <div className="text-[12px] text-slate-500 mt-0.5">
+          {people(q.n)} answered &middot; {pct(q.topBox * q.n, q.n)} rated it {q.scale - 1} or {q.scale}
+        </div>
+      </div>
+      <div className="flex items-center gap-3">
+        <span className="w-12 text-right text-[15px] font-semibold text-slate-900 tabular-nums">
+          {fmt(q.mean, 1)}<span className="text-[12px] font-normal text-slate-400">/{q.scale}</span>
+        </span>
+        <div className="flex-1"><SplitBar values={q.values} scale={q.scale} /></div>
       </div>
     </div>
   );
@@ -118,228 +141,166 @@ export default async function FeedbackPage({ params }: { params: { token: string
   const rows = await prisma.feedbackResponse.findMany({
     where: { presenterId: presenter.id },
     orderBy: [{ submittedAt: "asc" }, { importedAt: "asc" }],
-    select: { id: true, ratings: true, comments: true, hiddenKeys: true, submittedAt: true, questionOrder: true },
+    select: {
+      id: true, ratings: true, comments: true, hiddenKeys: true,
+      submittedAt: true, questionOrder: true, segment: true,
+    },
   });
-  const view = assemblePresenterFeedback(rows);
+  const report = buildPresenterReport(rows);
+  const { scale, pooled, overall, questions, responses, commented, highlights, groups } = report;
   const first = presenter.name.split(" ")[0] || presenter.name;
+  const singleQuestion = questions.length === 1;
+  const perfect = pooled.filter((v) => v >= scale).length;
+  const topTwo = pooled.filter((v) => v >= scale - 1).length;
 
-  // The headline: every answer on the form's main scale pooled, so a question
-  // answered by more people weighs more, which is what an overall rating
-  // should mean. The main scale is whichever most answers used; a 1-to-10
-  // score and a 1-to-5 score cannot be averaged together honestly.
-  const answersByScale = new Map<number, number>();
-  for (const q of view.questions) answersByScale.set(q.scale, (answersByScale.get(q.scale) || 0) + q.n);
-  const mainScale = Array.from(answersByScale.entries()).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 5;
-  const mixedScales = answersByScale.size > 1;
-  const onMain = new Set(view.questions.filter((q) => q.scale === mainScale).map((q) => q.question));
-  const pooled: number[] = [];
-  for (const r of rows) {
-    for (const [q, v] of Object.entries((r.ratings || {}) as Record<string, unknown>)) {
-      const n = typeof v === "number" ? v : Number(v);
-      if (onMain.has(q) && Number.isFinite(n)) pooled.push(n);
-    }
-  }
-  const overall = pooled.length ? pooled.reduce((a, b) => a + b, 0) / pooled.length : null;
-  const topBox = pooled.length ? pooled.filter((v) => v >= mainScale - 1).length / pooled.length : null;
-  const commentCount = view.comments.reduce((a, c) => a + c.entries.length, 0);
+  // The headline, in words. "113 of them gave it a perfect 10" when that is
+  // most people; the share in the top two points when it is not, so the
+  // sentence stays true without turning into a verdict.
+  const n = report.responseCount;
+  const lead = !pooled.length
+    ? `${n} ${n === 1 ? "attendee" : "attendees"} left written feedback on your session.`
+    : singleQuestion && perfect / pooled.length >= 0.5
+    ? `${n} ${n === 1 ? "attendee" : "attendees"} rated your session, and ${perfect} of them gave it a perfect ${scale}.`
+    : singleQuestion
+    ? `${n} ${n === 1 ? "attendee" : "attendees"} rated your session, and ${pct(topTwo, pooled.length)} of them gave it a ${scale - 1} or ${scale}.`
+    : `${n} ${n === 1 ? "attendee" : "attendees"} gave feedback on your session, and ${pct(topTwo, pooled.length)} of their ratings were ${scale - 1} or ${scale}.`;
 
-  // Every response, in order, with hidden comments already gone. Questions run
-  // in the order the form asked them, same as the charts above.
-  const formOrder = questionOrderOf(rows);
-  const rank = (q: string) => { const i = formOrder.indexOf(q); return i < 0 ? formOrder.length : i; };
-  const questionOrder = view.questions.map((q) => q.question);
-  const scaleByQuestion = new Map(view.questions.map((q) => [q.question, q.scale]));
-  const responses = rows.map((r, i) => {
-    const ratings = (r.ratings || {}) as Record<string, unknown>;
-    const hidden = (r.hiddenKeys || {}) as Record<string, unknown>;
-    const comments = Object.entries((r.comments || {}) as Record<string, unknown>)
-      .filter(([q, t]) => !hidden[q] && typeof t === "string" && t.trim())
-      .map(([q, t]) => ({ question: q, text: (t as string).trim() }))
-      .sort((a, b) => rank(a.question) - rank(b.question));
-    return {
-      n: i + 1,
-      ratings: questionOrder
-        .filter((q) => ratings[q] != null && Number.isFinite(Number(ratings[q])))
-        .map((q) => ({ question: q, value: Number(ratings[q]), of: scaleByQuestion.get(q) || 5 })),
-      comments,
-    };
-  });
-
-  // A one-question form gets a narrower table: the question is said once in
-  // the chart above instead of on every line.
-  const singleQuestion = view.questions.length === 1;
-  // Comment headings only earn their place when there is more than one kind.
-  const labelComments = view.comments.length > 1;
+  const H2 = "text-[19px] font-semibold text-slate-900 tracking-tight";
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header style={{ background: `linear-gradient(135deg, ${TEAL} 0%, #0B4A5C 45%, ${BLUE} 100%)` }}>
-        <div className="max-w-4xl mx-auto px-5 pt-10 pb-20">
-          <div className="text-[11px] font-bold tracking-[0.22em] uppercase text-white/70">
-            2026 Lurie Children&rsquo;s &amp; AALB Conference
+    <div className="min-h-screen bg-[#FAFAF9] text-slate-800">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6">
+        <header className="pt-10 sm:pt-14 pb-8 border-b border-slate-200">
+          <div className="flex items-center justify-between gap-4 text-[12.5px] text-slate-500">
+            <span>2026 Lurie Children&rsquo;s &amp; AALB Conference &middot; Attendee feedback</span>
+            {n > 0 && (
+              <a href={`/api/feedback/${params.token}`} className="shrink-0 font-semibold text-[#0E5566] hover:underline">
+                Download CSV
+              </a>
+            )}
           </div>
-          <h1 className="text-[34px] sm:text-[40px] font-bold text-white tracking-tight mt-2 leading-tight">
-            Your attendee feedback
+          <h1 className="mt-4 text-[28px] sm:text-[34px] leading-[1.15] font-semibold tracking-tight text-slate-900">
+            {presenter.talkTitle || "Your session"}
           </h1>
-          {presenter.talkTitle && (
-            <p className="text-[17px] text-white/90 mt-2 font-medium">{presenter.talkTitle}</p>
-          )}
-          <p className="text-[14px] text-white/70 mt-3 max-w-2xl leading-relaxed">
-            Thank you for presenting, {first}. Here is everything attendees told us about your session:
-            every rating and every comment. This page is private to your link.
-          </p>
-        </div>
-      </header>
+          <p className="mt-2 text-[15px] text-slate-500">{presenter.name}</p>
+        </header>
 
-      <main className="max-w-4xl mx-auto px-5 -mt-12 pb-16">
-        {view.responseCount === 0 ? (
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-10 text-center text-slate-500">
-            Feedback is still being collected. Check back soon.
-          </div>
+        {n === 0 ? (
+          <p className="py-16 text-center text-slate-500">Feedback is still being collected. Check back soon.</p>
         ) : (
-          <>
-            <div className="grid gap-3 sm:grid-cols-3">
-              <Tile
-                label="Overall rating"
-                value={overall !== null ? fmt(overall) : "–"}
-                sub={overall !== null
-                  ? `average out of ${mainScale}${onMain.size > 1 ? `, across every ${mixedScales ? `1-to-${mainScale} ` : ""}question` : ""}`
-                  : undefined}
-              />
-              <Tile
-                label="Responses"
-                value={String(view.responseCount)}
-                sub={`${commentCount} written comment${commentCount === 1 ? "" : "s"}`}
-              />
-              <Tile
-                label={`Rated ${topTwo(mainScale)}`}
-                value={topBox !== null ? `${Math.round(topBox * 100)}%` : "–"}
-                sub="of all ratings you received"
-              />
-            </div>
-
-            <nav className="sticky top-0 z-10 mt-6 -mx-5 px-5 py-2.5 bg-slate-50/90 backdrop-blur border-b border-slate-200/70">
-              <div className="flex items-center gap-1.5 flex-wrap text-[13px] font-semibold">
-                <a href="#ratings" className="px-3 py-1.5 rounded-lg text-slate-600 hover:bg-white hover:text-slate-900">Ratings</a>
-                {commentCount > 0 && (
-                  <a href="#comments" className="px-3 py-1.5 rounded-lg text-slate-600 hover:bg-white hover:text-slate-900">Comments</a>
-                )}
-                <a href="#responses" className="px-3 py-1.5 rounded-lg text-slate-600 hover:bg-white hover:text-slate-900">Every response</a>
-                <a href={`/api/feedback/${params.token}`}
-                   className="ml-auto px-3 py-1.5 rounded-lg text-white"
-                   style={{ background: `linear-gradient(90deg, ${TEAL}, ${BLUE})` }}>
-                  Download spreadsheet (CSV)
-                </a>
-              </div>
-            </nav>
-
-            <section id="ratings" className="scroll-mt-16 mt-8">
-              <h2 className="text-[22px] font-bold text-slate-900">How attendees rated it</h2>
-              <p className="text-[13px] text-slate-500 mt-1">Each question on its own, with how the answers spread across the scale.</p>
-              <div className={`mt-4 grid gap-4 ${singleQuestion ? "" : "md:grid-cols-2"}`}>
-                {view.questions.map((q) => <QuestionCard key={q.question} q={q} />)}
+          <main className="pb-16">
+            <section className="py-10 grid gap-6 sm:grid-cols-[auto_1fr] sm:gap-10 sm:items-center">
+              {overall !== null && (
+                <div>
+                  <div className="text-[64px] leading-none font-semibold tracking-tight text-slate-900">
+                    {fmt(overall, 1)}<span className="text-[24px] font-normal text-slate-400 ml-1">/{scale}</span>
+                  </div>
+                  <div className="mt-2 text-[12.5px] text-slate-500">average rating</div>
+                </div>
+              )}
+              <div>
+                <p className="text-[19px] sm:text-[21px] leading-snug text-slate-900">
+                  Thank you, {first}. {lead}
+                </p>
+                <p className="mt-3 text-[14px] text-slate-500 leading-relaxed">
+                  {commented > 0
+                    ? `${people(commented)} also wrote a comment. `
+                    : ""}
+                  Everything here comes from the attendee feedback form, and this page is private to your link.
+                </p>
               </div>
             </section>
 
-            {commentCount > 0 && (
-              <section id="comments" className="scroll-mt-16 mt-12">
-                <h2 className="text-[22px] font-bold text-slate-900">What they wrote</h2>
-                <p className="text-[13px] text-slate-500 mt-1">In their words, unedited, grouped by question.</p>
-                {view.comments.map((c) => (
-                  <div key={c.question} className="mt-6">
-                    <h3 className="text-[12px] font-bold uppercase tracking-[0.12em] text-slate-400">{c.question}</h3>
-                    <div className="mt-2.5 space-y-2.5">
-                      {c.entries.map((text, i) => (
-                        <blockquote key={i}
-                                    className="bg-white rounded-xl border border-slate-200 pl-5 pr-4 py-3.5 text-[14.5px] leading-relaxed text-slate-700 relative overflow-hidden">
-                          <span className="absolute left-0 top-0 bottom-0 w-1" style={{ background: `linear-gradient(180deg, ${TEAL}, ${BLUE})` }} />
-                          {text}
-                        </blockquote>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+            {pooled.length > 0 && (
+              <section className="py-8 border-t border-slate-200">
+                <div className="flex items-baseline justify-between gap-4 flex-wrap">
+                  <h2 className={H2}>How the ratings fell</h2>
+                  <Legend scale={scale} />
+                </div>
+                <p className="mt-1 text-[13px] text-slate-500">
+                  {singleQuestion
+                    ? <>Answers to &ldquo;{questions[0].question}&rdquo; Each column is how many people gave that score.</>
+                    : `Every answer on the 1-to-${scale} questions, pooled. Each column is how many answers gave that score.`}
+                </p>
+                <div className="mt-6"><Distribution values={pooled} scale={scale} /></div>
               </section>
             )}
 
-            <section id="responses" className="scroll-mt-16 mt-12">
-              <h2 className="text-[22px] font-bold text-slate-900">Every response</h2>
-              <p className="text-[13px] text-slate-500 mt-1">
-                The raw data, one attendee at a time, in the order they came in. Names and email addresses are never shared here.
-              </p>
-              {/* One line per response, like the spreadsheet it came from. Cards
-                  were fine at ten responses and a wall at a hundred and forty.
-                  No submission time: it adds nothing for the presenter, and a
-                  time can point to who wrote it ("the one who left early"). */}
-              <div className="mt-4 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                {singleQuestion && (
-                  <div className="px-5 py-2.5 bg-slate-50/80 border-b border-slate-100 flex gap-4 text-[10.5px] font-bold uppercase tracking-[0.1em] text-slate-400">
-                    <span className="w-8 shrink-0">#</span>
-                    <span className="w-16 shrink-0">Rating</span>
-                    <span>Comment</span>
-                  </div>
-                )}
-                <div className="divide-y divide-slate-100">
-                  {responses.map((r) => (
-                    <div key={r.n} className={`px-5 ${singleQuestion ? "py-2" : "py-3"} flex gap-4 items-start`}>
-                      <span className="w-8 shrink-0 pt-0.5 text-[12px] font-bold text-slate-400 tabular-nums">{r.n}</span>
-                      {singleQuestion ? (
-                        <span className="w-16 shrink-0 pt-0.5">
-                          {r.ratings[0] ? <Dots value={r.ratings[0].value} of={r.ratings[0].of} compact /> : <span className="text-[12.5px] text-slate-300">&ndash;</span>}
-                        </span>
-                      ) : null}
-                      <div className="flex-1 min-w-0">
-                        {!singleQuestion && (r.ratings.length > 0 ? (
-                          <div className="flex flex-wrap gap-x-5 gap-y-1.5">
-                            {r.ratings.map((x) => (
-                              <span key={x.question} className="inline-flex items-center gap-2">
-                                <span className="text-[12px] text-slate-500">{x.question}</span>
-                                <Dots value={x.value} of={x.of} />
-                              </span>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="text-[12.5px] text-slate-400">No ratings given.</div>
-                        ))}
-                        {r.comments.length > 0 && (
-                          <div className={`${singleQuestion ? "" : "mt-2 "}space-y-1.5`}>
-                            {r.comments.map((c) => (
-                              <p key={c.question} className="text-[14px] leading-relaxed text-slate-700">
-                                {labelComments && (
-                                  <span className="block text-[10.5px] font-bold uppercase tracking-[0.1em] text-slate-400">{c.question}</span>
-                                )}
-                                {c.text}
-                              </p>
-                            ))}
-                          </div>
-                        )}
+            {groups.length >= 2 && (
+              <section className="py-8 border-t border-slate-200">
+                <h2 className={H2}>In the room and online</h2>
+                <p className="mt-1 text-[13px] text-slate-500">The same ratings, split by how people attended.</p>
+                <div className="mt-5 space-y-5">
+                  {groups.map((g) => {
+                    const gTop = g.values.filter((v) => v >= scale).length;
+                    return (
+                      <div key={g.name}>
+                        <div className="flex items-baseline justify-between gap-3">
+                          <span className="text-[14px] font-semibold text-slate-800">{g.name}</span>
+                          <span className="text-[13px] text-slate-500">
+                            <span className="font-semibold text-slate-900 tabular-nums">{fmt(g.mean, 1)}</span>/{scale} average
+                            {" "}&middot; {gTop} of {g.values.length} gave a {scale}
+                          </span>
+                        </div>
+                        <div className="mt-2"><SplitBar values={g.values} scale={scale} /></div>
                       </div>
-                    </div>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+
+            {!singleQuestion && questions.length > 0 && (
+              <section className="py-8 border-t border-slate-200">
+                <div className="flex items-baseline justify-between gap-4 flex-wrap">
+                  <h2 className={H2}>Question by question</h2>
+                  <Legend scale={scale} />
+                </div>
+                <div className="mt-2 divide-y divide-slate-100">
+                  {questions.map((q) => <QuestionRow key={q.question} q={q} />)}
+                </div>
+              </section>
+            )}
+
+            {highlights.length > 0 && (
+              <section className="py-8 border-t border-slate-200">
+                <h2 className={H2}>What stood out</h2>
+                <p className="mt-1 text-[13px] text-slate-500">
+                  From attendees who rated your session {scale - 1} or {scale}. Every comment is in the table below.
+                </p>
+                <div className="mt-6 grid gap-x-10 gap-y-8 sm:grid-cols-2">
+                  {highlights.map((h, i) => (
+                    <figure key={i} className="border-l-2 pl-5" style={{ borderColor: TOP }}>
+                      <blockquote className="text-[16.5px] leading-relaxed text-slate-800">
+                        &ldquo;{h.text}&rdquo;
+                      </blockquote>
+                      <figcaption className="mt-2.5 text-[12.5px] text-slate-500">
+                        Rated {fmt(h.score, 1)}/{scale}
+                      </figcaption>
+                    </figure>
                   ))}
                 </div>
-              </div>
-            </section>
+              </section>
+            )}
 
-            <section className="mt-12 rounded-2xl border border-slate-200 bg-white px-6 py-5">
-              <h2 className="text-[14px] font-bold text-slate-900">About these numbers</h2>
-              <dl className="mt-3 grid gap-3 sm:grid-cols-2 text-[12.5px] leading-relaxed text-slate-600">
-                <div><dt className="font-semibold text-slate-800">Average and median</dt>
-                  <dd>The average adds every rating and divides; the median is the middle rating. When they sit close together, the room broadly agreed.</dd></div>
-                <div><dt className="font-semibold text-slate-800">Spread</dt>
-                  <dd>How far ratings usually sit from the average. The smaller it is, the more people agreed; a larger number means opinions were more mixed.</dd></div>
-                <div><dt className="font-semibold text-slate-800">Likely range</dt>
-                  <dd>With a limited number of answers, the true average could be a little higher or lower. This is where it most likely sits, with 95% confidence. Fewer answers give a wider range.</dd></div>
-                <div><dt className="font-semibold text-slate-800">Rated {topTwo(mainScale)}</dt>
-                  <dd>The share of ratings at the top of the scale. Often the clearest single signal of how a session landed.</dd></div>
-              </dl>
+            <section className="py-8 border-t border-slate-200">
+              <h2 className={H2}>Every response</h2>
+              <p className="mt-1 mb-4 text-[13px] text-slate-500">
+                Numbered in the order they came in. Names and email addresses are never shared here.
+              </p>
+              <ResponseTable
+                rows={responses}
+                singleQuestion={singleQuestion}
+                labelComments={report.commentQuestions > 1}
+              />
             </section>
-          </>
+          </main>
         )}
 
-        <p className="mt-10 text-center text-[12px] text-slate-400">
+        <footer className="py-10 border-t border-slate-200 text-center text-[12.5px] text-slate-400">
           Questions about this page? Write to contact@aalb.org.
-        </p>
-      </main>
+        </footer>
+      </div>
     </div>
   );
 }

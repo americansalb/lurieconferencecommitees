@@ -2,9 +2,8 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { randomBytes } from "crypto";
 import { assemblePresenterFeedback, questionOrderOf, questionStats } from "@/lib/feedback";
-import { appUrl } from "@/lib/presenters";
+import { feedbackUrlFor } from "@/lib/feedback-links";
 
 // The admin's view of all feedback, and the two corrections they can make:
 // assigning unmatched rows to a presenter, and hiding a comment from a share
@@ -14,15 +13,6 @@ export const dynamic = "force-dynamic";
 
 function isAdmin(role?: string) {
   return role === "admin" || role === "developer";
-}
-
-/** The presenter's share token, minted on first use. */
-async function feedbackTokenFor(presenterId: string): Promise<string> {
-  const p = await prisma.presenter.findUnique({ where: { id: presenterId }, select: { feedbackToken: true } });
-  if (p?.feedbackToken) return p.feedbackToken;
-  const token = randomBytes(18).toString("base64url");
-  await prisma.presenter.update({ where: { id: presenterId }, data: { feedbackToken: token } });
-  return token;
 }
 
 export async function GET() {
@@ -40,7 +30,7 @@ export async function GET() {
   });
   const presenters = await prisma.presenter.findMany({
     where: { status: "confirmed" },
-    select: { id: true, name: true, talkTitle: true },
+    select: { id: true, name: true, talkTitle: true, email: true, feedbackSentAt: true },
     orderBy: { name: "asc" },
   });
 
@@ -101,7 +91,7 @@ export async function GET() {
   const links: Record<string, string> = {};
   for (const p of presenters) {
     if (byPresenter.find((b) => b.presenter.id === p.id && b.responseCount > 0)) {
-      links[p.id] = `${appUrl()}/feedback/${await feedbackTokenFor(p.id)}`;
+      links[p.id] = await feedbackUrlFor(p.id);
     }
   }
 

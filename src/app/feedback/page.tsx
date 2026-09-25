@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import {
   MessageSquareText, Upload, Loader2, RefreshCw, Copy, Check, EyeOff, Eye,
-  ChevronDown, ChevronRight, ExternalLink, FileSpreadsheet, Trash2, BarChart3,
+  ChevronDown, ChevronRight, ExternalLink, FileSpreadsheet, Trash2, BarChart3, Send,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
@@ -19,14 +19,14 @@ import { parseCsv, matchSessionLabel, type QuestionStats } from "@/lib/feedback"
 // copy each presenter's share link. Cross-presenter comparison lives on this
 // page and nowhere else.
 
-type ColumnRole = "ignore" | "session" | "rating" | "comment" | "timestamp";
+type ColumnRole = "ignore" | "session" | "rating" | "comment" | "timestamp" | "segment";
 
 type AdminData = {
   total: number;
   overall: { responses: number; sessionsRated: number; questions: QuestionStats[] };
   sources: { name: string; responses: number; matched: number }[];
   byPresenter: {
-    presenter: { id: string; name: string; talkTitle: string | null };
+    presenter: { id: string; name: string; talkTitle: string | null; email: string; feedbackSentAt: string | null };
     responseCount: number;
     questions: QuestionStats[];
     commentRows: { responseId: string; question: string; text: string; hidden: boolean }[];
@@ -61,6 +61,60 @@ export default function FeedbackAdminPage() {
   const [importing, setImporting] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+
+  // Emailing presenters their feedback. Ticks start on everyone with feedback
+  // who has not been sent it yet; the team adjusts from there.
+  const [ticks, setTicks] = useState<Set<string>>(new Set());
+  const [ticksReady, setTicksReady] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sendNote, setSendNote] = useState<string | null>(null);
+  useEffect(() => {
+    if (!data || ticksReady) return;
+    setTicks(new Set(data.byPresenter.filter((b) => b.responseCount > 0 && !b.presenter.feedbackSentAt).map((b) => b.presenter.id)));
+    setTicksReady(true);
+  }, [data, ticksReady]);
+
+  async function sendFeedback(ids: string[], test: boolean) {
+    if (!ids.length) { setSendNote("Tick at least one presenter."); return; }
+    if (!test) {
+      const names = ids.map((id) => data?.byPresenter.find((b) => b.presenter.id === id)?.presenter.name).filter(Boolean);
+      const who = names.length === 1 ? names[0] : `${names.length} presenters`;
+      if (!window.confirm(`Email ${who} their feedback link now?`)) return;
+    }
+    setSending(true);
+    setSendNote(null);
+    try {
+      const res = await fetch("/api/feedback/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids, mode: "all", test }),
+      });
+      const j = await res.json();
+      if (!res.ok) setSendNote(j.error || "Sending failed.");
+      else if (test) setSendNote(j.sent ? `Test sent to ${j.recipients[0]}.` : "Nothing to send a test of.");
+      else {
+        setSendNote(`Sent ${j.sent}${j.failed ? `, ${j.failed} failed (${j.failures.map((f: { email: string }) => f.email).join(", ")})` : ""}.`);
+        setTicks((t) => { const next = new Set(t); ids.forEach((id) => next.delete(id)); return next; });
+        await load();
+      }
+    } catch {
+      setSendNote("Network error while sending.");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  async function markSent(id: string, sent: boolean) {
+    const res = await fetch("/api/feedback/send", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, sent }),
+    });
+    if (res.ok) {
+      if (sent) setTicks((t) => { const next = new Set(t); next.delete(id); return next; });
+      await load();
+    }
+  }
 
   // Reading the file here rather than posting it keeps the import route on one
   // JSON shape, and the mapping step needs the text in hand anyway.
@@ -141,6 +195,9 @@ export default function FeedbackAdminPage() {
       // Multiple choice repeats itself ("CCHI", "Yes, I agree"); comments do not.
       const repetitive = values.length >= 5 && new Set(values).size / values.length < 0.5;
       if (hl.includes("timestamp") || hl === "date") guess[h] = "timestamp";
+      // "Did you attend in-person or virtually?": lets the presenter see how
+      // the session landed in the room against online.
+      else if (/in[- ]person|virtual/.test(hl) && h.length < 100 && !Object.values(guess).includes("segment")) guess[h] = "segment";
       // Identity columns are never shared onward, whatever they contain.
       else if (/\b(name|email|e-mail|phone)\b/.test(hl)) guess[h] = "ignore";
       // Short headers only: a long consent statement that mentions "each
@@ -167,15 +224,16 @@ export default function FeedbackAdminPage() {
       const ratingColumns = header.filter((h) => roles[h] === "rating");
       const commentColumns = header.filter((h) => roles[h] === "comment");
       const timestampColumn = header.find((h) => roles[h] === "timestamp");
+      const segmentColumn = header.find((h) => roles[h] === "segment");
       let mapping: Record<string, unknown>;
       if (mode === "onePresenter") {
         if (!formPresenter) { setNote("Choose whose session this form is for."); setImporting(false); return; }
         if (!ratingColumns.length && !commentColumns.length) { setNote("Mark at least one column as a rating or a comment."); setImporting(false); return; }
-        mapping = { presenterId: formPresenter, ratingColumns, commentColumns, timestampColumn };
+        mapping = { presenterId: formPresenter, ratingColumns, commentColumns, timestampColumn, segmentColumn };
       } else if (mode === "perRow") {
         const sessionColumn = header.find((h) => roles[h] === "session");
         if (!sessionColumn) { setNote("Mark one column as the session name first."); setImporting(false); return; }
-        mapping = { sessionColumn, ratingColumns, commentColumns, timestampColumn };
+        mapping = { sessionColumn, ratingColumns, commentColumns, timestampColumn, segmentColumn };
       } else {
         // Group each mapped column under the presenter the admin assigned it to.
         const byPresenter = new Map<string, { ratingColumns: string[]; commentColumns: string[] }>();
@@ -188,6 +246,7 @@ export default function FeedbackAdminPage() {
         const names = new Map((data?.byPresenter || []).map((b) => [b.presenter.id, b.presenter.talkTitle || b.presenter.name]));
         mapping = {
           timestampColumn,
+          segmentColumn,
           perPresenterColumns: Array.from(byPresenter.entries()).map(([presenterId, cols]) => ({
             presenterId, label: names.get(presenterId) || presenterId, ...cols,
           })),
@@ -381,6 +440,7 @@ export default function FeedbackAdminPage() {
                             <option value="rating">Rating (number)</option>
                             <option value="comment">Comment</option>
                             <option value="timestamp">Timestamp</option>
+                            <option value="segment">In person or virtual</option>
                           </select>
                           {mode === "perColumn" && (roles[h] === "rating" || roles[h] === "comment") && (
                             <select
@@ -516,6 +576,84 @@ export default function FeedbackAdminPage() {
                   </div>
                 )}
 
+                {data.byPresenter.some((b) => b.responseCount > 0) && (() => {
+                  const withFeedback = data.byPresenter.filter((b) => b.responseCount > 0);
+                  const ticked = withFeedback.filter((b) => ticks.has(b.presenter.id)).map((b) => b.presenter.id);
+                  const setAll = (ids: string[]) => setTicks(new Set(ids));
+                  const small = "px-2.5 py-1 rounded-lg text-[11.5px] font-bold border border-slate-200 bg-white text-slate-600 hover:border-slate-300 disabled:opacity-50";
+                  return (
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+                      <div className="flex items-center gap-2 text-sm font-bold text-slate-900">
+                        <Send className="w-4 h-4 text-[#0E5566]" /> Email presenters their feedback
+                      </div>
+                      <p className="text-xs text-slate-500 mt-1 max-w-2xl">
+                        Each presenter gets their own private link, plus one comment from somebody who rated them at
+                        the top of the scale when there is one. No scores go in the email. Replies come to contact@aalb.org.
+                      </p>
+                      <div className="mt-3 flex items-center gap-2 flex-wrap">
+                        <button className={small} onClick={() => setAll(withFeedback.filter((b) => !b.presenter.feedbackSentAt).map((b) => b.presenter.id))}>
+                          Tick everyone not sent yet
+                        </button>
+                        <button className={small} onClick={() => setAll(withFeedback.map((b) => b.presenter.id))}>Tick everyone</button>
+                        <button className={small} onClick={() => setAll([])}>Untick all</button>
+                      </div>
+                      <div className="mt-3 rounded-xl border border-slate-200 divide-y divide-slate-100 max-h-96 overflow-y-auto">
+                        {withFeedback.map((b) => {
+                          const sentAt = b.presenter.feedbackSentAt;
+                          return (
+                            <div key={b.presenter.id} className="px-3 py-2 flex items-center gap-3">
+                              <input
+                                type="checkbox"
+                                checked={ticks.has(b.presenter.id)}
+                                onChange={(e) => setTicks((t) => {
+                                  const next = new Set(t);
+                                  if (e.target.checked) next.add(b.presenter.id); else next.delete(b.presenter.id);
+                                  return next;
+                                })}
+                                className="accent-[#0E5566]"
+                              />
+                              <div className="min-w-0 flex-1">
+                                <div className="text-[13px] font-semibold text-slate-800 truncate">{b.presenter.name}</div>
+                                <div className="text-[11.5px] text-slate-500 truncate">
+                                  {b.responseCount} response{b.responseCount === 1 ? "" : "s"} &middot; {b.presenter.email}
+                                </div>
+                              </div>
+                              <span className={`shrink-0 text-[11.5px] font-semibold ${sentAt ? "text-emerald-700" : "text-slate-400"}`}>
+                                {sentAt ? `Sent ${new Date(sentAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}` : "Not sent"}
+                              </span>
+                              <button className={small} disabled={sending} onClick={() => void sendFeedback([b.presenter.id], false)}>
+                                {sentAt ? "Send again" : "Send"}
+                              </button>
+                              <button className={small} onClick={() => void markSent(b.presenter.id, !sentAt)}>
+                                {sentAt ? "Unmark" : "Mark sent"}
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div className="mt-3 flex items-center gap-2 flex-wrap">
+                        <button
+                          disabled={sending || !ticked.length}
+                          onClick={() => void sendFeedback(ticked, true)}
+                          className="px-3.5 py-2 rounded-xl text-[12.5px] font-bold border border-slate-200 bg-white text-slate-700 disabled:opacity-50"
+                        >
+                          Send me a test
+                        </button>
+                        <button
+                          disabled={sending || !ticked.length}
+                          onClick={() => void sendFeedback(ticked, false)}
+                          className="px-4 py-2 rounded-xl text-[12.5px] font-bold text-white inline-flex items-center gap-1.5 disabled:opacity-50 bg-gradient-to-r from-[#0E5566] to-[#0066B3]"
+                        >
+                          {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                          Send to {ticked.length} ticked
+                        </button>
+                        <span className="text-[11.5px] text-slate-400">The test uses the first ticked presenter&rsquo;s real link and comment.</span>
+                      </div>
+                      {sendNote && <div className="mt-2 text-[12.5px] font-semibold text-[#0E5566]">{sendNote}</div>}
+                    </div>
+                  );
+                })()}
+
                 {data.byPresenter.filter((b) => b.responseCount > 0).map((b) => {
                   const isOpen = open === b.presenter.id;
                   const overall = b.questions.length
@@ -530,7 +668,12 @@ export default function FeedbackAdminPage() {
                           <div className="text-[12px] text-slate-500 truncate">{b.presenter.talkTitle || ""}</div>
                         </div>
                         <div className="shrink-0 text-right">
-                          <div className="text-[15px] font-bold text-slate-800">{overall !== null ? overall.toFixed(2) : "–"}</div>
+                          <div className="text-[15px] font-bold text-slate-800">
+                            {overall !== null ? overall.toFixed(2) : "–"}
+                            {overall !== null && b.questions.every((q) => q.scale === b.questions[0].scale) && (
+                              <span className="text-[11px] font-normal text-slate-400">/{b.questions[0].scale}</span>
+                            )}
+                          </div>
                           <div className="text-[11px] text-slate-400">{b.responseCount} response{b.responseCount === 1 ? "" : "s"}</div>
                         </div>
                       </button>
