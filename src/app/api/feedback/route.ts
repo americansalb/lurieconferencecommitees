@@ -3,7 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import {
-  assemblePresenterFeedback, buildPresenterReport, isNonAnswer, questionOrderOf, questionStats, suggestHighlights,
+  assemblePresenterFeedback, buildPresenterReport, hiddenFromPresenter, isNonAnswer, offTopicReason,
+  questionOrderOf, questionStats, suggestHighlights,
 } from "@/lib/feedback";
 import { feedbackUrlFor } from "@/lib/feedback-links";
 
@@ -27,7 +28,7 @@ export async function GET() {
     orderBy: { importedAt: "asc" },
     select: {
       id: true, sessionLabel: true, presenterId: true, sourceName: true,
-      ratings: true, comments: true, hiddenKeys: true, featuredKeys: true, submittedAt: true, questionOrder: true,
+      ratings: true, comments: true, hiddenKeys: true, featuredKeys: true, keptKeys: true, submittedAt: true, questionOrder: true,
     },
   });
   const presenters = await prisma.presenter.findMany({
@@ -47,15 +48,26 @@ export async function GET() {
     const commentRows = mine.flatMap((r, i) => {
       const hidden = (r.hiddenKeys || {}) as Record<string, unknown>;
       const picks = (r.featuredKeys || {}) as Record<string, { at?: string } | undefined>;
+      const kept = (r.keptKeys || {}) as Record<string, unknown>;
       return Object.entries((r.comments || {}) as Record<string, string>)
         .filter(([, text]) => (text || "").trim() && !isNonAnswer(text))
-        .map(([question, text]) => ({
-          responseId: r.id, question, text,
-          hidden: !!hidden[question],
-          featured: !!picks[question] && !hidden[question],
-          featuredAt: picks[question]?.at || "",
-          suggested: suggested.has(`${i + 1}|${question}`),
-        }));
+        .map(([question, text]) => {
+          const offTopic = offTopicReason(text);
+          return {
+            responseId: r.id, question, text,
+            // Hidden by hand.
+            hidden: !!hidden[question],
+            // Why it looks like it is not about the speaker, if it does.
+            offTopic,
+            // Flagged, and the team chose to show it to the speaker anyway.
+            kept: !!kept[question],
+            // Flagged and therefore off their page, with no one having said otherwise.
+            autoHidden: !!offTopic && !kept[question] && !hidden[question],
+            featured: !!picks[question] && !hiddenFromPresenter(r, question, text),
+            featuredAt: picks[question]?.at || "",
+            suggested: suggested.has(`${i + 1}|${question}`),
+          };
+        });
     })
       // Picked first, in the order picked; then suggestions; then the rest.
       .sort((a, b) =>
@@ -68,6 +80,16 @@ export async function GET() {
       emailQuote: report.highlights[0]?.text || null,
     };
   });
+
+  // Every comment flagged as not about the speaker, across all presenters,
+  // for the team to check: kept off the speaker's page unless approved here.
+  const offTopic = byPresenter.flatMap((b) => b.commentRows
+    .filter((c) => c.offTopic && !c.hidden)
+    .map((c) => ({
+      presenterId: b.presenter.id, presenterName: b.presenter.name,
+      responseId: c.responseId, question: c.question, text: c.text,
+      reason: c.offTopic as string, kept: c.kept,
+    })));
 
   // What could not be matched, grouped by label so one assignment fixes the
   // whole group.
@@ -123,6 +145,7 @@ export async function GET() {
     sources,
     byPresenter,
     unmatched,
+    offTopic,
     links,
   });
 }
@@ -149,6 +172,7 @@ export async function PATCH(req: Request) {
     assign?: { sessionLabel: string; presenterId: string | null };
     hide?: { responseId: string; question: string; hidden: boolean };
     feature?: { responseId: string; question: string; featured: boolean };
+    keep?: { responseId: string; question: string; kept: boolean };
   };
 
   if (body.assign) {
@@ -187,11 +211,12 @@ export async function PATCH(req: Request) {
   if (body.feature) {
     const { responseId, question, featured } = body.feature;
     const row = await prisma.feedbackResponse.findUnique({
-      where: { id: responseId }, select: { hiddenKeys: true, featuredKeys: true },
+      where: { id: responseId }, select: { hiddenKeys: true, featuredKeys: true, keptKeys: true, comments: true },
     });
     if (!row) return NextResponse.json({ error: "No such response." }, { status: 404 });
-    if (featured && ((row.hiddenKeys || {}) as Record<string, unknown>)[question]) {
-      return NextResponse.json({ error: "That comment is hidden. Show it again before featuring it." }, { status: 400 });
+    const text = String(((row.comments || {}) as Record<string, unknown>)[question] || "");
+    if (featured && hiddenFromPresenter(row, question, text)) {
+      return NextResponse.json({ error: "That comment is hidden from the speaker. Show it again before featuring it." }, { status: 400 });
     }
     const picks = { ...((row.featuredKeys || {}) as Record<string, unknown>) };
     if (featured) picks[question] = { by: email, at: new Date().toISOString() };
@@ -200,5 +225,23 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ ok: true });
   }
 
-  return NextResponse.json({ error: "Send assign, hide or feature." }, { status: 400 });
+  if (body.keep) {
+    // Show a flagged comment to the speaker after all, or take that back.
+    const { responseId, question, kept } = body.keep;
+    const row = await prisma.feedbackResponse.findUnique({
+      where: { id: responseId }, select: { keptKeys: true, featuredKeys: true },
+    });
+    if (!row) return NextResponse.json({ error: "No such response." }, { status: 404 });
+    const keeps = { ...((row.keptKeys || {}) as Record<string, unknown>) };
+    const picks = { ...((row.featuredKeys || {}) as Record<string, unknown>) };
+    if (kept) keeps[question] = { by: email, at: new Date().toISOString() };
+    else { delete keeps[question]; delete picks[question]; }
+    await prisma.feedbackResponse.update({
+      where: { id: responseId },
+      data: { keptKeys: keeps as object, featuredKeys: picks as object },
+    });
+    return NextResponse.json({ ok: true });
+  }
+
+  return NextResponse.json({ error: "Send assign, hide, feature or keep." }, { status: 400 });
 }

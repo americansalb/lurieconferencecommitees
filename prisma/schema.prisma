@@ -474,6 +474,10 @@ model FeedbackResponse {
   /// page: {label: {by, at}}. The earliest chosen one also goes in the email.
   /// Nothing is featured automatically.
   featuredKeys  Json       @default("{}")
+  /// Comments flagged as not about the speaker (CEUs, Zoom, the room) are kept
+  /// off the presenter's page automatically. A key here means the team read it
+  /// and decided the speaker should see it after all: {label: {by, at}}.
+  keptKeys      Json       @default("{}")
   /// The raw row as imported, untouched.
   data          Json
   /// The mapped questions in the form's own column order. Postgres stores

@@ -82,7 +82,7 @@ export async function POST(req: Request) {
       const rows = await prisma.feedbackResponse.findMany({
         where: { presenterId: p.id },
         orderBy: [{ submittedAt: "asc" }, { importedAt: "asc" }],
-        select: { id: true, ratings: true, comments: true, hiddenKeys: true, featuredKeys: true, questionOrder: true, segment: true },
+        select: { id: true, ratings: true, comments: true, hiddenKeys: true, featuredKeys: true, keptKeys: true, questionOrder: true, segment: true },
       });
       const report = buildPresenterReport(rows);
       const first = (p.name || "").split(" ")[0] || "";

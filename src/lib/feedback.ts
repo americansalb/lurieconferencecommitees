@@ -253,6 +253,7 @@ type Row = {
   comments: unknown;
   hiddenKeys: unknown;
   featuredKeys?: unknown;
+  keptKeys?: unknown;
   questionOrder?: string[] | null;
 };
 
@@ -267,12 +268,11 @@ export function assemblePresenterFeedback(rows: Row[]): PresenterFeedback {
       if (!byQuestion.has(q)) byQuestion.set(q, []);
       byQuestion.get(q)!.push(num);
     }
-    const hidden = (r.hiddenKeys || {}) as Record<string, unknown>;
     const comments = (r.comments || {}) as Record<string, unknown>;
     for (const [q, val] of Object.entries(comments)) {
       const text = typeof val === "string" ? val.trim() : "";
       if (!text) continue;
-      if (hidden[q]) continue;
+      if (hiddenFromPresenter(r, q, text)) continue;
       if (!commentMap.has(q)) commentMap.set(q, []);
       commentMap.get(q)!.push(text);
     }
@@ -304,11 +304,48 @@ export function assemblePresenterFeedback(rows: Row[]): PresenterFeedback {
 /** Questions that ask for criticism. Their answers are never suggested. */
 const CRITIQUE_QUESTION = /improv|better|change|suggest|dislike|least|wish|missing/i;
 
+// --- Comments that are not about the speaker ------------------------------
+//
+// An attendee's complaint about CEU credits or the Zoom audio is for us, not
+// the presenter, and it is not theirs to read on a page about their talk. These
+// are kept off the presenter's page (and out of their CSV and email)
+// automatically. Their rating still counts; the comment is simply blank for
+// them. The team sees every one on the admin page and can show any of them to
+// the speaker after all.
+//
+// Phrased narrowly on purpose, and checked against real comments: "no room for
+// questions", "sound advice" and "the link between policy and practice" are
+// about the talk and are left alone.
+
+const OFF_TOPIC: [string, RegExp][] = [
+  ["CEUs or certificates", /\bceu'?s?\b|continuing education|credit hours?|\bcredits\b|\bcertificates?\b/i],
+  ["The camera or attendance rule", /\bcameras?\b|\battendance\b|\b90\s?%|\bverif(y|ied|ication)\b/i],
+  ["Zoom, audio or connection", /\bzoom\b|\baudio\b|internet|connection (issues?|problems?|dropped|was)|breakout rooms?|\bplatform\b|\blagg?(ing|ed|y)\b|\bfroze\b|\bmuted?\b/i],
+  ["Registration, payment or email", /registr|sign(?:ed|ing)? up (for|to) the conference|\brefunds?\b|\bpayment\b|\binvoices?\b|\breceipts?\b|(sent|send) (you )?an email|\bemailed you\b/i],
+  ["The venue or food", /the room (was|is|felt)|room temperature|\bcold\b|freezing|\bparking\b|\blunch\b|\bcoffee\b|\bbreakfast\b|\bseating\b|\bbathrooms?\b|\brestrooms?\b|\bhotel\b|\belevators?\b|wi-?fi/i],
+  ["The schedule", /\bschedule\b|\bagenda\b|break (was|time)/i],
+  ["A note to the organizers", /\borganizers?\b|\baalb\b|next year'?s conference|please (address|fix|send me|let me know)/i],
+];
+
+/** Why a comment looks like it is not about the speaker, or null if it is. */
+export function offTopicReason(text: string): string | null {
+  return OFF_TOPIC.find(([, re]) => re.test(text))?.[0] ?? null;
+}
+
 /**
- * Comments about the event rather than the talk: credits, the camera rule,
- * Zoom, the room. Those are for us, not the presenter, whatever the rating.
+ * Whether the presenter should not see this comment: hidden by hand, or
+ * flagged as off-topic and not since approved by the team.
  */
-const ABOUT_THE_EVENT = /\bceus?\b|\bcredits?\b|\bcertificates?\b|camera|zoom|\blinks?\b|registr|sign(?:ed|ing)? up|refund|audio|sound|wi-?fi|parking|lunch|food|\broom\b|temperature|email(?:ed)?\b|schedule|attendance|recording/i;
+export function hiddenFromPresenter(
+  r: { hiddenKeys?: unknown; keptKeys?: unknown },
+  question: string,
+  text: string,
+): boolean {
+  if (((r.hiddenKeys || {}) as Record<string, unknown>)[question]) return true;
+  if (((r.keptKeys || {}) as Record<string, unknown>)[question]) return false;
+  return offTopicReason(text) !== null;
+}
+
 
 export type Highlight = { text: string; score: number | null };
 
@@ -327,7 +364,7 @@ export function suggestHighlights(
   const pool = responses
     .filter((r) => r.score !== null && r.score >= scale - 1)
     .flatMap((r) => r.comments
-      .filter((c) => !CRITIQUE_QUESTION.test(c.question) && !ABOUT_THE_EVENT.test(c.text) && words(c.text) >= 4)
+      .filter((c) => !CRITIQUE_QUESTION.test(c.question) && !offTopicReason(c.text) && words(c.text) >= 4)
       .map((c) => ({ key: `${r.n}|${c.question}`, words: words(c.text) })));
   return new Set(pool.sort((a, b) => b.words - a.words).slice(0, limit).map((c) => c.key));
 }
@@ -426,7 +463,6 @@ export function buildPresenterReport(rows: (Row & { segment?: string | null })[]
   const rank = (q: string) => { const i = order.indexOf(q); return i < 0 ? order.length : i; };
   const responses: PresenterResponse[] = rows.map((r, i) => {
     const ratings = (r.ratings || {}) as Record<string, unknown>;
-    const hidden = (r.hiddenKeys || {}) as Record<string, unknown>;
     const mine = mainValues(r);
     return {
       n: i + 1,
@@ -435,7 +471,7 @@ export function buildPresenterReport(rows: (Row & { segment?: string | null })[]
         .filter((q) => ratings[q.question] != null && Number.isFinite(numeric(ratings[q.question])))
         .map((q) => ({ question: q.question, value: numeric(ratings[q.question]), of: q.scale })),
       comments: Object.entries((r.comments || {}) as Record<string, unknown>)
-        .filter(([q, t]) => !hidden[q] && typeof t === "string" && t.trim() && !isNonAnswer(t))
+        .filter(([q, t]) => typeof t === "string" && t.trim() && !isNonAnswer(t) && !hiddenFromPresenter(r, q, t))
         .map(([q, t]) => ({ question: q, text: (t as string).trim() }))
         .sort((a, b) => rank(a.question) - rank(b.question)),
     };

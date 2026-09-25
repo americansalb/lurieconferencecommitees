@@ -159,3 +159,7 @@ ALTER TABLE "lcc"."lcc_presenters"
 -- Comments the team hand-picks to feature on a presenter's page. Additive.
 ALTER TABLE "lcc"."lcc_feedback_responses"
   ADD COLUMN IF NOT EXISTS "featuredKeys" JSONB NOT NULL DEFAULT '{}';
+
+-- Off-topic comments the team chose to show the speaker anyway. Additive.
+ALTER TABLE "lcc"."lcc_feedback_responses"
+  ADD COLUMN IF NOT EXISTS "keptKeys" JSONB NOT NULL DEFAULT '{}';

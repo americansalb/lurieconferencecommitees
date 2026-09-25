@@ -32,11 +32,17 @@ type AdminData = {
     commentRows: {
       responseId: string; question: string; text: string;
       hidden: boolean; featured: boolean; suggested: boolean;
+      /** Why it looks like it is not about the speaker, if it does. */
+      offTopic: string | null; kept: boolean; autoHidden: boolean;
     }[];
     /** The comment their email will quote: the first one featured. */
     emailQuote: string | null;
   }[];
   unmatched: { label: string; count: number }[];
+  offTopic: {
+    presenterId: string; presenterName: string; responseId: string;
+    question: string; text: string; reason: string; kept: boolean;
+  }[];
   links: Record<string, string>;
 };
 
@@ -292,6 +298,15 @@ export default function FeedbackAdminPage() {
     if (res.ok) await load();
   }
 
+  async function setKept(responseId: string, question: string, kept: boolean) {
+    const res = await fetch("/api/feedback", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ keep: { responseId, question, kept } }),
+    });
+    if (res.ok) await load();
+  }
+
   async function toggleFeature(responseId: string, question: string, featured: boolean) {
     const res = await fetch("/api/feedback", {
       method: "PATCH",
@@ -508,6 +523,45 @@ export default function FeedbackAdminPage() {
                 )}
               </div>
             )}
+
+            {data && data.offTopic.length > 0 && (() => {
+              const held = data.offTopic.filter((c) => !c.kept);
+              const shown = data.offTopic.filter((c) => c.kept);
+              return (
+                <div className="mt-6 bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+                  <div className="text-sm font-bold text-slate-900">
+                    Comments not about the speaker
+                    <span className="ml-2 text-[12px] font-semibold text-slate-400">{held.length} kept from speakers</span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1 max-w-3xl">
+                    Comments about CEUs, the camera rule, Zoom, the room, registration and the like are left off the
+                    speaker&rsquo;s page, their spreadsheet and their email automatically. Their rating still counts;
+                    the comment is just blank for them, with nothing to say it was there. If one is actually about the
+                    talk, show it to the speaker.
+                  </p>
+                  <div className="mt-3 rounded-xl border border-slate-200 divide-y divide-slate-100 max-h-[28rem] overflow-y-auto">
+                    {[...held, ...shown].map((c) => (
+                      <div key={`${c.responseId}-${c.question}`} className={`px-3 py-2.5 flex items-start gap-3 ${c.kept ? "bg-emerald-50/50" : ""}`}>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[11px] text-slate-500 flex items-center gap-1.5 flex-wrap">
+                            <span className="font-semibold text-slate-700">{c.presenterName}</span>
+                            <span className="px-1.5 rounded bg-slate-100 text-slate-600 font-semibold">{c.reason}</span>
+                            {c.kept && <span className="px-1.5 rounded bg-emerald-100 text-emerald-800 font-bold">Shown to speaker</span>}
+                          </div>
+                          <div className="mt-0.5 text-[13px] leading-relaxed text-slate-700">{c.text}</div>
+                        </div>
+                        <button
+                          onClick={() => void setKept(c.responseId, c.question, !c.kept)}
+                          className="shrink-0 px-2.5 py-1 rounded-lg text-[11.5px] font-bold border border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                        >
+                          {c.kept ? "Keep from speaker" : "Show to speaker"}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
 
             {data && data.unmatched.length > 0 && (
               <div className="mt-6 bg-amber-50 rounded-2xl border border-amber-200 p-5">
@@ -751,7 +805,7 @@ export default function FeedbackAdminPage() {
                               {b.commentRows.map((c, i) => (
                                 <div key={`${c.responseId}-${c.question}-${i}`}
                                      className={`flex items-start gap-2 rounded-lg border px-3 py-2 ${
-                                       c.hidden ? "border-rose-200 bg-rose-50/60"
+                                       c.hidden || c.autoHidden ? "border-rose-200 bg-rose-50/60"
                                        : c.featured ? "border-amber-300 bg-amber-50/70"
                                        : "border-slate-150 bg-slate-50/60"}`}>
                                   <div className="flex-1 min-w-0">
@@ -766,10 +820,16 @@ export default function FeedbackAdminPage() {
                                       {!c.featured && !c.hidden && c.suggested && (
                                         <span className="px-1.5 rounded bg-sky-100 text-sky-800 font-bold">Suggested</span>
                                       )}
+                                      {c.autoHidden && (
+                                        <span className="px-1.5 rounded bg-rose-100 text-rose-800 font-bold">Not about the speaker: {c.offTopic}</span>
+                                      )}
+                                      {c.offTopic && c.kept && !c.hidden && (
+                                        <span className="px-1.5 rounded bg-emerald-100 text-emerald-800 font-bold">Flagged, shown anyway</span>
+                                      )}
                                     </div>
-                                    <div className={`text-[13px] leading-relaxed ${c.hidden ? "text-rose-800 line-through" : "text-slate-700"}`}>{c.text}</div>
+                                    <div className={`text-[13px] leading-relaxed ${c.hidden || c.autoHidden ? "text-rose-800 line-through" : "text-slate-700"}`}>{c.text}</div>
                                   </div>
-                                  {!c.hidden && (
+                                  {!c.hidden && !c.autoHidden && (
                                     <button
                                       onClick={() => void toggleFeature(c.responseId, c.question, !c.featured)}
                                       title={c.featured ? "Stop featuring this" : "Feature this on their page"}
@@ -779,11 +839,13 @@ export default function FeedbackAdminPage() {
                                     </button>
                                   )}
                                   <button
-                                    onClick={() => void toggleHide(c.responseId, c.question, !c.hidden)}
-                                    title={c.hidden ? "Show on their page again" : "Hide from their page"}
+                                    onClick={() => void (c.autoHidden
+                                      ? setKept(c.responseId, c.question, true)
+                                      : toggleHide(c.responseId, c.question, !c.hidden))}
+                                    title={c.hidden || c.autoHidden ? "Show on their page again" : "Hide from their page"}
                                     className="shrink-0 p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-white"
                                   >
-                                    {c.hidden ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                                    {c.hidden || c.autoHidden ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
                                   </button>
                                 </div>
                               ))}

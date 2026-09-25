@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { questionOrderOf } from "@/lib/feedback";
+import { hiddenFromPresenter, questionOrderOf } from "@/lib/feedback";
 
 // A presenter's own raw feedback as CSV, behind their share token.
 //
@@ -8,7 +8,7 @@ import { questionOrderOf } from "@/lib/feedback";
 // the untouched spreadsheet row can carry a respondent's name or another
 // session's columns, and neither belongs in a file we hand a presenter.
 // Hidden comments stay hidden here too, or the hide switch would be
-// decorative.
+// decorative, and so do comments flagged as not about the speaker.
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +26,7 @@ export async function GET(_req: Request, { params }: { params: { token: string }
   const rows = await prisma.feedbackResponse.findMany({
     where: { presenterId: presenter.id },
     orderBy: [{ submittedAt: "asc" }, { importedAt: "asc" }],
-    select: { ratings: true, comments: true, hiddenKeys: true, submittedAt: true, questionOrder: true },
+    select: { ratings: true, comments: true, hiddenKeys: true, keptKeys: true, submittedAt: true, questionOrder: true },
   });
 
   // Columns are every question that appears, ratings first, each group in the
@@ -44,11 +44,10 @@ export async function GET(_req: Request, { params }: { params: { token: string }
   rows.forEach((r, i) => {
     const ratings = (r.ratings || {}) as Record<string, number>;
     const comments = (r.comments || {}) as Record<string, string>;
-    const hidden = (r.hiddenKeys || {}) as Record<string, unknown>;
     lines.push([
       String(i + 1),
       ...ratingCols.map((q) => (ratings[q] != null ? String(ratings[q]) : "")),
-      ...commentCols.map((q) => (hidden[q] ? "" : comments[q] || "")),
+      ...commentCols.map((q) => (comments[q] && !hiddenFromPresenter(r, q, comments[q]) ? comments[q] : "")),
     ].map(esc).join(","));
   });
 

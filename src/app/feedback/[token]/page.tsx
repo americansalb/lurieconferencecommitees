@@ -142,7 +142,7 @@ export default async function FeedbackPage({ params }: { params: { token: string
     where: { presenterId: presenter.id },
     orderBy: [{ submittedAt: "asc" }, { importedAt: "asc" }],
     select: {
-      id: true, ratings: true, comments: true, hiddenKeys: true, featuredKeys: true,
+      id: true, ratings: true, comments: true, hiddenKeys: true, featuredKeys: true, keptKeys: true,
       submittedAt: true, questionOrder: true, segment: true,
     },
   });
