@@ -550,6 +550,22 @@ export function tallyChoices(question: string, answers: string[]): ChoiceTally {
 }
 
 /**
+ * A form's name without what every form's name repeats: "13. 2026 Lurie
+ * Children's & AALB Conference - General Conference Feedback (Responses) -
+ * Form Responses 1" reads as "General Conference Feedback".
+ */
+export function formLabel(name: string): string {
+  const short = name
+    .replace(/_/g, " ")
+    .replace(/^\d+\.\s*/, "")
+    .replace(/^2026\s+Lurie Children.?s\s*(?:&|and)?\s*AALB Conference\s*-\s*/i, "")
+    .replace(/\s*\(Responses\)/i, "")
+    .replace(/\s*-\s*Form Responses \d+$/i, "")
+    .trim();
+  return short || name;
+}
+
+/**
  * A session title from a form's file name, for sessions the presenter record
  * cannot name: a panel, whose members each have their own talk title.
  * "13. 2026 Lurie Children's & AALB Conference - Lessons from the Department

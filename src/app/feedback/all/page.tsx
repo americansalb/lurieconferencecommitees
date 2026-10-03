@@ -12,6 +12,7 @@ import { Distribution, Legend, SplitBar, TOP } from "@/components/feedback/Ratin
 import type {
   CompiledComment, CompiledConference, CompiledFeedback, CompiledSession,
 } from "@/lib/feedback-compiled";
+import { formLabel } from "@/lib/feedback";
 
 // Every imported form in one place, for the team: the whole conference first,
 // then each session, with every comment. A side menu jumps anywhere, search
@@ -28,22 +29,6 @@ const FIRST_COMMENTS = 6;
 
 function fmt(n: number, digits = 1): string {
   return n.toFixed(digits).replace(/\.?0+$/, "");
-}
-
-/**
- * A form's name without what every form's name repeats: "13. 2026 Lurie
- * Children's & AALB Conference - General Conference Feedback (Responses) -
- * Form Responses 1" reads as "General Conference Feedback".
- */
-function formLabel(name: string): string {
-  const short = name
-    .replace(/_/g, " ")
-    .replace(/^\d+\.\s*/, "")
-    .replace(/^2026\s+Lurie Children.?s\s*(?:&|and)?\s*AALB Conference\s*-\s*/i, "")
-    .replace(/\s*\(Responses\)/i, "")
-    .replace(/\s*-\s*Form Responses \d+$/i, "")
-    .trim();
-  return short || name;
 }
 
 function pct(share: number | null): string {
