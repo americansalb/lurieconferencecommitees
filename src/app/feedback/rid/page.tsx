@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, Check, Download, FileText, Loader2, MessageSquareText } from "lucide-react";
+import { AlertTriangle, Check, Download, FileText, Link2, Loader2, MessageSquareText, Package } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
 import MobileNav from "@/components/layout/MobileNav";
@@ -11,10 +11,11 @@ import FeedbackTabs from "@/components/feedback/FeedbackTabs";
 import { formLabel } from "@/lib/feedback";
 import type { RidForm, RidReport } from "@/lib/rid-ceu-report";
 
-// The RID CEU list for Vancro, compiled from the session feedback forms: who
-// asked for RID CEUs, at which of the 13 sponsored sessions, in the columns of
-// Vancro's RID CEU Upload Form. The team adds Vancro's Workshop IDs, checks
-// what needs a look, and downloads the file.
+// Everything Vancro asked for, compiled from what the site already holds: who
+// asked for RID CEUs at which of the 13 sponsored sessions (in the columns of
+// Vancro's RID CEU Upload Form), every session's evaluations, and the slides
+// presenters allowed to be shared. The team adds Vancro's Workshop IDs,
+// decides whose slides go, checks what needs a look, and downloads one zip.
 
 const HOW: Record<NonNullable<RidForm["how"]>, string> = {
   chosen: "chosen by hand",
@@ -85,11 +86,19 @@ export default function RidCeuPage() {
     return <div className="min-h-screen flex items-center justify-center text-slate-400"><Loader2 className="w-5 h-5 animate-spin" /></div>;
   }
 
+  // Numbered 1 to 13, the way the forms and the package number them.
+  const numberOf = (key: string | null) => (data ? data.sessions.findIndex((x) => x.key === key) + 1 : 0);
   const sessionName = (key: string | null) => {
     const s = data?.sessions.find((x) => x.key === key);
-    return s ? `Day ${s.day}.${s.n}: ${s.title}` : "Not one of the 13 sessions";
+    return s ? `Session ${numberOf(key)}: ${s.title}` : "Not one of the 13 sessions";
   };
-  const empty = data ? data.sessions.filter((s) => s.people === 0) : [];
+  // A session with nobody in the file is one of three things, and only one of
+  // them is something Vancro can close: no forms at all, someone still owed a
+  // number, or genuinely nobody who asked.
+  const waitingOn = (key: string) => (data?.issues || []).filter((i) => i.kind === "number" && i.sessionKeys.includes(key));
+  const noForms = data ? data.sessions.filter((s) => s.responses === 0) : [];
+  const waiting = data ? data.sessions.filter((s) => s.people === 0 && s.responses > 0 && waitingOn(s.key).length > 0) : [];
+  const empty = data ? data.sessions.filter((s) => s.people === 0 && s.responses > 0 && waitingOn(s.key).length === 0) : [];
   const missingIds = data ? data.sessions.filter((s) => s.people > 0 && !s.workshopId).length : 0;
   const card = "bg-white rounded-2xl border border-slate-200 p-5 sm:p-6";
   const input = "w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#0E5566]/20";
@@ -106,8 +115,9 @@ export default function RidCeuPage() {
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight mt-1">RID CEUs</h1>
             <p className="text-sm text-slate-500 mt-1 max-w-3xl">
-              Everyone who asked for RID CEUs on a session&rsquo;s feedback form, laid out as Vancro&rsquo;s RID CEU
-              Upload Form. Add Vancro&rsquo;s Workshop ID for each session, check what needs a look, then download the file.
+              Everything Vancro asked for, in one download: their RID CEU Upload Form filled in, every session&rsquo;s
+              evaluations with who wrote them, and the slides presenters allowed to be shared. Add Vancro&rsquo;s Workshop
+              IDs, choose whose slides go, then download the package.
             </p>
             <FeedbackTabs active="rid" />
 
@@ -149,17 +159,22 @@ export default function RidCeuPage() {
                       ))}
                     </dl>
                     <div className="flex flex-col items-stretch gap-2">
-                      <a href="/api/feedback/rid-ceu?format=csv"
+                      <a href="/api/feedback/rid-ceu/package"
                          className="inline-flex items-center justify-center gap-1.5 rounded-xl px-3.5 py-2 text-[13px] font-semibold text-white"
                          style={{ background: "#0E5566" }}>
-                        <Download className="w-4 h-4" /> RID CEU Upload Form (CSV)
+                        <Package className="w-4 h-4" /> Download package for Vancro
                       </a>
-                      <a href="/api/feedback/compiled?format=csv"
+                      <a href="/api/feedback/rid-ceu?format=csv"
                          className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-[13px] font-semibold text-slate-700 hover:border-slate-300">
-                        <Download className="w-4 h-4" /> Evaluation results (CSV)
+                        <Download className="w-4 h-4" /> Upload Form only (CSV)
                       </a>
                     </div>
                   </div>
+                  <p className="mt-4 text-[12.5px] text-slate-600 max-w-3xl">
+                    The package is a zip with, in order: an overview of the 13 sessions, the RID CEU Upload Form, an
+                    evaluation file per session (name, how they attended, rating, comments), and the slides for each session
+                    marked to send. A withheld session gets its description and a note that the slides were not released.
+                  </p>
                   {missingIds > 0 && (
                     <p className="mt-4 text-[12.5px] text-slate-600">
                       {missingIds} session{missingIds === 1 ? " has" : "s have"} RID attendees but no Workshop ID yet. Until one
@@ -170,7 +185,26 @@ export default function RidCeuPage() {
                     <div className="mt-3 text-[12.5px] text-slate-600">
                       Nobody asked for RID CEUs at {empty.length} session{empty.length === 1 ? "" : "s"}, which Vancro can close out:
                       <ul className="mt-1 space-y-0.5 text-slate-500">
-                        {empty.map((s) => <li key={s.key}>Day {s.day}.{s.n} &middot; {s.title}</li>)}
+                        {empty.map((s) => <li key={s.key}>Session {numberOf(s.key)} &middot; {s.title}</li>)}
+                      </ul>
+                    </div>
+                  )}
+                  {waiting.length > 0 && (
+                    <div className="mt-3 text-[12.5px] text-slate-600">
+                      Not finished: RID requests waiting on a member number, so do not close {waiting.length === 1 ? "this one" : "these"} yet:
+                      <ul className="mt-1 space-y-0.5 text-slate-500">
+                        {waiting.map((s) => (
+                          <li key={s.key}>Session {numberOf(s.key)} &middot; {s.title} &middot; waiting on {waitingOn(s.key).map((i) => i.name).join(", ")}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {noForms.length > 0 && (
+                    <div className="mt-3 text-[12.5px] text-amber-800">
+                      No feedback form imported for {noForms.length === 1 ? "this session" : "these sessions"}, so its RID requests and
+                      evaluations are unknown. Upload it under Import and manage:
+                      <ul className="mt-1 space-y-0.5">
+                        {noForms.map((s) => <li key={s.key}>Session {numberOf(s.key)} &middot; {s.title}</li>)}
                       </ul>
                     </div>
                   )}
@@ -190,7 +224,9 @@ export default function RidCeuPage() {
                   </div>
                   <p className="mt-1 text-[12.5px] text-slate-500 max-w-3xl">
                     Workshop IDs come from Vancro&rsquo;s approval of each activity. CEUs start at the scheduled length (one
-                    CEU is ten hours, so an hour is 0.1); change any that Vancro approved differently.
+                    CEU is ten hours, so an hour is 0.1); change any that Vancro approved differently. Slides go to Vancro
+                    only where every presenter opted in to continuing education in the portal, which is what authorizes
+                    sending them; change any session by hand.
                   </p>
                   <div className="mt-4 overflow-x-auto">
                     <table className="w-full text-[13px]">
@@ -201,14 +237,14 @@ export default function RidCeuPage() {
                           <th className="py-2 pr-3 font-semibold whitespace-nowrap">Workshop ID</th>
                           <th className="py-2 pr-3 font-semibold">CEUs</th>
                           <th className="py-2 pr-3 font-semibold whitespace-nowrap hidden md:table-cell">Evaluations</th>
-                          <th className="py-2 font-semibold hidden md:table-cell">Slides</th>
+                          <th className="py-2 font-semibold">Slides to Vancro</th>
                         </tr>
                       </thead>
                       <tbody>
                         {data.sessions.map((s) => (
                           <tr key={s.key} className="border-b border-slate-100 align-top">
                             <td className="py-2.5 pr-3 min-w-[16rem]">
-                              <div className="text-[11.5px] text-slate-400">Day {s.day}.{s.n} &middot; {s.date} &middot; {s.time}</div>
+                              <div className="text-[11.5px] text-slate-400">Session {numberOf(s.key)} &middot; {s.date} &middot; {s.time}</div>
                               <div className="font-semibold text-slate-800 leading-snug">{s.title}</div>
                               <div className="text-[11.5px] text-slate-500">{s.who.split("·")[0].trim()}</div>
                             </td>
@@ -225,13 +261,36 @@ export default function RidCeuPage() {
                               <div className="mt-0.5 text-[11px] text-slate-400 whitespace-nowrap">{s.minutes} min</div>
                             </td>
                             <td className="py-2.5 pr-3 tabular-nums text-slate-700 hidden md:table-cell">{s.responses}</td>
-                            <td className="py-2.5 hidden md:table-cell">
-                              {s.slides.length ? s.slides.map((sl) => (
-                                <a key={sl.href} href={sl.href} target="_blank" rel="noopener noreferrer"
-                                   className="flex items-center gap-1 text-[12.5px] text-[#0E5566] hover:underline whitespace-nowrap">
-                                  <FileText className="w-3.5 h-3.5" /> {sl.name}
-                                </a>
-                              )) : <span className="text-[12.5px] text-slate-400">None on file</span>}
+                            <td className="py-2.5 min-w-[13rem]">
+                              <select
+                                value={s.release}
+                                disabled={saving}
+                                onChange={(e) => post({ materials: { [s.key]: e.target.value === s.releaseDefault ? "" : e.target.value } })}
+                                className={`w-full rounded-lg border px-2 py-1.5 text-[12.5px] ${s.release === "send" ? "border-slate-200 bg-white text-slate-700" : "border-amber-200 bg-amber-50 text-amber-900"}`}
+                              >
+                                <option value="send">Send slides{s.releaseDefault === "send" ? "" : " (overridden)"}</option>
+                                <option value="withhold">Withhold, send description{s.releaseDefault === "withhold" ? "" : " (overridden)"}</option>
+                              </select>
+                              <ul className="mt-1.5 space-y-1">
+                                {s.presenters.map((p) => (
+                                  <li key={p.id} className="text-[12px] leading-snug">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      {p.slide ? (
+                                        <a href={p.slide.href} target="_blank" rel="noopener noreferrer"
+                                           className="inline-flex items-center gap-1 text-[#0E5566] hover:underline">
+                                          {p.slide.sizeBytes ? <FileText className="w-3.5 h-3.5" /> : <Link2 className="w-3.5 h-3.5" />} {p.name}
+                                        </a>
+                                      ) : <span className="text-slate-600">{p.name}</span>}
+                                    </div>
+                                    <div className="text-[11px] text-slate-400">
+                                      {p.slide ? (p.slide.sizeBytes ? "Slides on file" : "Link on file") : "No slides on file"}
+                                      {" "}&middot;{" "}
+                                      {p.agreedToCe ? "opted in to CE" : <span className="text-amber-700">did not opt in to CE</span>}
+                                    </div>
+                                  </li>
+                                ))}
+                                {s.presenters.length === 0 && <li className="text-[12px] text-slate-400">No presenter matched</li>}
+                              </ul>
                             </td>
                           </tr>
                         ))}
@@ -245,7 +304,7 @@ export default function RidCeuPage() {
                     <h2 className="text-[18px] font-semibold text-slate-900">Need a look <span className="font-normal text-slate-400">({data.issues.length})</span></h2>
                     <p className="mt-1 text-[12.5px] text-slate-500 max-w-3xl">
                       These people asked for RID CEUs, or may have, but are not in the file because something is missing
-                      or unclear. Each one needs a reply or a fix before Vancro can credit them.
+                      or unclear. Each is one line however many sessions it affects; the numbers are the sessions.
                     </p>
                     <div className="mt-4 overflow-x-auto">
                       <table className="w-full text-[13px]">
@@ -253,7 +312,7 @@ export default function RidCeuPage() {
                           <tr className="text-left text-[11.5px] text-slate-400 border-b border-slate-200">
                             <th className="py-2 pr-3 font-semibold">Person</th>
                             <th className="py-2 pr-3 font-semibold">What is wrong</th>
-                            <th className="py-2 font-semibold">Session</th>
+                            <th className="py-2 font-semibold">Sessions</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -264,8 +323,11 @@ export default function RidCeuPage() {
                                 {i.email && <div className="text-[11.5px] text-slate-500 break-all">{i.email}</div>}
                               </td>
                               <td className="py-2.5 pr-3 text-slate-700">{i.reason}</td>
-                              <td className="py-2.5 text-[12.5px] text-slate-500">
-                                {i.sessionKey ? sessionName(i.sessionKey) : <span title={i.form}>{formLabel(i.form)}</span>}
+                              <td className="py-2.5 text-[12.5px] text-slate-500"
+                                  title={i.sessionKeys.map((k) => sessionName(k)).join("\n") || i.forms.join("\n")}>
+                                {i.sessionKeys.length
+                                  ? i.sessionKeys.map((k) => numberOf(k)).join(", ")
+                                  : i.forms.map(formLabel).join(", ")}
                               </td>
                             </tr>
                           ))}
@@ -354,7 +416,7 @@ export default function RidCeuPage() {
                             <option value="">
                               {f.autoKey ? `Auto: ${sessionName(f.autoKey)}` : f.general ? "Auto: whole conference, no session" : "Auto: not matched"}
                             </option>
-                            {data.sessions.map((s) => <option key={s.key} value={s.key}>Day {s.day}.{s.n}: {s.title}</option>)}
+                            {data.sessions.map((s) => <option key={s.key} value={s.key}>Session {numberOf(s.key)}: {s.title}</option>)}
                             <option value="none">Not one of the 13 sessions</option>
                           </select>
                           {f.how && f.how !== "chosen" && <div className="mt-0.5 text-[11px] text-slate-400">Matched {HOW[f.how]}</div>}

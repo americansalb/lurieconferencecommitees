@@ -1,16 +1,18 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { compileRidCeus, ridUploadCsv, saveRidSettings, type RidSettings } from "@/lib/rid-ceu-report";
-import { VANCRO_SESSIONS } from "@/lib/rid-ceu";
+import { compileRidCeus, saveRidSettings, type RidSettings } from "@/lib/rid-ceu-report";
+import { VANCRO_SESSIONS, uploadCsv } from "@/lib/rid-ceu";
 
 // RID CEUs for Vancro, read from the imported feedback forms.
 //
 // GET                -> the compiled list, how each form was read, and what
 //                       needs a look.
 // GET ?format=csv    -> Vancro's RID CEU Upload Form, filled in.
-// POST { workshopIds?, ceus?, forms? } -> save the team's entries. Admins only,
-//                       like everything else that reads respondents' names.
+// POST { workshopIds?, ceus?, forms?, materials? } -> save the team's entries.
+//                       Admins only, like everything else that reads
+//                       respondents' names. The whole package for Vancro is
+//                       ./package.
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +26,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Admins only" }, { status: 403 });
   }
   if (new URL(req.url).searchParams.get("format") === "csv") {
-    return new NextResponse(await ridUploadCsv(), {
+    return new NextResponse(uploadCsv((await compileRidCeus()).rows), {
       headers: {
         "Content-Type": "text/csv; charset=utf-8",
         "Content-Disposition": `attachment; filename="RID_CEU_Upload_Form.csv"`,
@@ -44,7 +46,7 @@ export async function POST(req: Request) {
   if (!body) return NextResponse.json({ error: "Nothing to save." }, { status: 400 });
 
   const sessionKeys = new Set(VANCRO_SESSIONS.map((s) => s.key));
-  const patch: Partial<RidSettings> = { workshopIds: {}, ceus: {}, forms: {} };
+  const patch: Partial<RidSettings> = { workshopIds: {}, ceus: {}, forms: {}, materials: {} };
   for (const [k, v] of Object.entries(body.workshopIds || {})) {
     if (!sessionKeys.has(k)) continue;
     const val = String(v ?? "").trim();
@@ -63,6 +65,12 @@ export async function POST(req: Request) {
     const val = String(v ?? "").trim();
     if (val && val !== "none" && !sessionKeys.has(val)) continue;
     patch.forms![k.slice(0, 600)] = val;
+  }
+  for (const [k, v] of Object.entries(body.materials || {})) {
+    if (!sessionKeys.has(k)) continue;
+    const val = String(v ?? "").trim();
+    if (val && val !== "send" && val !== "withhold") continue;
+    patch.materials![k] = val;
   }
   await saveRidSettings(patch);
   return NextResponse.json(await compileRidCeus());

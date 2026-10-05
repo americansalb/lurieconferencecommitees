@@ -170,6 +170,11 @@ export type FormColumns = {
   /** A number box that is not only for RID: "Certification number", or one
    *  shared by several bodies ("Your RID, CCHI or NBCMI number"). */
   genericNumber: string | null;
+  /** "Which certifying body or bodies will you be requesting CEU credits
+   *  for?" When someone answered it, it decides: it is the question people
+   *  read carefully, where a yes/no about RID gets a "Yes" from medical
+   *  interpreters who need CEUs of any kind. */
+  bodies: string | null;
   lastName: string | null;
   firstName: string | null;
   fullName: string | null;
@@ -192,10 +197,11 @@ export function findColumns(headers: string[]): FormColumns {
     && !/presenter|speaker|session|organi[sz]ation|employer|company|agency|institution|hospital|user\s*name|e-?mail|workshop|title/i.test(h),
   ) || null;
   const email = headers.find((h) => /e-?mail/i.test(h)) || null;
-  return { ridNumber, asked, genericNumber, lastName, firstName, fullName, email };
+  const bodies = headers.find((h) => !RID.test(h) && /certifying bod|(credentialing|accrediting|certifying) (body|bodies|organi[sz]ation)|which bod(y|ies)/i.test(h)) || null;
+  return { ridNumber, asked, genericNumber, lastName, firstName, fullName, email, bodies };
 }
 
-const NON_ANSWER = /^(none|n\/?a|na|no|nope|not applicable|pending|-+|\.+|x|0+)[.!]*$/i;
+const NON_ANSWER = /^(none|n\/?a|na|no|nope|not applicable|pending|-+|\.+|x)[.!]*$/i;
 
 /**
  * An RID member number as typed: "#12345", "RID 12345", "12 345". Null when
@@ -206,7 +212,8 @@ export function cleanMemberId(raw: string): { id: string | null; given: string }
   const given = (raw || "").trim();
   if (!given || NON_ANSWER.test(given)) return { id: null, given: "" };
   const stripped = given.replace(/^(RID\s*)?(member\s*)?(id|number|no\.?|#)?\s*[:#]?\s*/i, "").replace(/[\s#-]/g, "");
-  return { id: /^\d{3,8}$/.test(stripped) ? stripped : null, given };
+  // "000000" is somebody getting past a required box, not a member number.
+  return { id: /^\d{3,8}$/.test(stripped) && !/^0+$/.test(stripped) ? stripped : null, given };
 }
 
 const YES = /^(yes|y|si|sí|yes please|i do|please)\b/i;
@@ -225,6 +232,12 @@ export type RidAnswer = {
   otherBody: boolean;
   /** A number in a box shared with other bodies, and nothing saying which. */
   unsure: boolean;
+  /** Said yes to RID, or typed an RID number, but did not pick RID as a
+   *  certifying body: almost always a medical interpreter misreading the
+   *  question, and never sent without someone checking. */
+  mismatch: boolean;
+  /** The certifying bodies they picked, short: "CCHI, NBCMI". */
+  bodies: string;
   lastName: string;
   lastNameFrom: "column" | "full name" | null;
   fullName: string;
@@ -269,7 +282,17 @@ export function readRid(raw: Record<string, string>, cols: FormColumns): RidAnsw
   const g = cleanMemberId(shared);
   if (!memberId && wants && g.id) { memberId = g.id; numberFrom = "generic"; }
   if (OTHER_BODY.test(shared)) otherBody = true;
-  const unsure = !wants && !declined && !otherBody && !!g.id && RID.test(cols.genericNumber || "");
+  let unsure = !wants && !declined && !otherBody && !!g.id && RID.test(cols.genericNumber || "");
+
+  // The certifying-body answer, when given, overrides everything above.
+  let mismatch = false;
+  const bodies = v(cols.bodies);
+  if (bodies) {
+    const picked = RID.test(bodies) || /registry of interpreters/i.test(bodies);
+    if (!picked && wants) mismatch = true;
+    wants = picked && !declined;
+    unsure = false;
+  }
 
   const fullName = [v(cols.firstName), v(cols.lastName)].filter(Boolean).join(" ") || v(cols.fullName);
   let lastName = v(cols.lastName);
@@ -284,11 +307,18 @@ export function readRid(raw: Record<string, string>, cols: FormColumns): RidAnsw
     numberFrom,
     otherBody: otherBody && numberFrom === "generic",
     unsure,
+    mismatch,
+    bodies: shortBodies(bodies),
     lastName,
     lastNameFrom,
     fullName,
     email: v(cols.email).toLowerCase(),
   };
+}
+
+/** "CCHI: Certification Commission for Healthcare Interpreters, NBCMI: ..." as "CCHI, NBCMI". */
+export function shortBodies(answer: string): string {
+  return answer.split(/,\s+(?=[A-Z]{2,}\b)/).map((b) => b.split(":")[0].trim()).filter(Boolean).join(", ");
 }
 
 const PARTICLES = new Set(["de", "del", "la", "las", "los", "da", "das", "do", "dos", "di", "van", "von", "der", "den", "le", "st", "st.", "y"]);
