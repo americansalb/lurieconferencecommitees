@@ -16,7 +16,9 @@ import {
 
 const SETTINGS_KEY = "feedback.ridCeu";
 
-export type Release = "send" | "withhold";
+/** "restricted": the presenter kept the slides and recording to the room, so
+ *  nothing but the description goes, and Vancro is told a recording is held. */
+export type Release = "send" | "withhold" | "restricted";
 
 export type RidSettings = {
   /** Vancro's Workshop ID for each session, by session key. */
@@ -26,7 +28,8 @@ export type RidSettings = {
   /** A form's session chosen by hand, by form key; "none" for not sponsored. */
   forms: Record<string, string>;
   /** Whether a session's slides go to Vancro, where the team overrode the
-   *  default (sent when every presenter opted in to continuing education). */
+   *  default (sent when every presenter opted in to continuing education,
+   *  restricted where the presenter kept them to the room). */
   materials: Record<string, string>;
 };
 
@@ -101,6 +104,7 @@ export type SessionPresenter = {
   agreedToCe: boolean;
   slide: { href: string; fileName: string | null; sizeBytes: number | null; mime: string | null; linkUrl: string | null } | null;
   abstract: string | null;
+  learningObjectives: string | null;
 };
 
 export type RidSession = (typeof VANCRO_SESSIONS)[number] & {
@@ -161,7 +165,7 @@ export async function compileRidCeusWithEvaluations(): Promise<RidReport & { eva
     }),
     prisma.presenter.findMany({
       select: {
-        id: true, name: true, talkTitle: true, talkAbstract: true, status: true, agreedToCe: true,
+        id: true, name: true, talkTitle: true, talkAbstract: true, learningObjectives: true, status: true, agreedToCe: true,
         slide: { select: { fileName: true, mime: true, sizeBytes: true, linkUrl: true } },
       },
     }),
@@ -372,14 +376,17 @@ export async function compileRidCeusWithEvaluations(): Promise<RidReport & { eva
         name: p.name,
         agreedToCe: p.agreedToCe,
         abstract: p.talkAbstract,
+        learningObjectives: p.learningObjectives,
         slide: p.slide && (p.slide.sizeBytes || p.slide.linkUrl)
           ? { href: `/api/presenters/${p.id}/slides`, fileName: p.slide.fileName, sizeBytes: p.slide.sizeBytes, mime: p.slide.mime, linkUrl: p.slide.linkUrl }
           : null,
       }))
       .sort((a, b) => at(a.name) - at(b.name));
     // Slides go to Vancro by default only when every presenter opted in to
-    // continuing education use, which is what authorizes sending them.
-    const releaseDefault: Release = list.length > 0 && list.every((p) => p.agreedToCe) ? "send" : "withhold";
+    // continuing education use, which is what authorizes sending them, and
+    // never where the presenter restricted them to the room.
+    const releaseDefault: Release = s.restricted ? "restricted"
+      : list.length > 0 && list.every((p) => p.agreedToCe) ? "send" : "withhold";
     const chosen = settings.materials[s.key];
     return {
       ...s,
@@ -388,7 +395,7 @@ export async function compileRidCeusWithEvaluations(): Promise<RidReport & { eva
       people: rows.filter((r) => r.sessionKey === s.key).length,
       responses: responsesBySession.get(s.key) || 0,
       presenters: list,
-      release: chosen === "send" || chosen === "withhold" ? chosen : releaseDefault,
+      release: chosen === "send" || chosen === "withhold" || chosen === "restricted" ? chosen : releaseDefault,
       releaseDefault,
     };
   });

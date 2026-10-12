@@ -1,5 +1,6 @@
 import { scaleFor } from "./feedback";
 import { slideChunks } from "./presenter-slides";
+import { splitObjectives } from "./program-book";
 import { uploadCsv } from "./rid-ceu";
 import { compileRidCeusWithEvaluations, sessionNumber, type RidSession, type SessionEvaluation } from "./rid-ceu-report";
 import type { ZipEntry } from "./zip-stream";
@@ -15,7 +16,10 @@ import type { ZipEntry } from "./zip-stream";
 // Slides go only for sessions marked to send on the RID CEUs page, which by
 // default means every presenter opted in to continuing education use. A
 // withheld session gets a short note and its description in place of slides,
-// so Vancro sees it was not overlooked.
+// so Vancro sees it was not overlooked. A restricted session (the presenter
+// kept the slides and recording to the room) gets the same, plus a line that
+// the conference holds a recording if Vancro needs proof it took place; no
+// slide file or link of theirs is ever added.
 
 const BOM = "﻿";
 
@@ -71,16 +75,25 @@ function extensionFor(fileName: string | null, mime: string | null): string {
 
 function description(s: RidSession): string {
   const abstracts = s.presenters.map((p) => (p.abstract || "").trim()).filter(Boolean);
+  const objectives = Array.from(new Set(s.presenters.flatMap((p) => splitObjectives(p.learningObjectives, 10).filter(Boolean))));
   return [
     s.title,
     `Presented by ${presenterNames(s)}`,
     `${s.date}, ${s.time} (${s.minutes} minutes)`,
     "",
     ...(abstracts.length ? abstracts : ["No written description on file."]),
+    ...(objectives.length ? ["", "Learning objectives:", ...objectives.map((o, i) => `${i + 1}. ${o}`)] : []),
   ].join("\r\n");
 }
 
+const RESTRICTED_NOTE = [
+  "The presenter restricted the materials for this session to the room. The slides were shown from the presentation computer only, the conference was not given a copy, and the presenter asked that neither the slides nor the recording be shared with anyone. That is why they are not included.",
+  "",
+  "The session was recorded and the conference holds the recording. If you need evidence that the session took place, please let us know.",
+].join("\r\n");
+
 function materialsStatus(s: RidSession): string {
+  if (s.release === "restricted") return "Slides and recording restricted by the presenter; description attached; recording held as evidence the session took place";
   if (s.release === "withhold") return "Slides not released by the presenter; description attached";
   const files = s.presenters.filter((p) => p.slide?.sizeBytes);
   const links = s.presenters.filter((p) => !p.slide?.sizeBytes && p.slide?.linkUrl);
@@ -124,6 +137,13 @@ export async function vancroPackage(): Promise<ZipEntry[]> {
 
   for (const s of report.sessions) {
     const base = `3. Session Materials/${fileSafe(sessionLabel(s))}`;
+    if (s.release === "restricted") {
+      entries.push({
+        name: `${base} - materials restricted by presenter.txt`,
+        data: `${RESTRICTED_NOTE}\r\n\r\n${description(s)}\r\n`,
+      });
+      continue;
+    }
     if (s.release === "withhold") {
       entries.push({
         name: `${base} - slides not released.txt`,

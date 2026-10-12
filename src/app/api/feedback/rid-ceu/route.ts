@@ -69,7 +69,7 @@ export async function POST(req: Request) {
   for (const [k, v] of Object.entries(body.materials || {})) {
     if (!sessionKeys.has(k)) continue;
     const val = String(v ?? "").trim();
-    if (val && val !== "send" && val !== "withhold") continue;
+    if (val && val !== "send" && val !== "withhold" && val !== "restricted") continue;
     patch.materials![k] = val;
   }
   await saveRidSettings(patch);

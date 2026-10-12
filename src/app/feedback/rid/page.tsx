@@ -173,7 +173,9 @@ export default function RidCeuPage() {
                   <p className="mt-4 text-[12.5px] text-slate-600 max-w-3xl">
                     The package is a zip with, in order: an overview of the 13 sessions, the RID CEU Upload Form, an
                     evaluation file per session (name, how they attended, rating, comments), and the slides for each session
-                    marked to send. A withheld session gets its description and a note that the slides were not released.
+                    marked to send. A withheld session gets its description and a note that the slides were not released. A
+                    restricted session gets its description and a note that the presenter kept the slides and recording to the
+                    room and that the conference holds the recording if Vancro needs proof the session took place.
                   </p>
                   {missingIds > 0 && (
                     <p className="mt-4 text-[12.5px] text-slate-600">
@@ -226,7 +228,7 @@ export default function RidCeuPage() {
                     Workshop IDs come from Vancro&rsquo;s approval of each activity. CEUs start at the scheduled length (one
                     CEU is ten hours, so an hour is 0.1); change any that Vancro approved differently. Slides go to Vancro
                     only where every presenter opted in to continuing education in the portal, which is what authorizes
-                    sending them; change any session by hand.
+                    sending them, and never where the presenter restricted them to the room; change any session by hand.
                   </p>
                   <div className="mt-4 overflow-x-auto">
                     <table className="w-full text-[13px]">
@@ -270,7 +272,13 @@ export default function RidCeuPage() {
                               >
                                 <option value="send">Send slides{s.releaseDefault === "send" ? "" : " (overridden)"}</option>
                                 <option value="withhold">Withhold, send description{s.releaseDefault === "withhold" ? "" : " (overridden)"}</option>
+                                <option value="restricted">Restricted by presenter, recording held{s.releaseDefault === "restricted" ? "" : " (overridden)"}</option>
                               </select>
+                              {s.release === "restricted" && (
+                                <div className="mt-1 text-[11px] text-amber-800">
+                                  No slides or links go. Vancro gets the description and a note that a recording is held.
+                                </div>
+                              )}
                               <ul className="mt-1.5 space-y-1">
                                 {s.presenters.map((p) => (
                                   <li key={p.id} className="text-[12px] leading-snug">

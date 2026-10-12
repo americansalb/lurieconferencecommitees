@@ -29,11 +29,25 @@ export type VancroSession = {
   minutes: number;
   /** From the scheduled length, until the team enters what Vancro approved. */
   defaultCeus: string;
+  /** The presenter restricted the slides and recording to the room. */
+  restricted: boolean;
 };
 
 // The program's days are written "Saturday, August 15"; the year is the
 // conference's.
 const DATES = ["08/15/2026", "08/16/2026"];
+
+// Sessions whose presenters restricted their materials to the room: the deck
+// was loaded straight onto the presentation computer, the conference never
+// had a copy, and they asked that neither the slides nor the recording go to
+// anyone. Vancro gets the description and a note that a recording is held,
+// never slides, whatever else is on file. By title, as the program has it.
+const RESTRICTED_TITLES = new Set([
+  // Wilma Alvarado-Little's talk. Her panel with Linda Coronado follows the usual rule.
+  "Empowering Communication: Lessons from Language Access Past, Present, and Future",
+  // Jane Crandall Kontrimas.
+  "Revising the National Code of Ethics for Interpreters in Health Care: What’s New?",
+]);
 
 /** Every session that earns credit, in program order. There are 13. */
 export const VANCRO_SESSIONS: VancroSession[] = PROGRAM_DAYS.flatMap((d, di) =>
@@ -49,6 +63,7 @@ export const VANCRO_SESSIONS: VancroSession[] = PROGRAM_DAYS.flatMap((d, di) =>
       who: s.who || "",
       minutes: s.ceuMinutes as number,
       defaultCeus: ridCeusFor(s.ceuMinutes as number),
+      restricted: RESTRICTED_TITLES.has(s.title),
     })),
 );
 
