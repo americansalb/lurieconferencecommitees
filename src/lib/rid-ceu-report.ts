@@ -160,7 +160,7 @@ export async function compileRidCeusWithEvaluations(): Promise<RidReport & { eva
       orderBy: [{ submittedAt: "asc" }, { importedAt: "asc" }],
       select: {
         sourceName: true, sessionLabel: true, presenterId: true, sharedWith: true, general: true, data: true, segment: true,
-        ratings: true, comments: true, questionOrder: true,
+        ratings: true, comments: true, choices: true, questionOrder: true,
       },
     }),
     prisma.presenter.findMany({
@@ -355,14 +355,25 @@ export async function compileRidCeusWithEvaluations(): Promise<RidReport & { eva
 
   rows.sort((x, y) => (order.get(x.sessionKey)! - order.get(y.sessionKey)!) || x.lastName.localeCompare(y.lastName));
 
+  // A presenter's record holds one talk: one abstract, one set of objectives,
+  // one deck. They belong to the session that talk matches, so Wilma
+  // Alvarado-Little's talk does not describe her panel or lend it her deck.
+  const ownSession = new Map(presenters.map((p) => [
+    p.id, matchVancroSession({ formName: "", title: p.talkTitle, presenterNames: [p.name] })?.key ?? null,
+  ]));
+
   // Who presented each session: whoever its forms credit, and failing that,
-  // the confirmed presenter whose name and talk fit it.
+  // every confirmed presenter whose name and talk fit it. Every one matters:
+  // slides go only when all of them opted in.
+  const fallback = new Map<string, Set<string>>();
   for (const p of presenters) {
-    if (p.status !== "confirmed") continue;
-    const m = matchVancroSession({ formName: "", title: p.talkTitle, presenterNames: [p.name] });
-    if (!m || (presentersBySession.get(m.key)?.size ?? 0) > 0) continue;
-    presentersBySession.set(m.key, new Set([p.id]));
+    const key = ownSession.get(p.id);
+    if (p.status !== "confirmed" || !key) continue;
+    fallback.set(key, (fallback.get(key) || new Set<string>()).add(p.id));
   }
+  fallback.forEach((ids, key) => {
+    if (!presentersBySession.get(key)?.size) presentersBySession.set(key, ids);
+  });
 
   const sessions: RidSession[] = VANCRO_SESSIONS.map((s) => {
     // In the order the program names them.
@@ -371,16 +382,19 @@ export async function compileRidCeusWithEvaluations(): Promise<RidReport & { eva
     const list: SessionPresenter[] = Array.from(presentersBySession.get(s.key) || [])
       .map((id) => people.get(id))
       .filter((p): p is NonNullable<typeof p> => !!p)
-      .map((p) => ({
-        id: p.id,
-        name: p.name,
-        agreedToCe: p.agreedToCe,
-        abstract: p.talkAbstract,
-        learningObjectives: p.learningObjectives,
-        slide: p.slide && (p.slide.sizeBytes || p.slide.linkUrl)
-          ? { href: `/api/presenters/${p.id}/slides`, fileName: p.slide.fileName, sizeBytes: p.slide.sizeBytes, mime: p.slide.mime, linkUrl: p.slide.linkUrl }
-          : null,
-      }))
+      .map((p) => {
+        const mine = (ownSession.get(p.id) ?? s.key) === s.key;
+        return {
+          id: p.id,
+          name: p.name,
+          agreedToCe: p.agreedToCe,
+          abstract: mine ? p.talkAbstract : null,
+          learningObjectives: mine ? p.learningObjectives : null,
+          slide: mine && p.slide && (p.slide.sizeBytes || p.slide.linkUrl)
+            ? { href: `/api/presenters/${p.id}/slides`, fileName: p.slide.fileName, sizeBytes: p.slide.sizeBytes, mime: p.slide.mime, linkUrl: p.slide.linkUrl }
+            : null,
+        };
+      })
       .sort((a, b) => at(a.name) - at(b.name));
     // Slides go to Vancro by default only when every presenter opted in to
     // continuing education use, which is what authorizes sending them, and
@@ -400,11 +414,21 @@ export async function compileRidCeusWithEvaluations(): Promise<RidReport & { eva
     };
   });
 
+  // Someone who kept one session's materials to the room keeps them there on
+  // every session they are on: no slide of theirs reaches the package.
+  const keptToRoom = new Set(sessions.filter((s) => s.release === "restricted").flatMap((s) => s.presenters.map((p) => p.id)));
+  for (const s of sessions) {
+    if (s.release === "restricted") continue;
+    s.presenters = s.presenters.map((p) => (keptToRoom.has(p.id) ? { ...p, slide: null } : p));
+  }
+
   // Every evaluation, by session, with who wrote it: the form's own answers,
-  // in the form's own question order.
+  // in the form's own question order, then any multiple-choice answers ("Were
+  // the learning objectives met?"), which a session form does not order.
   const evaluations: SessionEvaluation[] = VANCRO_SESSIONS.map((s) => {
     const rs = evalRows.get(s.key) || [];
     const questions = questionOrderOf(rs);
+    for (const r of rs) for (const q of Object.keys((r.choices || {}) as object)) if (!questions.includes(q)) questions.push(q);
     const ratingQuestions = questions.filter((q) => rs.some((r) => q in ((r.ratings || {}) as object)));
     return {
       sessionKey: s.key,
@@ -415,7 +439,11 @@ export async function compileRidCeusWithEvaluations(): Promise<RidReport & { eva
       rows: rs.map((r) => ({
         name: evalNames.get(r)?.name || "",
         attended: evalNames.get(r)?.attended || "",
-        answers: { ...((r.comments || {}) as Record<string, string>), ...((r.ratings || {}) as Record<string, number>) },
+        answers: {
+          ...((r.choices || {}) as Record<string, string>),
+          ...((r.comments || {}) as Record<string, string>),
+          ...((r.ratings || {}) as Record<string, number>),
+        },
       })).sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" })),
     };
   });

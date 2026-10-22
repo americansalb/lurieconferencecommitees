@@ -74,14 +74,15 @@ function extensionFor(fileName: string | null, mime: string | null): string {
 }
 
 function description(s: RidSession): string {
-  const abstracts = s.presenters.map((p) => (p.abstract || "").trim()).filter(Boolean);
+  // Co-presenters often submitted the same abstract; it is printed once.
+  const abstracts = Array.from(new Set(s.presenters.map((p) => (p.abstract || "").trim()).filter(Boolean)));
   const objectives = Array.from(new Set(s.presenters.flatMap((p) => splitObjectives(p.learningObjectives, 10).filter(Boolean))));
   return [
     s.title,
     `Presented by ${presenterNames(s)}`,
     `${s.date}, ${s.time} (${s.minutes} minutes)`,
     "",
-    ...(abstracts.length ? abstracts : ["No written description on file."]),
+    (abstracts.length ? abstracts : ["No written description on file."]).join("\r\n\r\n"),
     ...(objectives.length ? ["", "Learning objectives:", ...objectives.map((o, i) => `${i + 1}. ${o}`)] : []),
   ].join("\r\n");
 }
